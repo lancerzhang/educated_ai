@@ -22,13 +22,14 @@ try:
             wav_data=audio.get_wav_data()
             tmp = io.BytesIO(wav_data)
             y, sr = sf.read(tmp)
-            S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
+            mel_data = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
             plt.figure(figsize=(10, 4))
-            librosa.display.specshow(librosa.power_to_db(S, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
+            librosa.display.specshow(librosa.power_to_db(mel_data, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
             plt.colorbar(format='%+2.0f dB')
             plt.title('Mel spectrogram')
             plt.tight_layout()
             plt.show()
+            np.save('npa.npy', y)
         except sr.UnknownValueError:
             print("Oops! Didn't catch that")
         except sr.RequestError as e:

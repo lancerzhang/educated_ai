@@ -77,7 +77,7 @@ class TestMemory(unittest.TestCase):
         mem2 = self.database.get_memory(el2)
         mem3 = self.database.get_memory(el3)
         related_memory_ids = [mem1, mem2, mem3]
-        exp_memory=memory.find_exp_memory(related_memory_ids)
+        exp_memory=memory.find_exp_memory_id(related_memory_ids)
         self.assertEqual(1, exp_memory)
 
     def test_find_exp_memory1(self):
@@ -88,7 +88,7 @@ class TestMemory(unittest.TestCase):
         mem2 = self.database.get_memory(el2)
         mem3 = self.database.get_memory(el3)
         related_memory_ids = [mem1, mem2, mem3]
-        exp_memory=memory.find_exp_memory(related_memory_ids)
+        exp_memory=memory.find_exp_memory_id(related_memory_ids)
         self.assertEqual(2, exp_memory)
 
 

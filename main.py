@@ -3,11 +3,11 @@ from db import Database
 from tinydb import TinyDB, Query
 
 # number of process per second
-pps = 10
+pps = 5
 # duration per process (s)
 dps = 1.0 / pps
 # limit the time of finding experience memories
-find_exp_mem_time = dps * 0.3
+find_exp_mem_time = dps * 0.2
 # limit the time of verify experience memories
 verify_exp_mem_time = dps * 0.3
 
@@ -22,13 +22,14 @@ try:
     while 1:
         start = time.time()
         # find out the experience start
-        experience_memory = memory.find_exp_memory(working_memory)
-        print("find out the experience - used(ms):", util.time_diff(start))
+        related_memory_ids = memory.find_related_memory_ids(working_memory)
+        exp_memory_id = memory.find_exp_memory_id(related_memory_ids)
+        # print("find out the experience - used(ms):", util.time_diff(start))
         # find out the experience end
         if util.time_diff(start) > dps:
             continue
         # find out the best action start
-        print("find out the best action - used(ms):", util.time_diff(start))
+        # print("find out the best action - used(ms):", util.time_diff(start))
         # find out the best action end
         if util.time_diff(start) > dps:
             continue

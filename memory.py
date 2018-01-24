@@ -77,7 +77,7 @@ def find_related_memory_ids(working_memories):
 
 
 # find max reward in memories (db record)
-def find_exp_memory(related_memories):
+def find_exp_memory_id(related_memories):
     max_value = 0
     max_id = 0
     for mem in related_memories:

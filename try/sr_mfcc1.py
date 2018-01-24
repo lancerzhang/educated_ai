@@ -23,7 +23,6 @@ try:
             data, samplerate = sf.read(tmp)
             # mfccs = librosa.feature.mfcc(y, sr=44100, n_mfcc=40)
             mfccs = librosa.feature.mfcc(data, sr=44100)
-            print mfccs
             plt.figure(figsize=(10, 4))
             dsp.specshow(mfccs, x_axis='time')
             plt.colorbar()
