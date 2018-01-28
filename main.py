@@ -1,45 +1,53 @@
-import time, util, memory
+import time, util, memory, sound, thread, collections
 from db import Database
 from tinydb import TinyDB, Query
 
 # number of process per second
-pps = 5
+PPS = 2
 # duration per process (s)
-dps = 1.0 / pps
+DPS = 1.0 / PPS
 # limit the time of finding experience memories
-find_exp_mem_time = dps * 0.2
+FIND_EXP_MEM_TIME = DPS * 0.2
 # limit the time of verify experience memories
-verify_exp_mem_time = dps * 0.3
+VERIFY_EXP_MEM_TIME = DPS * 0.3
 
 # expect working memories will match experience memories, if not, working memories will became new experience.
 experience_memory = 0
 # working memories are reflection of the environment, can find out state from few working memories
-working_memory = []
+working_memory = collections.deque()
+working_memory_sound = collections.deque()
 
-database = Database(TinyDB(TinyDB('TinyDB.json')))
+db = Database(TinyDB('TinyDB.json'))
+sound.db = db
+memory.db=db
+thread.start_new_thread(sound.listen, ())
 
 try:
+    print 'wake up.'
     while 1:
         start = time.time()
         # find out the experience start
-        related_memory_ids = memory.find_related_memory_ids(working_memory)
+        related_memory_ids = memory.find_related_memory_ids(working_memory_sound)
         exp_memory_id = memory.find_exp_memory_id(related_memory_ids)
         # print("find out the experience - used(ms):", util.time_diff(start))
         # find out the experience end
-        if util.time_diff(start) > dps:
+        if util.time_diff(start) > DPS:
             continue
         # find out the best action start
         # print("find out the best action - used(ms):", util.time_diff(start))
         # find out the best action end
-        if util.time_diff(start) > dps:
+        if util.time_diff(start) > DPS:
             continue
+        # impress
+        sound.impress(working_memory_sound)
         # all end
         duration = util.time_diff(start)
-        print("All:", duration)
-        if duration < dps:
-            print("Sleep:", (dps - duration))
-            time.sleep(dps - duration)
+        # print("All:", duration)
+        if duration < DPS:
+            # print("Sleep (ms):", (DPS - duration) * 1000)
+            time.sleep(DPS - duration)
 
 except KeyboardInterrupt:
     print("quiting...")
-    database.cleanup_memory()
+    sound.start_thread = False
+    db.housekeep()

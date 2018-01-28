@@ -11,29 +11,29 @@ class TestDB(unittest.TestCase):
         self.database = Database(TinyDB(storage=MemoryStorage))
         memory.forget_memory = True
 
-    def test_cleanup_memory0(self):
-        self.database.add_memory({'lastRecall': time.time() - 50})
-        cleaned = self.database.cleanup_memory()
+    def test_housekeep0(self):
+        self.database._add_memory({'lastRecall': time.time() - 50})
+        cleaned = self.database.housekeep()
         self.assertEqual(0, cleaned)
 
     # there is 1% chance this case will fail, as we turn on forget_memory
-    def test_cleanup_memory1(self):
+    def test_housekeep1(self):
         last_recall = time.time() - 65000000
-        el = self.database.add_memory()
+        el = self.database._add_memory()
         self.database.table.update({'lastRecall': last_recall}, eids=[el])
-        cleaned = self.database.cleanup_memory()
+        cleaned = self.database.housekeep()
         self.assertEqual(1, cleaned)
         self.assertEqual(0, len(self.database.table.all()))
 
     # there is 1% chance this case will fail, as we turn on forget_memory
-    def test_cleanup_memory2(self):
+    def test_housekeep2(self):
         last_recall1 = time.time() - 65000000
-        el1 = self.database.add_memory()
+        el1 = self.database._add_memory()
         self.database.table.update({'lastRecall': last_recall1}, eids=[el1])
         last_recall2 = time.time() - 50
-        el2 = self.database.add_memory()
+        el2 = self.database._add_memory()
         self.database.table.update({'lastRecall': last_recall2}, eids=[el2])
-        cleaned = self.database.cleanup_memory()
+        cleaned = self.database.housekeep()
         self.assertEqual(1, cleaned)
         self.assertEqual(1, len(self.database.table.all()))
 

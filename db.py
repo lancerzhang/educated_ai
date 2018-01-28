@@ -1,6 +1,7 @@
-import time, memory
-from tinydb import  Query
+import time, memory, util, sound
+from tinydb import Query
 from tinydb_smartcache import SmartCacheTable
+from tinydb.database import Document
 
 
 class Database:
@@ -15,54 +16,125 @@ class Database:
     def load_memory(self):
         print 'load memory'
 
-    def get_memory(self,elid):
+    # return None if not found
+    # do not use directly, we usually need to refresh it before getting it
+    def _get_memory(self, elid):
         return self.table.get(eid=elid)
 
-    def cleanup_memory(self):
-        print 'start to cleanup memory'
-        clean_time = time.time() - 60
-        Memory = Query()
-        records=self.table.search( Memory.lastRecall < clean_time)
-        print 'memories to cleanup:',len(records)
-        cleaned=0
+    # return None if not found
+    def get_memory(self, elid, recall=False):
+        mem = self._get_memory(elid)
+        memory.refresh(mem, recall)
+        if mem[memory.STRENGTH] == -1:
+            return None
+        return mem
+
+    # return None if not found
+    def use_memory(self, elid):
+        return self.get_memory(elid, True)
+
+    def update_memory_ids(self, fields, ids):
+        self.table.update(fields, eids=ids)
+
+    def refresh_memories(self, records, recall=False):
+        cleaned = 0
         for record in records:
-            memory.refresh(record)
-            if record['strength'] == -1:
-                cleaned=cleaned+1
+            memory.refresh(record, recall)
+            if record[memory.STRENGTH] == -1:
+                cleaned = cleaned + 1
                 self.table.remove(eids=[record.doc_id])
-        print 'memories were cleaned up:', cleaned
+                records.remove(record)
         return cleaned
 
-    def add_record(self, record):
-        new_record = record.copy()
-        new_record.update({'lastRecall': time.time()})
+    def housekeep(self):
+        print 'start to cleanup memory'
+        clean_time = time.time() - 60
+        query = Query()
+        records = self.table.search(query.lastRecall < clean_time)
+        print 'memories to be refresh:', len(records)
+        cleaned = self.refresh_memories(records)
+        print 'memories were deleted:', cleaned
+        return cleaned
+
+    # private method
+    def _add_record(self, new_record):
+        # new_record = record.copy()
+        new_record.update({memory.STRENGTH: 100, memory.RECALL: 1, memory.LASTRECALL: time.time()})
         return self.table.insert(new_record)
 
-    def add_memory(self, addition={}):
-        new_memory = memory.basic_memory.copy()
+    # it return new created record id, normally not use it
+    def _add_memory(self, addition={}):
+        new_memory = memory.BASIC_MEMORY.copy()
         # use children memories to match the experience
-        new_memory.update({'type': 'memory'})
-        # new_memory.update({'type': 'memory', 'children': [0, 0]})
+        new_memory.update({memory.TYPE: memory.MEMORY})
+        # new_memory.update({memory.TYPE:memory.MEMORY, 'children': [0, 0]})
         new_memory.update(addition)
-        return self.add_record(new_memory)
+        return self._add_record(new_memory)
 
-    def add_vision(self, addition={}):
-        new_memory = memory.basic_memory.copy()
-        new_memory.update({'type': 'vision', 'filter': 'vf1', 'data': 'abc'})
-        return self.add_record(new_memory)
+    def add_memory(self, addition={}):
+        eid = self._add_memory(addition)
+        return self._get_memory(eid)
+
+    # it return new created record id, normally not use it
+    def _add_vision(self, addition={}):
+        new_memory = memory.BASIC_MEMORY.copy()
+        new_memory.update({memory.TYPE: memory.VISION, 'filter': 'vf1', 'data': 'abc'})
+        new_memory.update(addition)
+        return self._add_record(new_memory)
+
+    # it return new created record id, normally not use it
+    def _add_sound(self, addition={}):
+        new_memory = memory.BASIC_MEMORY.copy()
+        new_memory.update({memory.TYPE: memory.SOUND})
+        new_memory.update(addition)
+        return self._add_record(new_memory)
 
     def add_sound(self, addition={}):
-        new_memory = memory.basic_memory.copy()
-        new_memory.update({'type': 'sound', 'data': '123'})
-        return self.add_record(new_memory)
+        eid = self._add_sound(addition)
+        return self._get_memory(eid)
 
-    def add_focus(self, addition={}):
-        new_memory = memory.basic_memory.copy()
-        new_memory.update({'type': 'focus', 'angle': 10, 'speed': 10, 'duration': 10})
-        return self.add_record(new_memory)
+    # it return new created record id, normally not use it
+    def _add_focus(self, addition={}):
+        new_memory = memory.BASIC_MEMORY.copy()
+        new_memory.update({memory.TYPE: memory.FOCUS, 'angle': 10, 'speed': 10, 'duration': 10})
+        new_memory.update(addition)
+        return self._add_record(new_memory)
 
-    def add_speak(self, addition={}):
-        new_memory = memory.basic_memory.copy()
-        new_memory.update({'type': 'speak', 'word': 'yes'})
-        return self.add_record(new_memory)
+    # it return new created record id, normally not use it
+    def _add_speak(self, addition={}):
+        new_memory = memory.BASIC_MEMORY.copy()
+        new_memory.update({memory.TYPE: memory.SPEAK, 'word': 'yes'})
+        new_memory.update(addition)
+        return self._add_record(new_memory)
 
+    # do not use directly, we usually need to refresh it before getting it
+    # return [] if not found
+    def _search_sound(self, feature, name, min, max):
+        query = Query()
+        records = self.table.search((query[memory.TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[name].test(util.between, min, max)))
+        return records
+
+    # TODO, need to remove all references?
+    def search_sound(self, feature, name, min, max, recall=False):
+        records = self._search_sound(feature, name, min, max)
+        self.refresh_memories(records, recall)
+        return records
+
+    def use_sound(self, feature, name, min, max):
+        return self.search_sound(feature, name, min, max, True)
+
+    def add_parent(self, memories):
+        first_data = []
+        for mem in memories:
+            if not isinstance(mem, Document):
+                print mem
+            first_data.append(mem.doc_id)
+        # add new memory with those children as first data
+        parent = self.add_memory({memory.FIRST_DATA: first_data})
+        # update children
+        for mem in memories:
+            parent_ids = mem[memory.PARENTS]
+            if parent.doc_id not in parent_ids:
+                parent_ids.append(parent.doc_id)
+                self.update_memory_ids({memory.PARENTS: parent_ids}, [mem.doc_id])
+        return parent

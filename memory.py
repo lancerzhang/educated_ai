@@ -1,10 +1,25 @@
-import time, random
+import time, random, util
+
+STRENGTH = 'strength'
+RECALL = 'recall'
+REWARD = 'reward'
+LASTRECALL = 'lastRecall'
+PARENTS = 'parents'
+TYPE = 'type'
+MEMORY = 'memory'
+SOUND = 'sound'
+VISION = 'vision'
+FOCUS = 'focus'
+SPEAK = 'speak'
+FIRST_DATA = 'firstData'
+
+db = None
 
 # use parent to find experience memories
-basic_memory = {'strength': 0, 'recall': 0, 'reward': 0, 'lastRecall': 0, 'parents': []}
+BASIC_MEMORY = {STRENGTH: 0, RECALL: 0, REWARD: 0, LASTRECALL: 0, PARENTS: []}
 
 # The first recall time, if less than 60 seconds, memory strength is 100%, and then 99% for 61 seconds ... 21% for 35 days
-time_sec = [60, 61, 63, 66, 70, 75, 81, 88, 96, 105, 115, 126, 138, 151, 165, 180, 196, 213, 231, 250, 270, 291, 313, 336, 360, 385, 411, 438, 466, 495, 525, 540, 600, 660, 720,
+TIME_SEC = [60, 61, 63, 66, 70, 75, 81, 88, 96, 105, 115, 126, 138, 151, 165, 180, 196, 213, 231, 250, 270, 291, 313, 336, 360, 385, 411, 438, 466, 495, 525, 540, 600, 660, 720,
             780, 840, 900, 960, 1020, 1080, 1140, 1200, 1260, 1320, 1440, 1560, 1740, 1920, 2100, 2280, 2460, 2640, 2880, 3120, 3360, 3600, 4680, 6120, 7920, 10440, 14040, 18720,
             24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600, 537840, 853200, 1326240, 2035800, 3100140,
             3609835, 4203316, 4894372, 5699043, 6636009, 7727020, 8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033, 41225925,
@@ -16,44 +31,39 @@ forget_memory = False
 # longer time elapsed, easier to forget
 # more times recall, harder to forget
 # can not recall frequently in short time
+# check result, if memory.strength = -1, that it's forgot
 def refresh(mem, recall=False):
-    time_elapse = time.time() - mem['lastRecall']
+    time_elapse = time.time() - mem[LASTRECALL]
     if time_elapse < 60:
         return
     count = 0
-    for num in range(mem['recall'], len(time_sec)):
-        if time_sec[num] <= time_elapse:
+    for num in range(mem[RECALL], len(TIME_SEC)):
+        if TIME_SEC[num] <= time_elapse:
             count = count + 1
         else:
             strength = 100 - count
-            mem['strength'] = strength
+            mem[STRENGTH] = strength
             if count > 0:
                 # random forget memory base on strength
                 if forget_memory:
                     ran = random.randint(1, 100)
                     if ran > strength:
-                        mem['strength'] = -1
+                        mem[STRENGTH] = -1
                         break
                 # if this is recall, will update recall count and last recall time
                 if recall:
-                    mem['recall'] = mem['recall'] + 1
-                    mem['lastRecall'] = time.time()
+                    mem[RECALL] = mem[RECALL] + 1
+                    mem[LASTRECALL] = time.time()
             break
 
 
 # TODO, need to check if parent memory is valid or not
 # summarize all parent memories in a list
 def find_parents(working_memories):
-    parent_counts = {}
+    parent_list = []
     for mem in working_memories:
-        parents = mem['parents']
-        for parent in parents:
-            pc = parent_counts.get(parent)
-            if pc:
-                parent_counts.update({parent: pc + 1})
-            else:
-                parent_counts.update({parent: 1})
-    return parent_counts
+        parent_list += mem[PARENTS]
+    return util.list_element_count(parent_list)
 
 
 # find out max occurrence in parent memories of all working memories
@@ -81,8 +91,41 @@ def find_exp_memory_id(related_memories):
     max_value = 0
     max_id = 0
     for mem in related_memories:
-        reward = mem['reward']
+        reward = mem[REWARD]
         if reward > max_value:
             max_value = reward
             max_id = mem.doc_id
     return max_id
+
+
+def remove_memories(memory_list, tobe_remove_list_ids):
+    for el in tobe_remove_list_ids:
+        for mem in memory_list:
+            if mem.doc_id in tobe_remove_list_ids:
+                memory_list.remove(mem)
+
+
+# check if can combine small feature memories to larger parent memory
+# if match a parent memory, will add to return list, and remove from feature memories
+def find_common_parents(feature_memories):
+    common_parents = []
+    if len(feature_memories) <= 1:
+        return common_parents
+    parent_ids = find_parents(feature_memories)
+    feature_memory_ids = []
+    for feature in feature_memories:
+        feature_memory_ids.append(feature.doc_id)
+    for key, value in parent_ids.items():
+        if value <= 1:
+            continue
+        mem = db.use_memory(key)
+        if mem is None:
+            continue
+        print 'found exp memory ', mem.doc_id
+        first_data = mem[FIRST_DATA]
+        first_common = util.common_elements(first_data, feature_memory_ids)
+        # check if this parent memory all matches
+        if len(first_common) == len(first_data):
+            common_parents.append(mem)
+            remove_memories(feature_memories, first_common)
+    return common_parents
