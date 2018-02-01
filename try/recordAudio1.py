@@ -1,4 +1,4 @@
-import pyaudio, wave, librosa, time
+import pyaudio, wave, librosa, time, util
 import matplotlib.pyplot as plt
 import librosa.display as dsp
 import numpy as np
@@ -18,14 +18,14 @@ stream = p.open(format=FORMAT,
                 input=True,
                 frames_per_buffer=CHUNK)
 
-
 print("* recording")
 npFrames = []
 
 for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
     data = stream.read(CHUNK)
-    npBuffer = np.fromstring(data, dtype=np.int16)
-    npFrames.append(npBuffer)
+    np_buffer = np.fromstring(data, dtype=np.int16)
+    normal_buffer = util.normalizeAudioData(np_buffer)
+    npFrames.append(normal_buffer)
 
 print("* done recording")
 

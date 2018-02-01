@@ -10,7 +10,8 @@ class Database:
 
     def __init__(self, db):
         self.db_instance = db
-        self.db_instance.table_class = SmartCacheTable
+        # has strange error when use cache table
+        # self.db_instance.table_class = SmartCacheTable
         self.table = self.db_instance.table('Memory')
 
     def load_memory(self):
@@ -38,19 +39,25 @@ class Database:
 
     def refresh_memories(self, records, recall=False):
         cleaned = 0
+        tobe_removed = []
         for record in records:
             memory.refresh(record, recall)
             if record[memory.STRENGTH] == -1:
                 cleaned = cleaned + 1
                 self.table.remove(eids=[record.doc_id])
-                records.remove(record)
+                tobe_removed.append(record.doc_id)
+        for id in tobe_removed:
+            for record in records:
+                if record.doc_id == id:
+                    records.remove(record)
+                    continue
         return cleaned
 
     def housekeep(self):
-        print 'start to cleanup memory'
+        print 'start to housekeep memory'
         clean_time = time.time() - 60
         query = Query()
-        records = self.table.search(query.lastRecall < clean_time)
+        records = self.table.search(query[memory.LASTRECALL] < clean_time)
         print 'memories to be refresh:', len(records)
         cleaned = self.refresh_memories(records)
         print 'memories were deleted:', cleaned

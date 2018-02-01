@@ -16,7 +16,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 SAMPLE_RATE = 44100
 SAMPLE_WIDTH = 2  # 16-bit
-ENERGY_THRESHOLD = 2000  # minimum audio energy to consider for recording
+ENERGY_THRESHOLD = 1500  # minimum audio energy to consider for recording
 BUFFER_THRESHOLD = 0.5  # second of buffer
 
 MEL_NUMBER = 128
@@ -28,14 +28,14 @@ FRAME_SECOND = 0.1  # process phase per frame, each frame is 0.1 seconds
 
 db = None
 FEATURE = 'ftr'
-INDEX = 'ngpos'
-ENERGY = 'ng'
+INDEX = 'nps'
+ENERGY = 'ngy'
 FEATURE_MAX_ENERGY = 1
 SIMILARITY = 0.1
 
 
 def listen():
-    print 'start to listen'
+    print 'start to listen.\n'
     try:
         audio = pyaudio.PyAudio()
         stream = audio.open(format=FORMAT,
@@ -91,17 +91,19 @@ def listen():
     except:
         pass
 
-
 def impress(working_memory_sound):
     if len(phases) == 0:
         return
     phase = phases.popleft()
+    # process phase per frame
+    frames = []
     phase_seconds = float(phase.size) / SAMPLE_RATE
     number_of_frames = int(phase_seconds / FRAME_SECOND)
-    if number_of_frames < 1:
-        number_of_frames = 1
-    # process phase per frame
-    frames = np.array_split(phase, number_of_frames)
+    if number_of_frames <= 1:
+        frames.append(phase)
+    else:
+        frames = np.array_split(phase, number_of_frames)
+    # start to process frames
     for frame in frames:
         frame_working_memories = []
         mel_data = librosa.feature.melspectrogram(y=frame, sr=SAMPLE_RATE, n_mels=MEL_NUMBER, fmax=8000)

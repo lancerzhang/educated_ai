@@ -1,17 +1,17 @@
 import time, random, util
 
-STRENGTH = 'strength'
-RECALL = 'recall'
-REWARD = 'reward'
-LASTRECALL = 'lastRecall'
-PARENTS = 'parents'
-TYPE = 'type'
-MEMORY = 'memory'
-SOUND = 'sound'
-VISION = 'vision'
-FOCUS = 'focus'
-SPEAK = 'speak'
-FIRST_DATA = 'firstData'
+STRENGTH = 'str'
+RECALL = 'rcl'
+REWARD = 'rwd'
+LASTRECALL = 'lrc'
+PARENTS = 'prt'
+TYPE = 'typ'
+MEMORY = 'mmy'
+SOUND = 'snd'
+VISION = 'vsn'
+FOCUS = 'fcs'
+SPEAK = 'spk'
+FIRST_DATA = 'fsd'
 
 db = None
 
@@ -25,7 +25,7 @@ TIME_SEC = [60, 61, 63, 66, 70, 75, 81, 88, 96, 105, 115, 126, 138, 151, 165, 18
             3609835, 4203316, 4894372, 5699043, 6636009, 7727020, 8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033, 41225925,
             48003823, 55896067, 65085866]
 
-forget_memory = False
+forget_memory = True
 
 
 # longer time elapsed, easier to forget
@@ -97,7 +97,7 @@ def find_exp_memory_id(related_memories):
             max_id = mem.doc_id
     return max_id
 
-
+#TODO, can enhance?
 def remove_memories(memory_list, tobe_remove_list_ids):
     for el in tobe_remove_list_ids:
         for mem in memory_list:

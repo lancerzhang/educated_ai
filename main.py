@@ -19,11 +19,11 @@ working_memory_sound = collections.deque()
 
 db = Database(TinyDB('TinyDB.json'))
 sound.db = db
-memory.db=db
+memory.db = db
 thread.start_new_thread(sound.listen, ())
 
 try:
-    print 'wake up.'
+    print 'wake up.\n'
     while 1:
         start = time.time()
         # find out the experience start

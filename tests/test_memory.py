@@ -92,10 +92,28 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(2, exp_memory)
 
     def test_remove_memories(self):
-        el1 = self.database.add_memory({memory.REWARD: 97})
-        el2 = self.database.add_memory({memory.REWARD: 99})
+        el1 = self.database.add_memory()
+        el2 = self.database.add_memory()
         memory_list = [el1, el2]
         tobe_remove_list_ids = [el1.doc_id]
+        memory.remove_memories(memory_list, tobe_remove_list_ids)
+        self.assertEqual(1, len(memory_list))
+
+    def test_remove_memories2(self):
+        el1 = self.database.add_memory()
+        el2 = self.database.add_memory()
+        el3 = self.database.add_memory()
+        memory_list = [el1, el2, el3]
+        tobe_remove_list_ids = [el2.doc_id]
+        memory.remove_memories(memory_list, tobe_remove_list_ids)
+        self.assertEqual(2, len(memory_list))
+
+    def test_remove_memories3(self):
+        el1 = self.database.add_memory()
+        el2 = self.database.add_memory()
+        el3 = self.database.add_memory()
+        memory_list = [el1, el2, el3]
+        tobe_remove_list_ids = [el2.doc_id, el3.doc_id]
         memory.remove_memories(memory_list, tobe_remove_list_ids)
         self.assertEqual(1, len(memory_list))
 
@@ -110,9 +128,7 @@ class TestMemory(unittest.TestCase):
         c2 = self.database.add_sound({sound.FEATURE: sound.FEATURE_MAX_ENERGY, sound.ENERGY: 5000})
         feature_memories.append(c2)
         # now add 2 children to a parent
-        c3=self.database.get_memory(7)
-        c4 = self.database.get_memory(28)
-        self.database.add_parent(c3, c4)
+        self.database.add_parent([c1, c2])
         common_parents = memory.find_common_parents(feature_memories)
         self.assertEqual(1, len(common_parents))
         self.assertEqual(0, len(feature_memories))
