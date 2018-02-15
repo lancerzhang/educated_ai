@@ -11,3 +11,8 @@ http://pythonware.com/products/pil/
 ``` bash
     pip install -r requirements.txt
 ```
+For Mac
+- install python 2.7
+https://www.python.org/downloads/mac-osx/
+- install portaudio
+brew install portaudio

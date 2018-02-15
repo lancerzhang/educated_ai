@@ -76,6 +76,30 @@ class TestUtil(unittest.TestCase):
         util.comprehension(list1, list2)
         self.assertEqual([1, 2], list1)
 
+    def test_calculate_similarity1(self):
+        value = 100.0
+        similarity = 0.1
+        sim_result = util.calculate_similarity(value, similarity)
+        min = sim_result[0]
+        max = sim_result[1]
+        self.assertGreater(max, min)
+
+    def test_calculate_similarity2(self):
+        value = -100.0
+        similarity = 0.1
+        sim_result = util.calculate_similarity(value, similarity)
+        min = sim_result[0]
+        max = sim_result[1]
+        self.assertGreater(max, min)
+
+    def test_calculate_similarity3(self):
+        value = 0.0
+        similarity = 0.1
+        sim_result = util.calculate_similarity(value, similarity)
+        min = sim_result[0]
+        max = sim_result[1]
+        self.assertEqual(max, min)
+
 
 if __name__ == "__main__":
     unittest.main()

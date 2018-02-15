@@ -6,7 +6,6 @@
 # if recall many times, can explore more features
 
 import librosa, math, audioop, time, pyaudio, collections, util, memory
-import matplotlib.pyplot as plt
 import librosa.display as dsp
 import numpy as np
 
@@ -20,6 +19,7 @@ ENERGY_THRESHOLD = 1500  # minimum audio energy to consider for recording
 BUFFER_THRESHOLD = 0.5  # second of buffer
 
 MEL_NUMBER = 128
+MFCC_NUMBER = 13
 
 phases = collections.deque()  # phases queue
 MAX_PHASES = 5  # max phases storage
@@ -31,7 +31,10 @@ FEATURE = 'ftr'
 INDEX = 'nps'
 ENERGY = 'ngy'
 FEATURE_MAX_ENERGY = 1
+FEATURE_MFCC = 2
 SIMILARITY = 0.1
+MFCC_GAP_THRESHOLD = 0.03
+last_mfcc = None
 
 
 def listen():
@@ -91,6 +94,29 @@ def listen():
     except:
         pass
 
+
+def mix_energy(energy, memories):
+    for mem in memories:
+        db.update_memory_ids({ENERGY: (energy + mem[ENERGY]) / 2}, [mem.doc_id])
+
+
+# given 2 mfcc arrays, find out shift, look up them in memories
+def process_frame_mfcc_feature(frame_working_memories, current_data, last_data):
+    mfcc_gaps = current_data - last_data
+    mfcc_gaps_abs = abs(mfcc_gaps)
+    max_index = np.argmax(mfcc_gaps_abs)
+    max_index = max_index.astype(np.int32)
+    sim_result = util.calculate_similarity(current_data[max_index], SIMILARITY)
+    features = db.use_sound2(FEATURE_MFCC, max_index, ENERGY, sim_result[0], sim_result[1])
+    if len(features) == 0:
+        # if no, add one to memory
+        mem = db.add_sound({FEATURE: FEATURE_MFCC, INDEX: max_index, ENERGY: current_data[0]})
+        frame_working_memories.append(mem)
+    else:
+        mix_energy(current_data[max_index], features)
+        frame_working_memories += features
+
+
 def impress(working_memory_sound):
     if len(phases) == 0:
         return
@@ -105,26 +131,24 @@ def impress(working_memory_sound):
         frames = np.array_split(phase, number_of_frames)
     # start to process frames
     for frame in frames:
+        mfccs = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=MFCC_NUMBER)
+        mfcc_data = np.average(mfccs, axis=1)
+        global last_mfcc
+        if last_mfcc is None:
+            last_mfcc = mfcc_data
+            continue
         frame_working_memories = []
-        mel_data = librosa.feature.melspectrogram(y=frame, sr=SAMPLE_RATE, n_mels=MEL_NUMBER, fmax=8000)
-        average_data = np.average(mel_data, axis=1)
-        max_energy = get_max_energy(average_data)
-        max_index = np.argmax(average_data)
-        max_index = max_index.astype(np.int32)
+        process_frame_mfcc_feature(frame_working_memories, mfcc_data, last_mfcc)
+
         # see if we have such feature in memory
-        features1 = db.use_sound(FEATURE_MAX_ENERGY, INDEX, max_index - 1, max_index + 1)
-        if len(features1) == 0:
-            # if no, add one to memory
-            mem = db.add_sound({FEATURE: FEATURE_MAX_ENERGY, INDEX: max_index})
-            frame_working_memories.append(mem)
-        # see if we have such feature in memory
-        features2 = db.use_sound(FEATURE_MAX_ENERGY, ENERGY, max_energy * (1 - SIMILARITY), max_index * (1 - max_energy))
-        if len(features2) == 0:
-            # if no, add one to memory
-            mem = db.add_sound({FEATURE: FEATURE_MAX_ENERGY, ENERGY: max_energy})
-            frame_working_memories.append(mem)
+        # features2 = db.use_sound(FEATURE_MFCC, ENERGY, max_energy * (1 - SIMILARITY), max_index * (1 - max_energy))
+        # if len(features2) == 0:
+        #     # if no, add one to memory
+        #     mem = db.add_sound({FEATURE: FEATURE_MFCC, ENERGY: max_energy})
+        #     frame_working_memories.append(mem)
         # now group the (new or found) feature memories
-        frame_working_memories = features1 + features2
+        # frame_working_memories = features1 + features2
+        # frame_working_memories = features1
         # try to find out parent memory, emphasize it
         common_parents = []
         if len(frame_working_memories) > 1:

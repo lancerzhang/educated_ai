@@ -36,6 +36,17 @@ def comprehension_new(list1, list2):
 
 
 def comprehension(list1, list2):
-    tobe_remove=common_elements(list1,list2)
+    tobe_remove = common_elements(list1, list2)
     for el1 in tobe_remove:
         list1.remove(el1)
+
+
+def calculate_similarity(value, similarity):
+    min, max = 0, 0
+    if value > 0:
+        min = value * (1 - similarity)
+        max = value * (1 + similarity)
+    else:
+        min = value * (1 + similarity)
+        max = value * (1 - similarity)
+    return [min, max]

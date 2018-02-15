@@ -121,14 +121,28 @@ class Database:
         records = self.table.search((query[memory.TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[name].test(util.between, min, max)))
         return records
 
+    def _search_sound2(self, feature, index_value, name, min, max):
+        query = Query()
+        records = self.table.search(
+            (query[memory.TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[sound.INDEX] == index_value) & (query[name].test(util.between, min, max)))
+        return records
+
     # TODO, need to remove all references?
     def search_sound(self, feature, name, min, max, recall=False):
-        records = self._search_sound(feature, name, min, max)
+        records = self._search_sound2(feature, name, min, max)
+        self.refresh_memories(records, recall)
+        return records
+
+    def search_sound2(self, feature, index, value, min, max, recall=False):
+        records = self._search_sound2(feature, index, value, min, max)
         self.refresh_memories(records, recall)
         return records
 
     def use_sound(self, feature, name, min, max):
         return self.search_sound(feature, name, min, max, True)
+
+    def use_sound2(self, feature, index, value, min, max):
+        return self.search_sound2(feature, index, value, min, max, True)
 
     def add_parent(self, memories):
         first_data = []
