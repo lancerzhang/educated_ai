@@ -5,7 +5,7 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import librosa, math, audioop, time, pyaudio, collections, util, memory
+import librosa, math, audioop, time, pyaudio, collections, util, memory, sys
 import librosa.display as dsp
 import numpy as np
 
@@ -15,7 +15,8 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 SAMPLE_RATE = 44100
 SAMPLE_WIDTH = 2  # 16-bit
-ENERGY_THRESHOLD = 1500  # minimum audio energy to consider for recording
+# different mic have different energy level, need to test, for Mac, use 300, PC use 1500
+ENERGY_THRESHOLD = 250  # minimum audio energy to consider for recording
 BUFFER_THRESHOLD = 0.5  # second of buffer
 
 MEL_NUMBER = 128
@@ -91,8 +92,6 @@ def listen():
 
     except KeyboardInterrupt:
         pass
-    except:
-        pass
 
 
 def mix_energy(energy, memories):
@@ -105,7 +104,7 @@ def process_frame_mfcc_feature(frame_working_memories, current_data, last_data):
     mfcc_gaps = current_data - last_data
     mfcc_gaps_abs = abs(mfcc_gaps)
     max_index = np.argmax(mfcc_gaps_abs)
-    max_index = max_index.astype(np.int32)
+    max_index = max_index.astype(np.int)
     sim_result = util.calculate_similarity(current_data[max_index], SIMILARITY)
     features = db.use_sound2(FEATURE_MFCC, max_index, ENERGY, sim_result[0], sim_result[1])
     if len(features) == 0:

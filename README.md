@@ -16,3 +16,5 @@ For Mac
 https://www.python.org/downloads/mac-osx/
 - install portaudio
 brew install portaudio
+- install opencv
+pip install opencv-python
