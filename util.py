@@ -1,4 +1,5 @@
-import time, numpy
+import time, numpy, cv2
+import numpy as np
 
 
 def time_diff(start):
@@ -50,3 +51,57 @@ def calculate_similarity(value, similarity):
         min = value * (1 + similarity)
         max = value * (1 - similarity)
     return [min, max]
+
+
+def delete_empty_surround(arr):
+    shape = arr.shape
+    for col_num in range(shape[1] - 1, 0, -1):
+        if arr[:, col_num].sum() == 0:
+            arr = np.delete(arr, col_num, 1)
+        else:
+            break
+
+    for row_num in range(shape[0] - 1, 0, -1):
+        if arr[row_num].sum() == 0:
+            arr = np.delete(arr, row_num, 0)
+        else:
+            break
+
+    shape = arr.shape
+    col_to_delete = []
+    for col_num in range(0, shape[1] - 1):
+        if arr[:, col_num].sum() == 0:
+            col_to_delete.append(col_num)
+        else:
+            break
+    arr = np.delete(arr, col_to_delete, 1)
+
+    row_to_delete = []
+    for row_num in range(0, shape[0] - 1):
+        if arr[row_num].sum() == 0:
+            row_to_delete.append(row_num)
+        else:
+            break
+    arr = np.delete(arr, row_to_delete, 0)
+
+    return arr
+
+
+def colorSorter(rgb):
+    return str(rgb[0] / 86) + str(rgb[1] / 86) + str(rgb[2] / 86)
+
+
+def hamming(h1, h2):
+    h, d = 0, h1 ^ h2
+    while d:
+        h += 1
+        d &= d - 1
+    return h
+
+
+def imgHash(im, size):
+    resized_image = cv2.resize(im, (size, size))
+    gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+    data = gray.flatten().tolist()
+    avg = reduce(lambda x, y: x + y, data) / (size * size)
+    return reduce(lambda x, (y, z): x | (z << y), enumerate(map(lambda i: 0 if i < avg else 1, data)), 0)

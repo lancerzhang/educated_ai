@@ -21,6 +21,6 @@ for p1 in range(1,3):
                                     if not dict.has_key(str):
                                         dict.update({str:0})
                                         filters.append(arr2)
-                                    print arr2
+                                        print arr2
 
 print len(filters)
