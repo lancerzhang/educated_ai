@@ -91,6 +91,29 @@ def colorSorter(rgb):
     return str(rgb[0] / 86) + str(rgb[1] / 86) + str(rgb[2] / 86)
 
 
+def colorHist(rgb,bins):
+    num=256/bins+1
+    r = rgb[:, :, 0].flatten()
+    g = rgb[:, :, 1].flatten()
+    b = rgb[:, :, 2].flatten()
+    bc1=np.bincount(r/num,minlength=3)
+    bc2=np.bincount(g/num,minlength=3)
+    bc3=np.bincount(b/num,minlength=3)
+    return np.concatenate((bc1,bc2,bc3))
+
+def compareColorHist(img1, img2, resize=64, bins=3):
+    img1=cv2.resize(img1, (resize, resize))
+    img2=cv2.resize(img2, (resize, resize))
+    g=colorHist(img1,bins).astype(float)
+    s=colorHist(img2,bins).astype(float)
+    data = []
+    for index in range(0, len(g)):
+        if g[index] != s[index]:
+            data.append(1 - abs(g[index] - s[index]) / max(g[index], s[index]))
+        else:
+            data.append(1)
+    return sum(data) / len(g)
+
 def hamming(h1, h2):
     h, d = 0, h1 ^ h2
     while d:

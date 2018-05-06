@@ -1,4 +1,4 @@
-import unittest, util
+import unittest, util,cv2
 import numpy as np
 
 
@@ -99,6 +99,19 @@ class TestUtil(unittest.TestCase):
         min = sim_result[0]
         max = sim_result[1]
         self.assertEqual(max, min)
+
+    def test_colorHist(self):
+        arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
+                         [[79, 118, 190], [60, 110, 230]]])
+        hist=util.colorHist(arr1,3)
+        self.assertEqual([3,1,0,0,3,1,1,0,3],hist.tolist())
+
+    def test_compareColorHist(self):
+        arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
+                         [[79, 118, 190], [60, 110, 230]]])
+        hist=util.colorHist(arr1,3)
+        print cv2.compareHist(hist,hist,cv2.HISTCMP_BHATTACHARYYA)
+
 
 
 if __name__ == "__main__":
