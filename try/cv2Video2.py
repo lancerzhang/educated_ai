@@ -1,8 +1,8 @@
-import histogram as his
+import histogramCv as his
 import cv2
 import util
 
-cap = cv2.VideoCapture('test.mkv')
+cap = cv2.VideoCapture('D:/bak/test.mkv')
 frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
@@ -10,7 +10,7 @@ img = cv2.imread('head11.jpg', 1)
 reg_point = cv2.resize(img, (1, 1))
 reg_cat = util.colorSorter(reg_point[0, 0])
 hash_size = 3
-reg_hash = util.imgHash(img, hash_size)
+reg_hash = util.image_hash(img, hash_size)
 hist_size = 3
 reg_img = cv2.resize(img, (hist_size, hist_size))
 steps = 64
@@ -35,14 +35,14 @@ while cap.isOpened():
                             roi_img = frame[newY:newY + windows[w], newX:newX + windows[w]]
                             roi_point = cv2.resize(roi_img, (1, 1))
                             roi_cat = util.colorSorter(roi_point[0, 0])
-                            roi_hash = util.imgHash(roi_img, hash_size)
+                            roi_hash = util.image_hash(roi_img, hash_size)
                             hash_dist = util.hamming(roi_hash, reg_hash)
-                            roi_hist_img = cv2.resize(roi_img, (hist_size, hist_size))
-                            hist_sim=his.classfiy_histogram(reg_img,roi_hist_img,size=(hist_size,hist_size))
-                            if roi_cat == reg_cat and hash_dist < 3 and hist_sim>0.9:
+                            # hist_sim=util.color_hist_similarity(reg_img, roi_img, hist_size)
+                            # if roi_cat == reg_cat and hash_dist < 3 and hist_sim > 0.6:
+                            if roi_cat == reg_cat and hash_dist < 3:
                                 cv2.rectangle(frame, (newX, newY), (newX + windows[w], newY + windows[w]), (0, 255, 0), 1)
             cv2.imshow('frame', frame)
-        if cv2.waitKey(50) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
 cap.release()

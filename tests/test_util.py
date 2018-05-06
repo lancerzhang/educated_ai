@@ -103,13 +103,13 @@ class TestUtil(unittest.TestCase):
     def test_colorHist(self):
         arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
                          [[79, 118, 190], [60, 110, 230]]])
-        hist=util.colorHist(arr1,3)
+        hist=util.color_hist(arr1, 3)
         self.assertEqual([3,1,0,0,3,1,1,0,3],hist.tolist())
 
     def test_compareColorHist(self):
         arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
                          [[79, 118, 190], [60, 110, 230]]])
-        hist=util.colorHist(arr1,3)
+        hist=util.color_hist(arr1, 3)
         print cv2.compareHist(hist,hist,cv2.HISTCMP_BHATTACHARYYA)
 
 

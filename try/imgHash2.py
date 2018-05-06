@@ -2,7 +2,7 @@ import cv2,util
 
 def avhash(im):
     im = cv2.imread(im,1)
-    return util.imgHash(im,3)
+    return util.image_hash(im, 3)
 
 
 hash1=avhash("head1.jpg")
