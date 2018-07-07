@@ -90,6 +90,9 @@ def delete_empty_surround(arr):
 def colorSorter(rgb):
     return str(rgb[0] / 86) + str(rgb[1] / 86) + str(rgb[2] / 86)
 
+def point_color_category(img):
+    reg_point = cv2.resize(img, (1, 1))
+    return colorSorter(reg_point[0, 0])
 
 def color_hist(rgb, bins):
     num = 256 / bins + 1

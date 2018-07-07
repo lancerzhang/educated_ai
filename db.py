@@ -85,9 +85,13 @@ class Database:
     # it return new created record id, normally not use it
     def _add_vision(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.TYPE: memory.VISION, 'filter': 'vf1', 'data': 'abc'})
+        new_memory.update({memory.TYPE: memory.VISION,})
         new_memory.update(addition)
         return self._add_record(new_memory)
+
+    def add_vision(self, addition={}):
+        eid = self._add_vision(addition)
+        return self._get_memory(eid)
 
     # it return new created record id, normally not use it
     def _add_sound(self, addition={}):

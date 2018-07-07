@@ -28,7 +28,7 @@ try:
         start = time.time()
         # find out the experience start
         related_memory_ids = memory.find_related_memory_ids(working_memory_sound)
-        exp_memory_id = memory.find_exp_memory_id(related_memory_ids)
+        exp_memory_id = memory.find_reward_target(related_memory_ids)
         # print("find out the experience - used(ms):", util.time_diff(start))
         # find out the experience end
         if util.time_diff(start) > DPS:

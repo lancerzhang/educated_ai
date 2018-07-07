@@ -69,7 +69,7 @@ class TestMemory(unittest.TestCase):
         related_memory_ids = memory.find_related_memory_ids(working_memory)
         self.assertEqual(3, len(related_memory_ids))
 
-    def test_find_exp_memory0(self):
+    def test_find_target0(self):
         el1 = self.database._add_memory({memory.REWARD: 100})
         el2 = self.database._add_memory({memory.REWARD: 99})
         el3 = self.database._add_memory({memory.REWARD: 98})
@@ -77,10 +77,10 @@ class TestMemory(unittest.TestCase):
         mem2 = self.database._get_memory(el2)
         mem3 = self.database._get_memory(el3)
         related_memory_ids = [mem1, mem2, mem3]
-        exp_memory = memory.find_exp_memory_id(related_memory_ids)
+        exp_memory = memory.find_reward_target(related_memory_ids)
         self.assertEqual(1, exp_memory)
 
-    def test_find_exp_memory1(self):
+    def test_find_target1(self):
         el1 = self.database._add_memory({memory.REWARD: 97})
         el2 = self.database._add_memory({memory.REWARD: 99})
         el3 = self.database._add_memory({memory.REWARD: 99})
@@ -88,7 +88,7 @@ class TestMemory(unittest.TestCase):
         mem2 = self.database._get_memory(el2)
         mem3 = self.database._get_memory(el3)
         related_memory_ids = [mem1, mem2, mem3]
-        exp_memory = memory.find_exp_memory_id(related_memory_ids)
+        exp_memory = memory.find_reward_target(related_memory_ids)
         self.assertEqual(2, exp_memory)
 
     def test_remove_memories(self):
