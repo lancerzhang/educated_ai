@@ -14,13 +14,13 @@ class TestDB(unittest.TestCase):
     def test_get_memory(self):
         elid = self.database._add_memory()
         record = self.database._get_memory(elid)
-        self.assertEqual(record[memory.TYPE], memory.MEMORY)
+        self.assertEqual(record[memory.TYPE], memory.COLLECTION)
 
     def test_add_memory(self):
         self.database._add_memory()
         query = Query()
-        record = self.database.table.search(query[memory.TYPE] == memory.MEMORY)[0]
-        self.assertEqual(record[memory.TYPE], memory.MEMORY)
+        record = self.database.table.search(query[memory.TYPE] == memory.COLLECTION)[0]
+        self.assertEqual(record[memory.TYPE], memory.COLLECTION)
         self.assertGreater(record[memory.LASTRECALL], 0)
 
     def test_add_vision(self):

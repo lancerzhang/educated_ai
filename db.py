@@ -73,8 +73,7 @@ class Database:
     def _add_memory(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
         # use children memories to match the experience
-        new_memory.update({memory.TYPE: memory.MEMORY})
-        # new_memory.update({memory.TYPE:memory.MEMORY, 'children': [0, 0]})
+        new_memory.update({memory.TYPE: memory.COLLECTION})
         new_memory.update(addition)
         return self._add_record(new_memory)
 
@@ -155,7 +154,7 @@ class Database:
                 print mem
             first_data.append(mem.doc_id)
         # add new memory with those children as first data
-        parent = self.add_memory({memory.FIRST_DATA: first_data})
+        parent = self.add_memory({memory.CHILD_DATA: first_data})
         # update children
         for mem in memories:
             parent_ids = mem[memory.PARENTS]

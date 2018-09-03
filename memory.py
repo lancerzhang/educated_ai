@@ -5,18 +5,37 @@ RECALL = 'rcl'
 REWARD = 'rwd'
 LASTRECALL = 'lrc'
 PARENTS = 'prt'
+DURATION= 'drt'
+INTERVALS='itv'
+
 TYPE = 'typ'
-MEMORY = 'mmy'
+# below are memory types
+COLLECTION = 'clt'  # non physical memory,
+# physical memories
 SOUND = 'snd'
 VISION = 'vsn'
 FOCUS = 'fcs'
 SPEAK = 'spk'
-FIRST_DATA = 'fsd'
-SEQUENCE_DATA = 'sqd'
-# sequence data include slice data
-SLICE_DATA = 'sld'
-# slice data include vision, sound, focus, speack data
-VISION_DATA = 'vdt'
+
+TYPE_COLLECTION = 'toc'  # type of collection
+# below are types of collection
+INSTANT_MEMORY = 'itm'  # instant memory
+SHORT_MEMORY = 'stm'  # short time memory
+LONG_MEMORY = 'ltm'  # long time memory
+SLICE_MEMORY = 'slm' # slice memory
+
+# data set of 'long/short/instant time memory', slice memory
+CHILD_DATA = 'cdt'
+
+#                                                                                                                                                                                  collections
+#                                                                                                                                        long                                   long            ...       long
+#                                                                                 short                                               short       ...       short
+#                             instant                                          instant         ...         instant
+# slice1        slice2      slice3      slice4      slice5 (max5)
+# vision1.1   vision2   vision3     vision4     vision5
+# sound1      sound2
+# vision1.2
+
 
 db = None
 
@@ -137,7 +156,7 @@ def find_common_parents(feature_memories):
         if mem is None:
             continue
         print 'found exp memory ', mem.doc_id
-        first_data = mem[FIRST_DATA]
+        first_data = mem[CHILD_DATA]
         first_common = util.common_elements(first_data, feature_memory_ids)
         # check if this parent memory all matches
         if len(first_common) == len(first_data):

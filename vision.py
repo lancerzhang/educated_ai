@@ -5,8 +5,8 @@ from win32api import GetSystemMetrics
 # 1920	960	320	80	16
 # 1080	540	180	45	9
 
-POINT_COLOR='PC'
-IMG_HASH='IH'
+POINT_COLOR = 'PC'
+IMG_HASH = 'IH'
 
 screen_width = GetSystemMetrics(0)
 screen_height = GetSystemMetrics(1)
@@ -25,8 +25,19 @@ def init():
     # watch start
     return;
 
+
+def watch(hist_short_memories, hist_instant_memories):
+    for mem in hist_instant_memories:
+        slice = mem.get_slice()
+        matched = match(mem)
+        if matched:
+            remove_others(hist_short_memories, hist_instant_memories)
+        else
+            remove_itself(hist_short_memories, hist_instant_memories)
+
+
 # given list of possible slice memory, match from 1st to end, if all not match, return a new one
-def watch(mem_v):
+def match(mem_v):
     # watch frame (0.1s) start
     start = time.time()
     # getROI(); 9x9 ... 288x288, default 72x72
@@ -58,11 +69,11 @@ def watch(mem_v):
             if match:
                 db.use_memory(mem_v.doc_id)
             else:
-                db.add_vision({memory.VISION_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
+                db.add_vision({memory.CHILD_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
         else:
-            mem_v.update({memory.VISION_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
+            mem_v.update({memory.CHILD_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
     else:
-        db.add_vision({memory.VISION_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
+        db.add_vision({memory.CHILD_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
 
     # watch frame end
     end = time.time()
