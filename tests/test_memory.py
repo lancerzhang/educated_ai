@@ -1,4 +1,4 @@
-import unittest, memory, sound
+import unittest, memory, sound, time, copy
 from db import Database
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
@@ -10,6 +10,7 @@ class TestMemory(unittest.TestCase):
     def setUp(self):
         self.database = Database(TinyDB(storage=MemoryStorage))
         memory.forget_memory = False
+        memory.db = self.database
 
     # test find parent memories
     def test_find_parents1(self):
@@ -132,6 +133,219 @@ class TestMemory(unittest.TestCase):
         common_parents = memory.find_common_parents(feature_memories)
         self.assertEqual(1, len(common_parents))
         self.assertEqual(0, len(feature_memories))
+
+    def test_split_working_memories_empty(self):
+        memories = []
+        result = memory.split_working_memories(memories)
+        self.assertEqual(0, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(0, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_number_no_split(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({memory.HAPPEN_TIME: time.time()})
+        memories = [mem]
+        result = memory.split_working_memories(memories)
+        self.assertEqual(0, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(1, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_number_split_1_1(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({memory.HAPPEN_TIME: time.time()})
+        memories = []
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
+            memories.append(mem)
+        result = memory.split_working_memories(memories)
+        self.assertEqual(1, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(1, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_number_split_1_2(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({memory.HAPPEN_TIME: time.time()})
+        memories = []
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
+            memories.append(mem)
+        result = memory.split_working_memories(memories)
+        self.assertEqual(1, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(2, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_number_split_2(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({memory.HAPPEN_TIME: time.time()})
+        memories = []
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
+            memories.append(mem)
+        result = memory.split_working_memories(memories)
+        self.assertEqual(2, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(1, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_time_no_split(self):
+        now = time.time()
+        memories = []
+        for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({memory.HAPPEN_TIME: now + 1})
+            memories.append(mem)
+            now = now + 1
+        result = memory.split_working_memories(memories, 6)
+        self.assertEqual(0, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(memory.COMPOSE_NUMBER - 1, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_time_split_1_1(self):
+        now = time.time()
+        memories = []
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({memory.HAPPEN_TIME: now + 1})
+            memories.append(mem)
+            now = now + 1
+        result = memory.split_working_memories(memories, 5)
+        self.assertEqual(1, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(1, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_time_split_1_2(self):
+        now = time.time()
+        memories = []
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({memory.HAPPEN_TIME: now + 1})
+            memories.append(mem)
+            now = now + 1
+        result = memory.split_working_memories(memories, 5)
+        self.assertEqual(1, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(2, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_time_split_2(self):
+        now = time.time()
+        memories = []
+        for num in range(1, memory.COMPOSE_NUMBER + 1 + memory.COMPOSE_NUMBER + 1):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({memory.HAPPEN_TIME: now + 1})
+            memories.append(mem)
+            now = now + 1
+        result = memory.split_working_memories(memories, 5)
+        self.assertEqual(2, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(1, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_split_working_memories_mix(self):
+        now = time.time()
+        memories = []
+        for num in range(1, memory.COMPOSE_NUMBER + 1 + 1):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({memory.HAPPEN_TIME: now + 1})
+            memories.append(mem)
+            now = now + 1
+        result = memory.split_working_memories(memories, 10)
+        self.assertEqual(1, len(result[memory.NEW_MEMORIES]))
+        self.assertEqual(1, len(result[memory.REST_OF_MEMORIES]))
+
+    def test_compose_slice_number_no_split(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({'doc_id': 1000, memory.HAPPEN_TIME: time.time()})
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        working_memories[memory.SLICE_MEMORY].update({mem['doc_id']: mem})
+        new_working_memories[memory.SLICE_MEMORY].append(mem)
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(1, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(1, len(new_working_memories[memory.SLICE_MEMORY]))
+
+    def test_compose_slice_number_split_1_1(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({'doc_id': 1000, memory.HAPPEN_TIME: time.time()})
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
+            working_memories[memory.SLICE_MEMORY].update({mem['doc_id'] + num: mem})
+            new_working_memories[memory.SLICE_MEMORY].append(mem)
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
+        self.assertEqual(1, len(new_working_memories[memory.SLICE_MEMORY]))
+
+    def test_compose_slice_number_split_1_2(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({'doc_id': 1000, memory.HAPPEN_TIME: time.time()})
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
+            working_memories[memory.SLICE_MEMORY].update({mem['doc_id'] + num: mem})
+            new_working_memories[memory.SLICE_MEMORY].append(mem)
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
+        self.assertEqual(2, len(new_working_memories[memory.SLICE_MEMORY]))
+
+    def test_compose_slice_number_split_2(self):
+        mem = memory.BASIC_MEMORY.copy()
+        mem.update({'doc_id': 1000, memory.HAPPEN_TIME: time.time()})
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
+            working_memories[memory.SLICE_MEMORY].update({mem['doc_id'] + num: mem})
+            new_working_memories[memory.SLICE_MEMORY].append(mem)
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(2, len(working_memories[memory.INSTANT_MEMORY]))
+        self.assertEqual(1, len(new_working_memories[memory.SLICE_MEMORY]))
+
+    def test_compose_slice_time_no_split(self):
+        now = time.time()
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({'doc_id': 1000 + num, memory.HAPPEN_TIME: now + 0.1})
+            working_memories[memory.SLICE_MEMORY].update({mem['doc_id'] + num: mem})
+            new_working_memories[memory.SLICE_MEMORY].append(mem)
+            now = now + 0.1
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(memory.COMPOSE_NUMBER - 1, len(new_working_memories[memory.SLICE_MEMORY]))
+
+    def test_compose_slice_time_split_1_1(self):
+        now = time.time()
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({'doc_id': 1000 + num, memory.HAPPEN_TIME: now + 0.1})
+            working_memories[memory.SLICE_MEMORY].update({mem['doc_id'] + num: mem})
+            new_working_memories[memory.SLICE_MEMORY].append(mem)
+            now = now + 0.1
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
+        self.assertEqual(1, len(new_working_memories[memory.SLICE_MEMORY]))
+
+    def test_compose_slice_time_split_1_2(self):
+        now = time.time()
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({'doc_id': 1000 + num, memory.HAPPEN_TIME: now + 0.1})
+            working_memories[memory.SLICE_MEMORY].update({mem['doc_id'] + num: mem})
+            new_working_memories[memory.SLICE_MEMORY].append(mem)
+            now = now + 0.1
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
+        self.assertEqual(2, len(new_working_memories[memory.SLICE_MEMORY]))
+
+    def test_compose_slice_time_split_2(self):
+        now = time.time()
+        working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+        new_working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
+            mem = memory.BASIC_MEMORY.copy()
+            mem.update({'doc_id': 1000 + num, memory.HAPPEN_TIME: now + 0.1})
+            working_memories[memory.SLICE_MEMORY].update({mem['doc_id'] + num: mem})
+            new_working_memories[memory.SLICE_MEMORY].append(mem)
+            now = now + 0.1
+        memory.compose(working_memories, new_working_memories)
+        self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[memory.SLICE_MEMORY]))
+        self.assertEqual(2, len(working_memories[memory.INSTANT_MEMORY]))
+        self.assertEqual(1, len(new_working_memories[memory.SLICE_MEMORY]))
 
 
 if __name__ == "__main__":

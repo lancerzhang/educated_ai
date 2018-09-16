@@ -3,10 +3,14 @@ import time, random, util
 STRENGTH = 'str'
 RECALL = 'rcl'
 REWARD = 'rwd'
-LASTRECALL = 'lrc'
+LAST_RECALL = 'lrc'
 PARENTS = 'prt'
-DURATION= 'drt'
-INTERVALS='itv'
+DURATION = 'drt'
+INTERVALS = 'itv'
+HAPPEN_TIME = 'hpt'
+NEW_MEMORIES = 'nmm'
+REST_OF_MEMORIES = 'rom'
+COMPOSE_NUMBER = 4
 
 TYPE = 'typ'
 # below are memory types
@@ -19,10 +23,10 @@ SPEAK = 'spk'
 
 TYPE_COLLECTION = 'toc'  # type of collection
 # below are types of collection
+SLICE_MEMORY = 'slm'  # slice memory
 INSTANT_MEMORY = 'itm'  # instant memory
 SHORT_MEMORY = 'stm'  # short time memory
 LONG_MEMORY = 'ltm'  # long time memory
-SLICE_MEMORY = 'slm' # slice memory
 
 # data set of 'long/short/instant time memory', slice memory
 CHILD_DATA = 'cdt'
@@ -40,7 +44,10 @@ CHILD_DATA = 'cdt'
 db = None
 
 # use parent to find experience memories
-BASIC_MEMORY = {STRENGTH: 0, RECALL: 0, REWARD: 0, LASTRECALL: 0, PARENTS: []}
+BASIC_MEMORY = {STRENGTH: 0, RECALL: 0, REWARD: 0, LAST_RECALL: 0, PARENTS: []}
+
+BASIC_MEMORY_GROUP_DICT = {SLICE_MEMORY: {}, SHORT_MEMORY: {}, INSTANT_MEMORY: {}, LONG_MEMORY: {}}
+BASIC_MEMORY_GROUP_ARR = {SLICE_MEMORY: [], SHORT_MEMORY: [], INSTANT_MEMORY: [], LONG_MEMORY: []}
 
 # The first recall time, if less than 60 seconds, memory strength is 100%, and then 99% for 61 seconds ... 21% for 35 days
 # TIME_SEC = [60, 61, 63, 66, 70, 75, 81, 88, 96, 105, 115, 126, 138, 151, 165, 180, 196, 213, 231, 250, 270, 291, 313, 336, 360, 385, 411, 438, 466, 495, 525, 540, 600, 660, 720,
@@ -63,7 +70,7 @@ forget_memory = True
 # check result, if memory.strength = -1, that it's forgot
 def refresh(mem, recall=False):
     deleted = False
-    time_elapse = time.time() - mem[LASTRECALL]
+    time_elapse = time.time() - mem[LAST_RECALL]
     if time_elapse < TIME_SEC[0]:
         return deleted
     count = 0
@@ -84,7 +91,7 @@ def refresh(mem, recall=False):
                 # if this is recall, will update recall count and last recall time
                 if recall:
                     mem[RECALL] = mem[RECALL] + 1
-                    mem[LASTRECALL] = time.time()
+                    mem[LAST_RECALL] = time.time()
             break
     return deleted
 
@@ -163,3 +170,74 @@ def find_common_parents(feature_memories):
             common_parents.append(mem)
             remove_memories(feature_memories, first_common)
     return common_parents
+
+
+def get_child_data_from_arr(mem_arr):
+    child_data = []
+    for mem in mem_arr:
+        child_data.append(mem['doc_id'])
+    return child_data
+
+
+# working_memories: dict
+# new_working_memories: array
+def compose(working_memories, new_working_memories):
+    result1 = split_working_memories(new_working_memories[SLICE_MEMORY], 0.5)
+    new_working_memories[SLICE_MEMORY] = result1[REST_OF_MEMORIES]
+    for memories in result1[NEW_MEMORIES]:
+        child_data = get_child_data_from_arr(memories)
+        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: INSTANT_MEMORY})
+        working_memories[INSTANT_MEMORY].update({new_mem.doc_id:new_mem})
+
+    result2 = split_working_memories(new_working_memories[INSTANT_MEMORY], 5)
+    new_working_memories[INSTANT_MEMORY] = result2[REST_OF_MEMORIES]
+    for memories in result2[NEW_MEMORIES]:
+        child_data = get_child_data_from_arr(memories)
+        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: SHORT_MEMORY})
+        working_memories[SHORT_MEMORY].update({new_mem.doc_id:new_mem})
+
+    result3 = split_working_memories(new_working_memories[SHORT_MEMORY])
+    new_working_memories[SHORT_MEMORY] = result3[REST_OF_MEMORIES]
+    for memories in result3[NEW_MEMORIES]:
+        child_data = get_child_data_from_arr(memories)
+        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
+        working_memories[LONG_MEMORY].update({new_mem.doc_id:new_mem})
+
+    result4 = split_working_memories(new_working_memories[LONG_MEMORY])
+    new_working_memories[LONG_MEMORY] = result4[REST_OF_MEMORIES]
+    for memories in result4[NEW_MEMORIES]:
+        child_data = get_child_data_from_arr(memories)
+        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
+        working_memories[LONG_MEMORY].update({new_mem.doc_id:new_mem})
+
+
+def split_working_memories(memories, gap=60):
+    count = 0
+    last_time = 0
+    elapse_time = 0
+    groups = []
+    group = []
+    for mem in memories:
+        this_time = mem[HAPPEN_TIME]
+        group.append(mem)
+        if last_time == 0:
+            distance = 0
+        else:
+            distance = this_time - last_time
+        elapse_time = elapse_time + distance
+        last_time = mem[HAPPEN_TIME]
+        count = count + 1
+        if elapse_time >= gap or count >= COMPOSE_NUMBER:
+            groups.append(group)
+            group = []
+            count = 0
+            elapse_time = 0
+    result = {
+        NEW_MEMORIES: groups,
+        REST_OF_MEMORIES: group
+    }
+    return result
+
+
+def associate(working_memories):
+    return

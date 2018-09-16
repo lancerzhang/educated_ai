@@ -57,7 +57,7 @@ class Database:
         print 'start to housekeep memory'
         clean_time = time.time() - 60
         query = Query()
-        records = self.table.search(query[memory.LASTRECALL] < clean_time)
+        records = self.table.search(query[memory.LAST_RECALL] < clean_time)
         print 'memories to be refresh:', len(records)
         cleaned = self.refresh_memories(records)
         print 'memories were deleted:', cleaned
@@ -66,7 +66,7 @@ class Database:
     # private method
     def _add_record(self, new_record):
         # new_record = record.copy()
-        new_record.update({memory.STRENGTH: 100, memory.RECALL: 1, memory.LASTRECALL: time.time()})
+        new_record.update({memory.STRENGTH: 100, memory.RECALL: 1, memory.LAST_RECALL: time.time()})
         return self.table.insert(new_record)
 
     # it return new created record id, normally not use it

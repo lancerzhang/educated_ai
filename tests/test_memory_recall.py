@@ -10,55 +10,55 @@ class TestMemory(unittest.TestCase):
     def test0_refresh_5s(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.STRENGTH] = 100
-        mem[memory.LASTRECALL] = time.time() - 4
+        mem[memory.LAST_RECALL] = time.time() - 4
         memory.refresh(mem,True)
         self.assertEqual(0, mem[memory.RECALL])
 
     def test0_refresh_6s(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 5
+        mem[memory.LAST_RECALL] = time.time() - 5
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test0_refresh_20m(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 1200
+        mem[memory.LAST_RECALL] = time.time() - 1200
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test0_refresh_1h(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 3600
+        mem[memory.LAST_RECALL] = time.time() - 3600
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test0_refresh_1d(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 86400
+        mem[memory.LAST_RECALL] = time.time() - 86400
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test0_refresh_1w(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 604800
+        mem[memory.LAST_RECALL] = time.time() - 604800
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test0_refresh_1m(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 2592000
+        mem[memory.LAST_RECALL] = time.time() - 2592000
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test0_refresh_greater_1m(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 3200140
+        mem[memory.LAST_RECALL] = time.time() - 3200140
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test0_refresh_greater_1y(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem[memory.LASTRECALL] = time.time() - 31536000
+        mem[memory.LAST_RECALL] = time.time() - 31536000
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
@@ -69,63 +69,63 @@ class TestMemory(unittest.TestCase):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.STRENGTH] = 100
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 4
+        mem[memory.LAST_RECALL] = time.time() - 4
         memory.refresh(mem,True)
         self.assertEqual(1, mem[memory.RECALL])
 
     def test1_refresh_6s(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 6
+        mem[memory.LAST_RECALL] = time.time() - 6
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
     def test1_refresh_20m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 1200
+        mem[memory.LAST_RECALL] = time.time() - 1200
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
     def test1_refresh_1h(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 3600
+        mem[memory.LAST_RECALL] = time.time() - 3600
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
     def test1_refresh_1d(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 86400
+        mem[memory.LAST_RECALL] = time.time() - 86400
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
     def test1_refresh_1w(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 604800
+        mem[memory.LAST_RECALL] = time.time() - 604800
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
     def test1_refresh_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 2592000
+        mem[memory.LAST_RECALL] = time.time() - 2592000
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
     def test1_refresh_greater_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 3200140
+        mem[memory.LAST_RECALL] = time.time() - 3200140
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
     def test1_refresh_greater_1y(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 1
-        mem[memory.LASTRECALL] = time.time() - 31536000
+        mem[memory.LAST_RECALL] = time.time() - 31536000
         memory.refresh(mem,True)
         self.assertEqual(2, mem[memory.RECALL])
 
@@ -136,63 +136,63 @@ class TestMemory(unittest.TestCase):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.STRENGTH] = 100
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 4
+        mem[memory.LAST_RECALL] = time.time() - 4
         memory.refresh(mem,True)
         self.assertEqual(9, mem[memory.RECALL])
 
     def test9_refresh_6s(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 5
+        mem[memory.LAST_RECALL] = time.time() - 5
         memory.refresh(mem,True)
         self.assertEqual(9, mem[memory.RECALL])
 
     def test9_refresh_20m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 1200
+        mem[memory.LAST_RECALL] = time.time() - 1200
         memory.refresh(mem,True)
         self.assertEqual(10, mem[memory.RECALL])
 
     def test9_refresh_1h(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 3600
+        mem[memory.LAST_RECALL] = time.time() - 3600
         memory.refresh(mem,True)
         self.assertEqual(10, mem[memory.RECALL])
 
     def test9_refresh_1d(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 86400
+        mem[memory.LAST_RECALL] = time.time() - 86400
         memory.refresh(mem,True)
         self.assertEqual(10, mem[memory.RECALL])
 
     def test9_refresh_1w(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 604800
+        mem[memory.LAST_RECALL] = time.time() - 604800
         memory.refresh(mem,True)
         self.assertEqual(10, mem[memory.RECALL])
 
     def test9_refresh_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 2592000
+        mem[memory.LAST_RECALL] = time.time() - 2592000
         memory.refresh(mem,True)
         self.assertEqual(10, mem[memory.RECALL])
 
     def test9_refresh_greater_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 3200140
+        mem[memory.LAST_RECALL] = time.time() - 3200140
         memory.refresh(mem,True)
         self.assertEqual(10, mem[memory.RECALL])
 
     def test9_refresh_greater_1y(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 9
-        mem[memory.LASTRECALL] = time.time() - 31536000
+        mem[memory.LAST_RECALL] = time.time() - 31536000
         memory.refresh(mem,True)
         self.assertEqual(10, mem[memory.RECALL])
 
@@ -203,63 +203,63 @@ class TestMemory(unittest.TestCase):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.STRENGTH] = 100
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 50
+        mem[memory.LAST_RECALL] = time.time() - 50
         memory.refresh(mem,True)
         self.assertEqual(20, mem[memory.RECALL])
 
     def test20_refresh_62s(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 62
+        mem[memory.LAST_RECALL] = time.time() - 62
         memory.refresh(mem,True)
         self.assertEqual(20, mem[memory.RECALL])
 
     def test20_refresh_20m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 1200
+        mem[memory.LAST_RECALL] = time.time() - 1200
         memory.refresh(mem,True)
         self.assertEqual(21, mem[memory.RECALL])
 
     def test20_refresh_1h(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 3600
+        mem[memory.LAST_RECALL] = time.time() - 3600
         memory.refresh(mem,True)
         self.assertEqual(21, mem[memory.RECALL])
 
     def test20_refresh_1d(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 86400
+        mem[memory.LAST_RECALL] = time.time() - 86400
         memory.refresh(mem,True)
         self.assertEqual(21, mem[memory.RECALL])
 
     def test20_refresh_1w(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 604800
+        mem[memory.LAST_RECALL] = time.time() - 604800
         memory.refresh(mem,True)
         self.assertEqual(21, mem[memory.RECALL])
 
     def test20_refresh_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 2592000
+        mem[memory.LAST_RECALL] = time.time() - 2592000
         memory.refresh(mem,True)
         self.assertEqual(21, mem[memory.RECALL])
 
     def test20_refresh_greater_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 3200140
+        mem[memory.LAST_RECALL] = time.time() - 3200140
         memory.refresh(mem,True)
         self.assertEqual(21, mem[memory.RECALL])
 
     def test20_refresh_greater_1y(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 20
-        mem[memory.LASTRECALL] = time.time() - 31536000
+        mem[memory.LAST_RECALL] = time.time() - 31536000
         memory.refresh(mem,True)
         self.assertEqual(21, mem[memory.RECALL])
 
@@ -271,63 +271,63 @@ class TestMemory(unittest.TestCase):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.STRENGTH] = 100
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 50
+        mem[memory.LAST_RECALL] = time.time() - 50
         memory.refresh(mem,True)
         self.assertEqual(40, mem[memory.RECALL])
 
     def test40_refresh_62s(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 62
+        mem[memory.LAST_RECALL] = time.time() - 62
         memory.refresh(mem,True)
         self.assertEqual(40, mem[memory.RECALL])
 
     def test40_refresh_20m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 1200
+        mem[memory.LAST_RECALL] = time.time() - 1200
         memory.refresh(mem,True)
         self.assertEqual(41, mem[memory.RECALL])
 
     def test40_refresh_1h(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 3600
+        mem[memory.LAST_RECALL] = time.time() - 3600
         memory.refresh(mem,True)
         self.assertEqual(41, mem[memory.RECALL])
 
     def test40_refresh_1d(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 86400
+        mem[memory.LAST_RECALL] = time.time() - 86400
         memory.refresh(mem,True)
         self.assertEqual(41, mem[memory.RECALL])
 
     def test40_refresh_1w(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 604800
+        mem[memory.LAST_RECALL] = time.time() - 604800
         memory.refresh(mem,True)
         self.assertEqual(41, mem[memory.RECALL])
 
     def test40_refresh_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 2592000
+        mem[memory.LAST_RECALL] = time.time() - 2592000
         memory.refresh(mem,True)
         self.assertEqual(41, mem[memory.RECALL])
 
     def test40_refresh_greater_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 3200140
+        mem[memory.LAST_RECALL] = time.time() - 3200140
         memory.refresh(mem,True)
         self.assertEqual(41, mem[memory.RECALL])
 
     def test40_refresh_greater_1y(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 40
-        mem[memory.LASTRECALL] = time.time() - 31536000
+        mem[memory.LAST_RECALL] = time.time() - 31536000
         memory.refresh(mem,True)
         self.assertEqual(41, mem[memory.RECALL])
 
@@ -338,63 +338,63 @@ class TestMemory(unittest.TestCase):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.STRENGTH] = 100
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 50
+        mem[memory.LAST_RECALL] = time.time() - 50
         memory.refresh(mem,True)
         self.assertEqual(78, mem[memory.RECALL])
 
     def test78_refresh_62s(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 62
+        mem[memory.LAST_RECALL] = time.time() - 62
         memory.refresh(mem,True)
         self.assertEqual(78, mem[memory.RECALL])
 
     def test78_refresh_20m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 1200
+        mem[memory.LAST_RECALL] = time.time() - 1200
         memory.refresh(mem,True)
         self.assertEqual(78, mem[memory.RECALL])
 
     def test78_refresh_1h(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 3600
+        mem[memory.LAST_RECALL] = time.time() - 3600
         memory.refresh(mem,True)
         self.assertEqual(78, mem[memory.RECALL])
 
     def test78_refresh_1d(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 86400
+        mem[memory.LAST_RECALL] = time.time() - 86400
         memory.refresh(mem,True)
         self.assertEqual(78, mem[memory.RECALL])
 
     def test78_refresh_1w(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 604800
+        mem[memory.LAST_RECALL] = time.time() - 604800
         memory.refresh(mem,True)
         self.assertEqual(78, mem[memory.RECALL])
 
     def test78_refresh_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 2592000
+        mem[memory.LAST_RECALL] = time.time() - 2592000
         memory.refresh(mem,True)
         self.assertEqual(79, mem[memory.RECALL])
 
     def test78_refresh_greater_1m(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 3200140
+        mem[memory.LAST_RECALL] = time.time() - 3200140
         memory.refresh(mem,True)
         self.assertEqual(79, mem[memory.RECALL])
 
     def test78_refresh_greater_1y(self):
         mem = memory.BASIC_MEMORY.copy()
         mem[memory.RECALL] = 78
-        mem[memory.LASTRECALL] = time.time() - 31536000
+        mem[memory.LAST_RECALL] = time.time() - 31536000
         memory.refresh(mem,True)
         self.assertEqual(79, mem[memory.RECALL])
 
