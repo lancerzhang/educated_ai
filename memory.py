@@ -1,4 +1,4 @@
-import time, random, util
+import time, random, util, copy, expectation
 
 STRENGTH = 'str'
 RECALL = 'rcl'
@@ -29,8 +29,9 @@ SHORT_MEMORY = 'stm'  # short time memory
 LONG_MEMORY = 'ltm'  # long time memory
 
 # data set of 'long/short/instant time memory', slice memory
-CHILD_DATA = 'cdt'
-
+CHILD_MEM = 'cmy'
+# additional data
+CHILD_DAT1 = 'cd1'
 #                                                                                                                                                                                  collections
 #                                                                                                                                        long                                   long            ...       long
 #                                                                                 short                                               short       ...       short
@@ -163,7 +164,7 @@ def find_common_parents(feature_memories):
         if mem is None:
             continue
         print 'found exp memory ', mem.doc_id
-        first_data = mem[CHILD_DATA]
+        first_data = mem[CHILD_MEM]
         first_common = util.common_elements(first_data, feature_memory_ids)
         # check if this parent memory all matches
         if len(first_common) == len(first_data):
@@ -175,7 +176,7 @@ def find_common_parents(feature_memories):
 def get_child_data_from_arr(mem_arr):
     child_data = []
     for mem in mem_arr:
-        child_data.append(mem['doc_id'])
+        child_data.append(mem.doc_id)
     return child_data
 
 
@@ -186,29 +187,37 @@ def compose(working_memories, new_working_memories):
     new_working_memories[SLICE_MEMORY] = result1[REST_OF_MEMORIES]
     for memories in result1[NEW_MEMORIES]:
         child_data = get_child_data_from_arr(memories)
-        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: INSTANT_MEMORY})
-        working_memories[INSTANT_MEMORY].update({new_mem.doc_id:new_mem})
+        new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: INSTANT_MEMORY})
+        new_mem.update({HAPPEN_TIME: time.time()})
+        working_memories[INSTANT_MEMORY].update({new_mem.doc_id: new_mem})
+        new_working_memories[INSTANT_MEMORY].append(new_mem)
 
     result2 = split_working_memories(new_working_memories[INSTANT_MEMORY], 5)
     new_working_memories[INSTANT_MEMORY] = result2[REST_OF_MEMORIES]
     for memories in result2[NEW_MEMORIES]:
         child_data = get_child_data_from_arr(memories)
-        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: SHORT_MEMORY})
-        working_memories[SHORT_MEMORY].update({new_mem.doc_id:new_mem})
+        new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: SHORT_MEMORY})
+        new_mem.update({HAPPEN_TIME: time.time()})
+        working_memories[SHORT_MEMORY].update({new_mem.doc_id: new_mem})
+        new_working_memories[SHORT_MEMORY].append(new_mem)
 
     result3 = split_working_memories(new_working_memories[SHORT_MEMORY])
     new_working_memories[SHORT_MEMORY] = result3[REST_OF_MEMORIES]
     for memories in result3[NEW_MEMORIES]:
         child_data = get_child_data_from_arr(memories)
-        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
-        working_memories[LONG_MEMORY].update({new_mem.doc_id:new_mem})
+        new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
+        new_mem.update({HAPPEN_TIME: time.time()})
+        working_memories[LONG_MEMORY].update({new_mem.doc_id: new_mem})
+        new_working_memories[LONG_MEMORY].append(new_mem)
 
     result4 = split_working_memories(new_working_memories[LONG_MEMORY])
     new_working_memories[LONG_MEMORY] = result4[REST_OF_MEMORIES]
     for memories in result4[NEW_MEMORIES]:
         child_data = get_child_data_from_arr(memories)
-        new_mem = db.add_memory({CHILD_DATA: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
-        working_memories[LONG_MEMORY].update({new_mem.doc_id:new_mem})
+        new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
+        new_mem.update({HAPPEN_TIME: time.time()})
+        working_memories[LONG_MEMORY].update({new_mem.doc_id: new_mem})
+        new_working_memories[LONG_MEMORY].append(new_mem)
 
 
 def split_working_memories(memories, gap=60):
@@ -217,27 +226,84 @@ def split_working_memories(memories, gap=60):
     elapse_time = 0
     groups = []
     group = []
+    add_datas = []
+    add_data = []
     for mem in memories:
         this_time = mem[HAPPEN_TIME]
-        group.append(mem)
         if last_time == 0:
             distance = 0
         else:
             distance = this_time - last_time
         elapse_time = elapse_time + distance
         last_time = mem[HAPPEN_TIME]
+        if elapse_time >= gap:
+            groups.append(group)
+            group = []
+            add_datas.append(add_data)
+            add_data = []
+            count = 0
+            elapse_time = 0
+        group.append(mem)
+        add_data.append(distance)
         count = count + 1
-        if elapse_time >= gap or count >= COMPOSE_NUMBER:
+        if count >= COMPOSE_NUMBER:
             groups.append(group)
             group = []
             count = 0
             elapse_time = 0
     result = {
         NEW_MEMORIES: groups,
+        CHILD_DAT1: add_datas,
         REST_OF_MEMORIES: group
     }
     return result
 
 
-def associate(working_memories):
-    return
+# new_working_memories: array
+def associate(new_working_memories, expectations):
+    slice_working_memories = new_working_memories[SLICE_MEMORY]
+    related_instant_memories = find_related_memory_ids(slice_working_memories)
+    for mem_id in related_instant_memories:
+        mem = db.get_memory()
+        if mem is not None and expectations[mem_id] is None:
+            exp = copy.deepcopy(mem)
+            now = time.time()
+            start_time = now
+            end_time = len(slice_working_memories) * 0.1 + expectation.SLICE_VARIANCE
+            exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time, expectation.END_TIME: end_time,
+                        expectation.CHILDREN: slice_working_memories})
+
+    instant_working_memories = new_working_memories[INSTANT_MEMORY]
+    related_short_memories = find_related_memory_ids(instant_working_memories)
+    for mem_id in related_short_memories:
+        mem = db.get_memory()
+        if mem is not None and expectations[mem_id] is None:
+            exp = copy.deepcopy(mem)
+            gaps = mem[CHILD_DAT1]
+            distance = 0
+            now = time.time()
+            for i in range(len(instant_working_memories), len(gaps)):
+                distance = distance + gaps[i]
+            start_time = now
+            end_time = now + distance
+            exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time, expectation.END_TIME: end_time,
+                        expectation.CHILDREN: instant_working_memories})
+
+    short_working_memories = new_working_memories[SHORT_MEMORY]
+    related_long_memories = find_related_memory_ids(short_working_memories)
+    for mem_id in related_long_memories:
+        mem = db.get_memory()
+        if mem is not None and expectations[mem_id] is None:
+            exp = copy.deepcopy(mem)
+            exp.update({expectation.STATUS: expectation.MATCHING, expectation.CHILDREN: short_working_memories})
+
+    long_working_memories = new_working_memories[SHORT_MEMORY]
+    related_long_memories = find_related_memory_ids(long_working_memories)
+    for mem_id in related_long_memories:
+        mem = db.get_memory()
+        if mem is not None and expectations[mem_id] is None:
+            exp = copy.deepcopy(mem)
+            child_ids = exp[CHILD_MEM]
+            long_memory_ids = [x.doc_id for x in long_working_memories]
+            rest_child = util.comprehension_new(child_ids, long_memory_ids)
+            exp.update({expectation.STATUS: expectation.MATCHING, CHILD_MEM: rest_child})

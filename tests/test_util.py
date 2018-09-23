@@ -1,4 +1,4 @@
-import unittest, util,cv2
+import unittest, util, cv2
 import numpy as np
 
 
@@ -103,8 +103,8 @@ class TestUtil(unittest.TestCase):
     def test_colorHist(self):
         arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
                          [[79, 118, 190], [60, 110, 230]]])
-        hist=util.color_hist(arr1, 3)
-        self.assertEqual([3,1,0,0,3,1,1,0,3],hist.tolist())
+        hist = util.color_hist(arr1, 3)
+        self.assertEqual([3, 1, 0, 0, 3, 1, 1, 0, 3], hist.tolist())
 
     # def test_compareColorHist(self):
     #     arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
@@ -112,6 +112,13 @@ class TestUtil(unittest.TestCase):
     #     hist=util.color_hist(arr1, 3)
     #     print cv2.compareHist(hist,hist,cv2.HISTCMP_BHATTACHARYYA)
 
+    def test_avg_int(self):
+        arr = [1, 2, 3]
+        self.assertEqual(2, util.avg(arr))
+
+    def test_avg_float(self):
+        arr = [1.5, 2.5, 3.5]
+        self.assertEqual(2.5, util.avg(arr))
 
 
 if __name__ == "__main__":

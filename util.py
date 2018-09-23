@@ -133,3 +133,7 @@ def image_hash(im, size):
     data = gray.flatten().tolist()
     avg = reduce(lambda x, y: x + y, data) / (size * size)
     return reduce(lambda x, (y, z): x | (z << y), enumerate(map(lambda i: 0 if i < avg else 1, data)), 0)
+
+
+def avg(arr):
+    return sum(arr)/len(arr)

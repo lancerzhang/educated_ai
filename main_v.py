@@ -1,4 +1,4 @@
-import time, util, memory, collections, vision,expectation
+import time, util, memory, collections, vision, expectation
 import numpy as np
 from db import Database
 from tinydb import TinyDB, Query
@@ -18,11 +18,12 @@ working_instant_memory_vision = np.zeros(5)  # last 0.5s
 
 # status - new, matching, matched
 expectations = {}
+slice_expectations = {}
 
-working_memories=[]
-new_working_memories=[]
-total_matched_counts=[0,0,0]
-durations=[0,0,0]
+working_memories = []
+new_working_memories = []
+total_matched_counts = [0, 0, 0]
+durations = [0, 0, 0]
 db = Database(TinyDB('TinyDB.json'))
 memory.db = db
 
@@ -30,46 +31,39 @@ try:
     print 'wake up.\n'
     while 1:
         start = time.time()
-		
-		less_workload=False
-		if avg(durations) <DPS:
-			less_workload=True
+        less_workload = False
+        if util.avg(durations) < DPS:
+            less_workload = True
 
-        if sum(total_matched_counts)==0 or slice_expectations.empyt():
-			vision.watch()
-			sound.hear()
-		else:
-			vision.watch(slice_expectations)
-			sound.hear(slice_expectations)
-			total_matched_count=0
-			# loop  expectations, find out slice_expectations
-			for exp in expectations:
-				expect(exp,expectation.id_time,slice_expectations, total_matched_count,less_workload);
-				if exp.status==expectation.MATCHED:
-					mem=expectation.memory.copy()
-					mem.update({memory.HAPPEN_TIME:exp.matched_time})
-					working_memories.push(mem)
-					new_working_memories.push(mem)
-					expectations.remove(exp)
-				elif exp.status==expectation.EXPIRED:
-					expectations.remove(exp)
-			total_matched_counts.push(total_matched_count)
-		
-		if expectations.has_slice():
-			vision.watch()
-			sound.hear()
-			
-		memory.compose(working_memories,new_working_memories)
-        
-		mem=memory.associate(working_memories)
-		if mem
-			expectation.push_memory(mem)
+        if sum(total_matched_counts) == 0 or slice_expectations.empyt():
+            vision.watch()
+        else:
+            vision.watch(slice_expectations)
+            total_matched_count = 0
+            # loop  expectations, find out slice_expectations
+            for exp in expectations:
+                expectation.expect(exp, exp['doc_id'], slice_expectations, total_matched_count, less_workload);
+                if exp.status == expectation.MATCHED:
+                    exp.update({memory.HAPPEN_TIME: exp.matched_time})
+                    working_memories.push(exp)
+                    new_working_memories.push(exp)
+                    expectations.pop(exp['doc_id'])
+                elif exp.status == expectation.EXPIRED:
+                    expectations.pop(exp['doc_id'])
+            total_matched_counts.push(total_matched_count)
+
+        if len(slice_expectations) > 0:
+            vision.watch(slice_expectations)
+
+        memory.compose(working_memories, new_working_memories)
+
+        memory.associate(new_working_memories, expectations)
 
         # if watch result is the same for xxx, trigger a random move, 1/16 d, 0.1-0.5 s
         vision.move()
         # all end
         duration = util.time_diff(start)
-		durations.push(duration)
+        durations.push(duration)
 
 except KeyboardInterrupt:
     print("quiting...")

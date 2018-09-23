@@ -69,11 +69,11 @@ def match(mem_v):
             if match:
                 db.use_memory(mem_v.doc_id)
             else:
-                db.add_vision({memory.CHILD_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
+                db.add_vision({memory.CHILD_MEM: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
         else:
-            mem_v.update({memory.CHILD_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
+            mem_v.update({memory.CHILD_MEM: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
     else:
-        db.add_vision({memory.CHILD_DATA: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
+        db.add_vision({memory.CHILD_MEM: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
 
     # watch frame end
     end = time.time()

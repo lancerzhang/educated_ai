@@ -154,7 +154,7 @@ class Database:
                 print mem
             first_data.append(mem.doc_id)
         # add new memory with those children as first data
-        parent = self.add_memory({memory.CHILD_DATA: first_data})
+        parent = self.add_memory({memory.CHILD_MEM: first_data})
         # update children
         for mem in memories:
             parent_ids = mem[memory.PARENTS]
