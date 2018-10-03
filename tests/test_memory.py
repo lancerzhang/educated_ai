@@ -144,6 +144,11 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(2, len(mem[memory.CHILD_MEM]))
         self.assertEqual(4, mem[memory.CHILD_MEM][1])
 
+    def test_get_valid_child_memory_empty(self):
+        el1 = self.database.add_memory({memory.CHILD_MEM: []})
+        memories=memory.get_valid_child_memory(el1)
+        self.assertEqual(0,len(memories))
+
 
 if __name__ == "__main__":
     unittest.main()

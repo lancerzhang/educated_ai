@@ -183,6 +183,29 @@ def get_child_data_from_arr(mem_arr):
 def remove_memory_children(children, forgot, doc_id):
     db.update_memories({CHILD_MEM: util.comprehension_new(children, forgot)}, [doc_id])
 
+def get_valid_child_memory(mem, limit=0,offset=0):
+    children_memory_ids=mem[CHILD_MEM]
+    forgot_children = []
+    child_mem=[]
+    count=0
+    total=limit
+    if total==0:
+        total=len(children_memory_ids)
+    for i in range(offset,limit) :
+        child_id=children_memory_ids[i]
+        mem = db.use_memory(child_id)
+        if mem is not None:
+            child_mem.append(mem)
+        else:
+            forgot_children.append(child_id)
+            print "forgot something"
+        count=count+1
+        if count >= total:
+            break
+    if len(forgot_children) > 0:
+        remove_memory_children(children_memory_ids, forgot_children, mem.doc_id)
+    return child_mem
+
 
 # working_memories: dict
 # new_working_memories: array
@@ -268,7 +291,7 @@ def associate(new_working_memories, expectations):
     slice_working_memories = new_working_memories[SLICE_MEMORY]
     related_instant_memories = find_related_memory_ids(slice_working_memories)
     for mem_id in related_instant_memories:
-        mem = db.get_memory()
+        mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
             exp = copy.deepcopy(mem)
             now = time.time()
@@ -280,7 +303,7 @@ def associate(new_working_memories, expectations):
     instant_working_memories = new_working_memories[INSTANT_MEMORY]
     related_short_memories = find_related_memory_ids(instant_working_memories)
     for mem_id in related_short_memories:
-        mem = db.get_memory()
+        mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
             exp = copy.deepcopy(mem)
             gaps = mem[CHILD_DAT1]
@@ -296,7 +319,7 @@ def associate(new_working_memories, expectations):
     short_working_memories = new_working_memories[SHORT_MEMORY]
     related_long_memories = find_related_memory_ids(short_working_memories)
     for mem_id in related_long_memories:
-        mem = db.get_memory()
+        mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
             exp = copy.deepcopy(mem)
             exp.update({expectation.STATUS: expectation.MATCHING, expectation.CHILDREN: short_working_memories})
@@ -304,7 +327,7 @@ def associate(new_working_memories, expectations):
     long_working_memories = new_working_memories[SHORT_MEMORY]
     related_long_memories = find_related_memory_ids(long_working_memories)
     for mem_id in related_long_memories:
-        mem = db.get_memory()
+        mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
             exp = copy.deepcopy(mem)
             child_ids = exp[CHILD_MEM]
