@@ -180,6 +180,10 @@ def get_child_data_from_arr(mem_arr):
     return child_data
 
 
+def remove_memory_children(children, forgot, doc_id):
+    db.update_memories({CHILD_MEM: util.comprehension_new(children, forgot)}, [doc_id])
+
+
 # working_memories: dict
 # new_working_memories: array
 def compose(working_memories, new_working_memories):
@@ -269,7 +273,7 @@ def associate(new_working_memories, expectations):
             exp = copy.deepcopy(mem)
             now = time.time()
             start_time = now
-            end_time = len(slice_working_memories) * 0.1 + expectation.SLICE_VARIANCE
+            end_time = (len(mem[CHILD_MEM]) - len(slice_working_memories)) * 0.1 + expectation.SLICE_VARIANCE
             exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time, expectation.END_TIME: end_time,
                         expectation.CHILDREN: slice_working_memories})
 

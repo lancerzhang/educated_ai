@@ -34,7 +34,7 @@ class Database:
     def use_memory(self, elid):
         return self.get_memory(elid, True)
 
-    def update_memory_ids(self, fields, ids):
+    def update_memories(self, fields, ids):
         self.table.update(fields, eids=ids)
 
     def refresh_memories(self, records, recall=False):
@@ -160,5 +160,5 @@ class Database:
             parent_ids = mem[memory.PARENTS]
             if parent.doc_id not in parent_ids:
                 parent_ids.append(parent.doc_id)
-                self.update_memory_ids({memory.PARENTS: parent_ids}, [mem.doc_id])
+                self.update_memories({memory.PARENTS: parent_ids}, [mem.doc_id])
         return parent
