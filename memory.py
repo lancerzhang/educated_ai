@@ -1,5 +1,6 @@
 import time, random, util, copy, expectation
 
+ID = 'id'
 STRENGTH = 'str'
 RECALL = 'rcl'
 REWARD = 'rwd'
@@ -135,7 +136,7 @@ def find_reward_target(related_memories):
         reward = mem[REWARD]
         if reward > max_value:
             max_value = reward
-            max_id = mem.doc_id
+            max_id = mem[ID]
     return max_id
 
 
@@ -143,7 +144,7 @@ def find_reward_target(related_memories):
 def remove_memories(memory_list, tobe_remove_list_ids):
     for el in tobe_remove_list_ids:
         for mem in memory_list:
-            if mem.doc_id in tobe_remove_list_ids:
+            if mem[ID] in tobe_remove_list_ids:
                 memory_list.remove(mem)
 
 
@@ -156,14 +157,14 @@ def find_common_parents(feature_memories):
     parent_ids = find_parents(feature_memories)
     feature_memory_ids = []
     for feature in feature_memories:
-        feature_memory_ids.append(feature.doc_id)
+        feature_memory_ids.append(feature[ID])
     for key, value in parent_ids.items():
         if value <= 1:
             continue
         mem = db.use_memory(key)
         if mem is None:
             continue
-        print 'found exp memory ', mem.doc_id
+        print 'found exp memory ', mem[ID]
         first_data = mem[CHILD_MEM]
         first_common = util.common_elements(first_data, feature_memory_ids)
         # check if this parent memory all matches
@@ -176,34 +177,35 @@ def find_common_parents(feature_memories):
 def get_child_data_from_arr(mem_arr):
     child_data = []
     for mem in mem_arr:
-        child_data.append(mem.doc_id)
+        child_data.append(mem[ID])
     return child_data
 
 
-def remove_memory_children(children, forgot, doc_id):
-    db.update_memories({CHILD_MEM: util.comprehension_new(children, forgot)}, [doc_id])
+def remove_memory_children(children, forgot, id):
+    db.update_memory({CHILD_MEM: util.comprehension_new(children, forgot)}, id)
 
-def get_valid_child_memory(mem, limit=0,offset=0):
-    children_memory_ids=mem[CHILD_MEM]
+
+def get_valid_child_memory(mem, limit=0, offset=0):
+    children_memory_ids = mem[CHILD_MEM]
     forgot_children = []
-    child_mem=[]
-    count=0
-    total=limit
-    if total==0:
-        total=len(children_memory_ids)
-    for i in range(offset,limit) :
-        child_id=children_memory_ids[i]
-        mem = db.use_memory(child_id)
-        if mem is not None:
-            child_mem.append(mem)
+    child_mem = []
+    count = 0
+    total = limit
+    if total == 0:
+        total = len(children_memory_ids)
+    for i in range(offset, total):
+        child_id = children_memory_ids[i]
+        mem_child = db.use_memory(child_id)
+        if mem_child is not None:
+            child_mem.append(mem_child)
         else:
             forgot_children.append(child_id)
             print "forgot something"
-        count=count+1
+        count = count + 1
         if count >= total:
             break
     if len(forgot_children) > 0:
-        remove_memory_children(children_memory_ids, forgot_children, mem.doc_id)
+        remove_memory_children(children_memory_ids, forgot_children, mem[ID])
     return child_mem
 
 
@@ -216,7 +218,7 @@ def compose(working_memories, new_working_memories):
         child_data = get_child_data_from_arr(memories)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: INSTANT_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
-        working_memories[INSTANT_MEMORY].update({new_mem.doc_id: new_mem})
+        working_memories[INSTANT_MEMORY].update({new_mem[ID]: new_mem})
         new_working_memories[INSTANT_MEMORY].append(new_mem)
 
     result2 = split_working_memories(new_working_memories[INSTANT_MEMORY], 5)
@@ -225,7 +227,7 @@ def compose(working_memories, new_working_memories):
         child_data = get_child_data_from_arr(memories)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: SHORT_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
-        working_memories[SHORT_MEMORY].update({new_mem.doc_id: new_mem})
+        working_memories[SHORT_MEMORY].update({new_mem[ID]: new_mem})
         new_working_memories[SHORT_MEMORY].append(new_mem)
 
     result3 = split_working_memories(new_working_memories[SHORT_MEMORY])
@@ -234,7 +236,7 @@ def compose(working_memories, new_working_memories):
         child_data = get_child_data_from_arr(memories)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
-        working_memories[LONG_MEMORY].update({new_mem.doc_id: new_mem})
+        working_memories[LONG_MEMORY].update({new_mem[ID]: new_mem})
         new_working_memories[LONG_MEMORY].append(new_mem)
 
     result4 = split_working_memories(new_working_memories[LONG_MEMORY])
@@ -243,7 +245,7 @@ def compose(working_memories, new_working_memories):
         child_data = get_child_data_from_arr(memories)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
-        working_memories[LONG_MEMORY].update({new_mem.doc_id: new_mem})
+        working_memories[LONG_MEMORY].update({new_mem[ID]: new_mem})
         new_working_memories[LONG_MEMORY].append(new_mem)
 
 
@@ -331,6 +333,6 @@ def associate(new_working_memories, expectations):
         if mem is not None and expectations[mem_id] is None:
             exp = copy.deepcopy(mem)
             child_ids = exp[CHILD_MEM]
-            long_memory_ids = [x.doc_id for x in long_working_memories]
+            long_memory_ids = [x[ID] for x in long_working_memories]
             rest_child = util.comprehension_new(child_ids, long_memory_ids)
             exp.update({expectation.STATUS: expectation.MATCHING, CHILD_MEM: rest_child})

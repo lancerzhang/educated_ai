@@ -96,7 +96,7 @@ def listen():
 
 def mix_energy(energy, memories):
     for mem in memories:
-        db.update_memory_ids({ENERGY: (energy + mem[ENERGY]) / 2}, [mem.doc_id])
+        db.update_memory({ENERGY: (energy + mem[ENERGY]) / 2}, mem[memory.ID])
 
 
 # given 2 mfcc arrays, find out shift, look up them in memories

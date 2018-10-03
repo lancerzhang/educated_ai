@@ -44,14 +44,14 @@ try:
             total_matched_count = 0
             # loop  expectations, find out slice_expectations
             for exp in expectations:
-                expectation.expect(exp, exp['doc_id'], slice_expectations, total_matched_count, less_workload);
+                expectation.expect(exp, exp[memory.ID], slice_expectations, total_matched_count, less_workload)
                 if exp.status == expectation.MATCHED:
                     exp.update({memory.HAPPEN_TIME: exp.matched_time})
                     working_memories.push(exp)
                     new_working_memories.push(exp)
-                    expectations.pop(exp['doc_id'])
+                    expectations.pop(exp[memory.ID])
                 elif exp.status == expectation.EXPIRED:
-                    expectations.pop(exp['doc_id'])
+                    expectations.pop(exp[memory.ID])
             total_matched_counts.push(total_matched_count)
 
         if len(slice_expectations) > 0:

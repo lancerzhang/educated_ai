@@ -80,7 +80,7 @@ class TestMemory(unittest.TestCase):
         mem3 = self.database._get_memory(el3)
         related_memory_ids = [mem1, mem2, mem3]
         exp_memory = memory.find_reward_target(related_memory_ids)
-        self.assertEqual(1, exp_memory)
+        self.assertEqual(el1, exp_memory)
 
     def test_find_target1(self):
         el1 = self.database._add_memory({memory.REWARD: 97})
@@ -91,13 +91,13 @@ class TestMemory(unittest.TestCase):
         mem3 = self.database._get_memory(el3)
         related_memory_ids = [mem1, mem2, mem3]
         exp_memory = memory.find_reward_target(related_memory_ids)
-        self.assertEqual(2, exp_memory)
+        self.assertEqual(el2, exp_memory)
 
     def test_remove_memories(self):
         el1 = self.database.add_memory()
         el2 = self.database.add_memory()
         memory_list = [el1, el2]
-        tobe_remove_list_ids = [el1.doc_id]
+        tobe_remove_list_ids = [el1[memory.ID]]
         memory.remove_memories(memory_list, tobe_remove_list_ids)
         self.assertEqual(1, len(memory_list))
 
@@ -106,7 +106,7 @@ class TestMemory(unittest.TestCase):
         el2 = self.database.add_memory()
         el3 = self.database.add_memory()
         memory_list = [el1, el2, el3]
-        tobe_remove_list_ids = [el2.doc_id]
+        tobe_remove_list_ids = [el2[memory.ID]]
         memory.remove_memories(memory_list, tobe_remove_list_ids)
         self.assertEqual(2, len(memory_list))
 
@@ -115,7 +115,7 @@ class TestMemory(unittest.TestCase):
         el2 = self.database.add_memory()
         el3 = self.database.add_memory()
         memory_list = [el1, el2, el3]
-        tobe_remove_list_ids = [el2.doc_id, el3.doc_id]
+        tobe_remove_list_ids = [el2[memory.ID], el3[memory.ID]]
         memory.remove_memories(memory_list, tobe_remove_list_ids)
         self.assertEqual(1, len(memory_list))
 
@@ -139,15 +139,32 @@ class TestMemory(unittest.TestCase):
         children = [1, 2, 3, 4, 5]
         forgot = [1, 3, 5]
         el1 = self.database.add_memory({memory.CHILD_MEM: children})
-        memory.remove_memory_children(children, forgot, el1)
-        mem = self.database.get_memory(el1)
+        memory.remove_memory_children(children, forgot, el1[memory.ID])
+        mem = self.database.get_memory(el1[memory.ID])
         self.assertEqual(2, len(mem[memory.CHILD_MEM]))
         self.assertEqual(4, mem[memory.CHILD_MEM][1])
 
     def test_get_valid_child_memory_empty(self):
         el1 = self.database.add_memory({memory.CHILD_MEM: []})
-        memories=memory.get_valid_child_memory(el1)
-        self.assertEqual(0,len(memories))
+        memories = memory.get_valid_child_memory(el1)
+        self.assertEqual(0, len(memories))
+
+    def test_get_valid_child_memory_success(self):
+        el1 = self.database.add_memory()
+        el2 = self.database.add_memory()
+        el3 = self.database.add_memory({memory.CHILD_MEM: [el1[memory.ID], el2[memory.ID]]})
+        child_memories1 = memory.get_valid_child_memory(el3)
+        self.assertEqual(2, len(child_memories1))
+
+        el4 = self.database.add_memory({memory.CHILD_MEM: [el1[memory.ID], el2[memory.ID], 9]})
+        child_memories2 = memory.get_valid_child_memory(el4)
+        self.assertEqual(2, len(child_memories2))
+        self.assertEqual(el2[memory.ID], child_memories2[1][memory.ID])
+
+        el5 = self.database.add_memory({memory.CHILD_MEM: [el1[memory.ID], 9, el2[memory.ID]]})
+        child_memories3 = memory.get_valid_child_memory(el5)
+        self.assertEqual(2, len(child_memories3))
+        self.assertEqual(el2[memory.ID], child_memories3[1][memory.ID])
 
 
 if __name__ == "__main__":

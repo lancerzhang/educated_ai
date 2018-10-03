@@ -1,4 +1,4 @@
-import unittest, sound
+import unittest, sound, memory
 import numpy as np
 from db import Database
 from tinydb import TinyDB, Query
@@ -34,7 +34,7 @@ class TestSound(unittest.TestCase):
         mem = self.database.add_sound({sound.FEATURE: sound.FEATURE_MFCC, sound.INDEX: 1, sound.ENERGY: energy1})
         energy2 = 100
         sound.mix_energy(energy2, [mem])
-        result = self.database.get_memory(mem.doc_id, False)
+        result = self.database.get_memory(mem[memory.ID], False)
         self.assertEqual(150, result[sound.ENERGY])
 
     def test_mix_energy2(self):
@@ -42,9 +42,9 @@ class TestSound(unittest.TestCase):
         mem2 = self.database.add_sound({sound.FEATURE: sound.FEATURE_MFCC, sound.INDEX: 1, sound.ENERGY: 300})
         energy2 = 100
         sound.mix_energy(energy2, [mem1, mem2])
-        result1 = self.database.get_memory(mem1.doc_id, False)
+        result1 = self.database.get_memory(mem1[memory.ID], False)
         self.assertEqual(150, result1[sound.ENERGY])
-        result2 = self.database.get_memory(mem2.doc_id, False)
+        result2 = self.database.get_memory(mem2[memory.ID], False)
         self.assertEqual(200, result2[sound.ENERGY])
 
     def test_process_frame_feature_new(self):
@@ -62,7 +62,7 @@ class TestSound(unittest.TestCase):
         last_data = np.array([-200, 15, 5])
         sound.process_frame_mfcc_feature(frame_working_memories, current_data, last_data)
         self.assertEqual(1, len(frame_working_memories))
-        result2 = self.database.get_memory(mem1.doc_id, False)
+        result2 = self.database.get_memory(mem1[memory.ID], False)
         self.assertEqual(-205, result2[sound.ENERGY])
 
 

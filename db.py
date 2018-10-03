@@ -1,4 +1,4 @@
-import time, memory, util, sound
+import time, memory, util, sound, uuid
 from tinydb import Query
 from tinydb_smartcache import SmartCacheTable
 from tinydb.database import Document
@@ -19,23 +19,24 @@ class Database:
 
     # return None if not found
     # do not use directly, we usually need to refresh it before getting it
-    def _get_memory(self, elid):
-        return self.table.get(eid=elid)
+    def _get_memory(self, id):
+        return self.table.get(Query()[memory.ID] == id)
 
     # return None if not found
-    def get_memory(self, elid, recall=False):
-        mem = self._get_memory(elid)
-        memory.refresh(mem, recall)
-        if mem[memory.STRENGTH] == -1:
-            return None
+    def get_memory(self, id, recall=False):
+        mem = self._get_memory(id)
+        if mem is not None:
+            memory.refresh(mem, recall)
+            if mem[memory.STRENGTH] == -1:
+                return None
         return mem
 
     # return None if not found
-    def use_memory(self, elid):
-        return self.get_memory(elid, True)
+    def use_memory(self, id):
+        return self.get_memory(id, True)
 
-    def update_memories(self, fields, ids):
-        self.table.update(fields, eids=ids)
+    def update_memory(self, fields, id):
+        self.table.update(fields, Query()[memory.ID] == id)
 
     def refresh_memories(self, records, recall=False):
         cleaned = 0
@@ -44,11 +45,11 @@ class Database:
             memory.refresh(record, recall)
             if record[memory.STRENGTH] == -1:
                 cleaned = cleaned + 1
-                self.table.remove(eids=[record.doc_id])
-                tobe_removed.append(record.doc_id)
+                self.table.remove(Query()[memory.ID] == record[memory.ID])
+                tobe_removed.append(record[memory.ID])
         for id in tobe_removed:
             for record in records:
-                if record.doc_id == id:
+                if record[memory.ID] == id:
                     records.remove(record)
                     continue
         return cleaned
@@ -66,8 +67,10 @@ class Database:
     # private method
     def _add_record(self, new_record):
         # new_record = record.copy()
-        new_record.update({memory.STRENGTH: 100, memory.RECALL: 1, memory.LAST_RECALL: time.time()})
-        return self.table.insert(new_record)
+        id = str(uuid.uuid4())
+        new_record.update({memory.ID: id, memory.STRENGTH: 100, memory.RECALL: 1, memory.LAST_RECALL: time.time()})
+        self.table.insert(new_record)
+        return id
 
     # it return new created record id, normally not use it
     def _add_memory(self, addition={}):
@@ -84,7 +87,7 @@ class Database:
     # it return new created record id, normally not use it
     def _add_vision(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.TYPE: memory.VISION,})
+        new_memory.update({memory.TYPE: memory.VISION, })
         new_memory.update(addition)
         return self._add_record(new_memory)
 
@@ -152,13 +155,13 @@ class Database:
         for mem in memories:
             if not isinstance(mem, Document):
                 print mem
-            first_data.append(mem.doc_id)
+            first_data.append(mem[memory.ID])
         # add new memory with those children as first data
         parent = self.add_memory({memory.CHILD_MEM: first_data})
         # update children
         for mem in memories:
             parent_ids = mem[memory.PARENTS]
-            if parent.doc_id not in parent_ids:
-                parent_ids.append(parent.doc_id)
-                self.update_memories({memory.PARENTS: parent_ids}, [mem.doc_id])
+            if parent[memory.ID] not in parent_ids:
+                parent_ids.append(parent[memory.ID])
+                self.update_memory({memory.PARENTS: parent_ids}, mem[memory.ID])
         return parent

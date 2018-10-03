@@ -23,7 +23,7 @@ db = None
 
 def init():
     # watch start
-    return;
+    return
 
 
 def watch(hist_short_memories, hist_instant_memories):
@@ -67,7 +67,7 @@ def match(mem_v):
 
             # all match, strengthen memory
             if match:
-                db.use_memory(mem_v.doc_id)
+                db.use_memory(mem_v[memory.ID])
             else:
                 db.add_vision({memory.CHILD_MEM: {POINT_COLOR: reg_cat, IMG_HASH: reg_hash}})
         else:
@@ -77,17 +77,17 @@ def match(mem_v):
 
     # watch frame end
     end = time.time()
-    return;
+    return
 
 
 def move():
     # move ROI
-    return;
+    return
 
 
 def zoom():
     # zoom ROI
-    return;
+    return
 
 
 # grab a fix size region with specified zoom level from screen

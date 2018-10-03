@@ -12,8 +12,8 @@ class TestDB(unittest.TestCase):
 
 
     def test_get_memory(self):
-        elid = self.database._add_memory()
-        record = self.database._get_memory(elid)
+        id = self.database._add_memory()
+        record = self.database._get_memory(id)
         self.assertEqual(record[memory.TYPE], memory.COLLECTION)
 
     def test_add_memory(self):
