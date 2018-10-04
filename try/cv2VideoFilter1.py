@@ -18,9 +18,9 @@ while cap.isOpened():
     ret, frame = cap.read()
     if ret:
         # crop
-        y = 0;
-        x = 0;
-        w = 1200;
+        y = 0
+        x = 0
+        w = 1200
         h = 500
         roi = frame[y:y + h, x:x + w]
         # filter

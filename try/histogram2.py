@@ -52,7 +52,7 @@ def classfiy_histogram_with_split(image1, image2, size=(128, 128), part_size=(32
     image2 = image2.resize(size).convert("RGB")
     sub_image2 = split_imgae(image2, part_size)
 
-    sub_data = 0;
+    sub_data = 0
     for im1, im2 in zip(sub_image1, sub_image2):
         sub_data += calculate(im1, im2)
 

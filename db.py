@@ -38,6 +38,9 @@ class Database:
     def update_memory(self, fields, id):
         self.table.update(fields, Query()[memory.ID] == id)
 
+    def remove_memory(self, id):
+        self.table.remove(Query()[memory.ID] == id)
+
     def refresh_memories(self, records, recall=False):
         cleaned = 0
         tobe_removed = []

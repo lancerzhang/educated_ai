@@ -29,7 +29,7 @@ def expect(expectation, slice_expectations, total_matched_count):
 
     if expectation[STATUS] == NEW:
         if memory.INSTANT_MEMORY == expectation[memory.TYPE_COLLECTION]:
-            children = memory.get_valid_child_memory(expectation)
+            children = memory.get_live_child_memories(expectation)
             interval = 0
             variance = 0.5
             now = time.time()
@@ -39,14 +39,14 @@ def expect(expectation, slice_expectations, total_matched_count):
                 slice_expectations.push(child)
                 interval = interval + 0.1
         elif memory.SLICE_MEMORY == expectation[memory.TYPE_COLLECTION]:
-            children = memory.get_valid_child_memory(expectation)
+            children = memory.get_live_child_memories(expectation)
             for child in children:
                 child.update({ID_TIME: time.time(), STATUS: MATCHING, START_TIME: expectation[START_TIME], END_TIME: expectation[END_TIME], CHILDREN: {}})
                 expectation[CHILDREN].push(child[memory.ID], child)
                 slice_expectations.push(child)
         else:
             # for short or long memory, only get next new child
-            children = memory.get_valid_child_memory(expectation, 1)
+            children = memory.get_live_child_memories(expectation, 1)
             for child in children:
                 child.update({ID_TIME: time.time(), STATUS: MATCHING, START_TIME: expectation[START_TIME], END_TIME: expectation[END_TIME], CHILDREN: {}})
                 expectation[CHILDREN].push(child[memory.ID], child)
@@ -80,7 +80,7 @@ def expect(expectation, slice_expectations, total_matched_count):
             # all expectation in the queue are matched, but number is not the count of children
             if is_all_matched and (memory.SHORT_MEMORY == expectation[memory.TYPE_COLLECTION] or memory.LONG_MEMORY == expectation[memory.TYPE_COLLECTION]):
                 children_memory_ids = expectation[memory.CHILD_MEM]
-                children = memory.get_valid_child_memory(expectation, 1, matched_count)
+                children = memory.get_live_child_memories(expectation, 1, matched_count)
                 for child in children:
                     now = time.time()
                     child_expectation = child.update(

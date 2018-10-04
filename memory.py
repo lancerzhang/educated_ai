@@ -100,7 +100,7 @@ def refresh(mem, recall=False):
 
 # TODO, need to check if parent memory is valid or not
 # summarize all parent memories in a list
-def find_parents(working_memories):
+def count_parent_id(working_memories):
     parent_list = []
     for mem in working_memories:
         parent_list += mem[PARENTS]
@@ -110,8 +110,8 @@ def find_parents(working_memories):
 # find out max occurrence in parent memories of all working memories
 # if all occur once, return [] (not found)
 # only search when working memories >2
-def find_related_memory_ids(working_memories):
-    parent_counts = find_parents(working_memories)
+def find_max_related_memory_ids(working_memories):
+    parent_counts = count_parent_id(working_memories)
     max_value = 0
     max_ids = []
     max_count = 0
@@ -126,6 +126,26 @@ def find_related_memory_ids(working_memories):
             if value == max_value:
                 max_ids.append(key)
     return max_ids
+
+
+def find_max_related_memories(working_memories, limit=4):
+    parent_counts = count_parent_id(working_memories)
+    related_memories = []
+    count = 0
+    tobe_remove_list_ids = []
+    for key in sorted(parent_counts, key=parent_counts.get, reverse=True):
+        mem = db.use_memory(key)
+        if mem:
+            related_memories.append(mem)
+            count = count + 1
+        else:
+            tobe_remove_list_ids.append(key)
+        if count >= limit:
+            break
+    if len(tobe_remove_list_ids) > 0:
+        for mem in working_memories:
+            remove_memory_parent(mem[PARENTS], tobe_remove_list_ids, mem[ID])
+    return related_memories
 
 
 # find max reward in memories (db record), this is the target
@@ -154,7 +174,7 @@ def find_common_parents(feature_memories):
     common_parents = []
     if len(feature_memories) <= 1:
         return common_parents
-    parent_ids = find_parents(feature_memories)
+    parent_ids = count_parent_id(feature_memories)
     feature_memory_ids = []
     for feature in feature_memories:
         feature_memory_ids.append(feature[ID])
@@ -182,10 +202,18 @@ def get_child_data_from_arr(mem_arr):
 
 
 def remove_memory_children(children, forgot, id):
-    db.update_memory({CHILD_MEM: util.comprehension_new(children, forgot)}, id)
+    new_children = util.comprehension_new(children, forgot)
+    if len(new_children) == 0:
+        db.remove_memory(id)
+    else:
+        db.update_memory({CHILD_MEM: new_children}, id)
 
 
-def get_valid_child_memory(mem, limit=0, offset=0):
+def remove_memory_parent(parent, forgot, id):
+    db.update_memory({PARENTS: util.comprehension_new(parent, forgot)}, id)
+
+
+def get_live_child_memories(mem, limit=0, offset=0):
     children_memory_ids = mem[CHILD_MEM]
     forgot_children = []
     child_mem = []
@@ -206,6 +234,8 @@ def get_valid_child_memory(mem, limit=0, offset=0):
             break
     if len(forgot_children) > 0:
         remove_memory_children(children_memory_ids, forgot_children, mem[ID])
+    if len(child_mem) == 0:
+        db.remove_memory(mem[ID])
     return child_mem
 
 
@@ -291,7 +321,7 @@ def split_working_memories(memories, gap=60):
 # new_working_memories: array
 def associate(new_working_memories, expectations):
     slice_working_memories = new_working_memories[SLICE_MEMORY]
-    related_instant_memories = find_related_memory_ids(slice_working_memories)
+    related_instant_memories = find_max_related_memory_ids(slice_working_memories)
     for mem_id in related_instant_memories:
         mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
@@ -303,7 +333,7 @@ def associate(new_working_memories, expectations):
                         expectation.CHILDREN: slice_working_memories})
 
     instant_working_memories = new_working_memories[INSTANT_MEMORY]
-    related_short_memories = find_related_memory_ids(instant_working_memories)
+    related_short_memories = find_max_related_memory_ids(instant_working_memories)
     for mem_id in related_short_memories:
         mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
@@ -319,7 +349,7 @@ def associate(new_working_memories, expectations):
                         expectation.CHILDREN: instant_working_memories})
 
     short_working_memories = new_working_memories[SHORT_MEMORY]
-    related_long_memories = find_related_memory_ids(short_working_memories)
+    related_long_memories = find_max_related_memory_ids(short_working_memories)
     for mem_id in related_long_memories:
         mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
@@ -327,7 +357,7 @@ def associate(new_working_memories, expectations):
             exp.update({expectation.STATUS: expectation.MATCHING, expectation.CHILDREN: short_working_memories})
 
     long_working_memories = new_working_memories[SHORT_MEMORY]
-    related_long_memories = find_related_memory_ids(long_working_memories)
+    related_long_memories = find_max_related_memory_ids(long_working_memories)
     for mem_id in related_long_memories:
         mem = db.use_memory()
         if mem is not None and expectations[mem_id] is None:
