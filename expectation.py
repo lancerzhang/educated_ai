@@ -23,7 +23,7 @@ BASIC_EXPECTATION = {STATUS: NEW, START_TIME: 0, END_TIME: 0, CHILDREN: {}}
 
 # check expectation status after sensor processing
 # populate slice expectation, for sensor to match
-def expect(expectation, slice_expectations, total_matched_count):
+def prepare_expectation(expectation, slice_expectations, total_matched_count):
     if expectation[memory.TYPE] is not memory.COLLECTION:
         return expectation[STATUS]
 
@@ -58,7 +58,7 @@ def expect(expectation, slice_expectations, total_matched_count):
         is_first_child = True
         children = expectation[CHILDREN]
         for child in children:
-            status = expect(child, expectation, total_matched_count)
+            status = prepare_expectation(child, expectation, total_matched_count)
             if status == MATCHED:
                 matched_count = matched_count + 1
                 total_matched_count = total_matched_count + 1

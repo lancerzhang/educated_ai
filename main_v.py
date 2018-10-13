@@ -42,7 +42,7 @@ try:
             total_matched_count = 0
             # loop  expectations, find out slice_expectations
             for exp in expectations:
-                expectation.expect(exp, exp[memory.ID], slice_expectations, total_matched_count, less_workload)
+                expectation.prepare_expectation(exp, exp[memory.ID], slice_expectations, total_matched_count, less_workload)
                 if exp.status == expectation.MATCHED:
                     exp.update({memory.HAPPEN_TIME: exp.matched_time})
                     working_memories.push(exp)
