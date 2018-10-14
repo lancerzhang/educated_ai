@@ -163,8 +163,8 @@ class Database:
         parent = self.add_memory({memory.CHILD_MEM: first_data})
         # update children
         for mem in memories:
-            parent_ids = mem[memory.PARENTS]
+            parent_ids = mem[memory.PARENT_MEM]
             if parent[memory.ID] not in parent_ids:
                 parent_ids.append(parent[memory.ID])
-                self.update_memory({memory.PARENTS: parent_ids}, mem[memory.ID])
+                self.update_memory({memory.PARENT_MEM: parent_ids}, mem[memory.ID])
         return parent
