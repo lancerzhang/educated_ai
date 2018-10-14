@@ -57,10 +57,14 @@ BASIC_MEMORY_GROUP_ARR = {SLICE_MEMORY: [], SHORT_MEMORY: [], INSTANT_MEMORY: []
 #             24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600, 537840, 853200, 1326240, 2035800, 3100140,
 #             3609835, 4203316, 4894372, 5699043, 6636009, 7727020, 8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033, 41225925,
 #             48003823, 55896067, 65085866]
-TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296, 326, 358, 392, 428, 466, 506, 548, 593, 641, 692, 746,
-            803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367, 1451, 1538, 1628, 1721, 1920, 2100, 2280, 2460, 2640, 2880, 3120, 3360, 3600, 4680, 6120, 7920, 10440, 14040, 18720,
-            24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600, 537840, 853200, 1326240, 2035800, 3100140,
-            3609835, 4203316, 4894372, 5699043, 6636009, 7727020, 8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033, 41225925,
+TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296, 326,
+            358, 392, 428, 466, 506, 548, 593, 641, 692, 746,
+            803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367, 1451, 1538, 1628, 1721, 1920, 2100, 2280, 2460, 2640,
+            2880, 3120, 3360, 3600, 4680, 6120, 7920, 10440, 14040, 18720,
+            24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600, 537840, 853200,
+            1326240, 2035800, 3100140,
+            3609835, 4203316, 4894372, 5699043, 6636009, 7727020, 8997403, 10476649, 12199095, 14204727, 16540102,
+            19259434, 22425848, 26112847, 30406022, 35405033, 41225925,
             48003823, 55896067, 65085866]
 
 forget_memory = True
@@ -104,9 +108,9 @@ def refresh(mem, recall=False):
 
 # TODO, need to check if parent memory is valid or not
 # summarize all parent memories in a list
-def count_parent_id(working_memories):
+def count_parent_id(seq_time_memories):
     parent_list = []
-    for mem in working_memories:
+    for mem in seq_time_memories:
         parent_list += mem[PARENT_MEM]
     return util.list_element_count(parent_list)
 
@@ -114,8 +118,8 @@ def count_parent_id(working_memories):
 # find out max occurrence in parent memories of all working memories
 # if all occur once, return [] (not found)
 # only search when working memories >2
-def find_max_related_memory_ids(working_memories):
-    parent_counts = count_parent_id(working_memories)
+def find_max_related_memory_ids(seq_time_memories):
+    parent_counts = count_parent_id(seq_time_memories)
     max_value = 0
     max_ids = []
     max_count = 0
@@ -132,8 +136,8 @@ def find_max_related_memory_ids(working_memories):
     return max_ids
 
 
-def find_max_related_memories(working_memories, limit=4):
-    parent_counts = count_parent_id(working_memories)
+def find_max_related_memories(seq_time_memories, limit=4):
+    parent_counts = count_parent_id(seq_time_memories)
     related_memories = []
     count = 0
     tobe_remove_list_ids = []
@@ -147,7 +151,7 @@ def find_max_related_memories(working_memories, limit=4):
         if count >= limit:
             break
     if len(tobe_remove_list_ids) > 0:
-        for mem in working_memories:
+        for mem in seq_time_memories:
             remove_dead_memories(PARENT_MEM, mem[PARENT_MEM], tobe_remove_list_ids, mem[ID])
     return related_memories
 
@@ -239,53 +243,52 @@ def get_live_memories(mem, field, limit=0, offset=0):
     return memories
 
 
-# working_memories: dict
 # slice memories of 4 (COMPOSE_NUMBER) or within 0.5s will be grouped as a new instant memory
 # instant memories of 4 (COMPOSE_NUMBER) or within 5s will be grouped as a new short memory
 # short memories of 4 (COMPOSE_NUMBER) will be grouped as a new long memory
-def compose(working_memories):
-    result1 = split_working_memories(working_memories[SLICE_MEMORY], 0.5)
-    working_memories[SLICE_MEMORY] = result1[REST_OF_MEMORIES]
+def compose(seq_time_memories):
+    result1 = split_seq_time_memories(seq_time_memories[SLICE_MEMORY], 0.5)
+    seq_time_memories[SLICE_MEMORY] = result1[REST_OF_MEMORIES]
     for memories in result1[NEW_MEMORIES]:
         child_data = get_arr_from_memories(memories, ID)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: INSTANT_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
         # working_memories[INSTANT_MEMORY].update({new_mem[ID]: new_mem})
-        working_memories[INSTANT_MEMORY].append(new_mem)
+        seq_time_memories[INSTANT_MEMORY].append(new_mem)
 
-    result2 = split_working_memories(working_memories[INSTANT_MEMORY], 5)
-    working_memories[INSTANT_MEMORY] = result2[REST_OF_MEMORIES]
+    result2 = split_seq_time_memories(seq_time_memories[INSTANT_MEMORY], 5)
+    seq_time_memories[INSTANT_MEMORY] = result2[REST_OF_MEMORIES]
     for memories in result2[NEW_MEMORIES]:
         child_data = get_arr_from_memories(memories, ID)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: SHORT_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
         # working_memories[SHORT_MEMORY].update({new_mem[ID]: new_mem})
-        working_memories[SHORT_MEMORY].append(new_mem)
+        seq_time_memories[SHORT_MEMORY].append(new_mem)
 
-    result3 = split_working_memories(working_memories[SHORT_MEMORY])
-    working_memories[SHORT_MEMORY] = result3[REST_OF_MEMORIES]
+    result3 = split_seq_time_memories(seq_time_memories[SHORT_MEMORY])
+    seq_time_memories[SHORT_MEMORY] = result3[REST_OF_MEMORIES]
     for memories in result3[NEW_MEMORIES]:
         child_data = get_arr_from_memories(memories, ID)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
         # working_memories[LONG_MEMORY].update({new_mem[ID]: new_mem})
-        working_memories[LONG_MEMORY].append(new_mem)
+        seq_time_memories[LONG_MEMORY].append(new_mem)
 
-    result4 = split_working_memories(working_memories[LONG_MEMORY])
-    working_memories[LONG_MEMORY] = result4[REST_OF_MEMORIES]
+    result4 = split_seq_time_memories(seq_time_memories[LONG_MEMORY])
+    seq_time_memories[LONG_MEMORY] = result4[REST_OF_MEMORIES]
     for memories in result4[NEW_MEMORIES]:
         child_data = get_arr_from_memories(memories, ID)
         new_mem = db.add_memory({CHILD_MEM: child_data, TYPE: COLLECTION, TYPE_COLLECTION: LONG_MEMORY})
         new_mem.update({HAPPEN_TIME: time.time()})
         # working_memories[LONG_MEMORY].update({new_mem[ID]: new_mem})
-        working_memories[LONG_MEMORY].append(new_mem)
+        seq_time_memories[LONG_MEMORY].append(new_mem)
 
 
 # split memory array to certain groups by number or elapse time
 # new memories can be found in NEW_MEMORIES of result
 # distance of each child memory can be found in CHILD_DAT1 of result
 # rest of memories that are not composed can be found in REST_OF_MEMORIES of result
-def split_working_memories(memories, gap=60):
+def split_seq_time_memories(memories, gap=60):
     count = 0
     last_time = 0
     elapse_time = 0
@@ -324,49 +327,52 @@ def split_working_memories(memories, gap=60):
     return result
 
 
-# new_working_memories: array in dict
-def associate(working_memories, expectations):
-    # most common case, associate long memory
-    if len(working_memories[LONG_MEMORY]) > 0:
-        long_working_memories = working_memories[LONG_MEMORY]
-        related_long_memories = find_max_related_memory_ids(long_working_memories)
+# first priority of association
+# separate her as it has more posibility
+def associate_long_time(active_long_time_memories, expectations):
+    related_long_memories = find_max_related_memories(active_long_time_memories)
+    for mem in related_long_memories:
+        if expectations[mem[ID]] is None:
+            exp = copy.deepcopy(mem)
+            child_ids = exp[CHILD_MEM]
+            long_memory_ids = [x[ID] for x in active_long_time_memories]
+            rest_child = util.comprehension_new(child_ids, long_memory_ids)
+            exp.update({expectation.STATUS: expectation.MATCHING, CHILD_MEM: rest_child})
+
+# second priority of association
+def associate_short_time(seq_time_memories, expectations):
+    if len(seq_time_memories[SHORT_MEMORY]) > 0:
+        short_time_memories = seq_time_memories[SHORT_MEMORY]
+        related_long_memories = find_max_related_memories(short_time_memories)
         for mem in related_long_memories:
             if expectations[mem[ID]] is None:
                 exp = copy.deepcopy(mem)
-                child_ids = exp[CHILD_MEM]
-                long_memory_ids = [x[ID] for x in long_working_memories]
-                rest_child = util.comprehension_new(child_ids, long_memory_ids)
-                exp.update({expectation.STATUS: expectation.MATCHING, CHILD_MEM: rest_child})
-    elif len(working_memories[SHORT_MEMORY]) > 0:
-        short_working_memories = working_memories[SHORT_MEMORY]
-        related_long_memories = find_max_related_memory_ids(short_working_memories)
-        for mem in related_long_memories:
-            if expectations[mem[ID]] is None:
-                exp = copy.deepcopy(mem)
-                exp.update({expectation.STATUS: expectation.MATCHING, expectation.CHILDREN: short_working_memories})
-    elif len(working_memories[INSTANT_MEMORY]) > 0:
-        instant_working_memories = working_memories[INSTANT_MEMORY]
-        related_short_memories = find_max_related_memory_ids(instant_working_memories)
+                exp.update({expectation.STATUS: expectation.MATCHING, expectation.CHILDREN: short_time_memories})
+    elif len(seq_time_memories[INSTANT_MEMORY]) > 0:
+        instant_memories = seq_time_memories[INSTANT_MEMORY]
+        related_short_memories = find_max_related_memories(instant_memories)
         for mem in related_short_memories:
             if expectations[mem[ID]] is None:
                 exp = copy.deepcopy(mem)
                 gaps = mem[CHILD_DAT1]
                 distance = 0
                 now = time.time()
-                for i in range(len(instant_working_memories), len(gaps)):
+                for i in range(len(instant_memories), len(gaps)):
                     distance = distance + gaps[i]
                 start_time = now
                 end_time = now + distance
-                exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time, expectation.END_TIME: end_time,
-                            expectation.CHILDREN: instant_working_memories})
-    elif len(working_memories[SLICE_MEMORY]) > 0:
-        slice_working_memories = working_memories[SLICE_MEMORY]
-        related_instant_memories = find_max_related_memory_ids(slice_working_memories)
+                exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time,
+                            expectation.END_TIME: end_time,
+                            expectation.CHILDREN: instant_memories})
+    elif len(seq_time_memories[SLICE_MEMORY]) > 0:
+        slice_memories = seq_time_memories[SLICE_MEMORY]
+        related_instant_memories = find_max_related_memories(slice_memories)
         for mem in related_instant_memories:
             if expectations[mem[ID]] is None:
                 exp = copy.deepcopy(mem)
                 now = time.time()
                 start_time = now
-                end_time = (len(mem[CHILD_MEM]) - len(slice_working_memories)) * 0.1 + expectation.SLICE_VARIANCE
-                exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time, expectation.END_TIME: end_time,
-                            expectation.CHILDREN: slice_working_memories})
+                end_time = (len(mem[CHILD_MEM]) - len(slice_memories)) * 0.1 + expectation.SLICE_VARIANCE
+                exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time,
+                            expectation.END_TIME: end_time,
+                            expectation.CHILDREN: slice_memories})

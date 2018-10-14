@@ -16,12 +16,18 @@ working_instant_memory_vision = np.zeros(5)  # last 0.5s
 # focus array
 # mouse action array
 
-# status - new, matching, matched
-expectations = {}
-slice_expectations = {}
+# to group them as a new memory by time
+sequential_time_memories = {}
 
-working_memories_dict = {}
-working_memories_arr = []
+# for searching expectations
+active_memories= {}
+
+# tree hierarchy, to provide pattern for matching the
+expectations={}
+
+# used by sensor
+slice_expectations=()
+
 total_matched_counts = [0, 0, 0]
 fifo_list_durations2s = [0] * 2 * PPS
 fifo_list_durations15s = [0] * 15 * PPS
@@ -32,7 +38,7 @@ memory.db = db
 
 try:
     print 'wake up.\n'
-    working_memories_dict = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
+    sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     while 1:
         frames = frames + 1
         start = time.time()
@@ -54,7 +60,7 @@ try:
                 expectation.prepare_expectation(exp, exp[memory.ID], slice_expectations, total_matched_count, less_workload)
                 if exp.status == expectation.MATCHED:
                     exp.update({memory.HAPPEN_TIME: exp.matched_time})
-                    working_memories_dict.push(exp)
+                    sequential_time_memories.push(exp)
                     # new_working_memories.push(exp)
                     expectations.pop(exp[memory.ID])
                 elif exp.status == expectation.EXPIRED:
@@ -65,11 +71,11 @@ try:
             vision.watch(slice_expectations)
             sound.listen(slice_expectations)
 
-        memory.compose(working_memories_dict)
+        memory.compose(sequential_time_memories)
 
 
 
-        memory.associate(working_memories_dict, expectations)
+        memory.associate(sequential_time_memories, expectations)
 
         # if watch result is the same for xxx, trigger a random move, 1/16 d, 0.1-0.5 s
         vision.move()

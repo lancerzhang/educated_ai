@@ -21,8 +21,8 @@ class TestMemory(unittest.TestCase):
         mem2.update({memory.PARENT_MEM: [6, 7, 8]})
         mem3 = memory.BASIC_MEMORY.copy()
         mem3.update({memory.PARENT_MEM: [7, 8, 9]})
-        working_memory = [mem1, mem2, mem3]
-        parent_counts = memory.count_parent_id(working_memory)
+        seq_time_memories = [mem1, mem2, mem3]
+        parent_counts = memory.count_parent_id(seq_time_memories)
         self.assertIsNotNone(parent_counts)
         self.assertEqual(1, parent_counts.get(5))
         self.assertEqual(3, parent_counts.get(7))
@@ -33,8 +33,8 @@ class TestMemory(unittest.TestCase):
         mem1.update({memory.PARENT_MEM: [5, 6, 7]})
         mem3 = memory.BASIC_MEMORY.copy()
         mem3.update({memory.PARENT_MEM: [8, 9]})
-        working_memory = [mem1, mem3]
-        parent_counts = memory.count_parent_id(working_memory)
+        seq_time_memories = [mem1, mem3]
+        parent_counts = memory.count_parent_id(seq_time_memories)
         self.assertIsNotNone(parent_counts)
         self.assertEqual(1, parent_counts.get(5))
         self.assertEqual(1, parent_counts.get(7))
@@ -45,8 +45,8 @@ class TestMemory(unittest.TestCase):
         mem1.update({memory.PARENT_MEM: [5, 6, 7]})
         mem2 = memory.BASIC_MEMORY.copy()
         mem2.update({memory.PARENT_MEM: [8, 9]})
-        working_memory = [mem1, mem2]
-        related_memory_ids = memory.find_max_related_memory_ids(working_memory)
+        seq_time_memories = [mem1, mem2]
+        related_memory_ids = memory.find_max_related_memory_ids(seq_time_memories)
         self.assertEqual(0, len(related_memory_ids))
 
     # test find exp memory, the top one
@@ -57,8 +57,8 @@ class TestMemory(unittest.TestCase):
         mem2.update({memory.PARENT_MEM: [6, 7, 8]})
         mem3 = memory.BASIC_MEMORY.copy()
         mem3.update({memory.PARENT_MEM: [7, 8, 9]})
-        working_memories = [mem1, mem2, mem3]
-        related_memory_ids = memory.find_max_related_memory_ids(working_memories)
+        seq_time_memories = [mem1, mem2, mem3]
+        related_memory_ids = memory.find_max_related_memory_ids(seq_time_memories)
         self.assertEqual(1, len(related_memory_ids))
 
     # test find exp memory, one of the tops
@@ -67,16 +67,16 @@ class TestMemory(unittest.TestCase):
         mem1.update({memory.PARENT_MEM: [5, 6, 7]})
         mem2 = memory.BASIC_MEMORY.copy()
         mem2.update({memory.PARENT_MEM: [5, 6, 7]})
-        working_memories = [mem1, mem2]
-        related_memory_ids = memory.find_max_related_memory_ids(working_memories)
+        seq_time_memories = [mem1, mem2]
+        related_memory_ids = memory.find_max_related_memory_ids(seq_time_memories)
         self.assertEqual(3, len(related_memory_ids))
 
     def test_find_max_related_memory_success(self):
         el1 = self.database.add_memory()
         el2 = self.database.add_memory({memory.PARENT_MEM: [5, 6, el1[memory.ID]]})
         el3 = self.database.add_memory({memory.PARENT_MEM: [6, el1[memory.ID], 8]})
-        working_memories = [el2, el3]
-        memories = memory.find_max_related_memories(working_memories)
+        seq_time_memories = [el2, el3]
+        memories = memory.find_max_related_memories(seq_time_memories)
         self.assertEqual(1, len(memories))
         mem = self.database.get_memory(el2[memory.ID])
         self.assertEqual(el1[memory.ID], mem[memory.PARENT_MEM][0])
@@ -84,8 +84,8 @@ class TestMemory(unittest.TestCase):
     def test_find_max_related_memory_empty(self):
         el1 = self.database.add_memory({memory.PARENT_MEM: [5, 6, 7]})
         el2 = self.database.add_memory({memory.PARENT_MEM: [6, 7, 8]})
-        working_memories = [el1, el2]
-        memories = memory.find_max_related_memories(working_memories)
+        seq_time_memories = [el1, el2]
+        memories = memory.find_max_related_memories(seq_time_memories)
         self.assertEqual(0, len(memories))
 
     def test_find_max_related_memory_limit(self):
@@ -93,8 +93,8 @@ class TestMemory(unittest.TestCase):
         el2 = self.database.add_memory()
         el3 = self.database.add_memory({memory.PARENT_MEM: [5, 6, el1[memory.ID], el2[memory.ID]]})
         el4 = self.database.add_memory({memory.PARENT_MEM: [6, el1[memory.ID], el2[memory.ID], 8]})
-        working_memories = [el3, el4]
-        memories = memory.find_max_related_memories(working_memories, 1)
+        seq_time_memories = [el3, el4]
+        memories = memory.find_max_related_memories(seq_time_memories, 1)
         self.assertEqual(1, len(memories))
 
     def test_find_target0(self):

@@ -17,12 +17,12 @@ class TestUtil(unittest.TestCase):
         working_memories_arr = {}
         working_memories_arr.update({el1[memory.ID]:el1})
         working_memories_arr.update({el2[memory.ID]:el2})
-        first=True
-        first_time=0
-        for key,value in working_memories_arr.items():
-            if first:
-                first_time=value[memory.HAPPEN_TIME]
-        self.assertEqual(1,first_time)
+        asc_list=[key for key,value in sorted(working_memories_arr.items(),key=lambda d: d[1][memory.HAPPEN_TIME],reverse=False)]
+        happen_time=working_memories_arr.get(asc_list[0])[memory.HAPPEN_TIME]
+        self.assertEqual(1,happen_time)
+        reverse_list=[key for key,value in sorted(working_memories_arr.items(),key=lambda d: d[1][memory.HAPPEN_TIME],reverse=True)]
+        happen_time=working_memories_arr.get(reverse_list[0])[memory.HAPPEN_TIME]
+        self.assertEqual(2, happen_time)
 
 
 

@@ -15,7 +15,7 @@ class TestMemory(unittest.TestCase):
 
     def test_associate_slice_empty(self):
         memories = []
-        result = memory.split_working_memories(memories)
+        result = memory.split_seq_time_memories(memories)
         self.assertEqual(0, len(result[memory.NEW_MEMORIES]))
         self.assertEqual(0, len(result[memory.REST_OF_MEMORIES]))
 
