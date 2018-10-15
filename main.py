@@ -16,17 +16,27 @@ working_instant_memory_vision = np.zeros(5)  # last 0.5s
 # focus array
 # mouse action array
 
-# to group them as a new memory by time
+# to group them as a new memory by time sequence
 sequential_time_memories = {}
 
-# for searching expectations
-active_memories= {}
+# matched memory tree
+active_memory_trees = {}
 
-# tree hierarchy, to provide pattern for matching the
-expectations={}
+# reference of active_memory_trees, for cleaning up active memory, associate expectation
+# not full tree, just limit of number (11? similar to working memory?)
+# matched / elder / child memory will be higher priority to clean up
+# pending / newer / parent / high reward memory will be lower priority to clean up
+# this is most important for making decision (what's next expectation)
+# pure memory recall (when free) will impact this, which it is "thinking"
+# interruption from environment can impact this, which it is "disturb"
+active_memory_arr = []
 
-# used by sensor
-slice_expectations=()
+# to find out slice expectations
+# compare to active memory tree, this is not happen
+expectation_trees = {}
+
+# array, used by sensor
+slice_expectations = []
 
 total_matched_counts = [0, 0, 0]
 fifo_list_durations2s = [0] * 2 * PPS
@@ -56,15 +66,15 @@ try:
             sound.hear(slice_expectations)
             total_matched_count = 0
             # loop  expectations, find out slice_expectations
-            for exp in expectations:
+            for exp in expectation_trees:
                 expectation.prepare_expectation(exp, exp[memory.ID], slice_expectations, total_matched_count, less_workload)
                 if exp.status == expectation.MATCHED:
                     exp.update({memory.HAPPEN_TIME: exp.matched_time})
                     sequential_time_memories.push(exp)
                     # new_working_memories.push(exp)
-                    expectations.pop(exp[memory.ID])
+                    expectation_trees.pop(exp[memory.ID])
                 elif exp.status == expectation.EXPIRED:
-                    expectations.pop(exp[memory.ID])
+                    expectation_trees.pop(exp[memory.ID])
             total_matched_counts.push(total_matched_count)
 
         if len(slice_expectations) > 0:
@@ -73,9 +83,7 @@ try:
 
         memory.compose(sequential_time_memories)
 
-
-
-        memory.associate(sequential_time_memories, expectations)
+        memory.associate(sequential_time_memories, expectation_trees)
 
         # if watch result is the same for xxx, trigger a random move, 1/16 d, 0.1-0.5 s
         vision.move()
