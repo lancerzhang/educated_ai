@@ -13,7 +13,6 @@ sequential_time_memories = {}
 
 working_memories = []
 
-
 workloads = {}
 
 frames = 0
@@ -91,7 +90,7 @@ try:
         update_workloads(duration)
 
         if workloads['busy']['M']:
-            memory.cleanup_working_memories(working_memories)
+            working_memories = memory.cleanup_working_memories(working_memories)
 
 except KeyboardInterrupt:
     print("quiting...")

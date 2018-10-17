@@ -45,6 +45,7 @@ START_TIME = 'stt'
 END_TIME = 'edt'
 DURATION_INSTANT = 0.5
 DURATION_SHORT = 3
+DURATION_LONG = 360
 
 #                                                                                                                                                                                  collections
 #                                                                                                                                        long                                   long            ...       long
@@ -342,39 +343,71 @@ def split_seq_time_memories(memories, gap=60):
     return result
 
 
-# append new memories to old memories if it's not exist
-def append_memories(old_memories, new_memories):
+def convert_to_expectation(mem):
+    exp = {STATUS: MATCHING, START_TIME: time.time()}
+    if mem[TYPE_COLLECTION] is INSTANT_MEMORY:
+        exp.update({END_TIME: time.time() + DURATION_INSTANT})
+    elif mem[TYPE_COLLECTION] is SHORT_MEMORY:
+        exp.update({END_TIME: time.time() + DURATION_SHORT})
+    elif mem[TYPE_COLLECTION] is LONG_MEMORY:
+        exp.update({END_TIME: time.time() + DURATION_LONG})
+    mem.update(exp)
+
+
+# append new memories to memories list if it's not exist
+def append_memories(memories, new_memories):
+    ids = [x[ID] for x in memories]
     for nmem in new_memories:
-        identical = False
-        for omem in old_memories:
-            if omem[ID] == nmem[ID]:
-                identical = True
-                break
-        if not identical:
-            exp = {STATUS: MATCHING}
-            if nmem[TYPE_COLLECTION] == INSTANT_MEMORY:
-                exp.update({START_TIME: time.time(), END_TIME: time.time() + DURATION_INSTANT})
-            elif nmem[TYPE_COLLECTION] == SHORT_MEMORY:
-                exp.update({START_TIME: time.time(), END_TIME: time.time() + DURATION_SHORT})
-            omem.update(exp)
-            old_memories.append(omem)
+        if nmem[ID] not in ids:
+            convert_to_expectation(nmem)
+            memories.append(nmem)
 
 
-def associate(working_memories):
-    matched_memories = [mem for mem in working_memories, lambda x: x[expectation.STATUS] == expectation.MATCHED]
-    related_memories = find_max_related_memories(matched_memories)
-    append_memories(working_memories, related_memories)
+def limit_sorted_working_memories(working_memories):
     sorted_working_memories = sorted(working_memories, key=lambda x: (x[RECALL], x[REWARD]))
     limit_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
     return limit_working_memories
 
 
+def associate(working_memories):
+    matched_memories = [mem for mem in working_memories, lambda x: x[STATUS] is MATCHED]
+    related_memories = find_max_related_memories(matched_memories)
+    append_memories(working_memories, related_memories)
+    return limit_sorted_working_memories(working_memories)
+
+
 def prepare_expectation(working_memories):
-    return
+    working_memories_ids = [x[ID] for x in working_memories]
+    pending_memories = [mem for mem in working_memories, lambda x: x[STATUS] is MATCHING]
+    for pmem in pending_memories:
+        live_children = get_live_memories(pmem, CHILD_MEM)
+        if pmem[TYPE_COLLECTION] is INSTANT_MEMORY:
+            for lmem in live_children:
+                if lmem not in working_memories_ids:
+                    convert_to_expectation(lmem)
+                    working_memories.append(lmem)
+        elif pmem[TYPE_COLLECTION] is LONG_MEMORY or pmem[TYPE_COLLECTION] is SHORT_MEMORY:
+            first = True
+            for lmem in live_children:
+                if lmem[ID] not in working_memories_ids and first:
+                    convert_to_expectation(lmem)
+                    working_memories.append(lmem)
+                    first = False
 
 
 def check_expectation(working_memories):
-    return
+    pending_memories = [mem for mem in working_memories, lambda x: x[STATUS] is MATCHING]
+    for pmem in pending_memories:
+        child_ids = pmem[CHILD_MEM]
+        if time.time() > pmem[END_TIME]:
+            pmem[STATUS] = EXPIRED
+            continue
+        all_matched = True
+        for mem in working_memories:
+            if mem[ID] in child_ids and mem[STATUS] is not MATCHED:
+                all_matched = False
+        if all_matched:
+            pmem[STATUS] = MATCHED
 
 
 # matched / elder / child memory will be higher priority to clean up
@@ -383,4 +416,5 @@ def check_expectation(working_memories):
 # pure memory recall (when free) will impact this, which it is "thinking"
 # interruption from environment can impact this, which it is "disturb"
 def cleanup_working_memories(working_memories):
-    return
+    valid_working_memories = [mem for mem in working_memories, lambda x: x[STATUS] is not EXPIRED]
+    return limit_sorted_working_memories(valid_working_memories)
