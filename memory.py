@@ -1,4 +1,5 @@
 import time, random, util, copy, expectation
+import numpy as np
 
 ID = 'id'
 STRENGTH = 'str'
@@ -33,6 +34,18 @@ LONG_MEMORY = 'ltm'  # long time memory
 CHILD_MEM = 'cmy'
 # additional data
 CHILD_DAT1 = 'cd1'
+
+# for expectation
+STATUS = 'sts'
+NEW = 'new'
+MATCHING = 'mcg'
+MATCHED = 'mcd'
+EXPIRED = 'xpd'
+START_TIME = 'stt'
+END_TIME = 'edt'
+DURATION_INSTANT = 0.5
+DURATION_SHORT = 3
+
 #                                                                                                                                                                                  collections
 #                                                                                                                                        long                                   long            ...       long
 #                                                                                 short                                               short       ...       short
@@ -68,6 +81,8 @@ TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 
             48003823, 55896067, 65085866]
 
 forget_memory = True
+
+threshold_of_working_memories = 20
 
 
 # longer time elapsed, easier to forget
@@ -108,9 +123,9 @@ def refresh(mem, recall=False):
 
 # TODO, need to check if parent memory is valid or not
 # summarize all parent memories in a list
-def count_parent_id(seq_time_memories):
+def count_parent_id(memories):
     parent_list = []
-    for mem in seq_time_memories:
+    for mem in memories:
         parent_list += mem[PARENT_MEM]
     return util.list_element_count(parent_list)
 
@@ -118,8 +133,8 @@ def count_parent_id(seq_time_memories):
 # find out max occurrence in parent memories of all working memories
 # if all occur once, return [] (not found)
 # only search when working memories >2
-def find_max_related_memory_ids(seq_time_memories):
-    parent_counts = count_parent_id(seq_time_memories)
+def find_max_related_memory_ids(memories):
+    parent_counts = count_parent_id(memories)
     max_value = 0
     max_ids = []
     max_count = 0
@@ -136,8 +151,8 @@ def find_max_related_memory_ids(seq_time_memories):
     return max_ids
 
 
-def find_max_related_memories(seq_time_memories, limit=4):
-    parent_counts = count_parent_id(seq_time_memories)
+def find_max_related_memories(memories, limit=4):
+    parent_counts = count_parent_id(memories)
     related_memories = []
     count = 0
     tobe_remove_list_ids = []
@@ -151,7 +166,7 @@ def find_max_related_memories(seq_time_memories, limit=4):
         if count >= limit:
             break
     if len(tobe_remove_list_ids) > 0:
-        for mem in seq_time_memories:
+        for mem in memories:
             remove_dead_memories(PARENT_MEM, mem[PARENT_MEM], tobe_remove_list_ids, mem[ID])
     return related_memories
 
@@ -327,52 +342,45 @@ def split_seq_time_memories(memories, gap=60):
     return result
 
 
-# first priority of association
-# separate her as it has more posibility
-def associate_long_time(active_long_time_memories, expectations):
-    related_long_memories = find_max_related_memories(active_long_time_memories)
-    for mem in related_long_memories:
-        if expectations[mem[ID]] is None:
-            exp = copy.deepcopy(mem)
-            child_ids = exp[CHILD_MEM]
-            long_memory_ids = [x[ID] for x in active_long_time_memories]
-            rest_child = util.comprehension_new(child_ids, long_memory_ids)
-            exp.update({expectation.STATUS: expectation.MATCHING, CHILD_MEM: rest_child})
+# append new memories to old memories if it's not exist
+def append_memories(old_memories, new_memories):
+    for nmem in new_memories:
+        identical = False
+        for omem in old_memories:
+            if omem[ID] == nmem[ID]:
+                identical = True
+                break
+        if not identical:
+            exp = {STATUS: MATCHING}
+            if nmem[TYPE_COLLECTION] == INSTANT_MEMORY:
+                exp.update({START_TIME: time.time(), END_TIME: time.time() + DURATION_INSTANT})
+            elif nmem[TYPE_COLLECTION] == SHORT_MEMORY:
+                exp.update({START_TIME: time.time(), END_TIME: time.time() + DURATION_SHORT})
+            omem.update(exp)
+            old_memories.append(omem)
 
-# second priority of association
-def associate_short_time(seq_time_memories, expectations):
-    if len(seq_time_memories[SHORT_MEMORY]) > 0:
-        short_time_memories = seq_time_memories[SHORT_MEMORY]
-        related_long_memories = find_max_related_memories(short_time_memories)
-        for mem in related_long_memories:
-            if expectations[mem[ID]] is None:
-                exp = copy.deepcopy(mem)
-                exp.update({expectation.STATUS: expectation.MATCHING, expectation.CHILDREN: short_time_memories})
-    elif len(seq_time_memories[INSTANT_MEMORY]) > 0:
-        instant_memories = seq_time_memories[INSTANT_MEMORY]
-        related_short_memories = find_max_related_memories(instant_memories)
-        for mem in related_short_memories:
-            if expectations[mem[ID]] is None:
-                exp = copy.deepcopy(mem)
-                gaps = mem[CHILD_DAT1]
-                distance = 0
-                now = time.time()
-                for i in range(len(instant_memories), len(gaps)):
-                    distance = distance + gaps[i]
-                start_time = now
-                end_time = now + distance
-                exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time,
-                            expectation.END_TIME: end_time,
-                            expectation.CHILDREN: instant_memories})
-    elif len(seq_time_memories[SLICE_MEMORY]) > 0:
-        slice_memories = seq_time_memories[SLICE_MEMORY]
-        related_instant_memories = find_max_related_memories(slice_memories)
-        for mem in related_instant_memories:
-            if expectations[mem[ID]] is None:
-                exp = copy.deepcopy(mem)
-                now = time.time()
-                start_time = now
-                end_time = (len(mem[CHILD_MEM]) - len(slice_memories)) * 0.1 + expectation.SLICE_VARIANCE
-                exp.update({expectation.STATUS: expectation.MATCHING, expectation.START_TIME: start_time,
-                            expectation.END_TIME: end_time,
-                            expectation.CHILDREN: slice_memories})
+
+def associate(working_memories):
+    matched_memories = [mem for mem in working_memories, lambda x: x[expectation.STATUS] == expectation.MATCHED]
+    related_memories = find_max_related_memories(matched_memories)
+    append_memories(working_memories, related_memories)
+    sorted_working_memories = sorted(working_memories, key=lambda x: (x[RECALL], x[REWARD]))
+    limit_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
+    return limit_working_memories
+
+
+def prepare_expectation(working_memories):
+    return
+
+
+def check_expectation(working_memories):
+    return
+
+
+# matched / elder / child memory will be higher priority to clean up
+# pending / newer / parent / high reward memory will be lower priority to clean up
+# this is most important for making decision (what's next expectation)
+# pure memory recall (when free) will impact this, which it is "thinking"
+# interruption from environment can impact this, which it is "disturb"
+def cleanup_working_memories(working_memories):
+    return
