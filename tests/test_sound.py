@@ -17,17 +17,6 @@ class TestSound(unittest.TestCase):
     #     sound.phases.append(y)
     #     sound.impress()
 
-    def test_get_strongest_energy_segment1(self):
-        data = np.array([1, 2, 3, 4])
-        self.assertEqual(7, sound.get_max_energy(data))
-
-    def test_get_strongest_energy_segment2(self):
-        data = np.array([1, 2, 4, 3])
-        self.assertEqual(9, sound.get_max_energy(data))
-
-    def test_get_strongest_energy_segment3(self):
-        data = np.array([3, 2, 1])
-        self.assertEqual(5, sound.get_max_energy(data))
 
     def test_mix_energy(self):
         energy1 = 200
@@ -52,7 +41,7 @@ class TestSound(unittest.TestCase):
         mem1 = self.database.add_sound({sound.FEATURE: sound.FEATURE_MFCC, sound.INDEX: 0, sound.ENERGY: 200})
         current_data = np.array([-300, 20, 10])
         last_data = np.array([-200, 20, 10])
-        sound.process_frame_mfcc_feature(frame_working_memories, current_data, last_data)
+        sound.process_frame(frame_working_memories, current_data, last_data)
         self.assertEqual(1, len(frame_working_memories))
 
     def test_process_frame_feature_found(self):
@@ -60,7 +49,7 @@ class TestSound(unittest.TestCase):
         mem1 = self.database.add_sound({sound.FEATURE: sound.FEATURE_MFCC, sound.INDEX: 0, sound.ENERGY: -200})
         current_data = np.array([-210, 20, 10])
         last_data = np.array([-200, 15, 5])
-        sound.process_frame_mfcc_feature(frame_working_memories, current_data, last_data)
+        sound.process_frame(frame_working_memories, current_data, last_data)
         self.assertEqual(1, len(frame_working_memories))
         result2 = self.database.get_memory(mem1[memory.ID], False)
         self.assertEqual(-205, result2[sound.ENERGY])

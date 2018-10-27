@@ -14,41 +14,41 @@ class TestDB(unittest.TestCase):
     def test_get_memory(self):
         id = self.database._add_memory()
         record = self.database._get_memory(id)
-        self.assertEqual(record[memory.TYPE], memory.COLLECTION)
+        self.assertEqual(record[memory.FEATURE_TYPE], memory.COLLECTION)
 
     def test_add_memory(self):
         self.database._add_memory()
         query = Query()
-        record = self.database.table.search(query[memory.TYPE] == memory.COLLECTION)[0]
-        self.assertEqual(record[memory.TYPE], memory.COLLECTION)
+        record = self.database.table.search(query[memory.FEATURE_TYPE] == memory.COLLECTION)[0]
+        self.assertEqual(record[memory.FEATURE_TYPE], memory.COLLECTION)
         self.assertGreater(record[memory.LAST_RECALL], 0)
 
     def test_add_vision(self):
         self.database._add_vision()
         query = Query()
-        record = self.database.table.search(query[memory.TYPE] == memory.VISION)[0]
-        self.assertEqual(record[memory.TYPE], memory.VISION)
+        record = self.database.table.search(query[memory.FEATURE_TYPE] == memory.VISION)[0]
+        self.assertEqual(record[memory.FEATURE_TYPE], memory.VISION)
         self.assertGreater(record[memory.LAST_RECALL], 0)
 
     def test_add_sound(self):
         self.database._add_sound()
         query = Query()
-        record = self.database.table.search(query[memory.TYPE] == memory.SOUND)[0]
-        self.assertEqual(record[memory.TYPE], memory.SOUND)
+        record = self.database.table.search(query[memory.FEATURE_TYPE] == memory.SOUND)[0]
+        self.assertEqual(record[memory.FEATURE_TYPE], memory.SOUND)
         self.assertGreater(record[memory.LAST_RECALL], 0)
 
     def test_add_focus(self):
         self.database._add_focus()
         query = Query()
-        record = self.database.table.search(query[memory.TYPE] == memory.FOCUS)[0]
-        self.assertEqual(record[memory.TYPE], memory.FOCUS)
+        record = self.database.table.search(query[memory.FEATURE_TYPE] == memory.FOCUS)[0]
+        self.assertEqual(record[memory.FEATURE_TYPE], memory.FOCUS)
         self.assertGreater(record[memory.LAST_RECALL], 0)
 
     def test_add_speak(self):
         self.database._add_speak()
         query = Query()
-        record = self.database.table.search(query[memory.TYPE] == memory.SPEAK)[0]
-        self.assertEqual(record[memory.TYPE], memory.SPEAK)
+        record = self.database.table.search(query[memory.FEATURE_TYPE] == memory.SPEAK)[0]
+        self.assertEqual(record[memory.FEATURE_TYPE], memory.SPEAK)
         self.assertGreater(record[memory.LAST_RECALL], 0)
 
     def test_search_sound(self):

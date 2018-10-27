@@ -26,7 +26,7 @@ class Database:
     def get_memory(self, id, recall=False):
         mem = self._get_memory(id)
         if mem is not None:
-            memory.refresh(mem, recall)
+            memory.refresh(mem, recall, True)
             if mem[memory.STRENGTH] == -1:
                 return None
         return mem
@@ -45,7 +45,7 @@ class Database:
         cleaned = 0
         tobe_removed = []
         for record in records:
-            memory.refresh(record, recall)
+            memory.refresh(record, recall, True)
             if record[memory.STRENGTH] == -1:
                 cleaned = cleaned + 1
                 self.table.remove(Query()[memory.ID] == record[memory.ID])
@@ -78,8 +78,6 @@ class Database:
     # it return new created record id, normally not use it
     def _add_memory(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
-        # use children memories to match the experience
-        new_memory.update({memory.TYPE: memory.COLLECTION})
         new_memory.update(addition)
         return self._add_record(new_memory)
 
@@ -90,7 +88,7 @@ class Database:
     # it return new created record id, normally not use it
     def _add_vision(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.TYPE: memory.VISION, })
+        new_memory.update({memory.FEATURE_TYPE: memory.VISION, })
         new_memory.update(addition)
         return self._add_record(new_memory)
 
@@ -101,7 +99,7 @@ class Database:
     # it return new created record id, normally not use it
     def _add_sound(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.TYPE: memory.SOUND})
+        new_memory.update({memory.FEATURE_TYPE: memory.SOUND})
         new_memory.update(addition)
         return self._add_record(new_memory)
 
@@ -112,14 +110,14 @@ class Database:
     # it return new created record id, normally not use it
     def _add_focus(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.TYPE: memory.FOCUS, 'angle': 10, 'speed': 10, 'duration': 10})
+        new_memory.update({memory.FEATURE_TYPE: memory.FOCUS, 'angle': 10, 'speed': 10, 'duration': 10})
         new_memory.update(addition)
         return self._add_record(new_memory)
 
     # it return new created record id, normally not use it
     def _add_speak(self, addition={}):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.TYPE: memory.SPEAK, 'word': 'yes'})
+        new_memory.update({memory.FEATURE_TYPE: memory.SPEAK, 'word': 'yes'})
         new_memory.update(addition)
         return self._add_record(new_memory)
 
@@ -127,13 +125,13 @@ class Database:
     # return [] if not found
     def _search_sound(self, feature, name, min, max):
         query = Query()
-        records = self.table.search((query[memory.TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[name].test(util.between, min, max)))
+        records = self.table.search((query[memory.FEATURE_TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[name].test(util.between, min, max)))
         return records
 
     def _search_sound2(self, feature, index_value, name, min, max):
         query = Query()
         records = self.table.search(
-            (query[memory.TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[sound.INDEX] == index_value) & (query[name].test(util.between, min, max)))
+            (query[memory.FEATURE_TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[sound.INDEX] == index_value) & (query[name].test(util.between, min, max)))
         return records
 
     # TODO, need to remove all references?

@@ -5,9 +5,9 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import librosa, math, audioop, time, pyaudio, collections, util, memory, sys
-import librosa.display as dsp
+import librosa, math, time, pyaudio, collections, util, memory, copy, cv2, status
 import numpy as np
+from scipy import ndimage
 
 start_thread = True
 CHUNK = 1024
@@ -15,17 +15,13 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 SAMPLE_RATE = 44100
 SAMPLE_WIDTH = 2  # 16-bit
-# different mic have different energy level, need to test, for Mac, use 300, PC use 1500
-ENERGY_THRESHOLD = 250  # minimum audio energy to consider for recording
-BUFFER_THRESHOLD = 0.5  # second of buffer
+DEFAULT_PHASE_DURATION = 0.1  # second of buffer
 
 MEL_NUMBER = 128
 MFCC_NUMBER = 13
 
 phases = collections.deque()  # phases queue
 MAX_PHASES = 5  # max phases storage
-REST_SECONDS = 0.01  # take some rest if too many phases are not handled
-FRAME_SECOND = 0.1  # process phase per frame, each frame is 0.1 seconds
 
 db = None
 FEATURE = 'ftr'
@@ -33,13 +29,19 @@ INDEX = 'nps'
 ENERGY = 'ngy'
 FEATURE_MAX_ENERGY = 1
 FEATURE_MFCC = 2
-SIMILARITY = 0.1
-MFCC_GAP_THRESHOLD = 0.03
-last_mfcc = None
+
+INPUT_FQC_SIZE = 5
+SIMILARITY_THRESHOLD = 0.9
+FEATURE_MAP_SIZE = 3
+KERNEL = 'kernel'
+FEATURE = 'feature'
+SIMILAR = 'similar'
+FEATURE_DATA = {KERNEL: [], FEATURE: [], SIMILAR: False}
+v_filter = {'123': {'filter': [], 'used_count': 0, 'last_used_time': 0, 'memories': {}}}
 
 
-def listen():
-    print 'start to listen.\n'
+def receive(phase_duration=DEFAULT_PHASE_DURATION):
+    print 'start to receive data.\n'
     try:
         audio = pyaudio.PyAudio()
         stream = audio.open(format=FORMAT,
@@ -48,122 +50,113 @@ def listen():
                             input=True,
                             frames_per_buffer=CHUNK)
         while start_thread:
-
-            # take some rest if too many phases are not handled
-            if len(phases) > MAX_PHASES:
-                time.sleep(REST_SECONDS)
-                break
-
             frame_count = 0
             frame_data = []
-            seconds_per_buffer = float(CHUNK) / SAMPLE_RATE
-            buffer_count = int(math.ceil(BUFFER_THRESHOLD / seconds_per_buffer))
-
-            # do nothing until frame energy reach threshold
-            while True:
-                buffer = stream.read(CHUNK)
-                if len(buffer) == 0: break  # reached end of the stream
-                # detect whether speaking has started on audio input
-                energy = audioop.rms(buffer, SAMPLE_WIDTH)  # energy of the audio signal
-                if energy > ENERGY_THRESHOLD:
-                    # save the frame
-                    np_buffer = np.fromstring(buffer, dtype=np.int16)
-                    normal_buffer = util.normalizeAudioData(np_buffer)
-                    frame_data.append(normal_buffer)
-                    frame_count += 1
-                    break
+            buffer_duration = float(CHUNK) / SAMPLE_RATE
+            buffer_count_of_phase = int(math.ceil(phase_duration / buffer_duration))
 
             # start to record
             while True:
                 buffer = stream.read(CHUNK)
                 if len(buffer) == 0: break  # reached end of the stream
-                energy = audioop.rms(buffer, SAMPLE_WIDTH)  # energy of the audio signal
                 np_buffer = np.fromstring(buffer, dtype=np.int16)
                 normal_buffer = util.normalizeAudioData(np_buffer)
                 frame_data.append(normal_buffer)
                 frame_count += 1
-                if frame_count >= buffer_count or energy < ENERGY_THRESHOLD:
+                if frame_count >= buffer_count_of_phase:
                     break
 
-            # reach buffer threshold, start to process
-            npArr = np.array(frame_data)
-            y = npArr.flatten()
-            phases.append(y)
+            # reach buffer threshold, save it as phase
+            if len(phases) > MAX_PHASES:
+                # ignore non-process phase
+                phases.popleft()
+            phases.append(frame_data)
 
     except KeyboardInterrupt:
         pass
 
 
-def mix_energy(energy, memories):
-    for mem in memories:
-        db.update_memory({ENERGY: (energy + mem[ENERGY]) / 2}, mem[memory.ID])
+def match(slice_memories):
+    distinct_feature_memories = []
+    slice_memory_children = {}
+    memory.get_live_children(slice_memories, distinct_feature_memories, slice_memory_children)
+    for fmm in distinct_feature_memories:
+        listen(fmm)
+    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
+    return matched_feature_memories
 
 
-# given 2 mfcc arrays, find out shift, look up them in memories
-def process_frame_mfcc_feature(frame_working_memories, current_data, last_data):
-    mfcc_gaps = current_data - last_data
-    mfcc_gaps_abs = abs(mfcc_gaps)
-    max_index = np.argmax(mfcc_gaps_abs)
-    max_index = max_index.astype(np.int)
-    sim_result = util.calculate_similarity(current_data[max_index], SIMILARITY)
-    features = db.use_sound2(FEATURE_MFCC, max_index, ENERGY, sim_result[0], sim_result[1])
-    if len(features) == 0:
-        # if no, add one to memory
-        mem = db.add_sound({FEATURE: FEATURE_MFCC, INDEX: max_index, ENERGY: current_data[0]})
-        frame_working_memories.append(mem)
+def process(working_memories, work_status, sequential_time_memories):
+    slice_memories = [mem for mem in working_memories if mem[memory.MEMORY_DURATION] is memory.SLICE_MEMORY and mem[memory.FEATURE_TYPE] is memory.SOUND]
+
+    matched_feature_memories = match(slice_memories)
+
+    new_feature_memory = hear()
+    if len(matched_feature_memories) > 0:
+        matched_feature_memories.append(new_feature_memory)
+        new_slice_memory = memory.add_slice_memory(matched_feature_memories)
+        sequential_time_memories[memory.SLICE_MEMORY].append(new_slice_memory)
     else:
-        mix_energy(current_data[max_index], features)
-        frame_working_memories += features
+        new_slice_memories = memory.get_live_memories(new_feature_memory, memory.PARENT_MEM)
+        new_matched_feature_memories = match(new_slice_memories)
+        new_matched_feature_memories.append(new_feature_memory)
+        new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
+        sequential_time_memories[memory.SLICE_MEMORY].append(new_slice_memory)
 
 
-def impress(working_memory_sound):
+def listen(fmm):
+    kernel = fmm[memory.KERNEL]
+    feature = fmm[memory.FEATURE]
+    fmm.update({memory.STATUS: memory.MATCHING})
+    mfcc_map = get_mfcc_map()
+    data = filter(mfcc_map, kernel, feature)
+    if data[SIMILAR]:
+        # recall memory and update feature to average
+        memory.recall_memory({FEATURE: data[FEATURE]})
+        fmm[memory.STATUS] = memory.MATCHED
+    return data[SIMILAR]
+
+
+# match the experience sound sense
+def filter(data, kernel, feature=None):
+    feature_data = copy.deepcopy(FEATURE_DATA)
+    feature_data[KERNEL] = kernel
+    cov = cv2.filter2D(data, -1, kernel)
+    new_feature = ndimage.maximum_filter(cov, size=FEATURE_MAP_SIZE)
+    if feature is None:
+        feature_data[FEATURE] = new_feature
+    else:
+        similarities = abs(new_feature - feature) / feature
+        similarity = util.avg(similarities)
+        feature_data[SIMILAR] = True
+        if similarity > SIMILARITY_THRESHOLD:
+            new_feature = (feature + new_feature) / 2
+        feature_data[FEATURE] = new_feature
+    return feature_data
+
+# get a frequent use kernel or a random kernel by certain possibility
+def get_kernel():
+    return
+
+def hear():
+    kernel = get_kernel()
+    data = filter(img, kernel)
+    mem = search_memory(kernel, data[FEATURE])
+    if mem is None:
+        mem = db.add_vision()
+    return mem
+
+def get_mfcc_map():
     if len(phases) == 0:
-        return
-    phase = phases.popleft()
-    # process phase per frame
-    frames = []
-    phase_seconds = float(phase.size) / SAMPLE_RATE
-    number_of_frames = int(phase_seconds / FRAME_SECOND)
-    if number_of_frames <= 1:
-        frames.append(phase)
-    else:
-        frames = np.array_split(phase, number_of_frames)
-    # start to process frames
+        return None
+    mfcc_map = []
+    frames = phases.popleft()
     for frame in frames:
-        mfccs = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=MFCC_NUMBER)
-        mfcc_data = np.average(mfccs, axis=1)
-        global last_mfcc
-        if last_mfcc is None:
-            last_mfcc = mfcc_data
-            continue
-        frame_working_memories = []
-        process_frame_mfcc_feature(frame_working_memories, mfcc_data, last_mfcc)
-
-        # see if we have such feature in memory
-        # features2 = db.use_sound(FEATURE_MFCC, ENERGY, max_energy * (1 - SIMILARITY), max_index * (1 - max_energy))
-        # if len(features2) == 0:
-        #     # if no, add one to memory
-        #     mem = db.add_sound({FEATURE: FEATURE_MFCC, ENERGY: max_energy})
-        #     frame_working_memories.append(mem)
-        # now group the (new or found) feature memories
-        # frame_working_memories = features1 + features2
-        # frame_working_memories = features1
-        # try to find out parent memory, emphasize it
-        common_parents = []
-        if len(frame_working_memories) > 1:
-            common_parents = memory.find_common_parents(frame_working_memories)
-        # if still have feature memory, group them all to a new parent memory
-        temp_memories = frame_working_memories + common_parents
-        if len(temp_memories) > 1:
-            db.add_parent(temp_memories)
+        mfcc = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=MFCC_NUMBER)
+        mfcc_map.append(mfcc)
+    return mfcc_map
 
 
-# get strongest energy and its left&right energy
-def get_max_energy(data):
-    energy = data.max()
-    max_index = np.argmax(data)
-    if max_index > 0:
-        energy += data[max_index - 1]
-    if max_index < len(data) - 1:
-        energy += data[max_index + 1]
-    return energy
+# crop a fix size region from source, other value is 0
+def crop():
+    return

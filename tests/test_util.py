@@ -10,71 +10,77 @@ class TestUtil(unittest.TestCase):
     def test_common_elements(self):
         list1 = [1, 2, 3, 4]
         list2 = [4, 5, 6, 7]
-        self.assertEqual([4], util.common_elements(list1, list2))
+        self.assertEqual([4], util.list_common(list1, list2))
 
     def test_common_elements2(self):
         list1 = [1, 52, 3, 4, 40, 99]
         list2 = [8, 5, 3, 4, 65, 7, 0, 87]
-        self.assertEqual([3, 4], util.common_elements(list1, list2))
+        self.assertEqual([3, 4], util.list_common(list1, list2))
 
     def test_common_elements(self):
         list1 = [1, 2, 3, 4]
         list2 = [5, 6, 7]
-        self.assertEqual([], util.common_elements(list1, list2))
+        self.assertEqual([], util.list_common(list1, list2))
 
-    def test_comprehension_new(self):
+    def list_comprehension_new(self):
         list1 = [1, 2, 3, 4]
         list2 = [2, 3, 4]
-        list3 = util.comprehension_new(list1, list2)
+        list3 = util.list_comprehension_new(list1, list2)
         self.assertEqual([1], list3)
 
-    def test_comprehension_new2(self):
+    def list_comprehension_new2(self):
         list1 = [1, 2, 3, 4]
         list2 = [1, 2, 3]
-        list3 = util.comprehension_new(list1, list2)
+        list3 = util.list_comprehension_new(list1, list2)
         self.assertEqual([4], list3)
 
-    def test_comprehension_new3(self):
+    def list_comprehension_new3(self):
         list1 = [1, 2]
         list2 = [1, 2]
-        list3 = util.comprehension_new(list1, list2)
+        list3 = util.list_comprehension_new(list1, list2)
         self.assertEqual([], list3)
 
-    def test_comprehension_new4(self):
+    def list_comprehension_new4(self):
         list1 = [1, 2]
         list2 = [3, 4]
-        list3 = util.comprehension_new(list1, list2)
+        list3 = util.list_comprehension_new(list1, list2)
         self.assertEqual([1, 2], list3)
 
-    def test_comprehension(self):
+    def test_list_comprehension_existing(self):
         list1 = [1, 2, 3, 4]
         list2 = [2, 3, 4]
-        util.comprehension(list1, list2)
+        util.list_comprehension_existing(list1, list2)
         self.assertEqual([1], list1)
 
-    def test_comprehension2(self):
+    def test_list_comprehension_existing2(self):
         list1 = [1, 2, 3, 4]
         list2 = [1, 2, 3]
-        util.comprehension(list1, list2)
+        util.list_comprehension_existing(list1, list2)
         self.assertEqual([4], list1)
 
-    def test_comprehension3(self):
+    def test_list_comprehension_existing3(self):
         list1 = [1, 2, 3, 4]
         list2 = [2, 3]
-        util.comprehension(list1, list2)
+        util.list_comprehension_existing(list1, list2)
         self.assertEqual([1, 4], list1)
 
-    def test_comprehension4(self):
+    def test_list_comprehension_existing4(self):
         list1 = [1, 2]
         list2 = [1, 2]
-        util.comprehension(list1, list2)
+        util.list_comprehension_existing(list1, list2)
         self.assertEqual([], list1)
 
-    def test_comprehension5(self):
+    def test_list_comprehension_existing5(self):
         list1 = [1, 2]
         list2 = [3, 4]
-        util.comprehension(list1, list2)
+        util.list_comprehension_existing(list1, list2)
         self.assertEqual([1, 2], list1)
+
+    def test_list_concat(self):
+        list1 = [1, 2]
+        list2 = [3, 4]
+        list3 = util.list_concat(list1, list2)
+        self.assertEqual(4, len(list3))
 
     def test_calculate_similarity1(self):
         value = 100.0

@@ -1,4 +1,4 @@
-import time, numpy, cv2
+import time, numpy, cv2, memory
 import numpy as np
 
 
@@ -22,7 +22,7 @@ def rms(x):
 
 
 # return common elements in 2 lists
-def common_elements(list1, list2):
+def list_common(list1, list2):
     return list(set(list1).intersection(list2))
 
 
@@ -32,14 +32,18 @@ def list_element_count(list1):
 
 
 # list a - b, return new list
-def comprehension_new(list1, list2):
+def list_comprehension_new(list1, list2):
     return [x for x in list1 if x not in list2]
 
 
-def comprehension(list1, list2):
-    tobe_remove = common_elements(list1, list2)
+def list_comprehension_existing(list1, list2):
+    tobe_remove = list_common(list1, list2)
     for el1 in tobe_remove:
         list1.remove(el1)
+
+
+def list_concat(list1, list2):
+    return np.concatenate([list1, list2])
 
 
 def calculate_similarity(value, similarity):
@@ -90,9 +94,11 @@ def delete_empty_surround(arr):
 def colorSorter(rgb):
     return str(rgb[0] / 86) + str(rgb[1] / 86) + str(rgb[2] / 86)
 
+
 def point_color_category(img):
     reg_point = cv2.resize(img, (1, 1))
     return colorSorter(reg_point[0, 0])
+
 
 def color_hist(rgb, bins):
     num = 256 / bins + 1
@@ -136,4 +142,4 @@ def image_hash(im, size):
 
 
 def avg(arr):
-    return sum(arr)/len(arr)
+    return sum(arr) / len(arr)

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import librosa.display as dsp
 import numpy as np
 
-thread.start_new_thread(sound.listen, ())
+thread.start_new_thread(sound.receive, ())
 
 try:
     while 1:

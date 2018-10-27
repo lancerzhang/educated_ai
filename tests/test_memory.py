@@ -197,6 +197,20 @@ class TestMemory(unittest.TestCase):
         mem = self.database.get_memory(el6[memory.ID])
         self.assertIsNone(mem)
 
+    def test_get_memories(self):
+        el1 = self.database.add_memory({memory.STATUS: memory.MATCHED, memory.DURATION: 1, memory.REWARD: 0.5})
+        el2 = self.database.add_memory({memory.STATUS: memory.MATCHING, memory.DURATION: 1, memory.REWARD: 0.6})
+        el3 = self.database.add_memory({memory.STATUS: memory.EXPIRED, memory.DURATION: 3, memory.REWARD: 0.3})
+        memories = [el1, el2, el3]
+        matched_list = [x for x in memories if x[memory.STATUS] is memory.MATCHED]
+        self.assertEqual(1, len(matched_list))
+        sorted_list1 = sorted(memories, key=lambda x: (x[memory.DURATION]), reverse=True)
+        self.assertEqual(memory.EXPIRED, sorted_list1[0][memory.STATUS])
+        sorted_list2 = sorted(memories, key=lambda x: (x[memory.REWARD]), reverse=True)
+        self.assertEqual(memory.MATCHING, sorted_list2[0][memory.STATUS])
+        sorted_list3 = sorted(memories, key=lambda x: (x[memory.DURATION], x[memory.REWARD]))
+        self.assertEqual(memory.MATCHED, sorted_list3[0][memory.STATUS])
+
 
 if __name__ == "__main__":
     unittest.main()
