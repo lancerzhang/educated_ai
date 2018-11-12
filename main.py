@@ -1,27 +1,22 @@
-import time, util, memory, collections, vision, status, sound, copy
-import numpy as np
+import time, util, memory, vision, status, sound, copy
 from db import Database
-from tinydb import TinyDB, Query
+from tinydb import TinyDB
 
 # number of process per second
 PPS = 10
 # duration per process (s)
 DPS = 1.0 / PPS
 
-# to group them as a new memory by time sequence
-sequential_time_memories = {}
-
-working_memories = []
-
-work_status = {}
-
-frames = 0
 db = Database(TinyDB('TinyDB.json'))
 memory.db = db
 
 try:
     print 'wake up.\n'
+    # to group them as a new memory by time sequence
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+    working_memories = []
+    work_status = {}
+    frames = 0
     while 1:
         frames = frames + 1
         start = time.time()
@@ -37,11 +32,12 @@ try:
         memory.check_expectation(working_memories, sequential_time_memories)
         memory.compose(sequential_time_memories)
 
-        # if watch result is the same for xxx, trigger a random move, 1/16 d, 0.1-0.5 s
-        vision.move()
+        vision.process(working_memories, work_status, sequential_time_memories)
+        sound.process(working_memories, work_status, sequential_time_memories)
+
         # all end
         duration = util.time_diff(start)
-        status.update_states(work_status, duration, working_memories)
+        status.update_status(work_status, duration, working_memories)
 
         if not work_status[status.BUSY][status.MEDIUM_DURATION]:
             working_memories = memory.cleanup_working_memories(working_memories, work_status)

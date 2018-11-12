@@ -41,7 +41,7 @@ try:
             if len(buffer) == 0: break  # reached end of the stream
             # detect whether speaking has started on audio input
             np_buffer = np.fromstring(buffer, dtype=np.int16)
-            normal_buffer = util.normalizeAudioData(np_buffer)
+            normal_buffer = util.normalize_audio_data(np_buffer)
             frame_data.append(normal_buffer)
             if len(frame_data) > non_speaking_buffer_count:  # ensure we only keep the needed amount of non-speaking buffers
                 frame_data.popleft()
@@ -53,7 +53,7 @@ try:
             buffer = stream.read(CHUNK)
             if len(buffer) == 0: break  # reached end of the stream
             np_buffer = np.fromstring(buffer, dtype=np.int16)
-            normal_buffer = util.normalizeAudioData(np_buffer)
+            normal_buffer = util.normalize_audio_data(np_buffer)
             frame_data.append(normal_buffer)
             frame_count += 1
             if frame_count >= buffer_count:

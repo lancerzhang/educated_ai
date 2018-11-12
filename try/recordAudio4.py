@@ -42,7 +42,7 @@ try:
             if energy > energy_threshold:
                 # save the frame
                 np_buffer = np.fromstring(buffer, dtype=np.int16)
-                normal_buffer = util.normalizeAudioData(np_buffer)
+                normal_buffer = util.normalize_audio_data(np_buffer)
                 frame_data.append(normal_buffer)
                 frame_count += 1
                 break
@@ -53,7 +53,7 @@ try:
             if len(buffer) == 0: break  # reached end of the stream
             energy = audioop.rms(buffer, SAMPLE_WIDTH)  # energy of the audio signal
             np_buffer = np.fromstring(buffer, dtype=np.int16)
-            normal_buffer = util.normalizeAudioData(np_buffer)
+            normal_buffer = util.normalize_audio_data(np_buffer)
             frame_data.append(normal_buffer)
             frame_count += 1
             if frame_count >= buffer_count or energy < energy_threshold:

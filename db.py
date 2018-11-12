@@ -19,12 +19,12 @@ class Database:
 
     # return None if not found
     # do not use directly, we usually need to refresh it before getting it
-    def _get_memory(self, id):
-        return self.table.get(Query()[memory.ID] == id)
+    def _get_memory(self, mid):
+        return self.table.get(Query()[memory.ID] == mid)
 
     # return None if not found
-    def get_memory(self, id, recall=False):
-        mem = self._get_memory(id)
+    def get_memory(self, mid, recall=False):
+        mem = self._get_memory(mid)
         if mem is not None:
             memory.refresh(mem, recall, True)
             if mem[memory.STRENGTH] == -1:
@@ -32,14 +32,14 @@ class Database:
         return mem
 
     # return None if not found
-    def use_memory(self, id):
-        return self.get_memory(id, True)
+    def use_memory(self, mid):
+        return self.get_memory(mid, True)
 
-    def update_memory(self, fields, id):
-        self.table.update(fields, Query()[memory.ID] == id)
+    def update_memory(self, fields, mid):
+        self.table.update(fields, Query()[memory.ID] == mid)
 
-    def remove_memory(self, id):
-        self.table.remove(Query()[memory.ID] == id)
+    def remove_memory(self, mid):
+        self.table.remove(Query()[memory.ID] == mid)
 
     def refresh_memories(self, records, recall=False):
         cleaned = 0
@@ -50,9 +50,9 @@ class Database:
                 cleaned = cleaned + 1
                 self.table.remove(Query()[memory.ID] == record[memory.ID])
                 tobe_removed.append(record[memory.ID])
-        for id in tobe_removed:
+        for mid in tobe_removed:
             for record in records:
-                if record[memory.ID] == id:
+                if record[memory.ID] == mid:
                     records.remove(record)
                     continue
         return cleaned
@@ -70,86 +70,57 @@ class Database:
     # private method
     def _add_record(self, new_record):
         # new_record = record.copy()
-        id = str(uuid.uuid4())
-        new_record.update({memory.ID: id, memory.STRENGTH: 100, memory.RECALL: 1, memory.LAST_RECALL: time.time()})
+        uid = str(uuid.uuid4())
+        new_record.update({memory.ID: uid, memory.STRENGTH: 100, memory.RECALL: 1, memory.LAST_RECALL: time.time()})
         self.table.insert(new_record)
-        return id
+        return uid
 
     # it return new created record id, normally not use it
-    def _add_memory(self, addition={}):
+    def _add_memory(self, addition=None):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update(addition)
+        if addition is not None:
+            new_memory.update(addition)
         return self._add_record(new_memory)
 
-    def add_memory(self, addition={}):
-        eid = self._add_memory(addition)
-        return self._get_memory(eid)
+    def add_memory(self, addition=None):
+        mid = self._add_memory(addition)
+        return self._get_memory(mid)
 
     # it return new created record id, normally not use it
-    def _add_vision(self, addition={}):
+    def _add_vision(self, addition=None):
         new_memory = memory.BASIC_MEMORY.copy()
         new_memory.update({memory.FEATURE_TYPE: memory.VISION, })
-        new_memory.update(addition)
+        if addition is not None:
+            new_memory.update(addition)
         return self._add_record(new_memory)
 
-    def add_vision(self, addition={}):
-        eid = self._add_vision(addition)
-        return self._get_memory(eid)
+    def add_vision(self, addition=None):
+        mid = self._add_vision(addition)
+        return self._get_memory(mid)
 
     # it return new created record id, normally not use it
-    def _add_sound(self, addition={}):
+    def _add_sound(self, addition=None):
         new_memory = memory.BASIC_MEMORY.copy()
         new_memory.update({memory.FEATURE_TYPE: memory.SOUND})
-        new_memory.update(addition)
+        if addition is not None:
+            new_memory.update(addition)
         return self._add_record(new_memory)
 
-    def add_sound(self, addition={}):
-        eid = self._add_sound(addition)
-        return self._get_memory(eid)
+    def add_sound(self, addition=None):
+        mid = self._add_sound(addition)
+        return self._get_memory(mid)
 
     # it return new created record id, normally not use it
-    def _add_focus(self, addition={}):
+    def _add_action(self, addition=None):
         new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.FEATURE_TYPE: memory.FOCUS, 'angle': 10, 'speed': 10, 'duration': 10})
-        new_memory.update(addition)
+        new_memory.update({memory.FEATURE_TYPE: memory.ACTION})
+        if addition is not None:
+            new_memory.update(addition)
         return self._add_record(new_memory)
 
-    # it return new created record id, normally not use it
-    def _add_speak(self, addition={}):
-        new_memory = memory.BASIC_MEMORY.copy()
-        new_memory.update({memory.FEATURE_TYPE: memory.SPEAK, 'word': 'yes'})
-        new_memory.update(addition)
-        return self._add_record(new_memory)
-
-    # do not use directly, we usually need to refresh it before getting it
-    # return [] if not found
-    def _search_sound(self, feature, name, min, max):
-        query = Query()
-        records = self.table.search((query[memory.FEATURE_TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[name].test(util.between, min, max)))
-        return records
-
-    def _search_sound2(self, feature, index_value, name, min, max):
-        query = Query()
-        records = self.table.search(
-            (query[memory.FEATURE_TYPE] == memory.SOUND) & (query[sound.FEATURE] == feature) & (query[sound.INDEX] == index_value) & (query[name].test(util.between, min, max)))
-        return records
-
-    # TODO, need to remove all references?
-    def search_sound(self, feature, name, min, max, recall=False):
-        records = self._search_sound2(feature, name, min, max)
-        self.refresh_memories(records, recall)
-        return records
-
-    def search_sound2(self, feature, index, value, min, max, recall=False):
-        records = self._search_sound2(feature, index, value, min, max)
-        self.refresh_memories(records, recall)
-        return records
-
-    def use_sound(self, feature, name, min, max):
-        return self.search_sound(feature, name, min, max, True)
-
-    def use_sound2(self, feature, index, value, min, max):
-        return self.search_sound2(feature, index, value, min, max, True)
+    def add_action(self, addition=None):
+        mid = self._add_action(addition)
+        return self._get_memory(mid)
 
     def add_parent(self, memories):
         first_data = []

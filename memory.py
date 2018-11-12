@@ -1,4 +1,4 @@
-import time, random, util, copy
+import time, random, util, status
 import numpy as np
 
 ID = 'id'
@@ -18,7 +18,8 @@ FEATURE_TYPE = 'ftt'
 # feature memories
 SOUND = 'snd'
 VISION = 'vsn'
-FOCUS = 'fcs'
+ACTION = 'fca'
+ACTOR = 'atr'
 SPEAK = 'spk'
 
 MEMORY_DURATION = 'mmd'
@@ -33,6 +34,7 @@ CHILD_MEM = 'cmy'
 CHILD_DAT1 = 'cd1'
 KERNEL = 'knl'
 FEATURE = 'ftr'
+SIMILAR = 'sml'
 
 # for expectation
 STATUS = 'sts'
@@ -42,6 +44,7 @@ MATCHED = '5mcd'
 EXPIRED = '4xpd'
 START_TIME = 'stt'
 END_TIME = 'edt'
+DURATION_SLICE = 0.15
 DURATION_INSTANT = 0.5
 DURATION_SHORT = 3
 DURATION_LONG = 360
@@ -119,7 +122,6 @@ def refresh(mem, recall=False, forget=False):
     return deleted
 
 
-# TODO, need to check if parent memory is valid or not
 # summarize all parent memories in a list
 def count_parent_id(memories):
     parent_list = []
@@ -128,32 +130,10 @@ def count_parent_id(memories):
     return util.list_element_count(parent_list)
 
 
-# find out max occurrence in parent memories of all working memories
-# if all occur once, return [] (not found)
-# only search when working memories >2
-def find_max_related_memory_ids(memories):
-    parent_counts = count_parent_id(memories)
-    max_value = 0
-    max_ids = []
-    max_count = 0
-    for key, value in parent_counts.items():
-        if value > max_count:
-            max_value = value
-            max_count = max_count + 1
-    if max_count == 1:
-        max_ids = []
-    else:
-        for key, value in parent_counts.items():
-            if value == max_value:
-                max_ids.append(key)
-    return max_ids
-
-
-def find_max_related_memories(memories, limit=4):
-    parent_counts = count_parent_id(memories)
+def find_max_related_memories(memories, tobe_remove_list_ids, limit=4):
     related_memories = []
+    parent_counts = count_parent_id(memories)
     count = 0
-    tobe_remove_list_ids = []
     for key in sorted(parent_counts, key=parent_counts.get, reverse=True):
         mem = db.get_memory(key)
         if mem:
@@ -163,63 +143,16 @@ def find_max_related_memories(memories, limit=4):
             tobe_remove_list_ids.append(key)
         if count >= limit:
             break
+    return related_memories
+
+
+def find_update_max_related_memories(memories, limit=4):
+    tobe_remove_list_ids = []
+    related_memories = find_max_related_memories(memories, tobe_remove_list_ids, limit)
     if len(tobe_remove_list_ids) > 0:
         for mem in memories:
             remove_dead_memories(PARENT_MEM, mem[PARENT_MEM], tobe_remove_list_ids, mem[ID])
     return related_memories
-
-
-# find max reward in memories (db record), this is the target
-def find_reward_target(related_memories):
-    max_value = 0
-    max_id = 0
-    for mem in related_memories:
-        reward = mem[REWARD]
-        if reward > max_value:
-            max_value = reward
-            max_id = mem[ID]
-    return max_id
-
-
-# TODO, can enhance?
-def remove_memories(memory_list, tobe_remove_list_ids):
-    for el in tobe_remove_list_ids:
-        for mem in memory_list:
-            if mem[ID] in tobe_remove_list_ids:
-                memory_list.remove(mem)
-
-
-# check if can combine small feature memories to larger parent memory
-# if match a parent memory, will add to return list, and remove from feature memories
-def find_common_parents(feature_memories):
-    common_parents = []
-    if len(feature_memories) <= 1:
-        return common_parents
-    parent_ids = count_parent_id(feature_memories)
-    feature_memory_ids = []
-    for feature in feature_memories:
-        feature_memory_ids.append(feature[ID])
-    for key, value in parent_ids.items():
-        if value <= 1:
-            continue
-        mem = db.get_memory(key)
-        if mem is None:
-            continue
-        print 'found exp memory ', mem[ID]
-        first_data = mem[CHILD_MEM]
-        first_common = util.list_common(first_data, feature_memory_ids)
-        # check if this parent memory all matches
-        if len(first_common) == len(first_data):
-            common_parents.append(mem)
-            remove_memories(feature_memories, first_common)
-    return common_parents
-
-
-def get_arr_from_memories(mem_arr, field):
-    arr = []
-    for mem in mem_arr:
-        arr.append(field)
-    return arr
 
 
 def remove_dead_memories(field, sub_ids, forgot_ids, mid):
@@ -230,7 +163,15 @@ def remove_dead_memories(field, sub_ids, forgot_ids, mid):
         db.update_memory({field: new_sub}, mid)
 
 
-def get_live_memories(mem, field, limit=0, offset=0):
+def get_live_memories(memory_ids):
+    memories = []
+    for mid in memory_ids:
+        mem = db.get_memory(mid)
+        if mem is not None:
+            memories.append(mem)
+
+
+def get_live_sub_memories(mem, field, limit=0, offset=0):
     memory_ids = mem[field]
     forgot_ids = []
     memories = []
@@ -256,30 +197,34 @@ def get_live_memories(mem, field, limit=0, offset=0):
     return memories
 
 
-def get_live_children(slice_memories, distinct_feature_memories, slice_memory_children):
-    feature_memory_ids = []
-    for smm in slice_memories:
-        live_children = get_live_memories(smm, CHILD_MEM)
-        slice_memory_children.update({smm[ID]: live_children})
+def search_sub_memories(memories, distinct_sub_memory_list, sub_memory_dict):
+    sub_memory_ids = []
+    for smm in memories:
+        live_children = get_live_sub_memories(smm, CHILD_MEM)
+        sub_memory_dict.update({smm[ID]: live_children})
         for lmm in live_children:
-            if lmm[ID] not in feature_memory_ids:
-                distinct_feature_memories.append(lmm)
-                feature_memory_ids.append(lmm[ID])
+            if lmm[ID] not in sub_memory_ids:
+                distinct_sub_memory_list.append(lmm)
+                sub_memory_ids.append(lmm[ID])
 
 
-def recall_memory(mem, addition={}):
+def recall_memory(mem, addition=None):
     refresh(mem, True, False)
-    addition.update({STRENGTH: mem[STRENGTH], RECALL: mem[RECALL], LAST_RECALL: mem[LAST_RECALL]})
-    db.update_memory(addition, mem[ID])
+    update_content = {STRENGTH: mem[STRENGTH], RECALL: mem[RECALL], LAST_RECALL: mem[LAST_RECALL]}
+    if addition is not None:
+        update_content.update(addition)
+    db.update_memory(update_content, mem[ID])
 
 
-def add_new_working_memory(seq_time_memories, children, type):
+# children is list of group memories [[m1, m2], [m3, m4]]
+def create_working_memory(seq_time_memories, children, duration_type):
     for memories in children:
-        child_memory_ids = get_arr_from_memories(memories, ID)
-        child_memory_rewards = get_arr_from_memories(memories, REWARD)
+        child_memory_ids = [mem[ID] for mem in memories]
+        child_memory_rewards = [mem[REWARD] for mem in memories]
         new_reward = np.max(np.array(child_memory_rewards))
-        new_mem = db.add_memory({CHILD_MEM: child_memory_ids, MEMORY_DURATION: type, HAPPEN_TIME: time.time(), REWARD: new_reward})
-        seq_time_memories[type].append(new_mem)
+        new_mem = db.add_memory(
+            {CHILD_MEM: child_memory_ids, MEMORY_DURATION: duration_type, HAPPEN_TIME: time.time(), REWARD: new_reward})
+        seq_time_memories[duration_type].append(new_mem)
 
 
 # slice memories of 4 (COMPOSE_NUMBER) or within DURATION_INSTANT will be grouped as a new instant memory
@@ -288,26 +233,26 @@ def add_new_working_memory(seq_time_memories, children, type):
 def compose(seq_time_memories):
     result1 = split_seq_time_memories(seq_time_memories[SLICE_MEMORY], DURATION_INSTANT)
     seq_time_memories[SLICE_MEMORY] = result1[REST_OF_MEMORIES]
-    add_new_working_memory(seq_time_memories, result1[NEW_MEMORIES], INSTANT_MEMORY)
+    create_working_memory(seq_time_memories, result1[NEW_MEMORIES], INSTANT_MEMORY)
 
     result2 = split_seq_time_memories(seq_time_memories[INSTANT_MEMORY], DURATION_SHORT)
     seq_time_memories[INSTANT_MEMORY] = result2[REST_OF_MEMORIES]
-    add_new_working_memory(seq_time_memories, result2[NEW_MEMORIES], SHORT_MEMORY)
+    create_working_memory(seq_time_memories, result2[NEW_MEMORIES], SHORT_MEMORY)
 
     result3 = split_seq_time_memories(seq_time_memories[SHORT_MEMORY], DURATION_LONG)
     seq_time_memories[SHORT_MEMORY] = result3[REST_OF_MEMORIES]
-    add_new_working_memory(seq_time_memories, result3[NEW_MEMORIES], LONG_MEMORY)
+    create_working_memory(seq_time_memories, result3[NEW_MEMORIES], LONG_MEMORY)
 
     result4 = split_seq_time_memories(seq_time_memories[LONG_MEMORY])
     seq_time_memories[LONG_MEMORY] = result4[REST_OF_MEMORIES]
-    add_new_working_memory(seq_time_memories, result4[NEW_MEMORIES], LONG_MEMORY)
+    create_working_memory(seq_time_memories, result4[NEW_MEMORIES], LONG_MEMORY)
 
 
 # split memory array to certain groups by number or elapse time
 # new memories can be found in NEW_MEMORIES of result
 # distance of each child memory can be found in CHILD_DAT1 of result
 # rest of memories that are not composed can be found in REST_OF_MEMORIES of result
-def split_seq_time_memories(memories, gap=60):
+def split_seq_time_memories(memories, gap=60.0):
     count = 0
     last_time = 0
     elapse_time = 0
@@ -354,6 +299,8 @@ def convert_to_expectation(mem):
         exp.update({END_TIME: time.time() + DURATION_SHORT})
     elif mem[MEMORY_DURATION] is LONG_MEMORY:
         exp.update({END_TIME: time.time() + DURATION_LONG})
+    elif mem[MEMORY_DURATION] is SLICE_MEMORY:
+        exp.update({END_TIME: time.time() + DURATION_SLICE})
     mem.update(exp)
 
 
@@ -363,11 +310,14 @@ def update_last_recall(memories):
 
 
 # append new memories to memories list if it's not exist
-def append_working_memories(memories, new_memories, limit):
+def append_working_memories(memories, new_memories, limit=0):
     total = 0
     ids = [x[ID] for x in memories]
+    sub_ids = [x[ID] for x in new_memories]
+    exist = util.list_common(ids, sub_ids)
+    total = total + len(exist)
     for nmem in new_memories:
-        if total >= limit:
+        if total >= limit > 0:
             break
         if nmem[ID] not in ids:
             convert_to_expectation(nmem)
@@ -380,16 +330,16 @@ def append_working_memories(memories, new_memories, limit):
 def associate(working_memories):
     valid_working_memories = [mem for mem in working_memories if mem[END_TIME] > time.time()]
     matched_memories = [mem for mem in valid_working_memories if mem[STATUS] is MATCHED]
-    related_memories = find_max_related_memories(matched_memories)
+    related_memories = find_update_max_related_memories(matched_memories)
     append_working_memories(valid_working_memories, related_memories)
-    sorted_working_memories = sorted(valid_working_memories, key=lambda x: (x[LAST_RECALL], x[REWARD]))
+    sorted_working_memories = sorted(valid_working_memories, key=lambda x: (x[LAST_RECALL], x[REWARD]), reverse=True)
     return sorted_working_memories[0:threshold_of_working_memories:]
 
 
 def prepare_expectation(working_memories):
     pending_memories = [mem for mem in working_memories if mem[STATUS] is MATCHING]
     for pmem in pending_memories:
-        live_children = get_live_memories(pmem, CHILD_MEM)
+        live_children = get_live_sub_memories(pmem, CHILD_MEM)
         if pmem[MEMORY_DURATION] is INSTANT_MEMORY:
             append_working_memories(working_memories, live_children)
         elif pmem[MEMORY_DURATION] is LONG_MEMORY or pmem[MEMORY_DURATION] is SHORT_MEMORY:
@@ -399,21 +349,21 @@ def prepare_expectation(working_memories):
 def check_expectation(working_memories, sequential_time_memories):
     pending_memories = [mem for mem in working_memories if mem[STATUS] is MATCHING]
     for pmem in pending_memories:
-        child_ids = pmem[CHILD_MEM]
         if time.time() > pmem[END_TIME]:
             pmem[STATUS] = EXPIRED
             continue
         all_matched = True
-        for mem in working_memories:
-            if mem[ID] in child_ids:
-                if mem[STATUS] is not MATCHED:
+        child_ids = pmem[CHILD_MEM]
+        for wmem in working_memories:
+            if wmem[ID] in child_ids:
+                if wmem[STATUS] is not MATCHED:
                     all_matched = False
                     break
         if all_matched:
-            recall_memory(pmem[ID])
+            recall_memory(pmem)
             pmem[STATUS] = MATCHED
             pmem[HAPPEN_TIME] = time.time()
-            sequential_time_memories[mem[MEMORY_DURATION]].append(mem)
+            sequential_time_memories[pmem[MEMORY_DURATION]].append(pmem)
 
 
 # matched / elder / child memory will be higher priority to clean up
@@ -423,16 +373,24 @@ def check_expectation(working_memories, sequential_time_memories):
 # interruption from environment can impact this, which it is "disturb"
 def cleanup_working_memories(working_memories, work_status):
     valid_working_memories = [mem for mem in working_memories if mem[END_TIME] > time.time()]
-    if work_status[REWARD]:
-        sorted_working_memories = sorted(valid_working_memories, key=lambda x: (x[MEMORY_DURATION], x[STATUS], x[LAST_RECALL], x[REWARD]))
+    if work_status[status.REWARD]:
+        sorted_working_memories = sorted(valid_working_memories,
+                                         key=lambda x: (x[MEMORY_DURATION], x[STATUS], x[LAST_RECALL], x[REWARD]),
+                                         reverse=True)
     else:
         # not satisfy, reward first
-        sorted_working_memories = sorted(valid_working_memories, key=lambda x: (x[REWARD], x[MEMORY_DURATION], x[STATUS], x[LAST_RECALL]))
+        sorted_working_memories = sorted(valid_working_memories,
+                                         key=lambda x: (x[REWARD], x[MEMORY_DURATION], x[STATUS], x[LAST_RECALL]),
+                                         reverse=True)
     return sorted_working_memories[0:threshold_of_working_memories:]
 
 
 def add_feature_memory(feature_type, kernel, feature):
     db.add_memory({FEATURE_TYPE: feature_type, KERNEL: kernel, FEATURE: feature})
+
+
+def add_action_memory(addition=None):
+    db.add_action(addition)
 
 
 def add_slice_memory(child_memories):
@@ -442,12 +400,15 @@ def add_slice_memory(child_memories):
 
 def verify_slice_memory_match_result(slice_memories, slice_memory_children):
     all_matched_feature_memories = []
+    ids = []
     for smm in slice_memories:
         smm_all_matched = True
         live_children = slice_memory_children.get(smm[ID])
         for fmm in live_children:
             if fmm[STATUS] is MATCHED:
-                all_matched_feature_memories.append(fmm)
+                if fmm[ID] not in ids:
+                    all_matched_feature_memories.append(fmm)
+                    ids.append(fmm[ID])
             else:
                 smm_all_matched = False
         if smm_all_matched:

@@ -36,7 +36,7 @@ print 'use:', (time2 - time1)
 
 idx = 0
 nFilters = np.array(filters)
-# np.save('nFilters90.npy', nFilters)
+# np.save('vision_kernels90.npy', nFilters)
 
 try:
     while idx < 100:

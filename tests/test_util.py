@@ -82,30 +82,6 @@ class TestUtil(unittest.TestCase):
         list3 = util.list_concat(list1, list2)
         self.assertEqual(4, len(list3))
 
-    def test_calculate_similarity1(self):
-        value = 100.0
-        similarity = 0.1
-        sim_result = util.calculate_similarity(value, similarity)
-        min = sim_result[0]
-        max = sim_result[1]
-        self.assertGreater(max, min)
-
-    def test_calculate_similarity2(self):
-        value = -100.0
-        similarity = 0.1
-        sim_result = util.calculate_similarity(value, similarity)
-        min = sim_result[0]
-        max = sim_result[1]
-        self.assertGreater(max, min)
-
-    def test_calculate_similarity3(self):
-        value = 0.0
-        similarity = 0.1
-        sim_result = util.calculate_similarity(value, similarity)
-        min = sim_result[0]
-        max = sim_result[1]
-        self.assertEqual(max, min)
-
     def test_colorHist(self):
         arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
                          [[79, 118, 190], [60, 110, 230]]])

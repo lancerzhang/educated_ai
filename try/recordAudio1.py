@@ -24,7 +24,7 @@ npFrames = []
 for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
     data = stream.read(CHUNK)
     np_buffer = np.fromstring(data, dtype=np.int16)
-    normal_buffer = util.normalizeAudioData(np_buffer)
+    normal_buffer = util.normalize_audio_data(np_buffer)
     npFrames.append(normal_buffer)
 
 print("* done recording")

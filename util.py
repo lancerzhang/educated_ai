@@ -12,7 +12,7 @@ def between(val, m, n):
 
 # TODO, need to consider other audio format
 # normalize audio data
-def normalizeAudioData(raw):
+def normalize_audio_data(raw):
     return raw / 32768.0  # assume 16 bit
 
 
@@ -44,17 +44,6 @@ def list_comprehension_existing(list1, list2):
 
 def list_concat(list1, list2):
     return np.concatenate([list1, list2])
-
-
-def calculate_similarity(value, similarity):
-    min, max = 0, 0
-    if value > 0:
-        min = value * (1 - similarity)
-        max = value * (1 + similarity)
-    else:
-        min = value * (1 + similarity)
-        max = value * (1 - similarity)
-    return [min, max]
 
 
 def delete_empty_surround(arr):
@@ -91,13 +80,13 @@ def delete_empty_surround(arr):
     return arr
 
 
-def colorSorter(rgb):
+def sort_color(rgb):
     return str(rgb[0] / 86) + str(rgb[1] / 86) + str(rgb[2] / 86)
 
 
 def point_color_category(img):
     reg_point = cv2.resize(img, (1, 1))
-    return colorSorter(reg_point[0, 0])
+    return sort_color(reg_point[0, 0])
 
 
 def color_hist(rgb, bins):
@@ -137,9 +126,19 @@ def image_hash(im, size):
     resized_image = cv2.resize(im, (size, size))
     gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
     data = gray.flatten().tolist()
-    avg = reduce(lambda x, y: x + y, data) / (size * size)
-    return reduce(lambda x, (y, z): x | (z << y), enumerate(map(lambda i: 0 if i < avg else 1, data)), 0)
+    avg_value = reduce(lambda x, y: x + y, data) / (size * size)
+    return reduce(lambda x, (y, z): x | (z << y), enumerate(map(lambda i: 0 if i < avg_value else 1, data)), 0)
 
 
 def avg(arr):
     return sum(arr) / len(arr)
+
+
+def compare_feature(feature1, feature2):
+    similarities = abs(feature1 - feature2) / feature2
+    similarity = avg(similarities)
+    return similarity
+
+
+def histogram_array_diff(his_arr1, his_arr2):
+    return

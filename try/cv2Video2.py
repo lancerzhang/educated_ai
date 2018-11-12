@@ -8,7 +8,7 @@ frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
 img = cv2.imread('head11.jpg', 1)
 reg_point = cv2.resize(img, (1, 1))
-reg_cat = util.colorSorter(reg_point[0, 0])
+reg_cat = util.sort_color(reg_point[0, 0])
 hash_size = 3
 reg_hash = util.image_hash(img, hash_size)
 hist_size = 3
@@ -34,7 +34,7 @@ while cap.isOpened():
                         if endX <= frame_width and endY <= frame_height:
                             roi_img = frame[newY:newY + windows[w], newX:newX + windows[w]]
                             roi_point = cv2.resize(roi_img, (1, 1))
-                            roi_cat = util.colorSorter(roi_point[0, 0])
+                            roi_cat = util.sort_color(roi_point[0, 0])
                             roi_hash = util.image_hash(roi_img, hash_size)
                             hash_dist = util.hamming(roi_hash, reg_hash)
                             # hist_sim=util.color_hist_similarity(reg_img, roi_img, hist_size)
