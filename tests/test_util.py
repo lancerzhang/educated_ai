@@ -102,6 +102,86 @@ class TestUtil(unittest.TestCase):
         arr = [1.5, 2.5, 3.5]
         self.assertEqual(2.5, util.avg(arr))
 
+    def test_standardize_feature1(self):
+        matrix = np.array([[0, 0, 0],
+                           [0, 1, 2],
+                           [0, 3, 4]])
+        standard = util.standardize_feature(matrix)
+        result = [[1, 2, 0],
+                  [3, 4, 0],
+                  [0, 0, 0]]
+        self.assertEquals(result, standard.tolist())
+
+    def test_standardize_feature2(self):
+        matrix = np.array([[0, 0, 0],
+                           [0, 0, 0],
+                           [0, 0, 4]])
+        standard = util.standardize_feature(matrix)
+        result = [[4, 0, 0],
+                  [0, 0, 0],
+                  [0, 0, 0]]
+        self.assertEquals(result, standard.tolist())
+
+    def test_standardize_feature3(self):
+        matrix = np.array([[0, 1, 2],
+                           [0, 0, 0],
+                           [0, 3, 4]])
+        standard = util.standardize_feature(matrix)
+        result = [[1, 2, 0],
+                  [0, 0, 0],
+                  [3, 4, 0]]
+        self.assertEquals(result, standard.tolist())
+
+    def test_standardize_feature3(self):
+        matrix = np.array([[0, 1, 2],
+                           [0, 3, 4],
+                           [0, 0, 0]])
+        standard = util.standardize_feature(matrix)
+        result = [[1, 2, 0],
+                  [3, 4, 0],
+                  [0, 0, 0]]
+        self.assertEquals(result, standard.tolist())
+
+    def test_update_rank_list(self):
+        SPEED = 'spd'
+        rank_list = np.array(
+            [{SPEED: 1, util.USED_COUNT: 1}, {SPEED: 2, util.USED_COUNT: 2}, {SPEED: 3, util.USED_COUNT: 3}])
+        rank_list = util.update_rank_list(SPEED, 3, rank_list)
+        self.assertEquals(3, len(rank_list))
+        self.assertEquals(4, rank_list[0][util.USED_COUNT])
+        rank_list = util.update_rank_list(SPEED, 4, rank_list)
+        self.assertEquals(4, len(rank_list))
+        rank_list2 = np.array([])
+        kernel1 = '-1, -1, 1,-1, -1, 0,1, 0, 1'
+        rank_list2 = util.update_rank_list('knl', kernel1, rank_list2)
+        kernel2 = '-1, -1, 1,-1, -1, 0,1, 0, 1'
+        rank_list2 = util.update_rank_list('knl', kernel2, rank_list2)
+        self.assertIsNotNone(rank_list2)
+
+    def test_get_top_rank(self):
+        SPEED = 'spd'
+        rank_list = np.array([])
+        sp1 = util.get_top_rank(rank_list)
+        self.assertIsNone(sp1)
+        rank_list = np.array(
+            [{SPEED: 1, util.USED_COUNT: 1}, {SPEED: 2, util.USED_COUNT: 2}, {SPEED: 3, util.USED_COUNT: 3}])
+        rank_list = util.update_rank_list(SPEED, 3, rank_list)
+        sp2 = util.get_top_rank(rank_list)
+        # sometimes it will fail
+        self.assertEquals(4, sp2[util.USED_COUNT])
+
+    def test_matrix_to_string(self):
+        kernel = np.array([[-1, -1, 1],
+                           [-1, -1, 0],
+                           [1, 0, 1]])
+        kernel_str = util.matrix_to_string(kernel)
+        self.assertEqual('-1,-1,1,-1,-1,0,1,0,1', kernel_str)
+
+    def test_string_to_matrix(self):
+        kernel_str = '-1,-1,1,-1,-1,0,1,0,1'
+        matrix = util.string_to_feature_matrix(kernel_str)
+        self.assertEqual((3, 3), matrix.shape)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,7 +7,7 @@
 
 import librosa, math, time, pyaudio, collections, util, memory, copy, cv2, status, random
 import numpy as np
-from scipy import ndimage
+import skimage.measure
 
 inited = False
 start_thread = True
@@ -29,9 +29,11 @@ ROI_ARR = [3, 5, 9, 13]
 ROI_LEVEL = 1
 current_range = {}
 INPUT_SIZE = 3
-SIMILARITY_THRESHOLD = 0.9
+SIMILARITY_THRESHOLD = 0.3
 VARIANCE_THRESHOLD = 0.3
-FEATURE_MAP_SIZE = 3
+FEATURE_INPUT_SIZE = 12
+FEATURE_THRESHOLD = 20
+POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
 RANGE_ARR = [3, 5]
 
 KERNEL_FILE = 'uk.npy'
@@ -42,7 +44,6 @@ previous_energies = []
 
 MEMORIES = 'mms'
 RANGE = 'rng'
-
 FEATURE_DATA = {memory.KERNEL: [], memory.FEATURE: [], memory.SIMILAR: False}
 s_filter = {'123': {'filter': [], 'used_count': 0, 'last_used_time': 0, 'memories': {}}}
 
@@ -143,27 +144,35 @@ def listen(full_frequency_map, fmm):
     data = filter_feature(frequency_map, kernel, feature)
     if data[memory.SIMILAR]:
         # recall memory and update feature to average
-        memory.recall_memory(fmm,{memory.FEATURE: data[memory.FEATURE]})
+        memory.recall_memory(fmm, {memory.FEATURE: data[memory.FEATURE]})
         fmm[memory.STATUS] = memory.MATCHED
     return data[memory.SIMILAR]
 
 
 # match the experience sound sense
 def filter_feature(data, kernel, feature=None):
-    fdata = copy.deepcopy(FEATURE_DATA)
-    fdata[memory.KERNEL] = kernel
-    cov = cv2.filter2D(data, -1, kernel)
-    new_feature = ndimage.maximum_filter(cov, size=FEATURE_MAP_SIZE)
+    feature_data = copy.deepcopy(FEATURE_DATA)
+    data_map = cv2.resize(data, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
+    cov = cv2.filter2D(data_map, -1, kernel)
+    # down-sampling once use max pool, size is 50% of origin
+    new_feature_pool1 = skimage.measure.block_reduce(cov, (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
+    # down-sampling again use max pool, size is 25% of origin
+    new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1, (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
+    # reduce not obvious feature
+    threshold_feature = np.where(new_feature_pool2 < FEATURE_THRESHOLD, 0, new_feature_pool2)
+    standard_feature = util.standardize_feature(threshold_feature)
+    new_feature = standard_feature.flatten().astype(int)
     if feature is None:
-        fdata[memory.FEATURE] = new_feature
+        feature_data[memory.FEATURE] = new_feature
     else:
-        similarities = abs(new_feature - feature) / feature
-        similarity = util.avg(similarities)
-        fdata[memory.SIMILAR] = True
-        if similarity > SIMILARITY_THRESHOLD:
-            new_feature = (feature + new_feature) / 2
-        fdata[memory.FEATURE] = new_feature
-    return fdata
+        difference = util.compare_feature(new_feature, feature)
+        if difference < SIMILARITY_THRESHOLD:
+            feature_data[memory.SIMILAR] = True
+            avg_feature = (feature + new_feature) / 2
+            feature_data[memory.FEATURE] = avg_feature
+        else:
+            feature_data[memory.FEATURE] = new_feature
+    return feature_data
 
 
 # get a frequent use kernel or a random kernel by certain possibility
@@ -187,11 +196,12 @@ def get_range():
 def search_memory(kernel_id, feature1):
     memory_ids = used_kernel_rank.get(kernel_id)[MEMORIES]
     live_memories = memory.get_live_memories(memory_ids)
-    for mem in live_memories:
-        feature2 = mem[memory.FEATURE]
-        similarity = util.compare_feature(feature1, feature2)
-        if similarity > SIMILARITY_THRESHOLD:
-            return mem
+    if live_memories is not None:
+        for mem in live_memories:
+            feature2 = mem[memory.FEATURE]
+            similarity = util.compare_feature(feature1, feature2)
+            if similarity > SIMILARITY_THRESHOLD:
+                return mem
     return None
 
 

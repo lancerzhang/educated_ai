@@ -1,5 +1,7 @@
-import time, numpy, cv2, memory
+import time, numpy, cv2, random, math
 import numpy as np
+
+USED_COUNT = 'uct'
 
 
 def time_diff(start):
@@ -134,11 +136,54 @@ def avg(arr):
     return sum(arr) / len(arr)
 
 
+def standardize_feature(matrix):
+    while sum(matrix[0]) == 0:
+        matrix = np.roll(matrix, -1, axis=0)
+    while sum(matrix[:, 0]) == 0:
+        matrix = np.roll(matrix, -1, axis=1)
+    return matrix
+
+
 def compare_feature(feature1, feature2):
-    similarities = abs(feature1 - feature2) / feature2
-    similarity = avg(similarities)
-    return similarity
+    matrix = [feature1, feature2]
+    max_list = np.max(matrix, axis=0)
+    # avoid 0 division
+    standard_max_list = np.where(max_list == 0, 9999999, max_list)
+    diff = abs(feature1.astype(int) - feature2.astype(int))
+    differences = diff / standard_max_list.astype(float)
+    difference = avg(differences)
+    return difference
 
 
 def histogram_array_diff(his_arr1, his_arr2):
     return
+
+
+def get_top_rank(rank_list):
+    ri = random.randint(0, 9)
+    if len(rank_list) == 0 or ri == 0:
+        return None
+    else:
+        return rank_list[0]
+
+
+def update_rank_list(key_key, key_value, rank_list):
+    element = next((x for x in rank_list if x[key_key] is key_value), None)
+    if element is None:
+        element = {key_key: key_value, USED_COUNT: 1}
+        rank_list = np.append(rank_list, element)
+    else:
+        element[USED_COUNT] = element[USED_COUNT] + 1
+    return sorted(rank_list, key=lambda x: (x[key_key]), reverse=True)
+
+
+def matrix_to_string(matrix):
+    arr = matrix.flatten()
+    matrix_str = ','.join(str(e) for e in arr)
+    return matrix_str
+
+
+def string_to_feature_matrix(string):
+    arr = np.fromstring(string, dtype=int, sep=',')
+    matrix = np.reshape(arr, (3, 3))
+    return matrix

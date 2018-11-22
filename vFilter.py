@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-nFilters=np.load("vision_kernels90.npy")
+nFilters=np.load("kernels.npy")
 
 def getFilter():
     shape=nFilters.shape

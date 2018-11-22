@@ -35,7 +35,7 @@ CHILD_DAT1 = 'cd1'
 KERNEL = 'knl'
 FEATURE = 'ftr'
 SIMILAR = 'sml'
-
+CHANNEL = 'cnl'
 # for expectation
 STATUS = 'sts'
 NEW = '7new'
@@ -110,10 +110,10 @@ def refresh(mem, recall=False, forget=False):
                         mem[STRENGTH] = -1
                         deleted = True
                         break
-                    if len(mem[CHILD_MEM]) <= 0:
-                        mem[STRENGTH] = -1
-                        deleted = True
-                        break
+                    # if not mem.has_key(FEATURE) and len(mem[CHILD_MEM]) <= 0:
+                    #     mem[STRENGTH] = -1
+                    #     deleted = True
+                    #     break
                 # if this is recall, will update recall count and last recall time
                 if recall:
                     mem[RECALL] = mem[RECALL] + 1
@@ -169,6 +169,7 @@ def get_live_memories(memory_ids):
         mem = db.get_memory(mid)
         if mem is not None:
             memories.append(mem)
+    return memories
 
 
 def get_live_sub_memories(mem, field, limit=0, offset=0):
@@ -385,17 +386,21 @@ def cleanup_working_memories(working_memories, work_status):
     return sorted_working_memories[0:threshold_of_working_memories:]
 
 
+def add_vision_memory(feature_type, channel, kernel, feature):
+    return db.add_memory({FEATURE_TYPE: feature_type, CHANNEL: channel, KERNEL: kernel, FEATURE: feature})
+
+
 def add_feature_memory(feature_type, kernel, feature):
-    db.add_memory({FEATURE_TYPE: feature_type, KERNEL: kernel, FEATURE: feature})
+    return db.add_memory({FEATURE_TYPE: feature_type, KERNEL: kernel, FEATURE: feature})
 
 
 def add_action_memory(addition=None):
-    db.add_action(addition)
+    return db.add_action(addition)
 
 
 def add_slice_memory(child_memories):
     child_memory_ids = [x[ID] for x in child_memories]
-    db.add_memory({CHILD_MEM: child_memory_ids, MEMORY_DURATION: SLICE_MEMORY})
+    return db.add_memory({CHILD_MEM: child_memory_ids, MEMORY_DURATION: SLICE_MEMORY})
 
 
 def verify_slice_memory_match_result(slice_memories, slice_memory_children):
