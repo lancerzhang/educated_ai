@@ -132,7 +132,7 @@ def image_hash(im, size):
     return reduce(lambda x, (y, z): x | (z << y), enumerate(map(lambda i: 0 if i < avg_value else 1, data)), 0)
 
 
-def avg(arr):
+def list_avg(arr):
     return sum(arr) / len(arr)
 
 
@@ -144,19 +144,22 @@ def standardize_feature(matrix):
     return matrix
 
 
-def compare_feature(feature1, feature2):
-    matrix = [feature1, feature2]
+def np_array_diff(arr1, arr2):
+    matrix = [arr1, arr2]
     max_list = np.max(matrix, axis=0)
     # avoid 0 division
     standard_max_list = np.where(max_list == 0, 9999999, max_list)
-    diff = abs(feature1.astype(int) - feature2.astype(int))
+    diff = abs(arr1.astype(int) - arr2.astype(int))
     differences = diff / standard_max_list.astype(float)
-    difference = avg(differences)
+    difference = list_avg(differences)
     return difference
 
 
-def histogram_array_diff(his_arr1, his_arr2):
-    return
+def np_matrix_diff(arr1, arr2):
+    differences = []
+    for i in range(0, len(arr1)):
+        differences.append(np_array_diff(arr1[i], arr2[i]) * len(arr1))
+    return differences
 
 
 def get_top_rank(rank_list):
@@ -187,3 +190,9 @@ def string_to_feature_matrix(string):
     arr = np.fromstring(string, dtype=int, sep=',')
     matrix = np.reshape(arr, (3, 3))
     return matrix
+
+
+def convert_1d_to_2d_index(index1, width):
+    x = index1 / width
+    y = index1 % width
+    return (x, y)

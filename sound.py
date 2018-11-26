@@ -5,7 +5,7 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import librosa, math, time, pyaudio, collections, util, memory, copy, cv2, status, random
+import librosa, math, pyaudio, collections, util, memory, copy, cv2, status, random, constants
 import numpy as np
 import skimage.measure
 
@@ -44,7 +44,7 @@ previous_energies = []
 
 MEMORIES = 'mms'
 RANGE = 'rng'
-FEATURE_DATA = {memory.KERNEL: [], memory.FEATURE: [], memory.SIMILAR: False}
+FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 s_filter = {'123': {'filter': [], 'used_count': 0, 'last_used_time': 0, 'memories': {}}}
 
 
@@ -113,7 +113,8 @@ def process(working_memories, work_status, sequential_time_memories):
     init()
     frequency_map = get_mfcc_map()
     slice_memories = [mem for mem in working_memories if
-                      mem[memory.MEMORY_DURATION] is memory.SLICE_MEMORY and mem[memory.FEATURE_TYPE] is memory.SOUND]
+                      mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
+                          constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
 
     matched_feature_memories = match(frequency_map, slice_memories)
 
@@ -121,32 +122,32 @@ def process(working_memories, work_status, sequential_time_memories):
     if len(matched_feature_memories) > 0:
         matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(matched_feature_memories)
-        sequential_time_memories[memory.SLICE_MEMORY].append(new_slice_memory)
+        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
     else:
-        new_slice_memories = memory.get_live_sub_memories(new_feature_memory, memory.PARENT_MEM)
+        new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
         new_matched_feature_memories = match(frequency_map, new_slice_memories)
         new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
-        sequential_time_memories[memory.SLICE_MEMORY].append(new_slice_memory)
+        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
 
-    if not work_status[status.BUSY][status.SHORT_DURATION]:
+    if not work_status[constants.BUSY][constants.SHORT_DURATION]:
         smm = aware(frequency_map)
         if smm is not None:
-            sequential_time_memories[memory.SLICE_MEMORY].append(smm)
+            sequential_time_memories[constants.SLICE_MEMORY].append(smm)
 
 
 def listen(full_frequency_map, fmm):
-    kernel = fmm[memory.KERNEL]
-    feature = fmm[memory.FEATURE]
+    kernel = fmm[constants.KERNEL]
+    feature = fmm[constants.FEATURE]
     data_range = fmm[RANGE]
-    fmm.update({memory.STATUS: memory.MATCHING})
+    fmm.update({constants.STATUS: constants.MATCHING})
     frequency_map = full_frequency_map[:, data_range[0]:data_range[1]]
     data = filter_feature(frequency_map, kernel, feature)
-    if data[memory.SIMILAR]:
+    if data[constants.SIMILAR]:
         # recall memory and update feature to average
-        memory.recall_memory(fmm, {memory.FEATURE: data[memory.FEATURE]})
-        fmm[memory.STATUS] = memory.MATCHED
-    return data[memory.SIMILAR]
+        memory.recall_memory(fmm, {constants.FEATURE: data[constants.FEATURE]})
+        fmm[constants.STATUS] = constants.MATCHED
+    return data[constants.SIMILAR]
 
 
 # match the experience sound sense
@@ -163,15 +164,15 @@ def filter_feature(data, kernel, feature=None):
     standard_feature = util.standardize_feature(threshold_feature)
     new_feature = standard_feature.flatten().astype(int)
     if feature is None:
-        feature_data[memory.FEATURE] = new_feature
+        feature_data[constants.FEATURE] = new_feature
     else:
-        difference = util.compare_feature(new_feature, feature)
+        difference = util.np_array_diff(new_feature, feature)
         if difference < SIMILARITY_THRESHOLD:
-            feature_data[memory.SIMILAR] = True
+            feature_data[constants.SIMILAR] = True
             avg_feature = (feature + new_feature) / 2
-            feature_data[memory.FEATURE] = avg_feature
+            feature_data[constants.FEATURE] = avg_feature
         else:
-            feature_data[memory.FEATURE] = new_feature
+            feature_data[constants.FEATURE] = new_feature
     return feature_data
 
 
@@ -198,8 +199,8 @@ def search_memory(kernel_id, feature1):
     live_memories = memory.get_live_memories(memory_ids)
     if live_memories is not None:
         for mem in live_memories:
-            feature2 = mem[memory.FEATURE]
-            similarity = util.compare_feature(feature1, feature2)
+            feature2 = mem[constants.FEATURE]
+            similarity = util.np_array_diff(feature1, feature2)
             if similarity > SIMILARITY_THRESHOLD:
                 return mem
     return None
@@ -246,7 +247,7 @@ def hear(full_frequency_map):
     new_range = expend_max(range_energies, [max_index, max_index], range_width)
     frequency_map = full_frequency_map[:, new_range[0]:new_range[1]]
     data = filter_feature(frequency_map, kernel)
-    mem = search_memory(kernel, data[memory.FEATURE])
+    mem = search_memory(kernel, data[constants.FEATURE])
     if mem is None:
         mem = db.add_vision()
     return mem
@@ -297,7 +298,7 @@ def aware(full_frequency_map):
     kernel = get_kernel()
     data = filter_feature(frequency_map, kernel)
     if range_data['v'] > VARIANCE_THRESHOLD:
-        fmm = memory.add_feature_memory(memory.SOUND, kernel, data[memory.FEATURE])
+        fmm = memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
         smm = memory.add_slice_memory([fmm])
         return smm
     else:

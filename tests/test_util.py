@@ -96,11 +96,11 @@ class TestUtil(unittest.TestCase):
 
     def test_avg_int(self):
         arr = [1, 2, 3]
-        self.assertEqual(2, util.avg(arr))
+        self.assertEqual(2, util.list_avg(arr))
 
     def test_avg_float(self):
         arr = [1.5, 2.5, 3.5]
-        self.assertEqual(2.5, util.avg(arr))
+        self.assertEqual(2.5, util.list_avg(arr))
 
     def test_standardize_feature1(self):
         matrix = np.array([[0, 0, 0],
@@ -168,6 +168,7 @@ class TestUtil(unittest.TestCase):
         rank_list = util.update_rank_list(SPEED, 3, rank_list)
         sp2 = util.get_top_rank(rank_list)
         # sometimes it will fail
+        print "Don't be panic, this case has 10% chance of failure!"
         self.assertEquals(4, sp2[util.USED_COUNT])
 
     def test_matrix_to_string(self):
@@ -181,6 +182,33 @@ class TestUtil(unittest.TestCase):
         kernel_str = '-1,-1,1,-1,-1,0,1,0,1'
         matrix = util.string_to_feature_matrix(kernel_str)
         self.assertEqual((3, 3), matrix.shape)
+
+    def test_matrix_diff(self):
+        arr1=np.array([[0,1],[2,3]])
+        arr2=np.array([[0,1],[2,3]])
+        difference=util.np_matrix_diff(arr1, arr2)
+        self.assertEqual(0,util.list_avg(difference))
+        arr3=np.array([[5,1],[2,3]])
+        arr4=np.array([[1,1],[2,3]])
+        difference2=util.np_matrix_diff(arr3, arr4)
+        self.assertEqual(0.4,util.list_avg(difference2))
+
+    def test_convert_1d_to_2d_index(self):
+        tuple=util.convert_1d_to_2d_index(0,2)
+        self.assertEqual(0,tuple[0])
+        self.assertEqual(0,tuple[1])
+        tuple=util.convert_1d_to_2d_index(1,2)
+        self.assertEqual(0,tuple[0])
+        self.assertEqual(1,tuple[1])
+        tuple=util.convert_1d_to_2d_index(2,2)
+        self.assertEqual(1,tuple[0])
+        self.assertEqual(0,tuple[1])
+        tuple=util.convert_1d_to_2d_index(3,2)
+        self.assertEqual(1,tuple[0])
+        self.assertEqual(1,tuple[1])
+        tuple=util.convert_1d_to_2d_index(4,2)
+        self.assertEqual(2,tuple[0])
+        self.assertEqual(0,tuple[1])
 
 
 if __name__ == "__main__":

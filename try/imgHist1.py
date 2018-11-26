@@ -2,9 +2,9 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-img = cv2.imread('head10.jpg',1)
+img = cv2.imread('head10.jpg',0)
 hist_cv = cv2.calcHist([img],[0],None,[256],[0,256])
-hist_np,bins = np.histogram(img.ravel(),64,[0,256])
+hist_np,bins = np.histogram(img.ravel(),bins=256, range=[0, 256])
 imgravel=img.ravel()
 hist_np2 = np.bincount(imgravel,minlength=256)
 plt.subplot(221),plt.imshow(img,'gray')

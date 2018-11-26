@@ -1,4 +1,4 @@
-import unittest, vision, memory, cv2, util, time, math
+import unittest, vision, memory, cv2, constants, time, math
 import numpy as np
 from db import Database
 from tinydb import TinyDB, Query
@@ -41,18 +41,18 @@ class TestVision(unittest.TestCase):
         img4_2 = cv2.imread('p4-2.jpg', 0)
         kernel3 = '-1,-1,1,-1,-1,0,1,0,1'
         feature_data1_1 = vision.filter_feature(img1_1, kernel3)
-        feature_data1_2 = vision.filter_feature(img1_2, kernel3, feature_data1_1[memory.FEATURE])
-        feature_data2_1 = vision.filter_feature(img2_1, kernel3, feature_data1_1[memory.FEATURE])
-        self.assertTrue(feature_data1_2[memory.SIMILAR])
-        self.assertFalse(feature_data2_1[memory.SIMILAR])
+        feature_data1_2 = vision.filter_feature(img1_2, kernel3, feature_data1_1[constants.FEATURE])
+        feature_data2_1 = vision.filter_feature(img2_1, kernel3, feature_data1_1[constants.FEATURE])
+        self.assertTrue(feature_data1_2[constants.SIMILAR])
+        self.assertFalse(feature_data2_1[constants.SIMILAR])
         # TODO
-        feature_data2_2 = vision.filter_feature(img2_2, kernel3, feature_data2_1[memory.FEATURE])
+        feature_data2_2 = vision.filter_feature(img2_2, kernel3, feature_data2_1[constants.FEATURE])
         feature_data3_1 = vision.filter_feature(img3_1, kernel3)
-        feature_data3_2 = vision.filter_feature(img3_2, kernel3, feature_data3_1[memory.FEATURE])
-        self.assertTrue(feature_data3_2[memory.SIMILAR])
+        feature_data3_2 = vision.filter_feature(img3_2, kernel3, feature_data3_1[constants.FEATURE])
+        self.assertTrue(feature_data3_2[constants.SIMILAR])
         feature_data4_1 = vision.filter_feature(img4_1, kernel3)
-        feature_data4_2 = vision.filter_feature(img4_2, kernel3, feature_data4_1[memory.FEATURE])
-        self.assertTrue(feature_data4_2[memory.SIMILAR])
+        feature_data4_2 = vision.filter_feature(img4_2, kernel3, feature_data4_1[constants.FEATURE])
+        self.assertTrue(feature_data4_2[constants.SIMILAR])
 
     def test_get_rank(self):
         vision.init()
@@ -80,7 +80,7 @@ class TestVision(unittest.TestCase):
         self.assertGreater(len(memory_indexes), 0)
         kernel2 = '0,0,0,0,1,0,0,0,0'
         vision.update_memory_indexes('y', kernel2, 'id2')
-        element = next((x for x in memory_indexes if x[memory.KERNEL] == kernel2 and x[memory.CHANNEL] == 'y'),
+        element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel2 and x[constants.CHANNEL] == 'y'),
                        None)
         self.assertEquals(2, len(element[vision.MEMORIES]))
 
@@ -92,41 +92,41 @@ class TestVision(unittest.TestCase):
         feature_data1_1 = vision.filter_feature(img1_1, kernel)
         feature_data1_2 = vision.filter_feature(img1_2, kernel)
         channel = 'y'
-        mem = memory.add_vision_memory(memory.VISION, channel, kernel, feature_data1_1[memory.FEATURE])
-        vision.update_memory_indexes(channel, kernel, mem[memory.ID])
+        mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature_data1_1[constants.FEATURE])
+        vision.update_memory_indexes(channel, kernel, mem[constants.ID])
         vision.update_memory_indexes(channel, kernel, '123')
-        new_mem = vision.search_memory(channel, kernel, feature_data1_2[memory.FEATURE])
+        new_mem = vision.search_memory(channel, kernel, feature_data1_2[constants.FEATURE])
         self.assertIsNotNone(new_mem)
 
     def test_calculate_degrees(self):
         vision.current_block = {vision.START_X: 100, vision.START_Y: 100}
         new_block1 = {vision.START_X: 110, vision.START_Y: 110}
         degrees1 = vision.calculate_degrees(new_block1)
-        self.assertEqual(45, degrees1)
+        self.assertEqual(5, degrees1)
         new_block2 = {vision.START_X: 117.32, vision.START_Y: 110}
         degrees2 = vision.calculate_degrees(new_block2)
-        self.assertEqual(30, int(degrees2))
+        self.assertEqual(3, int(degrees2))
         new_block3 = {vision.START_X: 110, vision.START_Y: 90}
         degrees3 = vision.calculate_degrees(new_block3)
-        self.assertEqual(-45, degrees3)
+        self.assertEqual(-5, degrees3)
         new_block4 = {vision.START_X: 90, vision.START_Y: 110}
         degrees4 = vision.calculate_degrees(new_block4)
-        self.assertEqual(135, degrees4)
+        self.assertEqual(14, degrees4)
         new_block5 = {vision.START_X: 100, vision.START_Y: 110}
         degrees5 = vision.calculate_degrees(new_block5)
-        self.assertEqual(90, degrees5)
+        self.assertEqual(9, degrees5)
         new_block6 = {vision.START_X: 90, vision.START_Y: 100}
         degrees6 = vision.calculate_degrees(new_block6)
-        self.assertEqual(180, degrees6)
+        self.assertEqual(18, degrees6)
 
     def test_calculate_action(self):
         vision.screen_width = 1920
         vision.screen_height = 1080
         action = vision.current_action.copy()
-        action[vision.CREATE_TIME] = time.time() - 1
-        action[vision.DEGREES] = 30
-        action[vision.SPEED] = 20
-        action[vision.DURATION] = 2
+        action[vision.CREATE_TIME] = time.time() - 0.2
+        action[constants.DEGREES] = 3
+        action[constants.SPEED] = 2
+        action[constants.DURATION] = 2
         vision.current_block = {vision.START_X: 100, vision.START_Y: 100, vision.WIDTH: 50, vision.HEIGHT: 50}
         vision.calculate_action(action)
         self.assertEqual(110, vision.current_block[vision.START_Y])
@@ -144,21 +144,55 @@ class TestVision(unittest.TestCase):
         cx = 100
         cy = 100
         vision.current_block = {vision.START_X: cx, vision.START_Y: cy, vision.WIDTH: 50, vision.HEIGHT: 50}
-        sx = 10
+        sx = 17
         sy = 10
         nx = cx + sx
         ny = cy + sy
         new_block1 = {vision.START_X: nx, vision.START_Y: ny}
         degrees1 = vision.calculate_degrees(new_block1)
+        self.assertEqual(3,degrees1)
         action = vision.current_action.copy()
         duration = 1
         action[vision.CREATE_TIME] = time.time() - duration
-        action[vision.DEGREES] = degrees1
-        action[vision.SPEED] = math.sqrt(sx * sx + sy * sy)
-        action[vision.DURATION] = duration
+        action[constants.DEGREES] = degrees1
+        action[constants.SPEED] = math.sqrt(sx * sx + sy * sy)/constants.ACTUAL_SPEED_TIMES
+        action[constants.DURATION] = duration
         vision.calculate_action(action)
         self.assertEqual(nx, vision.current_block[vision.START_X])
         self.assertEqual(ny, vision.current_block[vision.START_Y])
+
+    def test_set_movement_absolute(self):
+        vision.current_block = {vision.START_X: 100, vision.START_Y: 100}
+        new_block1 = {vision.START_X: 130, vision.START_Y: 140}
+        vision.set_movement_absolute(new_block1, 1)
+        self.assertEqual(1,vision.current_action[constants.SPEED])
+
+    def test_calculate_block_histogram(self):
+        img1 = cv2.imread('rgb1.jpg', 0)
+        height, width = img1.shape
+        vision.screen_width=width
+        vision.screen_height=height
+        vision.NUMBER_SUB_REGION=2
+        hist1 = vision.calculate_block_histogram(img1)
+        self.assertEqual(4,len(hist1))
+
+    def test_find_most_variable_region(self):
+        img1 = cv2.imread('rgb1.jpg', 0)
+        height, width = img1.shape
+        vision.screen_width=width
+        vision.screen_height=height
+        vision.NUMBER_SUB_REGION=2
+        hist1 = vision.calculate_block_histogram(img1)
+        vision.previous_block_histogram=hist1
+        vision.current_block = {vision.START_X: 0, vision.START_Y: 0, vision.WIDTH: 8, vision.HEIGHT: 8}
+        img2 = cv2.imread('rgb2.jpg', 0)
+        block=vision.find_most_variable_region(img2)
+        self.assertEqual(width/2, block[vision.START_X])
+        self.assertEqual(height/2, block[vision.START_Y])
+
+
+
+
 
 
 if __name__ == "__main__":
