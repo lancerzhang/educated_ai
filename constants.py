@@ -38,3 +38,7 @@ END_TIME = 'edt'
 MEMORY_DURATION = 'mmd'
 HAPPEN_TIME = 'hpt'
 
+# actor
+ACTOR_MOUSE = 'atm'
+CLICK_TYPE = 'clt'
+

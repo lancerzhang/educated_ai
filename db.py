@@ -112,3 +112,14 @@ class Database:
         records = self._search_vision_zoom(zoom_type)
         self.refresh_memories(records, recall)
         return records
+
+    def _search_actor_mouse(self, click_type):
+        query = Query()
+        records = self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.ACTOR_MOUSE) & (
+                    query[constants.CLICK_TYPE] == click_type))
+        return records
+
+    def search_actor_mouse(self, click_type, recall=False):
+        records = self._search_actor_mouse(click_type)
+        self.refresh_memories(records, recall)
+        return records

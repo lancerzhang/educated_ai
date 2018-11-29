@@ -42,6 +42,7 @@ class TestVision(unittest.TestCase):
         kernel3 = '-1,-1,1,-1,-1,0,1,0,1'
         feature_data1_1 = vision.filter_feature(img1_1, kernel3)
         feature_data1_2 = vision.filter_feature(img1_2, kernel3, feature_data1_1[constants.FEATURE])
+        feature_data1_1 = vision.filter_feature(img1_1, kernel3)
         feature_data2_1 = vision.filter_feature(img2_1, kernel3, feature_data1_1[constants.FEATURE])
         self.assertTrue(feature_data1_2[constants.SIMILAR])
         self.assertFalse(feature_data2_1[constants.SIMILAR])
@@ -69,7 +70,7 @@ class TestVision(unittest.TestCase):
 
     def test_get_channel_region(self):
         bgr = cv2.imread('p1-1.jpg', 1)
-        channel_img = vision.get_channel_region(bgr, 'y')
+        channel_img = vision.get_channel_img(bgr, 'y')
         self.assertIsNotNone(channel_img)
 
     def test_update_memory_indexes(self):
@@ -92,7 +93,8 @@ class TestVision(unittest.TestCase):
         feature_data1_1 = vision.filter_feature(img1_1, kernel)
         feature_data1_2 = vision.filter_feature(img1_2, kernel)
         channel = 'y'
-        mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature_data1_1[constants.FEATURE])
+        mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel,
+                                               feature_data1_1[constants.FEATURE])
         vision.update_memory_indexes(channel, kernel, mem[constants.ID])
         vision.update_memory_indexes(channel, kernel, '123')
         new_mem = vision.search_memory(channel, kernel, feature_data1_2[constants.FEATURE])
@@ -150,12 +152,12 @@ class TestVision(unittest.TestCase):
         ny = cy + sy
         new_block1 = {vision.START_X: nx, vision.START_Y: ny}
         degrees1 = vision.calculate_degrees(new_block1)
-        self.assertEqual(3,degrees1)
+        self.assertEqual(3, degrees1)
         action = vision.current_action.copy()
         duration = 1
         action[vision.CREATE_TIME] = time.time() - duration
         action[constants.DEGREES] = degrees1
-        action[constants.SPEED] = math.sqrt(sx * sx + sy * sy)/constants.ACTUAL_SPEED_TIMES
+        action[constants.SPEED] = math.sqrt(sx * sx + sy * sy) / constants.ACTUAL_SPEED_TIMES
         action[constants.DURATION] = duration
         vision.calculate_action(action)
         self.assertEqual(nx, vision.current_block[vision.START_X])
@@ -165,34 +167,30 @@ class TestVision(unittest.TestCase):
         vision.current_block = {vision.START_X: 100, vision.START_Y: 100}
         new_block1 = {vision.START_X: 130, vision.START_Y: 140}
         vision.set_movement_absolute(new_block1, 1)
-        self.assertEqual(1,vision.current_action[constants.SPEED])
+        self.assertEqual(1, vision.current_action[constants.SPEED])
 
     def test_calculate_block_histogram(self):
         img1 = cv2.imread('rgb1.jpg', 0)
         height, width = img1.shape
-        vision.screen_width=width
-        vision.screen_height=height
-        vision.NUMBER_SUB_REGION=2
+        vision.screen_width = width
+        vision.screen_height = height
+        vision.NUMBER_SUB_REGION = 2
         hist1 = vision.calculate_block_histogram(img1)
-        self.assertEqual(4,len(hist1))
+        self.assertEqual(4, len(hist1))
 
     def test_find_most_variable_region(self):
         img1 = cv2.imread('rgb1.jpg', 0)
         height, width = img1.shape
-        vision.screen_width=width
-        vision.screen_height=height
-        vision.NUMBER_SUB_REGION=2
+        vision.screen_width = width
+        vision.screen_height = height
+        vision.NUMBER_SUB_REGION = 2
         hist1 = vision.calculate_block_histogram(img1)
-        vision.previous_block_histogram=hist1
+        vision.previous_block_histogram = hist1
         vision.current_block = {vision.START_X: 0, vision.START_Y: 0, vision.WIDTH: 8, vision.HEIGHT: 8}
-        img2 = cv2.imread('rgb2.jpg', 0)
-        block=vision.find_most_variable_region(img2)
-        self.assertEqual(width/2, block[vision.START_X])
-        self.assertEqual(height/2, block[vision.START_Y])
-
-
-
-
+        img2 = cv2.imread('rgb2.jpg', 1)
+        block = vision.find_most_variable_region(img2)
+        self.assertEqual(width / 2, block[vision.START_X])
+        self.assertEqual(height / 2, block[vision.START_Y])
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ inited = False
 # 1080	540	180	45	9
 screen_width = 0
 screen_height = 0
-ROI_ARR = [12, 36, 72, 144, 288]
+ROI_ARR = [24, 48, 96, 192, 384]
 roi_index = 2
 current_block = None
 START_X = 'sx'
@@ -18,7 +18,7 @@ START_Y = 'sy'
 WIDTH = 'width'
 HEIGHT = 'height'
 NUMBER_SUB_REGION = 10
-FEATURE_SIMILARITY_THRESHOLD = 0.3
+FEATURE_SIMILARITY_THRESHOLD = 0.2
 IMAGE_VARIANCE_THRESHOLD = 0.05
 FEATURE_INPUT_SIZE = 12
 FEATURE_THRESHOLD = 20
@@ -35,11 +35,11 @@ ZOOM_IN = 'zmi'
 ZOOM_OUT = 'zmo'
 CREATE_TIME = 'crt'
 current_action = {STATUS: COMPLETED}
-SPEED_FILE = 'us.npy'
-DEGREES_FILE = 'ud.npy'
-KERNEL_FILE = 'uk.npy'
-CHANNEL_FILE = 'uc.npy'
-MEMORY_INDEX_FILE = 'mi.npy'
+SPEED_FILE = 'vus.npy'
+DEGREES_FILE = 'vud.npy'
+KERNEL_FILE = 'vuk.npy'
+CHANNEL_FILE = 'vuc.npy'
+MEMORY_INDEX_FILE = 'vmi.npy'
 VISION_KERNEL_FILE = 'kernels.npy'
 used_speed_rank = None
 used_degrees_rank = None
@@ -103,16 +103,6 @@ def init():
         inited = True
 
 
-def match_feature(slice_memories):
-    distinct_feature_memories = []
-    slice_memory_children = {}
-    memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
-    for fmm in distinct_feature_memories:
-        watch(fmm)
-    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
-    return matched_feature_memories
-
-
 def save_used_ranks():
     global used_speed_rank
     np.save(SPEED_FILE, used_speed_rank)
@@ -133,9 +123,9 @@ def process(working_memories, work_status, sequential_time_memories):
                               mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
                                   constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FEATURE]
 
-    matched_feature_memories = match_feature(slice_feature_memories)
+    matched_feature_memories = match_features(slice_feature_memories)
 
-    new_feature_memory = look()
+    new_feature_memory = search_feature()
     if len(matched_feature_memories) > 0:
         if new_feature_memory is not None:
             matched_feature_memories.append(new_feature_memory)
@@ -143,7 +133,7 @@ def process(working_memories, work_status, sequential_time_memories):
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
     elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
-        new_matched_feature_memories = match_feature(new_slice_memories)
+        new_matched_feature_memories = match_features(new_slice_memories)
         new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
@@ -175,34 +165,23 @@ def process(working_memories, work_status, sequential_time_memories):
         match_zoom_memories(slice_zoom_memories)
 
 
-def match_movement_memories(memories):
-    mem = memories[0]
-    global current_action
-    current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
-                      constants.DURATION: mem[constants.DURATION], CREATE_TIME: time.time(),
-                      constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE, STATUS: COMPLETED}
-    mem[constants.STATUS] = constants.MATCHED
-    memory.recall_memory(mem)
+def match_features(slice_memories):
+    distinct_feature_memories = []
+    slice_memory_children = {}
+    memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
+    for fmm in distinct_feature_memories:
+        match_feature(fmm)
+    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
+    return matched_feature_memories
 
 
-def match_zoom_memories(memories):
-    mem = memories[0]
-    zoom_type = mem[constants.ZOOM_TYPE]
-    if zoom_type is ZOOM_OUT:
-        zoom_out()
-    elif zoom_type is ZOOM_IN:
-        zoom_in()
-    mem[constants.STATUS] = constants.MATCHED
-    memory.recall_memory(mem)
-
-
-def watch(fmm):
+def match_feature(fmm):
     channel = fmm[constants.CHANNEL]
     kernel = fmm[constants.KERNEL]
     feature = fmm[constants.FEATURE]
     fmm.update({constants.STATUS: constants.MATCHING})
     img = get_region()
-    channel_img = get_channel_region(img, channel)
+    channel_img = get_channel_img(img, channel)
     data = filter_feature(channel_img, kernel, feature)
     if data is None:
         return False  # not similar
@@ -236,6 +215,7 @@ def filter_feature(data, kernel, feature=None):
         feature_data[constants.FEATURE] = new_feature
     else:
         difference = util.np_array_diff(new_feature, feature)
+        print difference
         if difference < FEATURE_SIMILARITY_THRESHOLD:
             feature_data[constants.SIMILAR] = True
             avg_feature = (feature + new_feature) / 2
@@ -243,11 +223,6 @@ def filter_feature(data, kernel, feature=None):
         else:
             feature_data[constants.FEATURE] = new_feature
     return feature_data
-
-
-def update_kernel_rank(kernel):
-    global used_kernel_rank
-    used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, used_kernel_rank)
 
 
 # get a frequent use kernel or a random kernel by certain possibility
@@ -258,6 +233,95 @@ def get_kernel():
         index = random.randint(0, shape[0] - 1)
         kernel = vision_kernels[index]
     return kernel
+
+
+def update_kernel_rank(kernel):
+    global used_kernel_rank
+    used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, used_kernel_rank)
+
+
+# try to find more detail
+def search_feature():
+    channel = get_channel()
+    img = get_region()
+    kernel = get_kernel()
+    channel_img = get_channel_img(img, channel)
+    data = filter_feature(channel_img, kernel)
+    if data is None:
+        return None
+    mem = search_memory(channel, kernel, data[constants.FEATURE])
+    if mem is None:
+        mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, data[constants.FEATURE])
+        update_memory_indexes(channel, kernel, mem[constants.ID])
+    update_kernel_rank(kernel)
+    update_channel_rank(channel)
+    return mem
+
+
+# search memory by kernel using index
+def search_memory(channel, kernel, feature1):
+    global memory_indexes
+    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
+                   None)
+    if element is not None:
+        memory_ids = element[MEMORIES]
+        live_memories = memory.get_live_memories(memory_ids)
+        if live_memories is not None:
+            for mem in live_memories:
+                feature2 = mem[constants.FEATURE]
+                difference = util.np_array_diff(feature1, feature2)
+                if difference < FEATURE_SIMILARITY_THRESHOLD:
+                    return mem
+    return None
+
+
+def update_memory_indexes(channel, kernel, mid):
+    global memory_indexes
+    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
+                   None)
+    if element is None:
+        new_kernel = {constants.CHANNEL: channel, constants.KERNEL: kernel, MEMORIES: [mid]}
+        memory_indexes = np.append(memory_indexes, new_kernel)
+    else:
+        memory_ids = element[MEMORIES]
+        if mid not in memory_ids:
+            memory_ids.append(mid)
+
+
+def aware():
+    duration = get_duration()
+    full_img = ImageGrab.grab()
+    block = find_most_variable_region(full_img)
+    if block['v'] > IMAGE_VARIANCE_THRESHOLD:
+        # move focus to variable region
+        set_movement_absolute(block, duration)
+
+
+def find_most_variable_region(full_img):
+    new_block = {}
+    channel_img=get_channel_img(full_img, 'y')
+    this_block_histogram = calculate_block_histogram(channel_img)
+    global previous_block_histogram
+    if len(previous_block_histogram) == 0:
+        previous_block_histogram = this_block_histogram
+        return None
+    else:
+        diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
+        previous_block_histogram = this_block_histogram
+        max_index = np.argmax(diff_arr)
+        max_var = diff_arr[max_index]
+        if max_var < IMAGE_VARIANCE_THRESHOLD:
+            return None
+        width = screen_width / NUMBER_SUB_REGION
+        height = screen_height / NUMBER_SUB_REGION
+        new_index_x, new_index_y = util.convert_1d_to_2d_index(max_index, NUMBER_SUB_REGION)
+        new_start_x = new_index_x * width
+        new_start_y = new_index_y * height
+        new_block[START_X] = calculate_start_x(new_start_x)
+        new_block[START_Y] = calculate_start_y(new_start_y)
+        new_block.update({'v': max_var})
+        previous_block_histogram = this_block_histogram
+    return new_block
 
 
 def update_degrees_rank(degrees):
@@ -305,52 +369,110 @@ def get_duration():
     return random.randint(1, 5) / 10.0
 
 
-# try to find more detail
-def look():
-    channel = get_channel()
-    img = get_region()
-    kernel = get_kernel()
-    channel_img = get_channel_region(img, channel)
-    data = filter_feature(channel_img, kernel)
-    if data is None:
-        return None
-    mem = search_memory(channel, kernel, data[constants.FEATURE])
-    if mem is None:
-        mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, data[constants.FEATURE])
-        update_memory_indexes(channel, kernel, mem[constants.ID])
-    update_kernel_rank(kernel)
-    update_channel_rank(channel)
-    return mem
-
-
-def update_memory_indexes(channel, kernel, mid):
-    global memory_indexes
-    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
-                   None)
-    if element is None:
-        new_kernel = {constants.CHANNEL: channel, constants.KERNEL: kernel, MEMORIES: [mid]}
-        memory_indexes = np.append(memory_indexes, new_kernel)
+def explore():
+    ri = random.randint(0, 1)
+    if ri == 0:
+        return random_move()
     else:
-        memory_ids = element[MEMORIES]
-        if mid not in memory_ids:
-            memory_ids.append(mid)
+        return random_zoom()
 
 
-# search memory by kernel using index
-def search_memory(channel, kernel, feature1):
-    global memory_indexes
-    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
-                   None)
-    if element is not None:
-        memory_ids = element[MEMORIES]
-        live_memories = memory.get_live_memories(memory_ids)
-        if live_memories is not None:
-            for mem in live_memories:
-                feature2 = mem[constants.FEATURE]
-                difference = util.np_array_diff(feature1, feature2)
-                if difference < FEATURE_SIMILARITY_THRESHOLD:
-                    return mem
-    return None
+def random_move():
+    # random move, explore the world
+    degrees = get_degrees()
+    update_degrees_rank(degrees)
+    # most frequent speed
+    speed = get_speed()
+    update_speed_rank(speed)
+    # 0.1-0.5s
+    duration = get_duration()
+    slice_memory = set_movement_relative(degrees, speed, duration)
+    return slice_memory
+
+
+def random_zoom():
+    ri = random.randint(0, 1)
+    if ri == 0:
+        zoom_type = zoom_in()
+    else:
+        zoom_type = zoom_out()
+    if zoom_type is None:
+        return None
+    action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type}
+    mem = db.search_vision_zoom(zoom_type)
+    if mem is None:
+        action_memory = db.add_memory(action)
+    else:
+        memory.recall_memory(mem)
+        action_memory = mem
+    slice_memory = memory.add_slice_memory([action_memory])
+    return slice_memory
+
+
+def get_channel_img(bgr, channel):
+    yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
+    y, u, v = cv2.split(yuv)
+    if channel is 'y':
+        return y
+    elif channel is 'u':
+        return u
+    elif channel is 'v':
+        return v
+
+
+def zoom_in():
+    global roi_index
+    temp_index = roi_index - 1
+    if temp_index < 0:
+        return None
+    roi_index = temp_index
+    return ZOOM_IN
+
+
+def zoom_out():
+    global roi_index
+    temp_index = roi_index + 1
+    if temp_index > (len(ROI_ARR) - 1):
+        return None
+    temp_width = ROI_ARR[temp_index]
+    if current_block[START_X] + temp_width > screen_width:
+        return None
+    if current_block[START_Y] + temp_width > screen_height:
+        return None
+    roi_index = temp_index
+    return ZOOM_OUT
+
+
+def get_region():
+    global current_block
+    roi_image = crop(current_block)
+    cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
+    img = cv2.resize(cv_img, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
+    return img
+
+
+def set_movement_absolute(new_block, duration):
+    degrees = calculate_degrees(new_block)
+    length = math.hypot(new_block[START_Y] - current_block[START_Y], new_block[START_X] - current_block[START_X])
+    speed = length / duration / constants.ACTUAL_SPEED_TIMES
+    set_movement_relative(degrees, speed, duration)
+
+
+def set_movement_relative(degrees, speed, duration):
+    global current_action
+    action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
+              constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
+    memories = db.search_vision_movement(degrees, speed, duration)
+    if memories is None or len(memories) == 0:
+        action_memory = db.add_memory(action)
+    else:
+        mem = memories[0]
+        memory.recall_memory(mem)
+        action_memory = mem
+    slice_memory = memory.add_slice_memory([action_memory])
+    current_action = copy.deepcopy(action)
+    current_action.update({CREATE_TIME: time.time(), STATUS: IN_PROGRESS})
+    return slice_memory
 
 
 def calculate_start_x(new_start_x):
@@ -391,156 +513,37 @@ def calculate_action(action):
         action.update({STATUS: COMPLETED})
 
 
-def calculate_block_histogram(img):
+def calculate_block_histogram(channel_img):
     block_histogram = []
     width = screen_width / NUMBER_SUB_REGION
     height = screen_height / NUMBER_SUB_REGION
     for j in range(0, NUMBER_SUB_REGION):
         for i in range(0, NUMBER_SUB_REGION):
-            ret = img[j * height:(j + 1) * height, i * width:(i + 1) * width]
+            ret = channel_img[j * height:(j + 1) * height, i * width:(i + 1) * width]
             hist_np, bins = np.histogram(ret.ravel(), bins=27, range=[0, 256])
             block_histogram.append(hist_np)
     return block_histogram
 
 
-def find_most_variable_region(full_img):
-    new_block = {}
-    this_block_histogram = calculate_block_histogram(full_img)
-    global previous_block_histogram
-    if len(previous_block_histogram) == 0:
-        previous_block_histogram = this_block_histogram
-        return None
-    else:
-        diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
-        previous_block_histogram = this_block_histogram
-        max_index = np.argmax(diff_arr)
-        max_var = diff_arr[max_index]
-        if max_var < IMAGE_VARIANCE_THRESHOLD:
-            return None
-        width = screen_width / NUMBER_SUB_REGION
-        height = screen_height / NUMBER_SUB_REGION
-        new_index_x, new_index_y = util.convert_1d_to_2d_index(max_index, NUMBER_SUB_REGION)
-        new_start_x = new_index_x * width
-        new_start_y = new_index_y * height
-        new_block[START_X] = calculate_start_x(new_start_x)
-        new_block[START_Y] = calculate_start_y(new_start_y)
-        new_block.update({'v': max_var})
-        previous_block_histogram = this_block_histogram
-    return new_block
-
-
-def aware():
-    duration = get_duration()
-    full_img = ImageGrab.grab()
-    block = find_most_variable_region(full_img)
-    if block['v'] > IMAGE_VARIANCE_THRESHOLD:
-        # move focus to variable region
-        set_movement_absolute(block, duration)
-
-
-def zoom_in():
-    global roi_index
-    temp_index = roi_index - 1
-    if temp_index < 0:
-        return None
-    roi_index = temp_index
-    return ZOOM_IN
-
-
-def zoom_out():
-    global roi_index
-    temp_index = roi_index + 1
-    if temp_index > (len(ROI_ARR) - 1):
-        return None
-    temp_width = ROI_ARR[temp_index]
-    if current_block[START_X] + temp_width > screen_width:
-        return None
-    if current_block[START_Y] + temp_width > screen_height:
-        return None
-    roi_index = temp_index
-    return ZOOM_OUT
-
-
-def random_zoom():
-    ri = random.randint(0, 1)
-    if ri == 0:
-        zoom_type = zoom_in()
-    else:
-        zoom_type = zoom_out()
-    if zoom_type is None:
-        return None
-    action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type}
-    mem = db.search_vision_zoom(zoom_type)
-    if mem is None:
-        action_memory = db.add_memory(action)
-    else:
-        memory.recall_memory(mem)
-        action_memory = mem
-    slice_memory = memory.add_slice_memory([action_memory])
-    return slice_memory
-
-
-def set_movement_absolute(new_block, duration):
-    degrees = calculate_degrees(new_block)
-    length = math.hypot(new_block[START_Y] - current_block[START_Y], new_block[START_X] - current_block[START_X])
-    speed = length / duration / constants.ACTUAL_SPEED_TIMES
-    set_movement_relative(degrees, speed, duration)
-
-
-def set_movement_relative(degrees, speed, duration):
+def match_movement_memories(memories):
+    mem = memories[0]
     global current_action
-    action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
-              constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
-    mem = db.search_vision_movement(degrees, speed, duration)
-    if mem is None:
-        action_memory = db.add_memory(action)
-    else:
-        memory.recall_memory(mem)
-        action_memory = mem
-    slice_memory = memory.add_slice_memory([action_memory])
-    current_action = copy.deepcopy(action)
-    current_action.update({CREATE_TIME: time.time(), STATUS: IN_PROGRESS})
-    return slice_memory
+    current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
+                      constants.DURATION: mem[constants.DURATION], CREATE_TIME: time.time(),
+                      constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE, STATUS: COMPLETED}
+    mem[constants.STATUS] = constants.MATCHED
+    memory.recall_memory(mem)
 
 
-def random_move():
-    # random move, explore the world
-    degrees = get_degrees()
-    update_degrees_rank(degrees)
-    # most frequent speed
-    speed = get_speed()
-    update_speed_rank(speed)
-    # 0.1-0.5s
-    duration = get_duration()
-    slice_memory = set_movement_relative(degrees, speed, duration)
-    return slice_memory
-
-
-def explore():
-    ri = random.randint(0, 1)
-    if ri == 0:
-        return random_move()
-    else:
-        return random_zoom()
-
-
-def get_channel_region(bgr, channel):
-    yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
-    y, u, v = cv2.split(yuv)
-    if channel is 'y':
-        return y
-    elif channel is 'u':
-        return u
-    elif channel is 'v':
-        return v
-
-
-def get_region():
-    global current_block
-    roi_image = crop(current_block)
-    cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
-    img = cv2.resize(cv_img, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
-    return img
+def match_zoom_memories(memories):
+    mem = memories[0]
+    zoom_type = mem[constants.ZOOM_TYPE]
+    if zoom_type is ZOOM_OUT:
+        zoom_out()
+    elif zoom_type is ZOOM_IN:
+        zoom_in()
+    mem[constants.STATUS] = constants.MATCHED
+    memory.recall_memory(mem)
 
 
 def crop(block):

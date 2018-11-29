@@ -16,50 +16,36 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 SAMPLE_RATE = 44100
 SAMPLE_WIDTH = 2  # 16-bit
-DEFAULT_PHASE_DURATION = 0.1  # second of buffer
+DEFAULT_PHASE_DURATION = 0.2  # second of buffer
+MAX_FREQUENCY = 8000
 
 phases = collections.deque()  # phases queue
 MAX_PHASES = 5  # max phases storage
 ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
 
-db = None
-
-FREQUENCY_WIDTH = 13
+FREQUENCY_MAP_HEIGHT = 20
+HOP_LENGTH = 512
 ROI_ARR = [3, 5, 9, 13]
 ROI_LEVEL = 1
 current_range = {}
-INPUT_SIZE = 3
-SIMILARITY_THRESHOLD = 0.3
-VARIANCE_THRESHOLD = 0.3
+FEATURE_SIMILARITY_THRESHOLD = 0.2
+VARIANCE_THRESHOLD = 0.05
 FEATURE_INPUT_SIZE = 12
-FEATURE_THRESHOLD = 20
+FEATURE_THRESHOLD = 10
 POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
 RANGE_ARR = [3, 5]
-
-KERNEL_FILE = 'uk.npy'
-SOUND_KERNEL_FILE = 'vision_kernels90.npy'
-used_kernel_rank = None
-sound_kernels = None
-previous_energies = []
-
 MEMORIES = 'mms'
 RANGE = 'rng'
+KERNEL_FILE = 'suk.npy'
+SOUND_KERNEL_FILE = 'kernels.npy'
+used_kernel_rank = None
+sound_kernels = None
+memory_indexes = None
+previous_energies = []
+
+db = None
 FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 s_filter = {'123': {'filter': [], 'used_count': 0, 'last_used_time': 0, 'memories': {}}}
-
-
-def init():
-    global inited
-    if inited is False:
-        global used_kernel_rank
-        try:
-            used_kernel_rank = np.load(KERNEL_FILE)
-        except IOError:
-            used_kernel_rank = {}
-
-        global sound_kernels
-        sound_kernels = np.load(SOUND_KERNEL_FILE)
-        inited = True
 
 
 def receive(phase_duration=DEFAULT_PHASE_DURATION):
@@ -84,7 +70,7 @@ def receive(phase_duration=DEFAULT_PHASE_DURATION):
                     break  # reached end of the stream
                 np_buffer = np.fromstring(audio_buffer, dtype=np.int16)
                 normal_buffer = util.normalize_audio_data(np_buffer)
-                frame_data.append(normal_buffer)
+                frame_data = frame_data + normal_buffer
                 frame_count += 1
                 if frame_count >= buffer_count_of_phase:
                     break
@@ -99,33 +85,45 @@ def receive(phase_duration=DEFAULT_PHASE_DURATION):
         pass
 
 
-def match(frequency_map, slice_memories):
-    distinct_feature_memories = []
-    slice_memory_children = {}
-    memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
-    for fmm in distinct_feature_memories:
-        listen(frequency_map, fmm)
-    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
-    return matched_feature_memories
+def init():
+    global inited
+    if inited is False:
+        global used_kernel_rank
+        try:
+            used_kernel_rank = np.load(KERNEL_FILE)
+        except IOError:
+            used_kernel_rank = np.array([])
+
+        global sound_kernels
+        sound_kernels = np.load(SOUND_KERNEL_FILE)
+        inited = True
+
+
+def save_used_ranks():
+    global used_kernel_rank
+    np.save(KERNEL_FILE, used_kernel_rank)
 
 
 def process(working_memories, work_status, sequential_time_memories):
     init()
-    frequency_map = get_mfcc_map()
-    slice_memories = [mem for mem in working_memories if
-                      mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
-                          constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
+    frequency_map = get_frequency_map()
+    if frequency_map is None:
+        return
+    slice_feature_memories = [mem for mem in working_memories if
+                              mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
+                                  constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
 
-    matched_feature_memories = match(frequency_map, slice_memories)
+    matched_feature_memories = match_features(frequency_map, slice_feature_memories)
 
-    new_feature_memory = hear(frequency_map)
+    new_feature_memory = search_feature(frequency_map)
     if len(matched_feature_memories) > 0:
-        matched_feature_memories.append(new_feature_memory)
+        if new_feature_memory is not None:
+            matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-    else:
+    elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
-        new_matched_feature_memories = match(frequency_map, new_slice_memories)
+        new_matched_feature_memories = match_features(frequency_map, new_slice_memories)
         new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
@@ -136,38 +134,59 @@ def process(working_memories, work_status, sequential_time_memories):
             sequential_time_memories[constants.SLICE_MEMORY].append(smm)
 
 
-def listen(full_frequency_map, fmm):
+def match_features(frequency_map, slice_memories):
+    distinct_feature_memories = []
+    slice_memory_children = {}
+    memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
+    for fmm in distinct_feature_memories:
+        match_feature(frequency_map, fmm)
+    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
+    return matched_feature_memories
+
+
+def match_feature(full_frequency_map, fmm):
     kernel = fmm[constants.KERNEL]
     feature = fmm[constants.FEATURE]
     data_range = fmm[RANGE]
     fmm.update({constants.STATUS: constants.MATCHING})
     frequency_map = full_frequency_map[:, data_range[0]:data_range[1]]
     data = filter_feature(frequency_map, kernel, feature)
+    if data is None:
+        return False  # not similar
     if data[constants.SIMILAR]:
         # recall memory and update feature to average
         memory.recall_memory(fmm, {constants.FEATURE: data[constants.FEATURE]})
         fmm[constants.STATUS] = constants.MATCHED
+        update_kernel_rank(kernel)
     return data[constants.SIMILAR]
 
 
 # match the experience sound sense
-def filter_feature(data, kernel, feature=None):
+def filter_feature(raw, kernel, feature=None):
+    # map to image color range
+    color_data = raw / (MAX_FREQUENCY / 256)
+    data = color_data.astype(np.uint8)
     feature_data = copy.deepcopy(FEATURE_DATA)
+    feature_data[constants.KERNEL] = kernel
     data_map = cv2.resize(data, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
-    cov = cv2.filter2D(data_map, -1, kernel)
+    kernel_arr = util.string_to_feature_matrix(kernel)
+    cov = cv2.filter2D(data_map, -1, kernel_arr)
     # down-sampling once use max pool, size is 50% of origin
     new_feature_pool1 = skimage.measure.block_reduce(cov, (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
     # down-sampling again use max pool, size is 25% of origin
     new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1, (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
     # reduce not obvious feature
     threshold_feature = np.where(new_feature_pool2 < FEATURE_THRESHOLD, 0, new_feature_pool2)
+    if threshold_feature.sum() == 0:
+        return None  # no any feature found
     standard_feature = util.standardize_feature(threshold_feature)
     new_feature = standard_feature.flatten().astype(int)
     if feature is None:
         feature_data[constants.FEATURE] = new_feature
     else:
         difference = util.np_array_diff(new_feature, feature)
-        if difference < SIMILARITY_THRESHOLD:
+        print difference
+        if difference < FEATURE_SIMILARITY_THRESHOLD:
             feature_data[constants.SIMILAR] = True
             avg_feature = (feature + new_feature) / 2
             feature_data[constants.FEATURE] = avg_feature
@@ -178,32 +197,127 @@ def filter_feature(data, kernel, feature=None):
 
 # get a frequent use kernel or a random kernel by certain possibility
 def get_kernel():
-    global used_kernel_rank
-    ri = random.randint(0, 9)
-    if len(used_kernel_rank) == 0 or ri == 0:
+    kernel = util.get_top_rank(used_kernel_rank)
+    if kernel is None:
         shape = sound_kernels.shape
         index = random.randint(0, shape[0] - 1)
-        return sound_kernels[index]
+        kernel = sound_kernels[index]
+    return kernel
+
+
+def update_kernel_rank(kernel):
+    global used_kernel_rank
+    used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, used_kernel_rank)
+
+
+# try to find more detail
+def search_feature(full_frequency_map):
+    kernel = get_kernel()
+    range_width = get_range()
+    energies = get_energy(full_frequency_map)
+    range_energies = get_range_energy(energies, range_width)
+    max_index = np.argmax(range_energies)
+    new_range = expend_max(range_energies, [max_index, max_index], range_width)
+    frequency_map = full_frequency_map[:, new_range[0]:new_range[1]]
+    data = filter_feature(frequency_map, kernel)
+    if data is None:
+        return None
+    mem = search_memory(kernel, data[constants.FEATURE])
+    if mem is None:
+        mem = memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
+        update_memory_indexes(kernel, mem[constants.ID])
+    update_kernel_rank(kernel)
+    return mem
+
+
+# search memory by kernel using index
+def search_memory(kernel, feature1):
+    global memory_indexes
+    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel), None)
+    if element is not None:
+        memory_ids = element[MEMORIES]
+        live_memories = memory.get_live_memories(memory_ids)
+        if live_memories is not None:
+            for mem in live_memories:
+                feature2 = mem[constants.FEATURE]
+                difference = util.np_array_diff(feature1, feature2)
+                if difference < FEATURE_SIMILARITY_THRESHOLD:
+                    return mem
+    return None
+
+
+def update_memory_indexes(kernel, mid):
+    global memory_indexes
+    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel),
+                   None)
+    if element is None:
+        new_kernel = {constants.KERNEL: kernel, MEMORIES: [mid]}
+        memory_indexes = np.append(memory_indexes, new_kernel)
     else:
-        return used_kernel_rank[0]
+        memory_ids = element[MEMORIES]
+        if mid not in memory_ids:
+            memory_ids.append(mid)
+
+
+def aware(full_frequency_map):
+    range_data = find_most_variable_region(full_frequency_map)
+    frequency_map = full_frequency_map[:, range_data[0]:range_data[1]]
+    kernel = get_kernel()
+    data = filter_feature(frequency_map, kernel)
+    if range_data['v'] > VARIANCE_THRESHOLD:
+        fmm = memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
+        smm = memory.add_slice_memory([fmm])
+        return smm
+    else:
+        return None
+
+
+def find_most_variable_region(frequency_map):
+    range_width = get_range()
+    new_range = {}
+    this_energies = get_energy(frequency_map)
+    global previous_energies
+    if len(previous_energies) == 0:
+        previous_energies = this_energies
+    else:
+        previous_range_energies = get_range_energy(previous_energies, range_width)
+        this_range_energy = get_range_energy(this_energies, range_width)
+        diff_arr = abs(previous_range_energies - this_range_energy) / this_range_energy
+        max_index = np.argmax(diff_arr)
+        max_var = diff_arr(max_index)
+        new_range.update({RANGE: [max_index, max_index + range_width]})
+        new_range.update({'v': max_var})
+        previous_energies = this_energies
+    return new_range
+
+
+def get_frequency_map():
+    if len(phases) == 0:
+        return None
+    frame = phases.popleft()
+    map_width = (len(frame) / HOP_LENGTH) + 1
+    if map_width >= FEATURE_INPUT_SIZE:
+        map_height = map_width
+    else:
+        map_height = FREQUENCY_MAP_HEIGHT
+    # frequency_map = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT)
+    frequency_map = librosa.feature.melspectrogram(y=frame, sr=SAMPLE_RATE, n_mels=map_height, hop_length=HOP_LENGTH,
+                                                   fmax=MAX_FREQUENCY)
+    return frequency_map
+
+
+def get_energy(frequency_map):
+    this_energy = []
+    for i in range(0, len(frequency_map)):
+        line = frequency_map[i]
+        energy = np.average(line)
+        this_energy.append(energy)
+    return this_energy
 
 
 def get_range():
     index = random.randint(0, len(RANGE_ARR) - 1)
     return RANGE_ARR[index]
-
-
-# search memory by kernel using index
-def search_memory(kernel_id, feature1):
-    memory_ids = used_kernel_rank.get(kernel_id)[MEMORIES]
-    live_memories = memory.get_live_memories(memory_ids)
-    if live_memories is not None:
-        for mem in live_memories:
-            feature2 = mem[constants.FEATURE]
-            similarity = util.np_array_diff(feature1, feature2)
-            if similarity > SIMILARITY_THRESHOLD:
-                return mem
-    return None
 
 
 def get_range_energy(energy, range_width):
@@ -235,71 +349,3 @@ def expend_max(range_energies, temp_range, range_width):
         expend_max(range_energies, temp_range, range_width)
     else:
         return new_range
-
-
-# try to find more detail
-def hear(full_frequency_map):
-    kernel = get_kernel()
-    range_width = get_range()
-    energies = get_energy(full_frequency_map)
-    range_energies = get_range_energy(energies, range_width)
-    max_index = np.argmax(range_energies)
-    new_range = expend_max(range_energies, [max_index, max_index], range_width)
-    frequency_map = full_frequency_map[:, new_range[0]:new_range[1]]
-    data = filter_feature(frequency_map, kernel)
-    mem = search_memory(kernel, data[constants.FEATURE])
-    if mem is None:
-        mem = db.add_vision()
-    return mem
-
-
-def get_mfcc_map():
-    if len(phases) == 0:
-        return None
-    mfcc_map = []
-    frames = phases.popleft()
-    for frame in frames:
-        mfcc = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=FREQUENCY_WIDTH)
-        mfcc_map.append(mfcc)
-    return mfcc_map
-
-
-def get_energy(frequency_map):
-    this_energy = []
-    for i in range(0, len(frequency_map)):
-        line = frequency_map[i]
-        energy = np.average(line)
-        this_energy.append(energy)
-    return this_energy
-
-
-def find_most_variable_range(frequency_map):
-    range_width = get_range()
-    new_range = {}
-    this_energies = get_energy(frequency_map)
-    global previous_energies
-    if len(previous_energies) == 0:
-        previous_energies = this_energies
-    else:
-        previous_range_energies = get_range_energy(previous_energies, range_width)
-        this_range_energy = get_range_energy(this_energies, range_width)
-        diff_arr = abs(previous_range_energies - this_range_energy) / this_range_energy
-        max_index = np.argmax(diff_arr)
-        max_var = diff_arr(max_index)
-        new_range.update({RANGE: [max_index, max_index + range_width]})
-        new_range.update({'v': max_var})
-        previous_energies = this_energies
-    return new_range
-
-
-def aware(full_frequency_map):
-    range_data = find_most_variable_range(full_frequency_map)
-    frequency_map = full_frequency_map[:, range_data[0]:range_data[1]]
-    kernel = get_kernel()
-    data = filter_feature(frequency_map, kernel)
-    if range_data['v'] > VARIANCE_THRESHOLD:
-        fmm = memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
-        smm = memory.add_slice_memory([fmm])
-        return smm
-    else:
-        return None

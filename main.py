@@ -1,4 +1,4 @@
-import time, util, memory, vision, status, sound, copy
+import time, util, memory, vision, status, sound, copy, actor, constants
 from db import Database
 from tinydb import TinyDB
 
@@ -28,6 +28,7 @@ try:
 
         vision.process(working_memories, work_status, sequential_time_memories)
         sound.process(working_memories, work_status, sequential_time_memories)
+        actor.process(working_memories, work_status, sequential_time_memories)
 
         memory.check_expectation(working_memories, sequential_time_memories)
         memory.compose(sequential_time_memories)
@@ -39,7 +40,7 @@ try:
         duration = util.time_diff(start)
         status.update_status(work_status, duration, working_memories)
 
-        if not work_status[status.BUSY][status.MEDIUM_DURATION]:
+        if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
             working_memories = memory.cleanup_working_memories(working_memories, work_status)
 
 except KeyboardInterrupt:
