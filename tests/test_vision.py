@@ -83,7 +83,7 @@ class TestVision(unittest.TestCase):
         vision.update_memory_indexes('y', kernel2, 'id2')
         element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel2 and x[constants.CHANNEL] == 'y'),
                        None)
-        self.assertEquals(2, len(element[vision.MEMORIES]))
+        self.assertEquals(2, len(element[constants.MEMORIES]))
 
     def test_search_memory(self):
         vision.init()
@@ -191,6 +191,34 @@ class TestVision(unittest.TestCase):
         block = vision.find_most_variable_region(img2)
         self.assertEqual(width / 2, block[vision.START_X])
         self.assertEqual(height / 2, block[vision.START_Y])
+
+    def test_zoom_in(self):
+        vision.roi_index=1
+        vision.zoom_in()
+        self.assertEqual(0,vision.roi_index)
+        vision.roi_index=0
+        vision.zoom_in()
+        self.assertEqual(0,vision.roi_index)
+
+    def test_zoom_out(self):
+        vision.screen_width=200
+        vision.screen_height=200
+        vision.current_block={vision.START_X: 100, vision.START_Y: 100, vision.WIDTH: 50, vision.HEIGHT: 50}
+        vision.roi_index=0
+        vision.zoom_out()
+        self.assertEqual(1,vision.roi_index)
+        max_index=len(vision.ROI_ARR)-1
+        vision.roi_index=max_index
+        vision.zoom_out()
+        self.assertEqual(max_index,vision.roi_index)
+        vision.roi_index=2
+        vision.zoom_out()
+        self.assertEqual(2,vision.roi_index)
+
+    def test_get_duration(self):
+        result=vision.get_duration()
+        self.assertGreater(result,0)
+        self.assertLess(result,0.6)
 
 
 if __name__ == "__main__":

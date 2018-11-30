@@ -28,12 +28,9 @@ class Database:
         if mem is not None:
             memory.refresh(mem, recall, True)
             if mem[constants.STRENGTH] == -1:
+                self.remove_memory(mem[constants.ID])
                 return None
         return mem
-
-    # return None if not found
-    def use_memory(self, mid):
-        return self.get_memory(mid, True)
 
     def update_memory(self, fields, mid):
         self.table.update(fields, Query()[constants.ID] == mid)
@@ -48,7 +45,7 @@ class Database:
             memory.refresh(record, recall, True)
             if record[constants.STRENGTH] == -1:
                 cleaned = cleaned + 1
-                self.table.remove(Query()[constants.ID] == record[constants.ID])
+                self.remove_memory(record[constants.ID])
                 tobe_removed.append(record[constants.ID])
         for mid in tobe_removed:
             for record in records:
@@ -93,33 +90,33 @@ class Database:
         query = Query()
         records = self.table.search(
             (query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_MOVE) & (
-                        query[constants.DEGREES] == degrees) & (
+                    query[constants.DEGREES] == degrees) & (
                     query[constants.SPEED] == speed) & (query[constants.DURATION] == duration))
         return records
 
-    def search_vision_movement(self, degrees, speed, duration, recall=False):
+    def search_vision_movement(self, degrees, speed, duration):
         records = self._search_vision_movement(degrees, speed, duration)
-        self.refresh_memories(records, recall)
+        self.refresh_memories(records, True)
         return records
 
     def _search_vision_zoom(self, zoom_type):
         query = Query()
         records = self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_ZOOM) & (
-                    query[constants.ZOOM_TYPE] == zoom_type))
+                query[constants.ZOOM_TYPE] == zoom_type))
         return records
 
-    def search_vision_zoom(self, zoom_type, recall=False):
+    def search_vision_zoom(self, zoom_type):
         records = self._search_vision_zoom(zoom_type)
-        self.refresh_memories(records, recall)
+        self.refresh_memories(records, True)
         return records
 
     def _search_actor_mouse(self, click_type):
         query = Query()
         records = self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.ACTOR_MOUSE) & (
-                    query[constants.CLICK_TYPE] == click_type))
+                query[constants.CLICK_TYPE] == click_type))
         return records
 
-    def search_actor_mouse(self, click_type, recall=False):
+    def search_actor_mouse(self, click_type):
         records = self._search_actor_mouse(click_type)
-        self.refresh_memories(records, recall)
+        self.refresh_memories(records, True)
         return records

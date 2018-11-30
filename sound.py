@@ -1,10 +1,3 @@
-# 1 second = 86.5 mel frames
-# find max energy position
-# expend the width to 3, add tolerance
-# detect if it elapse more than 3 frames, if yes, save to memory
-# next time, can detect if has such activation
-# if recall many times, can explore more features
-
 import librosa, math, pyaudio, collections, util, memory, copy, cv2, status, random, constants
 import numpy as np
 import skimage.measure
@@ -25,27 +18,28 @@ ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
 
 FREQUENCY_MAP_HEIGHT = 20
 HOP_LENGTH = 512
-ROI_ARR = [3, 5, 9, 13]
-ROI_LEVEL = 1
-current_range = {}
-FEATURE_SIMILARITY_THRESHOLD = 0.2
-VARIANCE_THRESHOLD = 0.05
 FEATURE_INPUT_SIZE = 12
 FEATURE_THRESHOLD = 10
+FEATURE_SIMILARITY_THRESHOLD = 0.2
 POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
-RANGE_ARR = [3, 5]
-MEMORIES = 'mms'
-RANGE = 'rng'
-KERNEL_FILE = 'suk.npy'
+USED_KERNEL_FILE = 'suk.npy'
+MEMORY_INDEX_FILE = 'smi.npy'
 SOUND_KERNEL_FILE = 'kernels.npy'
 used_kernel_rank = None
 sound_kernels = None
 memory_indexes = None
+previous_phase = None
 previous_energies = []
 
-db = None
+ROI_ARR = [3, 5, 9, 13]
+ROI_LEVEL = 1
+current_range = {}
+RANGE_ARR = [5, 10, 15]
+RANGE = 'rng'
+REGION_VARIANCE_THRESHOLD = 0.05
+
 FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
-s_filter = {'123': {'filter': [], 'used_count': 0, 'last_used_time': 0, 'memories': {}}}
+db = None
 
 
 def receive(phase_duration=DEFAULT_PHASE_DURATION):
@@ -88,9 +82,15 @@ def receive(phase_duration=DEFAULT_PHASE_DURATION):
 def init():
     global inited
     if inited is False:
+        global memory_indexes
+        try:
+            memory_indexes = np.load(MEMORY_INDEX_FILE)
+        except IOError:
+            memory_indexes = np.array([])
+
         global used_kernel_rank
         try:
-            used_kernel_rank = np.load(KERNEL_FILE)
+            used_kernel_rank = np.load(USED_KERNEL_FILE)
         except IOError:
             used_kernel_rank = np.array([])
 
@@ -99,9 +99,11 @@ def init():
         inited = True
 
 
-def save_used_ranks():
+def save_files():
+    global memory_indexes
+    np.save(MEMORY_INDEX_FILE, memory_indexes)
     global used_kernel_rank
-    np.save(KERNEL_FILE, used_kernel_rank)
+    np.save(USED_KERNEL_FILE, used_kernel_rank)
 
 
 def process(working_memories, work_status, sequential_time_memories):
@@ -128,10 +130,13 @@ def process(working_memories, work_status, sequential_time_memories):
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
 
-    if not work_status[constants.BUSY][constants.SHORT_DURATION]:
-        smm = aware(frequency_map)
-        if smm is not None:
-            sequential_time_memories[constants.SLICE_MEMORY].append(smm)
+    # if not work_status[constants.BUSY][constants.SHORT_DURATION]:
+    #     smm = aware(frequency_map)
+    #     if smm is not None:
+    #         sequential_time_memories[constants.SLICE_MEMORY].append(smm)
+
+    if not work_status[constants.BUSY][constants.LONG_DURATION]:
+        save_files()
 
 
 def match_features(frequency_map, slice_memories):
@@ -147,10 +152,11 @@ def match_features(frequency_map, slice_memories):
 def match_feature(full_frequency_map, fmm):
     kernel = fmm[constants.KERNEL]
     feature = fmm[constants.FEATURE]
-    data_range = fmm[RANGE]
+    # data_range = fmm[RANGE]
+    # frequency_map = full_frequency_map[data_range[0]:data_range[1], :]
+    # data = filter_feature(frequency_map, kernel, feature)
     fmm.update({constants.STATUS: constants.MATCHING})
-    frequency_map = full_frequency_map[:, data_range[0]:data_range[1]]
-    data = filter_feature(frequency_map, kernel, feature)
+    data = filter_feature(full_frequency_map, kernel, feature)
     if data is None:
         return False  # not similar
     if data[constants.SIMILAR]:
@@ -197,7 +203,7 @@ def filter_feature(raw, kernel, feature=None):
 
 # get a frequent use kernel or a random kernel by certain possibility
 def get_kernel():
-    kernel = util.get_top_rank(used_kernel_rank)
+    kernel = util.get_high_rank(used_kernel_rank)
     if kernel is None:
         shape = sound_kernels.shape
         index = random.randint(0, shape[0] - 1)
@@ -213,13 +219,14 @@ def update_kernel_rank(kernel):
 # try to find more detail
 def search_feature(full_frequency_map):
     kernel = get_kernel()
-    range_width = get_range()
-    energies = get_energy(full_frequency_map)
-    range_energies = get_range_energy(energies, range_width)
-    max_index = np.argmax(range_energies)
-    new_range = expend_max(range_energies, [max_index, max_index], range_width)
-    frequency_map = full_frequency_map[:, new_range[0]:new_range[1]]
-    data = filter_feature(frequency_map, kernel)
+    # range_width = get_range()
+    # energies = get_energy(full_frequency_map)
+    # range_energies = get_range_energy(energies, range_width)
+    # max_index = np.argmax(range_energies)
+    # new_range = expend_max(range_energies, [max_index, max_index], range_width)
+    # frequency_map = full_frequency_map[new_range[0]:new_range[1], :]
+    # data = filter_feature(frequency_map, kernel)
+    data = filter_feature(full_frequency_map, kernel)
     if data is None:
         return None
     mem = search_memory(kernel, data[constants.FEATURE])
@@ -235,7 +242,7 @@ def search_memory(kernel, feature1):
     global memory_indexes
     element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel), None)
     if element is not None:
-        memory_ids = element[MEMORIES]
+        memory_ids = element[constants.MEMORIES]
         live_memories = memory.get_live_memories(memory_ids)
         if live_memories is not None:
             for mem in live_memories:
@@ -248,23 +255,22 @@ def search_memory(kernel, feature1):
 
 def update_memory_indexes(kernel, mid):
     global memory_indexes
-    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel),
-                   None)
+    element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel), None)
     if element is None:
-        new_kernel = {constants.KERNEL: kernel, MEMORIES: [mid]}
+        new_kernel = {constants.KERNEL: kernel, constants.MEMORIES: [mid]}
         memory_indexes = np.append(memory_indexes, new_kernel)
     else:
-        memory_ids = element[MEMORIES]
+        memory_ids = element[constants.MEMORIES]
         if mid not in memory_ids:
             memory_ids.append(mid)
 
 
 def aware(full_frequency_map):
     range_data = find_most_variable_region(full_frequency_map)
-    frequency_map = full_frequency_map[:, range_data[0]:range_data[1]]
+    frequency_map = full_frequency_map[range_data[0]:range_data[1], :]
     kernel = get_kernel()
     data = filter_feature(frequency_map, kernel)
-    if range_data['v'] > VARIANCE_THRESHOLD:
+    if range_data['v'] > REGION_VARIANCE_THRESHOLD:
         fmm = memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
         smm = memory.add_slice_memory([fmm])
         return smm
@@ -292,17 +298,23 @@ def find_most_variable_region(frequency_map):
 
 
 def get_frequency_map():
+    global previous_phase
     if len(phases) == 0:
         return None
-    frame = phases.popleft()
-    map_width = (len(frame) / HOP_LENGTH) + 1
+    phase = phases.popleft()
+    if previous_phase is None:
+        previous_phase = phase
+        return
+    data = np.append(previous_phase, phase)
+    map_width = (len(data) / HOP_LENGTH) + 1
     if map_width >= FEATURE_INPUT_SIZE:
         map_height = map_width
     else:
         map_height = FREQUENCY_MAP_HEIGHT
     # frequency_map = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT)
-    frequency_map = librosa.feature.melspectrogram(y=frame, sr=SAMPLE_RATE, n_mels=map_height, hop_length=HOP_LENGTH,
+    frequency_map = librosa.feature.melspectrogram(y=data, sr=SAMPLE_RATE, n_mels=map_height, hop_length=HOP_LENGTH,
                                                    fmax=MAX_FREQUENCY)
+    previous_phase = phase
     return frequency_map
 
 

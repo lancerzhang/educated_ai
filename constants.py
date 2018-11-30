@@ -7,6 +7,7 @@ SPEED = 'spd'
 DURATION = 'drt'
 ACTUAL_SPEED_TIMES = 50
 ACTUAL_DEGREES_TIMES = 10
+
 # status
 BUSY = 'busy'
 SHORT_DURATION = 'S'
@@ -37,6 +38,8 @@ START_TIME = 'stt'
 END_TIME = 'edt'
 MEMORY_DURATION = 'mmd'
 HAPPEN_TIME = 'hpt'
+LAST_USED_TIME = 'lut'
+MEMORIES = 'mms'
 
 # actor
 ACTOR_MOUSE = 'atm'

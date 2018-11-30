@@ -162,12 +162,15 @@ def np_matrix_diff(arr1, arr2):
     return differences
 
 
-def get_top_rank(rank_list):
+def get_high_rank(rank_list):
     ri = random.randint(0, 9)
     if len(rank_list) == 0 or ri == 0:
         return None
     else:
-        return rank_list[0]
+        if ri < len(rank_list):
+            return rank_list[ri]
+        else:
+            return rank_list[0]
 
 
 def update_rank_list(key_key, key_value, rank_list):

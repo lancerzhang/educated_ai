@@ -1,8 +1,8 @@
 import time, cv2, util, copy, random, math, memory, constants
+import numpy as np
+import skimage.measure
 from PIL import ImageGrab, Image
 # from win32api import GetSystemMetrics
-import skimage.measure
-import numpy as np
 
 inited = False
 
@@ -10,23 +10,24 @@ inited = False
 # 1080	540	180	45	9
 screen_width = 0
 screen_height = 0
-ROI_ARR = [24, 48, 96, 192, 384]
+ROI_ARR = [12, 36, 72, 144, 288]
 roi_index = 2
 current_block = None
 START_X = 'sx'
 START_Y = 'sy'
 WIDTH = 'width'
 HEIGHT = 'height'
-NUMBER_SUB_REGION = 10
-FEATURE_SIMILARITY_THRESHOLD = 0.2
-IMAGE_VARIANCE_THRESHOLD = 0.05
+HISTOGRAM_BINS = 27
 FEATURE_INPUT_SIZE = 12
 FEATURE_THRESHOLD = 20
+FEATURE_SIMILARITY_THRESHOLD = 0.2
 POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
+NUMBER_SUB_REGION = 10
+REGION_VARIANCE_THRESHOLD = 0.05
+MAX_DEGREES = 36 # actuial is 10 times
+MAX_SPEED = 40 # actual is 50 times, pixel
+MAX_DURATION = 5 # actuial is 10%
 
-FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
-LAST_USED_TIME = 'lut'
-MEMORIES = 'mms'
 STATUS = 'sts'
 IN_PROGRESS = 'pgs'
 COMPLETED = 'cmp'
@@ -34,11 +35,10 @@ MOVE = 'move'
 ZOOM_IN = 'zmi'
 ZOOM_OUT = 'zmo'
 CREATE_TIME = 'crt'
-current_action = {STATUS: COMPLETED}
-SPEED_FILE = 'vus.npy'
-DEGREES_FILE = 'vud.npy'
-KERNEL_FILE = 'vuk.npy'
-CHANNEL_FILE = 'vuc.npy'
+USED_SPEED_FILE = 'vus.npy'
+USED_DEGREES_FILE = 'vud.npy'
+USED_KERNEL_FILE = 'vuk.npy'
+USED_CHANNEL_FILE = 'vuc.npy'
 MEMORY_INDEX_FILE = 'vmi.npy'
 VISION_KERNEL_FILE = 'kernels.npy'
 used_speed_rank = None
@@ -50,6 +50,8 @@ vision_kernels = None
 previous_energies = []
 previous_block_histogram = []
 
+FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
+current_action = {STATUS: COMPLETED}
 db = None
 
 
@@ -67,51 +69,52 @@ def init():
         half_width = width / 2
         current_block = {START_X: center_x - half_width, START_Y: center_y - half_width, WIDTH: width, HEIGHT: width}
 
-        # load speed array, degrees
-        global used_speed_rank
-        try:
-            used_speed_rank = np.load(SPEED_FILE)
-        except IOError:
-            used_speed_rank = np.array([])
-
-        global used_degrees_rank
-        try:
-            used_degrees_rank = np.load(DEGREES_FILE)
-        except IOError:
-            used_degrees_rank = np.array([])
-
-        global used_kernel_rank
-        try:
-            used_kernel_rank = np.load(KERNEL_FILE)
-        except IOError:
-            used_kernel_rank = np.array([])
-
-        global used_channel_rank
-        try:
-            used_channel_rank = np.load(CHANNEL_FILE)
-        except IOError:
-            used_channel_rank = np.array([])
-
         global memory_indexes
         try:
             memory_indexes = np.load(MEMORY_INDEX_FILE)
         except IOError:
             memory_indexes = np.array([])
 
+        global used_kernel_rank
+        try:
+            used_kernel_rank = np.load(USED_KERNEL_FILE)
+        except IOError:
+            used_kernel_rank = np.array([])
+
         global vision_kernels
         vision_kernels = np.load(VISION_KERNEL_FILE)
+
+        global used_speed_rank
+        try:
+            used_speed_rank = np.load(USED_SPEED_FILE)
+        except IOError:
+            used_speed_rank = np.array([])
+
+        global used_degrees_rank
+        try:
+            used_degrees_rank = np.load(USED_DEGREES_FILE)
+        except IOError:
+            used_degrees_rank = np.array([])
+
+        global used_channel_rank
+        try:
+            used_channel_rank = np.load(USED_CHANNEL_FILE)
+        except IOError:
+            used_channel_rank = np.array([])
         inited = True
 
 
-def save_used_ranks():
-    global used_speed_rank
-    np.save(SPEED_FILE, used_speed_rank)
-    global used_degrees_rank
-    np.save(DEGREES_FILE, used_degrees_rank)
+def save_files():
+    global memory_indexes
+    np.save(MEMORY_INDEX_FILE, memory_indexes)
     global used_kernel_rank
-    np.save(KERNEL_FILE, used_kernel_rank)
+    np.save(USED_KERNEL_FILE, used_kernel_rank)
+    global used_speed_rank
+    np.save(USED_SPEED_FILE, used_speed_rank)
+    global used_degrees_rank
+    np.save(USED_DEGREES_FILE, used_degrees_rank)
     global used_channel_rank
-    np.save(CHANNEL_FILE, used_channel_rank)
+    np.save(USED_CHANNEL_FILE, used_channel_rank)
 
 
 def process(working_memories, work_status, sequential_time_memories):
@@ -138,19 +141,6 @@ def process(working_memories, work_status, sequential_time_memories):
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
 
-    if not work_status[constants.BUSY][constants.SHORT_DURATION]:
-        if current_action[STATUS] is not IN_PROGRESS:
-            aware()
-
-    if not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
-        if current_action[STATUS] is not IN_PROGRESS:
-            new_slice_memory = explore()
-            if new_slice_memory is not None:
-                sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-
-    if not work_status[constants.BUSY][constants.LONG_DURATION]:
-        save_used_ranks()
-
     slice_movement_memories = [mem for mem in working_memories if
                                mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
                                    constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_MOVE]
@@ -163,6 +153,19 @@ def process(working_memories, work_status, sequential_time_memories):
                                constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_ZOOM]
     if len(slice_zoom_memories) > 0:
         match_zoom_memories(slice_zoom_memories)
+
+    if not work_status[constants.BUSY][constants.LONG_DURATION]:
+        save_files()
+
+    if not work_status[constants.BUSY][constants.SHORT_DURATION]:
+        if current_action[STATUS] is not IN_PROGRESS:
+            aware()
+
+    if not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
+        if current_action[STATUS] is not IN_PROGRESS:
+            new_slice_memory = explore()
+            if new_slice_memory is not None:
+                sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
 
 
 def match_features(slice_memories):
@@ -179,9 +182,9 @@ def match_feature(fmm):
     channel = fmm[constants.CHANNEL]
     kernel = fmm[constants.KERNEL]
     feature = fmm[constants.FEATURE]
-    fmm.update({constants.STATUS: constants.MATCHING})
     img = get_region()
     channel_img = get_channel_img(img, channel)
+    fmm.update({constants.STATUS: constants.MATCHING})
     data = filter_feature(channel_img, kernel, feature)
     if data is None:
         return False  # not similar
@@ -227,7 +230,7 @@ def filter_feature(data, kernel, feature=None):
 
 # get a frequent use kernel or a random kernel by certain possibility
 def get_kernel():
-    kernel = util.get_top_rank(used_kernel_rank)
+    kernel = util.get_high_rank(used_kernel_rank)
     if kernel is None:
         shape = vision_kernels.shape
         index = random.randint(0, shape[0] - 1)
@@ -264,7 +267,7 @@ def search_memory(channel, kernel, feature1):
     element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
                    None)
     if element is not None:
-        memory_ids = element[MEMORIES]
+        memory_ids = element[constants.MEMORIES]
         live_memories = memory.get_live_memories(memory_ids)
         if live_memories is not None:
             for mem in live_memories:
@@ -280,10 +283,10 @@ def update_memory_indexes(channel, kernel, mid):
     element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
                    None)
     if element is None:
-        new_kernel = {constants.CHANNEL: channel, constants.KERNEL: kernel, MEMORIES: [mid]}
+        new_kernel = {constants.CHANNEL: channel, constants.KERNEL: kernel, constants.MEMORIES: [mid]}
         memory_indexes = np.append(memory_indexes, new_kernel)
     else:
-        memory_ids = element[MEMORIES]
+        memory_ids = element[constants.MEMORIES]
         if mid not in memory_ids:
             memory_ids.append(mid)
 
@@ -292,14 +295,14 @@ def aware():
     duration = get_duration()
     full_img = ImageGrab.grab()
     block = find_most_variable_region(full_img)
-    if block['v'] > IMAGE_VARIANCE_THRESHOLD:
+    if block['v'] > REGION_VARIANCE_THRESHOLD:
         # move focus to variable region
         set_movement_absolute(block, duration)
 
 
 def find_most_variable_region(full_img):
     new_block = {}
-    channel_img=get_channel_img(full_img, 'y')
+    channel_img = get_channel_img(full_img, 'y')
     this_block_histogram = calculate_block_histogram(channel_img)
     global previous_block_histogram
     if len(previous_block_histogram) == 0:
@@ -310,7 +313,7 @@ def find_most_variable_region(full_img):
         previous_block_histogram = this_block_histogram
         max_index = np.argmax(diff_arr)
         max_var = diff_arr[max_index]
-        if max_var < IMAGE_VARIANCE_THRESHOLD:
+        if max_var < REGION_VARIANCE_THRESHOLD:
             return None
         width = screen_width / NUMBER_SUB_REGION
         height = screen_height / NUMBER_SUB_REGION
@@ -330,9 +333,9 @@ def update_degrees_rank(degrees):
 
 
 def get_degrees():
-    degrees = util.get_top_rank(used_degrees_rank)
+    degrees = util.get_high_rank(used_degrees_rank)
     if degrees is None:
-        degrees = random.randint(1, 36)
+        degrees = random.randint(1, MAX_DEGREES)
     return degrees
 
 
@@ -342,9 +345,9 @@ def update_speed_rank(speed):
 
 
 def get_speed():
-    speed = util.get_top_rank(used_speed_rank)
+    speed = util.get_high_rank(used_speed_rank)
     if speed is None:
-        speed = random.randint(1, 40)
+        speed = random.randint(1, MAX_SPEED)
     return speed
 
 
@@ -354,7 +357,7 @@ def update_channel_rank(channel):
 
 
 def get_channel():
-    channel = util.get_top_rank(used_channel_rank)
+    channel = util.get_high_rank(used_channel_rank)
     if channel is None:
         ri = random.randint(1, 3)
         channel = 'y'
@@ -366,7 +369,7 @@ def get_channel():
 
 
 def get_duration():
-    return random.randint(1, 5) / 10.0
+    return random.randint(1, MAX_DURATION) / 10.0
 
 
 def explore():
@@ -520,7 +523,7 @@ def calculate_block_histogram(channel_img):
     for j in range(0, NUMBER_SUB_REGION):
         for i in range(0, NUMBER_SUB_REGION):
             ret = channel_img[j * height:(j + 1) * height, i * width:(i + 1) * width]
-            hist_np, bins = np.histogram(ret.ravel(), bins=27, range=[0, 256])
+            hist_np, bins = np.histogram(ret.ravel(), bins=HISTOGRAM_BINS, range=[0, 256])
             block_histogram.append(hist_np)
     return block_histogram
 
@@ -530,7 +533,7 @@ def match_movement_memories(memories):
     global current_action
     current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
                       constants.DURATION: mem[constants.DURATION], CREATE_TIME: time.time(),
-                      constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE, STATUS: COMPLETED}
+                      constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE, STATUS: IN_PROGRESS}
     mem[constants.STATUS] = constants.MATCHED
     memory.recall_memory(mem)
 

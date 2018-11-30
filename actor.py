@@ -27,15 +27,22 @@ def match_actor_mouse_memories(memories):
             memory.recall_memory(mem)
 
 
-def explore():
+def left_click():
     click_type = LEFT_CLICK
     pyautogui.click()
-    mem = db.search_vision_zoom(click_type)
+    mem = db.search_actor_mouse(click_type)
     if mem is None:
-        action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE, constants.ZOOM_TYPE: click_type}
+        action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE, constants.CLICK_TYPE: click_type}
         action_memory = db.add_memory(action)
     else:
         memory.recall_memory(mem)
         action_memory = mem
-    slice_memory = memory.add_slice_memory([action_memory])
+    return action_memory
+
+
+def explore():
+    action_memory = left_click()
+    slice_memory = None
+    if action_memory is not None:
+        slice_memory = memory.add_slice_memory([action_memory])
     return slice_memory

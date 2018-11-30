@@ -46,7 +46,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = [mem2, mem3]
         memories = memory.find_update_max_related_memories(seq_time_memories)
         self.assertEqual(1, len(memories))
-        mem = self.database.get_memory(mem2[constants.ID])
+        mem = self.database._get_memory(mem2[constants.ID])
         self.assertEqual(mem1[constants.ID], mem[constants.PARENT_MEM][0])
 
     def test_find_max_related_memory_empty(self):
@@ -70,7 +70,7 @@ class TestMemory(unittest.TestCase):
         forgot = [1, 3, 5]
         mem1 = self.database.add_memory({memory.CHILD_MEM: children})
         memory.remove_dead_memories(memory.CHILD_MEM, children, forgot, mem1[constants.ID])
-        mem = self.database.get_memory(mem1[constants.ID])
+        mem = self.database._get_memory(mem1[constants.ID])
         self.assertEqual(2, len(mem[memory.CHILD_MEM]))
         self.assertEqual(4, mem[memory.CHILD_MEM][1])
 
@@ -98,7 +98,7 @@ class TestMemory(unittest.TestCase):
 
         el6 = self.database.add_memory({memory.CHILD_MEM: [8, 9]})
         memory.get_live_sub_memories(el6, memory.CHILD_MEM)
-        mem = self.database.get_memory(el6[constants.ID])
+        mem = self.database._get_memory(el6[constants.ID])
         self.assertIsNone(mem)
 
     def test_get_memories(self):
@@ -141,11 +141,11 @@ class TestMemory(unittest.TestCase):
         mem1 = self.database.add_memory({memory.CHILD_MEM: child_mem})
         forget_ids = ['c3']
         memory.remove_dead_memories(memory.CHILD_MEM, child_mem, forget_ids, mem1[constants.ID])
-        mem1b = self.database.get_memory(mem1[constants.ID])
+        mem1b = self.database._get_memory(mem1[constants.ID])
         forget_ids2 = ['a1', 'b2']
         self.assertEquals(forget_ids2, mem1b[memory.CHILD_MEM])
         memory.remove_dead_memories(memory.CHILD_MEM, mem1b[memory.CHILD_MEM], forget_ids2, mem1[constants.ID])
-        mem1c = self.database.get_memory(mem1[constants.ID])
+        mem1c = self.database._get_memory(mem1[constants.ID])
         self.assertIsNone(mem1c)
 
     def test_search_sub_memories(self):
