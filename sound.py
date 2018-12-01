@@ -203,12 +203,14 @@ def filter_feature(raw, kernel, feature=None):
 
 # get a frequent use kernel or a random kernel by certain possibility
 def get_kernel():
-    kernel = util.get_high_rank(used_kernel_rank)
-    if kernel is None:
+    used_kernel = util.get_high_rank(used_kernel_rank)
+    if used_kernel is None:
         shape = sound_kernels.shape
         index = random.randint(0, shape[0] - 1)
         kernel = sound_kernels[index]
-    return kernel
+        return kernel
+    else:
+        return used_kernel[constants.KERNEL]
 
 
 def update_kernel_rank(kernel):

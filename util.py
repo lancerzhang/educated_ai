@@ -1,4 +1,4 @@
-import time, numpy, cv2, random, math
+import time, numpy, cv2, random, constants
 import numpy as np
 
 USED_COUNT = 'uct'
@@ -189,8 +189,8 @@ def matrix_to_string(matrix):
     return matrix_str
 
 
-def string_to_feature_matrix(string):
-    arr = np.fromstring(string, dtype=int, sep=',')
+def string_to_feature_matrix(str_feature):
+    arr = np.fromstring(str_feature, dtype=int, sep=',')
     matrix = np.reshape(arr, (3, 3))
     return matrix
 

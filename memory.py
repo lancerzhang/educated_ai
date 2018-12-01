@@ -352,18 +352,20 @@ def cleanup_working_memories(working_memories, work_status):
     valid_working_memories = [mem for mem in working_memories if mem[constants.END_TIME] > time.time()]
     if work_status[constants.REWARD]:
         sorted_working_memories = sorted(valid_working_memories, key=lambda x: (
-        x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL], x[constants.REWARD]), reverse=True)
+            x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL], x[constants.REWARD]),
+                                         reverse=True)
     else:
         # not satisfy, reward first
         sorted_working_memories = sorted(valid_working_memories, key=lambda x: (
-        x[constants.REWARD], x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL]), reverse=True)
+            x[constants.REWARD], x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL]),
+                                         reverse=True)
     return sorted_working_memories[0:threshold_of_working_memories:]
 
 
 def add_vision_feature_memory(feature_type, channel, kernel, feature):
     return db.add_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.CHANNEL: channel, constants.KERNEL: kernel,
-         constants.FEATURE: feature})
+         constants.FEATURE: feature.tolist()})
 
 
 def add_feature_memory(feature_type, kernel, feature):
@@ -373,7 +375,9 @@ def add_feature_memory(feature_type, kernel, feature):
 
 def add_slice_memory(child_memories):
     child_memory_ids = [x[constants.ID] for x in child_memories]
-    return db.add_memory({CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+    mem = db.add_memory({CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+    mem.update({constants.HAPPEN_TIME: time.time()})
+    return mem
 
 
 def verify_slice_memory_match_result(slice_memories, slice_memory_children):

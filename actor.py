@@ -30,11 +30,12 @@ def match_actor_mouse_memories(memories):
 def left_click():
     click_type = LEFT_CLICK
     pyautogui.click()
-    mem = db.search_actor_mouse(click_type)
-    if mem is None:
+    memories = db.search_actor_mouse(click_type)
+    if memories is None or len(memories) == 0:
         action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE, constants.CLICK_TYPE: click_type}
         action_memory = db.add_memory(action)
     else:
+        mem = memories[0]
         memory.recall_memory(mem)
         action_memory = mem
     return action_memory

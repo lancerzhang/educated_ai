@@ -12,9 +12,18 @@ http://pythonware.com/products/pil/
     pip install -r requirements.txt
 ```
 For Mac
-- install python 2.7
-https://www.python.org/downloads/mac-osx/
+- install brew
 - install portaudio
+``` bash
 brew install portaudio
-- install opencv
+```
+- use separate PyCharm <br>
+PyCharm - Settings - Project Interpreter "Add" - Virtualenv Environment
+- install opencv (in PyCharm Terminal)
+``` bash
 pip install opencv-python
+```
+ - install requirement
+ ``` bash
+ pip install -r requirements.txt
+ ```

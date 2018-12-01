@@ -9,6 +9,8 @@ DPS = 1.0 / PPS
 
 db = Database(TinyDB('TinyDB.json'))
 memory.db = db
+vision.db = db
+actor.db = db
 
 try:
     print 'wake up.\n'
@@ -21,7 +23,7 @@ try:
         frames = frames + 1
         start = time.time()
 
-        status.calculate_status(work_status, DPS, frames)
+        status.calculate_status(work_status, PPS, frames)
 
         memory.associate(working_memories)
         memory.prepare_expectation(working_memories)

@@ -2,7 +2,7 @@ import time, cv2, util, copy, random, math, memory, constants
 import numpy as np
 import skimage.measure
 from PIL import ImageGrab, Image
-# from win32api import GetSystemMetrics
+from win32api import GetSystemMetrics
 
 inited = False
 
@@ -24,9 +24,9 @@ FEATURE_SIMILARITY_THRESHOLD = 0.2
 POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
 NUMBER_SUB_REGION = 10
 REGION_VARIANCE_THRESHOLD = 0.05
-MAX_DEGREES = 36 # actuial is 10 times
-MAX_SPEED = 40 # actual is 50 times, pixel
-MAX_DURATION = 5 # actuial is 10%
+MAX_DEGREES = 36  # actuial is 10 times
+MAX_SPEED = 40  # actual is 50 times, pixel
+MAX_DURATION = 5  # actuial is 10%
 
 STATUS = 'sts'
 IN_PROGRESS = 'pgs'
@@ -59,9 +59,9 @@ def init():
     global inited
     if inited is False:
         global screen_width
-        # screen_width = GetSystemMetrics(0)
+        screen_width = GetSystemMetrics(0)
         global screen_height
-        # screen_height = GetSystemMetrics(1)
+        screen_height = GetSystemMetrics(1)
         global current_block
         center_x = screen_width / 2
         center_y = screen_height / 2
@@ -230,12 +230,14 @@ def filter_feature(data, kernel, feature=None):
 
 # get a frequent use kernel or a random kernel by certain possibility
 def get_kernel():
-    kernel = util.get_high_rank(used_kernel_rank)
-    if kernel is None:
+    used_kernel = util.get_high_rank(used_kernel_rank)
+    if used_kernel is None:
         shape = vision_kernels.shape
         index = random.randint(0, shape[0] - 1)
         kernel = vision_kernels[index]
-    return kernel
+        return kernel
+    else:
+        return used_kernel[constants.KERNEL]
 
 
 def update_kernel_rank(kernel):
@@ -293,9 +295,10 @@ def update_memory_indexes(channel, kernel, mid):
 
 def aware():
     duration = get_duration()
-    full_img = ImageGrab.grab()
+    pil_image = ImageGrab.grab()
+    full_img = np.array(pil_image)
     block = find_most_variable_region(full_img)
-    if block['v'] > REGION_VARIANCE_THRESHOLD:
+    if block is not None and block['v'] > REGION_VARIANCE_THRESHOLD:
         # move focus to variable region
         set_movement_absolute(block, duration)
 
@@ -333,10 +336,12 @@ def update_degrees_rank(degrees):
 
 
 def get_degrees():
-    degrees = util.get_high_rank(used_degrees_rank)
-    if degrees is None:
+    used_degrees = util.get_high_rank(used_degrees_rank)
+    if used_degrees is None:
         degrees = random.randint(1, MAX_DEGREES)
-    return degrees
+        return degrees
+    else:
+        return used_degrees[constants.DEGREES]
 
 
 def update_speed_rank(speed):
@@ -345,10 +350,12 @@ def update_speed_rank(speed):
 
 
 def get_speed():
-    speed = util.get_high_rank(used_speed_rank)
-    if speed is None:
+    used_speed = util.get_high_rank(used_speed_rank)
+    if used_speed is None:
         speed = random.randint(1, MAX_SPEED)
-    return speed
+        return speed
+    else:
+        return used_speed[constants.SPEED]
 
 
 def update_channel_rank(channel):
@@ -357,15 +364,17 @@ def update_channel_rank(channel):
 
 
 def get_channel():
-    channel = util.get_high_rank(used_channel_rank)
-    if channel is None:
+    used_channel = util.get_high_rank(used_channel_rank)
+    if used_channel is None:
         ri = random.randint(1, 3)
         channel = 'y'
         if ri == 1:
             channel = 'u'
         elif ri == 2:
             channel = 'v'
-    return channel
+        return channel
+    else:
+        return used_channel[constants.CHANNEL]
 
 
 def get_duration():
@@ -402,10 +411,11 @@ def random_zoom():
     if zoom_type is None:
         return None
     action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type}
-    mem = db.search_vision_zoom(zoom_type)
-    if mem is None:
+    memories = db.search_vision_zoom(zoom_type)
+    if memories is None or len(memories) == 0:
         action_memory = db.add_memory(action)
     else:
+        mem = memories[0]
         memory.recall_memory(mem)
         action_memory = mem
     slice_memory = memory.add_slice_memory([action_memory])
@@ -415,11 +425,11 @@ def random_zoom():
 def get_channel_img(bgr, channel):
     yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
     y, u, v = cv2.split(yuv)
-    if channel is 'y':
+    if channel == 'y':
         return y
-    elif channel is 'u':
+    elif channel == 'u':
         return u
-    elif channel is 'v':
+    elif channel == 'v':
         return v
 
 
@@ -552,4 +562,4 @@ def match_zoom_memories(memories):
 def crop(block):
     img = ImageGrab.grab(
         bbox=(block[START_X], block[START_Y], block[START_X] + block[WIDTH], block[START_Y] + block[HEIGHT]))
-    return img
+    return np.array(img)
