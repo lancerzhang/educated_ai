@@ -52,7 +52,7 @@ previous_block_histogram = []
 
 FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 current_action = {STATUS: COMPLETED}
-db = None
+data = None
 
 
 def init():
@@ -199,6 +199,7 @@ def match_feature(fmm):
 
 # match the experience vision sense
 def filter_feature(data, kernel, feature=None):
+    # start = time.time()
     feature_data = copy.deepcopy(FEATURE_DATA)
     feature_data[constants.KERNEL] = kernel
     data_map = cv2.resize(data, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
@@ -225,6 +226,7 @@ def filter_feature(data, kernel, feature=None):
             feature_data[constants.FEATURE] = avg_feature
         else:
             feature_data[constants.FEATURE] = new_feature
+    # print 'filter_feature ' + str(time.time() - start)
     return feature_data
 
 
@@ -247,6 +249,7 @@ def update_kernel_rank(kernel):
 
 # try to find more detail
 def search_feature():
+    start = time.time()
     channel = get_channel()
     img = get_region()
     kernel = get_kernel()
@@ -257,9 +260,10 @@ def search_feature():
     mem = search_memory(channel, kernel, data[constants.FEATURE])
     if mem is None:
         mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, data[constants.FEATURE])
-        update_memory_indexes(channel, kernel, mem[constants.ID])
+        update_memory_indexes(channel, kernel, mem[constants.MID])
     update_kernel_rank(kernel)
     update_channel_rank(channel)
+    # print 'search_feature ' + str(time.time() - start)
     return mem
 
 
@@ -274,7 +278,7 @@ def search_memory(channel, kernel, feature1):
         if live_memories is not None:
             for mem in live_memories:
                 feature2 = mem[constants.FEATURE]
-                difference = util.np_array_diff(feature1, feature2)
+                difference = util.np_array_diff(feature1, np.array(feature2))
                 if difference < FEATURE_SIMILARITY_THRESHOLD:
                     return mem
     return None
@@ -294,6 +298,7 @@ def update_memory_indexes(channel, kernel, mid):
 
 
 def aware():
+    start = time.time()
     duration = get_duration()
     pil_image = ImageGrab.grab()
     full_img = np.array(pil_image)
@@ -301,9 +306,11 @@ def aware():
     if block is not None and block['v'] > REGION_VARIANCE_THRESHOLD:
         # move focus to variable region
         set_movement_absolute(block, duration)
+    print 'aware ' + str(time.time() - start)
 
 
 def find_most_variable_region(full_img):
+    start = time.time()
     new_block = {}
     channel_img = get_channel_img(full_img, 'y')
     this_block_histogram = calculate_block_histogram(channel_img)
@@ -327,6 +334,7 @@ def find_most_variable_region(full_img):
         new_block[START_Y] = calculate_start_y(new_start_y)
         new_block.update({'v': max_var})
         previous_block_histogram = this_block_histogram
+    print 'find_most_variable_region ' + str(time.time() - start)
     return new_block
 
 
@@ -411,9 +419,9 @@ def random_zoom():
     if zoom_type is None:
         return None
     action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type}
-    memories = db.search_vision_zoom(zoom_type)
+    memories = data.search_vision_zoom(zoom_type)
     if memories is None or len(memories) == 0:
-        action_memory = db.add_memory(action)
+        action_memory = data.add_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)
@@ -423,8 +431,10 @@ def random_zoom():
 
 
 def get_channel_img(bgr, channel):
+    # start = time.time()
     yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
     y, u, v = cv2.split(yuv)
+    # print 'get_channel_img ' + str(time.time() - start)
     if channel == 'y':
         return y
     elif channel == 'u':
@@ -457,10 +467,12 @@ def zoom_out():
 
 
 def get_region():
+    # start = time.time()
     global current_block
     roi_image = crop(current_block)
     cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
     img = cv2.resize(cv_img, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
+    # print 'get_region ' + str(time.time() - start)
     return img
 
 
@@ -475,9 +487,9 @@ def set_movement_relative(degrees, speed, duration):
     global current_action
     action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
               constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
-    memories = db.search_vision_movement(degrees, speed, duration)
+    memories = data.search_vision_movement(degrees, speed, duration)
     if memories is None or len(memories) == 0:
-        action_memory = db.add_memory(action)
+        action_memory = data.add_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)
@@ -560,6 +572,8 @@ def match_zoom_memories(memories):
 
 
 def crop(block):
+    # start = time.time()
     img = ImageGrab.grab(
         bbox=(block[START_X], block[START_Y], block[START_X] + block[WIDTH], block[START_Y] + block[HEIGHT]))
+    # print 'crop ' + str(time.time() - start)  # average 0.05s
     return np.array(img)

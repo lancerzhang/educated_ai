@@ -234,7 +234,7 @@ def search_feature(full_frequency_map):
     mem = search_memory(kernel, data[constants.FEATURE])
     if mem is None:
         mem = memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
-        update_memory_indexes(kernel, mem[constants.ID])
+        update_memory_indexes(kernel, mem[constants.MID])
     update_kernel_rank(kernel)
     return mem
 

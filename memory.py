@@ -30,7 +30,7 @@ DURATION_LONG = 360
 # vision1.2
 
 
-db = None
+data = None
 
 # use parent to find experience memories
 BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL: 0,
@@ -64,7 +64,8 @@ threshold_of_working_memories = 20
 # check result, if memory.strength = -1, that it's forgot
 def refresh(mem, recall=False, forget=False):
     deleted = False
-    time_elapse = time.time() - mem[constants.LAST_RECALL]
+    now_time = int(time.time())
+    time_elapse = now_time - mem[constants.LAST_RECALL]
     if time_elapse < TIME_SEC[0]:
         return deleted
     count = 0
@@ -89,7 +90,7 @@ def refresh(mem, recall=False, forget=False):
                 # if this is recall, will update recall count and last recall time
                 if recall:
                     mem[constants.RECALL] = mem[constants.RECALL] + 1
-                    mem[constants.LAST_RECALL] = time.time()
+                    mem[constants.LAST_RECALL] = int(time.time())
             break
     return deleted
 
@@ -107,7 +108,7 @@ def find_max_related_memories(memories, tobe_remove_list_ids, limit=4):
     parent_counts = count_parent_id(memories)
     count = 0
     for key in sorted(parent_counts, key=parent_counts.get, reverse=True):
-        mem = db.get_memory(key)
+        mem = data.get_memory(key)
         if mem:
             related_memories.append(mem)
             count = count + 1
@@ -124,22 +125,22 @@ def find_update_max_related_memories(memories, limit=4):
     if len(tobe_remove_list_ids) > 0:
         for mem in memories:
             remove_dead_memories(constants.PARENT_MEM, mem[constants.PARENT_MEM], tobe_remove_list_ids,
-                                 mem[constants.ID])
+                                 mem[constants.MID])
     return related_memories
 
 
 def remove_dead_memories(field, sub_ids, forgot_ids, mid):
     new_sub = util.list_comprehension_new(sub_ids, forgot_ids)
     if field == CHILD_MEM and len(new_sub) == 0:
-        db.remove_memory(mid)
+        data.remove_memory(mid)
     else:
-        db.update_memory({field: new_sub}, mid)
+        data.update_memory({field: new_sub}, mid)
 
 
 def get_live_memories(memory_ids):
     memories = []
     for mid in memory_ids:
-        mem = db.get_memory(mid)
+        mem = data.get_memory(mid)
         if mem is not None:
             memories.append(mem)
     return memories
@@ -155,7 +156,7 @@ def get_live_sub_memories(mem, field, limit=0, offset=0):
         total = len(memory_ids)
     for i in range(offset, total):
         sub_id = memory_ids[i]
-        sub_mem = db.get_memory(sub_id)
+        sub_mem = data.get_memory(sub_id)
         if sub_mem is not None:
             memories.append(sub_mem)
         else:
@@ -165,9 +166,9 @@ def get_live_sub_memories(mem, field, limit=0, offset=0):
         if count >= total:
             break
     if len(forgot_ids) > 0:
-        remove_dead_memories(CHILD_MEM, memory_ids, forgot_ids, mem[constants.ID])
+        remove_dead_memories(CHILD_MEM, memory_ids, forgot_ids, mem[constants.MID])
     if len(memories) == 0:
-        db.remove_memory(mem[constants.ID])
+        data.remove_memory(mem[constants.MID])
     return memories
 
 
@@ -175,11 +176,11 @@ def search_sub_memories(memories, distinct_sub_memory_list, sub_memory_dict):
     sub_memory_ids = []
     for smm in memories:
         live_children = get_live_sub_memories(smm, CHILD_MEM)
-        sub_memory_dict.update({smm[constants.ID]: live_children})
+        sub_memory_dict.update({smm[constants.MID]: live_children})
         for lmm in live_children:
-            if lmm[constants.ID] not in sub_memory_ids:
+            if lmm[constants.MID] not in sub_memory_ids:
                 distinct_sub_memory_list.append(lmm)
-                sub_memory_ids.append(lmm[constants.ID])
+                sub_memory_ids.append(lmm[constants.MID])
 
 
 def recall_memory(mem, addition=None):
@@ -188,16 +189,16 @@ def recall_memory(mem, addition=None):
                       constants.LAST_RECALL: mem[constants.LAST_RECALL]}
     if addition is not None:
         update_content.update(addition)
-    db.update_memory(update_content, mem[constants.ID])
+    data.update_memory(update_content, mem[constants.MID])
 
 
 # children is list of group memories [[m1, m2], [m3, m4]]
 def create_working_memory(seq_time_memories, children, duration_type):
     for memories in children:
-        child_memory_ids = [mem[constants.ID] for mem in memories]
+        child_memory_ids = [mem[constants.MID] for mem in memories]
         child_memory_rewards = [mem[constants.REWARD] for mem in memories]
         new_reward = np.max(np.array(child_memory_rewards))
-        new_mem = db.add_memory(
+        new_mem = data.add_memory(
             {CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: duration_type, constants.HAPPEN_TIME: time.time(),
              constants.REWARD: new_reward})
         seq_time_memories[duration_type].append(new_mem)
@@ -282,20 +283,20 @@ def convert_to_expectation(mem):
 
 def update_last_recall(memories):
     for mem in memories:
-        db.update_memory({constants.LAST_RECALL: time.time()}, mem[constants.ID])
+        data.update_memory({constants.LAST_RECALL: int(time.time())}, mem[constants.MID])
 
 
 # append new memories to memories list if it's not exist
 def append_working_memories(memories, new_memories, limit=0):
     total = 0
-    ids = [x[constants.ID] for x in memories]
-    sub_ids = [x[constants.ID] for x in new_memories]
+    ids = [x[constants.MID] for x in memories]
+    sub_ids = [x[constants.MID] for x in new_memories]
     exist = util.list_common(ids, sub_ids)
     total = total + len(exist)
     for nmem in new_memories:
         if total >= limit > 0:
             break
-        if nmem[constants.ID] not in ids:
+        if nmem[constants.MID] not in ids:
             convert_to_expectation(nmem)
             # higher priority to stay in working memory
             update_last_recall([nmem])
@@ -332,7 +333,7 @@ def check_expectation(working_memories, sequential_time_memories):
         all_matched = True
         child_ids = pmem[CHILD_MEM]
         for wmem in working_memories:
-            if wmem[constants.ID] in child_ids:
+            if wmem[constants.MID] in child_ids:
                 if wmem[constants.STATUS] is not constants.MATCHED:
                     all_matched = False
                     break
@@ -363,19 +364,19 @@ def cleanup_working_memories(working_memories, work_status):
 
 
 def add_vision_feature_memory(feature_type, channel, kernel, feature):
-    return db.add_memory(
+    return data.add_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.CHANNEL: channel, constants.KERNEL: kernel,
          constants.FEATURE: feature.tolist()})
 
 
 def add_feature_memory(feature_type, kernel, feature):
-    return db.add_memory(
+    return data.add_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.KERNEL: kernel, constants.FEATURE: feature})
 
 
 def add_slice_memory(child_memories):
-    child_memory_ids = [x[constants.ID] for x in child_memories]
-    mem = db.add_memory({CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+    child_memory_ids = [x[constants.MID] for x in child_memories]
+    mem = data.add_memory({CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
     mem.update({constants.HAPPEN_TIME: time.time()})
     return mem
 
@@ -385,12 +386,12 @@ def verify_slice_memory_match_result(slice_memories, slice_memory_children):
     ids = []
     for smm in slice_memories:
         smm_all_matched = True
-        live_children = slice_memory_children.get(smm[constants.ID])
+        live_children = slice_memory_children.get(smm[constants.MID])
         for fmm in live_children:
             if fmm[constants.STATUS] is constants.MATCHED:
-                if fmm[constants.ID] not in ids:
+                if fmm[constants.MID] not in ids:
                     all_matched_feature_memories.append(fmm)
-                    ids.append(fmm[constants.ID])
+                    ids.append(fmm[constants.MID])
             else:
                 smm_all_matched = False
         if smm_all_matched:

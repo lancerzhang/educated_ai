@@ -1,5 +1,5 @@
 import time, util, memory, vision, status, sound, copy, actor, constants
-from db import Database
+from data import Data
 from tinydb import TinyDB
 
 # number of process per second
@@ -7,9 +7,9 @@ PPS = 10
 # duration per process (s)
 DPS = 1.0 / PPS
 
-db = Database(TinyDB('TinyDB.json'))
-memory.db = db
-vision.db = db
+db = Data(TinyDB('TinyDB.json'))
+memory.data = db
+vision.data = db
 actor.db = db
 
 try:

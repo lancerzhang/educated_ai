@@ -1,18 +1,21 @@
 import unittest, vision, memory, cv2, constants, time, math
 import numpy as np
-from db import Database
+from data import Data
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
+from db_tinydb import DB_TinyDB
 
 
 class TestVision(unittest.TestCase):
+    data = None
     database = None
 
     def setUp(self):
-        self.database = Database(TinyDB(storage=MemoryStorage))
-        vision.db = self.database
+        database = DB_TinyDB(TinyDB(storage=MemoryStorage))
+        self.data = Data(database)
+        vision.data = self.data
         memory.forget_memory = False
-        memory.db = self.database
+        memory.data = self.data
 
     def test_init(self):
         vision.init()
@@ -95,7 +98,7 @@ class TestVision(unittest.TestCase):
         channel = 'y'
         mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel,
                                                feature_data1_1[constants.FEATURE])
-        vision.update_memory_indexes(channel, kernel, mem[constants.ID])
+        vision.update_memory_indexes(channel, kernel, mem[constants.MID])
         vision.update_memory_indexes(channel, kernel, '123')
         new_mem = vision.search_memory(channel, kernel, feature_data1_2[constants.FEATURE])
         self.assertIsNotNone(new_mem)
@@ -193,32 +196,32 @@ class TestVision(unittest.TestCase):
         self.assertEqual(height / 2, block[vision.START_Y])
 
     def test_zoom_in(self):
-        vision.roi_index=1
+        vision.roi_index = 1
         vision.zoom_in()
-        self.assertEqual(0,vision.roi_index)
-        vision.roi_index=0
+        self.assertEqual(0, vision.roi_index)
+        vision.roi_index = 0
         vision.zoom_in()
-        self.assertEqual(0,vision.roi_index)
+        self.assertEqual(0, vision.roi_index)
 
     def test_zoom_out(self):
-        vision.screen_width=200
-        vision.screen_height=200
-        vision.current_block={vision.START_X: 100, vision.START_Y: 100, vision.WIDTH: 50, vision.HEIGHT: 50}
-        vision.roi_index=0
+        vision.screen_width = 200
+        vision.screen_height = 200
+        vision.current_block = {vision.START_X: 100, vision.START_Y: 100, vision.WIDTH: 50, vision.HEIGHT: 50}
+        vision.roi_index = 0
         vision.zoom_out()
-        self.assertEqual(1,vision.roi_index)
-        max_index=len(vision.ROI_ARR)-1
-        vision.roi_index=max_index
+        self.assertEqual(1, vision.roi_index)
+        max_index = len(vision.ROI_ARR) - 1
+        vision.roi_index = max_index
         vision.zoom_out()
-        self.assertEqual(max_index,vision.roi_index)
-        vision.roi_index=2
+        self.assertEqual(max_index, vision.roi_index)
+        vision.roi_index = 2
         vision.zoom_out()
-        self.assertEqual(2,vision.roi_index)
+        self.assertEqual(2, vision.roi_index)
 
     def test_get_duration(self):
-        result=vision.get_duration()
-        self.assertGreater(result,0)
-        self.assertLess(result,0.6)
+        result = vision.get_duration()
+        self.assertGreater(result, 0)
+        self.assertLess(result, 0.6)
 
 
 if __name__ == "__main__":

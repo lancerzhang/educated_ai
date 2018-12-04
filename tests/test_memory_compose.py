@@ -1,16 +1,19 @@
 import unittest, memory, constants, time, copy
-from db import Database
+from data import Data
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
+from db_tinydb import DB_TinyDB
 
 
 class TestMemory(unittest.TestCase):
+    data = None
     database = None
 
     def setUp(self):
-        self.database = Database(TinyDB(storage=MemoryStorage))
+        database = DB_TinyDB(TinyDB(storage=MemoryStorage))
+        self.data = Data(database)
         memory.forget_memory = False
-        memory.db = self.database
+        memory.data = self.data
 
     def test_split_seq_time_memories_empty(self):
         memories = []
@@ -20,7 +23,7 @@ class TestMemory(unittest.TestCase):
 
     def test_split_seq_time_memories_number_no_split(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         memories = [mem]
         result = memory.split_seq_time_memories(memories)
         self.assertEqual(0, len(result[memory.NEW_MEMORIES]))
@@ -28,7 +31,7 @@ class TestMemory(unittest.TestCase):
 
     def test_split_seq_time_memories_number_split_1_1(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
             memories.append(mem)
@@ -38,7 +41,7 @@ class TestMemory(unittest.TestCase):
 
     def test_split_seq_time_memories_number_split_1_0(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
             memories.append(mem)
@@ -48,7 +51,7 @@ class TestMemory(unittest.TestCase):
 
     def test_split_seq_time_memories_number_split_1_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
             memories.append(mem)
@@ -58,7 +61,7 @@ class TestMemory(unittest.TestCase):
 
     def test_split_seq_time_memories_number_split_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
             memories.append(mem)
@@ -71,7 +74,7 @@ class TestMemory(unittest.TestCase):
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 1})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
             memories.append(mem)
             now = now + 1
         result = memory.split_seq_time_memories(memories, 6)
@@ -83,7 +86,7 @@ class TestMemory(unittest.TestCase):
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
             memories.append(mem)
             now = now + 3
         result = memory.split_seq_time_memories(memories, 5)
@@ -97,7 +100,7 @@ class TestMemory(unittest.TestCase):
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             memories.append(mem)
             now = now + 2
         result = memory.split_seq_time_memories(memories, 5)
@@ -109,7 +112,7 @@ class TestMemory(unittest.TestCase):
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
             memories.append(mem)
             now = now + 3
         result = memory.split_seq_time_memories(memories, 5)
@@ -123,7 +126,7 @@ class TestMemory(unittest.TestCase):
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 3):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             memories.append(mem)
             now = now + 2
         result = memory.split_seq_time_memories(memories, 5)
@@ -142,7 +145,7 @@ class TestMemory(unittest.TestCase):
         memories = []
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 1})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
             memories.append(mem)
             now = now + 1
         result = memory.split_seq_time_memories(memories, 10)
@@ -151,7 +154,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_slice_number_no_split(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID]: mem})
@@ -163,7 +166,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_slice_number_split_1_1(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
@@ -176,7 +179,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_slice_number_split_1_0(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
@@ -189,7 +192,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_slice_number_split_1_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
@@ -202,7 +205,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_slice_number_split_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
@@ -219,7 +222,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 0.1})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.1})
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.1
@@ -234,7 +237,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 0.3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.3})
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.3
@@ -249,7 +252,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 0.2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.2})
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.2
@@ -264,7 +267,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 0.3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.3})
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.3
@@ -279,7 +282,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 3):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 0.2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.2})
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.2
@@ -290,7 +293,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_instant_number_no_split(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID]: mem})
@@ -302,7 +305,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_instant_number_split_1_1(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
@@ -315,7 +318,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_instant_number_split_1_0(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
@@ -328,7 +331,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_instant_number_split_1_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
@@ -341,7 +344,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_instant_number_split_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
@@ -358,7 +361,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 1})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 1
@@ -373,7 +376,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 3
@@ -388,7 +391,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 1})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 1
@@ -403,7 +406,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 2
@@ -418,7 +421,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 3):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 2
@@ -429,7 +432,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_short_number_no_split(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID]: mem})
@@ -441,7 +444,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_short_number_split_1_1(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
@@ -454,7 +457,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_short_number_split_1_0(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
@@ -467,7 +470,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_short_number_split_1_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
@@ -480,7 +483,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_short_number_split_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
@@ -497,7 +500,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 1})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 1
@@ -512,7 +515,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 3
@@ -527,7 +530,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 2
@@ -542,7 +545,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 3
@@ -557,7 +560,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 3):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 2
@@ -568,7 +571,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_long_number_no_split(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[memory.LONG_MEMORY].update({mem[constants.ID]: mem})
@@ -579,7 +582,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_long_number_split_1_1(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
@@ -591,7 +594,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_long_number_split_1_0(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
@@ -603,7 +606,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_long_number_split_1_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
@@ -615,7 +618,7 @@ class TestMemory(unittest.TestCase):
 
     def test_compose_long_number_split_2(self):
         mem = memory.BASIC_MEMORY.copy()
-        mem.update({constants.ID: 1000, constants.HAPPEN_TIME: time.time()})
+        mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
         # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
@@ -631,7 +634,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 1})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 1
@@ -645,7 +648,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 3
@@ -659,7 +662,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER - 1):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 2
@@ -673,7 +676,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 3})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 3
@@ -687,7 +690,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 3):
             mem = memory.BASIC_MEMORY.copy()
-            mem.update({constants.ID: 1000, constants.HAPPEN_TIME: now + 2})
+            mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 2

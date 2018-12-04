@@ -15,7 +15,7 @@ MEDIUM_DURATION = 'M'
 LONG_DURATION = 'L'
 
 # memory
-ID = 'id'
+MID = 'mid'
 STRENGTH = 'str'
 RECALL = 'rcl'
 REWARD = 'rwd'
