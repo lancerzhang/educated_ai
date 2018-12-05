@@ -1,16 +1,19 @@
 import time, util, memory, vision, status, sound, copy, actor, constants
 from data import Data
 from tinydb import TinyDB
+from db_tinydb import DB_TinyDB
+from db_CodernityDB import DB_CodernityDB
 
 # number of process per second
 PPS = 10
 # duration per process (s)
 DPS = 1.0 / PPS
 
-db = Data(TinyDB('TinyDB.json'))
-memory.data = db
-vision.data = db
-actor.db = db
+# _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
+_data = Data(DB_CodernityDB())
+memory.data = _data
+vision.data = _data
+actor.data = _data
 
 try:
     print 'wake up.\n'
@@ -20,6 +23,7 @@ try:
     work_status = {}
     frames = 0
     while 1:
+        # print frames
         frames = frames + 1
         start = time.time()
 
@@ -47,4 +51,4 @@ try:
 
 except KeyboardInterrupt:
     print("quiting...")
-    db.housekeep()
+    _data.housekeep()

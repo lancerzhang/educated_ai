@@ -21,6 +21,15 @@ class TestDB(unittest.TestCase):
         record = self.data._get_memory(id)
         self.assertIsNotNone(record)
 
+    # def test1(self):
+    #     rwd=0
+    #     record1 = self.data.add_memory(
+    #         {'lrc': 1543983890, 'rwd': rwd, 'str': 100, 'mid': '43b79e1abadd4a809f0ac87bbb2841af', 'pmy': [],
+    #          'hpt': 1543983860.155, 'rcl': 1,
+    #          'cmy': ['1d931e95406c4b65a3dc7f1a30996368', '65e7e567a7d94c95aec0deaf723994d5',
+    #                  '739046def392446c935ec85635e2961d', '621b6fbfe16e42b5801b7658a0e6ff79'], 'mmd': '5itm',
+    #          '_id': '43b79e1abadd4a809f0ac87bbb2841af'})
+    #     print record1
 
 if __name__ == "__main__":
     unittest.main()

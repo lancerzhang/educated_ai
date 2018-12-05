@@ -12,10 +12,10 @@ class TestDB(unittest.TestCase):
     database = None
 
     def setUp(self):
-        # database = DB_TinyDB(TinyDB(storage=MemoryStorage))
-        database = DB_CodernityDB()
-        for el in database.get_all():
-            database.remove(el.get('_id'))
+        database = DB_TinyDB(TinyDB(storage=MemoryStorage))
+        # database = DB_CodernityDB()
+        # for el in database.get_all():
+        #     database.remove(el.get('_id'))
         self.data = Data(database)
         memory.forget_memory = True
 

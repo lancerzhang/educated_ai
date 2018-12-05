@@ -1,13 +1,15 @@
-import constants, uuid, md5
+import constants, uuid, hashlib
 from CodernityDB.database import Database
 from CodernityDB.hash_index import HashIndex
 from CodernityDB.tree_index import TreeBasedIndex
 from CodernityDB.database import DatabasePathException
+from CodernityDB.database import RecordNotFound
+from CodernityDB.database import RecordDeleted
 
 
 class ActorMouseIndex(HashIndex):
     custom_header = """from CodernityDB.tree_index import TreeBasedIndex
-import constants,md5"""
+import constants,hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '32s'
@@ -19,7 +21,7 @@ import constants,md5"""
         if mem_type is None or click_type is None:
             return None
         else:
-            return md5(mem_type + click_type).hexdigest(), None
+            return hashlib.md5(mem_type + click_type).hexdigest(), None
 
     def make_key(self, key):
         mem_type = key.get(constants.PHYSICAL_MEMORY_TYPE)
@@ -27,12 +29,12 @@ import constants,md5"""
         if mem_type is None or click_type is None:
             return None
         else:
-            return md5(mem_type + click_type).hexdigest()
+            return hashlib.md5(mem_type + click_type).hexdigest()
 
 
 class VisionZoomIndex(HashIndex):
     custom_header = """from CodernityDB.tree_index import TreeBasedIndex
-import constants,md5"""
+import constants,hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '32s'
@@ -44,7 +46,7 @@ import constants,md5"""
         if mem_type is None or zoom_type is None:
             return None
         else:
-            return md5(mem_type + zoom_type).hexdigest(), None
+            return hashlib.md5(mem_type + zoom_type).hexdigest(), None
 
     def make_key(self, key):
         mem_type = key.get(constants.PHYSICAL_MEMORY_TYPE)
@@ -52,12 +54,12 @@ import constants,md5"""
         if mem_type is None or zoom_type is None:
             return None
         else:
-            return md5(mem_type + zoom_type).hexdigest()
+            return hashlib.md5(mem_type + zoom_type).hexdigest()
 
 
 class VisionMoveIndex(HashIndex):
     custom_header = """from CodernityDB.tree_index import TreeBasedIndex
-import constants,md5"""
+import constants,hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '32s'
@@ -65,23 +67,23 @@ import constants,md5"""
 
     def make_key_value(self, data):
         mem_type = data.get(constants.PHYSICAL_MEMORY_TYPE)
-        degrees = data.get(constants.DEGREES)
-        speed = data.get(constants.SPEED)
-        duration = data.get(constants.DURATION)
+        degrees = str(data.get(constants.DEGREES))
+        speed = str(data.get(constants.SPEED))
+        duration = str(data.get(constants.DURATION))
         if mem_type is None or degrees is None or speed is None or duration is None:
             return None
         else:
-            return md5(mem_type + degrees + speed + duration).hexdigest(), None
+            return hashlib.md5(mem_type + degrees + speed + duration).hexdigest(), None
 
     def make_key(self, key):
         mem_type = key.get(constants.PHYSICAL_MEMORY_TYPE)
-        degrees = key.get(constants.DEGREES)
-        speed = key.get(constants.SPEED)
-        duration = key.get(constants.DURATION)
+        degrees = str(key.get(constants.DEGREES))
+        speed = str(key.get(constants.SPEED))
+        duration = str(key.get(constants.DURATION))
         if mem_type is None or degrees is None or speed is None or duration is None:
             return None
         else:
-            return md5(mem_type + degrees + speed + duration).hexdigest()
+            return hashlib.md5(mem_type + degrees + speed + duration).hexdigest()
 
 
 class LastRecallIndex(TreeBasedIndex):
@@ -126,7 +128,11 @@ class DB_CodernityDB:
         return self.db.insert(content)
 
     def get_by_id(self, eid):
-        return self.db.get('id', eid)
+        try:
+            record = self.db.get('id', eid)
+        except:
+            record = None
+        return record
 
     def get_all(self):
         records = self.db.all('id', with_doc=True)
@@ -146,25 +152,39 @@ class DB_CodernityDB:
 
     def search_by_last_call(self, last_call):
         records = []
+        # if add "start=0", there is a problem that sometimes get_many can't retrieve doc
+        # as the doc is not exist, don't know why
         db_records = self.db.get_many(self.INDEX_LAST_RECALL, end=last_call, with_doc=True)
         for record in db_records:
             records.append(record.get('doc'))
         return records
 
     def search_vision_movement(self, degrees, speed, duration):
-        record = self.db.get(self.INDEX_ACTOR_MOUSE,
-                             {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
-                              constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration})
-        return record.get('doc')
+        try:
+            record = self.db.get(self.INDEX_ACTOR_MOUSE,
+                                 {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
+                                  constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration})
+            doc = record.get('doc')
+        except RecordNotFound:
+            doc = None
+        return doc
 
     def search_vision_zoom(self, zoom_type):
-        record = self.db.get(self.INDEX_ACTOR_MOUSE,
-                             {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM,
-                              constants.ZOOM_TYPE: zoom_type})
-        return record.get('doc')
+        try:
+            record = self.db.get(self.INDEX_ACTOR_MOUSE,
+                                 {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM,
+                                  constants.ZOOM_TYPE: zoom_type})
+            doc = record.get('doc')
+        except RecordNotFound:
+            doc = None
+        return doc
 
     def search_actor_mouse(self, click_type):
-        record = self.db.get(self.INDEX_ACTOR_MOUSE,
-                             {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE,
-                              constants.CLICK_TYPE: click_type})
-        return record.get('doc')
+        try:
+            record = self.db.get(self.INDEX_ACTOR_MOUSE,
+                                 {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE,
+                                  constants.CLICK_TYPE: click_type})
+            doc = record.get('doc')
+        except RecordNotFound:
+            doc = None
+        return doc

@@ -33,6 +33,8 @@ class Data:
 
     def refresh_memories(self, records, recall=False):
         cleaned = 0
+        if records is None or len(records) == 0:
+            cleaned
         tobe_removed = []
         for record in records:
             memory.refresh(record, recall, True)
@@ -75,7 +77,8 @@ class Data:
 
     def add_memory(self, addition=None):
         mid = self._add_memory(addition)
-        return self._get_memory(mid)
+        result = self._get_memory(mid)
+        return result
 
     def search_vision_movement(self, degrees, speed, duration):
         records = self.db.search_vision_movement(degrees, speed, duration)

@@ -2,7 +2,7 @@ import constants, pyautogui, memory, random
 
 LEFT_CLICK = 'lcl'
 
-db = None
+data = None
 
 
 def process(working_memories, work_status, sequential_time_memories):
@@ -30,10 +30,10 @@ def match_actor_mouse_memories(memories):
 def left_click():
     click_type = LEFT_CLICK
     pyautogui.click()
-    memories = db.search_actor_mouse(click_type)
+    memories = data.search_actor_mouse(click_type)
     if memories is None or len(memories) == 0:
         action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE, constants.CLICK_TYPE: click_type}
-        action_memory = db.add_memory(action)
+        action_memory = data.add_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)

@@ -219,7 +219,6 @@ def filter_feature(data, kernel, feature=None):
         feature_data[constants.FEATURE] = new_feature
     else:
         difference = util.np_array_diff(new_feature, feature)
-        print difference
         if difference < FEATURE_SIMILARITY_THRESHOLD:
             feature_data[constants.SIMILAR] = True
             avg_feature = (feature + new_feature) / 2
@@ -249,7 +248,7 @@ def update_kernel_rank(kernel):
 
 # try to find more detail
 def search_feature():
-    start = time.time()
+    # start = time.time()
     channel = get_channel()
     img = get_region()
     kernel = get_kernel()
@@ -306,7 +305,7 @@ def aware():
     if block is not None and block['v'] > REGION_VARIANCE_THRESHOLD:
         # move focus to variable region
         set_movement_absolute(block, duration)
-    print 'aware ' + str(time.time() - start)
+    # print 'aware ' + str(time.time() - start)
 
 
 def find_most_variable_region(full_img):
@@ -334,7 +333,7 @@ def find_most_variable_region(full_img):
         new_block[START_Y] = calculate_start_y(new_start_y)
         new_block.update({'v': max_var})
         previous_block_histogram = this_block_histogram
-    print 'find_most_variable_region ' + str(time.time() - start)
+    # print 'find_most_variable_region ' + str(time.time() - start)
     return new_block
 
 
