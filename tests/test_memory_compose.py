@@ -1,19 +1,19 @@
 import unittest, memory, constants, time, copy
-from data import Data
+from data_service import DataService
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB
 
 
 class TestMemory(unittest.TestCase):
-    data = None
+    data_service = None
     database = None
 
     def setUp(self):
         database = DB_TinyDB(TinyDB(storage=MemoryStorage))
-        self.data = Data(database)
+        self.data_service = DataService(database)
         memory.forget_memory = False
-        memory.data = self.data
+        memory.data_service = self.data_service
 
     def test_split_seq_time_memories_empty(self):
         memories = []

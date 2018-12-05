@@ -1,5 +1,5 @@
 import unittest, sound, memory, time
-from data import Data
+from data_service import DataService
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB

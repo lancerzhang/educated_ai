@@ -23,8 +23,9 @@ def init_status(status, pps):
     status.update({constants.REWARD: False})
 
 
-def calculate_workload(status, pps, frames, flag):
-    if frames > len(status[WORKLOAD_DATA][flag]) and util.list_avg(status[WORKLOAD_DATA][flag]) > pps * 0.8:
+def calculate_workload(status, dps, frames, flag):
+    avg_workload = util.list_avg(status[WORKLOAD_DATA][flag])
+    if frames > len(status[WORKLOAD_DATA][flag]) and avg_workload > dps * 0.8:
         status[constants.BUSY].update({flag: True})
     else:
         status[constants.BUSY].update({flag: False})
@@ -35,20 +36,21 @@ def calculate_reward(status, frames):
         max_reward = np.max(np.array(status[REWARD_DATA]))
         if max_reward > SATISFIED_REWARD:
             status[constants.REWARD] = True
+        else:
+            status[constants.REWARD] = False
 
 
-def calculate_status(status, pps, frames):
-    if len(status) == 0:
-        init_status(status, pps)
-    calculate_workload(status, pps, frames, constants.SHORT_DURATION)
-    calculate_workload(status, pps, frames, constants.MEDIUM_DURATION)
-    calculate_workload(status, pps, frames, constants.LONG_DURATION)
+def calculate_status(status, dps, frames):
+    calculate_workload(status, dps, frames, constants.SHORT_DURATION)
+    calculate_workload(status, dps, frames, constants.MEDIUM_DURATION)
+    calculate_workload(status, dps, frames, constants.LONG_DURATION)
+    calculate_reward(status,frames)
 
 
 def find_max_reward(working_memories):
     max_reward = 0
     rewards = [x[constants.REWARD] for x in working_memories]
-    if len(rewards)>0:
+    if len(rewards) > 0:
         max_reward = np.max(np.array(rewards))
     return max_reward
 

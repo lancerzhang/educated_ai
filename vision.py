@@ -51,7 +51,7 @@ previous_block_histogram = []
 
 FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 current_action = {STATUS: COMPLETED}
-data = None
+data_service = None
 sct = None
 
 
@@ -425,9 +425,9 @@ def random_zoom():
     if zoom_type is None:
         return None
     action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type}
-    memories = data.search_vision_zoom(zoom_type)
+    memories = data_service.search_vision_zoom(zoom_type)
     if memories is None or len(memories) == 0:
-        action_memory = data.add_memory(action)
+        action_memory = data_service.add_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)
@@ -493,9 +493,9 @@ def set_movement_relative(degrees, speed, duration):
     global current_action
     action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
               constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
-    memories = data.search_vision_movement(degrees, speed, duration)
+    memories = data_service.search_vision_movement(degrees, speed, duration)
     if memories is None or len(memories) == 0:
-        action_memory = data.add_memory(action)
+        action_memory = data_service.add_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)

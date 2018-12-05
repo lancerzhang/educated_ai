@@ -1,5 +1,5 @@
 import unittest, memory, constants
-from data import Data
+from data_service import DataService
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB
@@ -11,9 +11,9 @@ class TestUtil(unittest.TestCase):
 
     def setUp(self):
         database = DB_TinyDB(TinyDB(storage=MemoryStorage))
-        self.data = Data(database)
+        self.data = DataService(database)
         memory.forget_memory = False
-        memory.data = self.data
+        memory.data_service = self.data
 
     def test_sort(self):
         el1 = self.data.add_memory({constants.HAPPEN_TIME: 1})

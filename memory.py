@@ -30,7 +30,7 @@ DURATION_LONG = 360
 # vision1.2
 
 
-data = None
+data_service = None
 
 # use parent to find experience memories
 BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL: 0,
@@ -108,7 +108,7 @@ def find_max_related_memories(memories, tobe_remove_list_ids, limit=4):
     parent_counts = count_parent_id(memories)
     count = 0
     for key in sorted(parent_counts, key=parent_counts.get, reverse=True):
-        mem = data.get_memory(key)
+        mem = data_service.get_memory(key)
         if mem:
             related_memories.append(mem)
             count = count + 1
@@ -132,15 +132,15 @@ def find_update_max_related_memories(memories, limit=4):
 def remove_dead_memories(field, sub_ids, forgot_ids, mid):
     new_sub = util.list_comprehension_new(sub_ids, forgot_ids)
     if field == CHILD_MEM and len(new_sub) == 0:
-        data.remove_memory(mid)
+        data_service.remove_memory(mid)
     else:
-        data.update_memory({field: new_sub}, mid)
+        data_service.update_memory({field: new_sub}, mid)
 
 
 def get_live_memories(memory_ids):
     memories = []
     for mid in memory_ids:
-        mem = data.get_memory(mid)
+        mem = data_service.get_memory(mid)
         if mem is not None:
             memories.append(mem)
     return memories
@@ -156,7 +156,7 @@ def get_live_sub_memories(mem, field, limit=0, offset=0):
         total = len(memory_ids)
     for i in range(offset, total):
         sub_id = memory_ids[i]
-        sub_mem = data.get_memory(sub_id)
+        sub_mem = data_service.get_memory(sub_id)
         if sub_mem is not None:
             memories.append(sub_mem)
         else:
@@ -168,7 +168,7 @@ def get_live_sub_memories(mem, field, limit=0, offset=0):
     if len(forgot_ids) > 0:
         remove_dead_memories(CHILD_MEM, memory_ids, forgot_ids, mem[constants.MID])
     if len(memories) == 0:
-        data.remove_memory(mem[constants.MID])
+        data_service.remove_memory(mem[constants.MID])
     return memories
 
 
@@ -189,7 +189,7 @@ def recall_memory(mem, addition=None):
                       constants.LAST_RECALL: mem[constants.LAST_RECALL]}
     if addition is not None:
         update_content.update(addition)
-    data.update_memory(update_content, mem[constants.MID])
+    data_service.update_memory(update_content, mem[constants.MID])
 
 
 # children is list of group memories [[m1, m2], [m3, m4]]
@@ -203,10 +203,9 @@ def create_working_memory(seq_time_memories, children, duration_type):
             new_reward = np.max(np.array(child_memory_rewards))
             # new_reward is int32, which will become "\x00\x00\x00\x00" when insert to CodernityDB
             reward = int(new_reward)
-            new_mem = data.add_memory(
+            new_mem = data_service.add_memory(
                 {CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: duration_type,
-                 constants.HAPPEN_TIME: time.time(),
-                 constants.REWARD: reward})
+                 constants.HAPPEN_TIME: time.time(), constants.REWARD: reward})
             seq_time_memories[duration_type].append(new_mem)
 
 
@@ -289,7 +288,7 @@ def convert_to_expectation(mem):
 
 def update_last_recall(memories):
     for mem in memories:
-        data.update_memory({constants.LAST_RECALL: int(time.time())}, mem[constants.MID])
+        data_service.update_memory({constants.LAST_RECALL: int(time.time())}, mem[constants.MID])
 
 
 # append new memories to memories list if it's not exist
@@ -370,19 +369,19 @@ def cleanup_working_memories(working_memories, work_status):
 
 
 def add_vision_feature_memory(feature_type, channel, kernel, feature):
-    return data.add_memory(
+    return data_service.add_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.CHANNEL: channel, constants.KERNEL: kernel,
          constants.FEATURE: feature.tolist()})
 
 
 def add_feature_memory(feature_type, kernel, feature):
-    return data.add_memory(
+    return data_service.add_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.KERNEL: kernel, constants.FEATURE: feature})
 
 
 def add_slice_memory(child_memories):
     child_memory_ids = [x[constants.MID] for x in child_memories]
-    mem = data.add_memory({CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+    mem = data_service.add_memory({CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
     mem.update({constants.HAPPEN_TIME: time.time()})
     return mem
 

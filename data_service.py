@@ -1,7 +1,7 @@
 import time, uuid, memory, constants
 
 
-class Data:
+class DataService:
     db = None
 
     def __init__(self, db):
