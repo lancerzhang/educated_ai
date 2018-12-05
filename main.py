@@ -1,4 +1,4 @@
-import time, util, memory, vision, status, sound, copy, actor, constants
+import time, util, memory, vision, status, sound, copy, actor, constants,thread
 from data import Data
 from tinydb import TinyDB
 from db_tinydb import DB_TinyDB
@@ -17,6 +17,7 @@ actor.data = _data
 
 try:
     print 'wake up.\n'
+    thread.start_new_thread(sound.receive, ())
     # to group them as a new memory by time sequence
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     working_memories = []
@@ -49,8 +50,9 @@ try:
         if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
             working_memories = memory.cleanup_working_memories(working_memories, work_status)
 
-        print 'frame used time	' + str(time.time() - start)
+        # print 'frame used time	' + str(time.time() - start)
 
 except KeyboardInterrupt:
     print("quiting...")
+    sound.start_thread = False
     _data.housekeep()

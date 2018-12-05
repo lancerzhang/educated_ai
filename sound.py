@@ -1,4 +1,4 @@
-import librosa, math, pyaudio, collections, util, memory, copy, cv2, status, random, constants
+import librosa, math, pyaudio, collections, util, memory, copy, cv2, status, random, constants, time
 import numpy as np
 import skimage.measure
 
@@ -64,7 +64,7 @@ def receive(phase_duration=DEFAULT_PHASE_DURATION):
                     break  # reached end of the stream
                 np_buffer = np.fromstring(audio_buffer, dtype=np.int16)
                 normal_buffer = util.normalize_audio_data(np_buffer)
-                frame_data = frame_data + normal_buffer
+                frame_data = frame_data + normal_buffer.tolist()
                 frame_count += 1
                 if frame_count >= buffer_count_of_phase:
                     break
@@ -107,6 +107,7 @@ def save_files():
 
 
 def process(working_memories, work_status, sequential_time_memories):
+    start = time.time()
     init()
     frequency_map = get_frequency_map()
     if frequency_map is None:
@@ -137,6 +138,7 @@ def process(working_memories, work_status, sequential_time_memories):
 
     if not work_status[constants.BUSY][constants.LONG_DURATION]:
         save_files()
+    # print 'process	' + str(time.time() - start)
 
 
 def match_features(frequency_map, slice_memories):
@@ -191,7 +193,6 @@ def filter_feature(raw, kernel, feature=None):
         feature_data[constants.FEATURE] = new_feature
     else:
         difference = util.np_array_diff(new_feature, feature)
-        print difference
         if difference < FEATURE_SIMILARITY_THRESHOLD:
             feature_data[constants.SIMILAR] = True
             avg_feature = (feature + new_feature) / 2
@@ -233,7 +234,7 @@ def search_feature(full_frequency_map):
         return None
     mem = search_memory(kernel, data[constants.FEATURE])
     if mem is None:
-        mem = memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
+        mem = memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE].tolist())
         update_memory_indexes(kernel, mem[constants.MID])
     update_kernel_rank(kernel)
     return mem
