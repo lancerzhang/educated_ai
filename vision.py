@@ -2,7 +2,6 @@ import time, cv2, util, copy, random, math, memory, constants
 import numpy as np
 import skimage.measure
 import mss
-from win32api import GetSystemMetrics
 
 inited = False
 
@@ -61,10 +60,11 @@ def init():
     if inited is False:
         global sct
         sct = mss.mss()
+        monitor = sct.monitors[1]
         global screen_width
-        screen_width = GetSystemMetrics(0)
+        screen_width = monitor['width']
         global screen_height
-        screen_height = GetSystemMetrics(1)
+        screen_height = monitor['height']
         global current_block
         center_x = screen_width / 2
         center_y = screen_height / 2
