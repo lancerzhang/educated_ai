@@ -194,16 +194,20 @@ def recall_memory(mem, addition=None):
 
 # children is list of group memories [[m1, m2], [m3, m4]]
 def create_working_memory(seq_time_memories, children, duration_type):
+    if children is None or len(children) == 0:
+        return
     for memories in children:
-        child_memory_ids = [mem[constants.MID] for mem in memories]
-        child_memory_rewards = [mem[constants.REWARD] for mem in memories]
-        new_reward = np.max(np.array(child_memory_rewards))
-        # new_reward is int32, which will become "\x00\x00\x00\x00" when insert to CodernityDB
-        reward = int(new_reward)
-        new_mem = data.add_memory(
-            {CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: duration_type, constants.HAPPEN_TIME: time.time(),
-             constants.REWARD: reward})
-        seq_time_memories[duration_type].append(new_mem)
+        if len(memories) > 0:
+            child_memory_ids = [mem[constants.MID] for mem in memories]
+            child_memory_rewards = [mem[constants.REWARD] for mem in memories]
+            new_reward = np.max(np.array(child_memory_rewards))
+            # new_reward is int32, which will become "\x00\x00\x00\x00" when insert to CodernityDB
+            reward = int(new_reward)
+            new_mem = data.add_memory(
+                {CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: duration_type,
+                 constants.HAPPEN_TIME: time.time(),
+                 constants.REWARD: reward})
+            seq_time_memories[duration_type].append(new_mem)
 
 
 # slice memories of 4 (COMPOSE_NUMBER) or within DURATION_INSTANT will be grouped as a new instant memory

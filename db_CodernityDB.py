@@ -153,6 +153,7 @@ class DB_CodernityDB:
     def search_by_last_call(self, last_call):
         records = []
         # if add "start=0", there is a problem that sometimes get_many can't retrieve doc
+        # error is "RecordNotFound: Location '                              l' not found"
         # as the doc is not exist, don't know why
         db_records = self.db.get_many(self.INDEX_LAST_RECALL, end=last_call, with_doc=True)
         for record in db_records:

@@ -34,7 +34,7 @@ class Data:
     def refresh_memories(self, records, recall=False):
         cleaned = 0
         if records is None or len(records) == 0:
-            cleaned
+            return cleaned
         tobe_removed = []
         for record in records:
             memory.refresh(record, recall, True)

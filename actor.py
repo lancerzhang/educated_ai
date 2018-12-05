@@ -1,8 +1,9 @@
-import constants, pyautogui, memory, random
+import constants, pyautogui, memory, random, time
 
 LEFT_CLICK = 'lcl'
 
 data = None
+pyautogui.PAUSE = 0.0001
 
 
 def process(working_memories, work_status, sequential_time_memories):
@@ -28,6 +29,7 @@ def match_actor_mouse_memories(memories):
 
 
 def left_click():
+    start = time.time()
     click_type = LEFT_CLICK
     pyautogui.click()
     memories = data.search_actor_mouse(click_type)
@@ -38,12 +40,16 @@ def left_click():
         mem = memories[0]
         memory.recall_memory(mem)
         action_memory = mem
+
+    # print 'left_click	' + str(time.time() - start)
     return action_memory
 
 
 def explore():
+    start = time.time()
     action_memory = left_click()
     slice_memory = None
     if action_memory is not None:
         slice_memory = memory.add_slice_memory([action_memory])
+    # print 'explore	' + str(time.time() - start)
     return slice_memory

@@ -1,7 +1,7 @@
 import time, cv2, util, copy, random, math, memory, constants
 import numpy as np
 import skimage.measure
-from PIL import ImageGrab, Image
+import mss
 from win32api import GetSystemMetrics
 
 inited = False
@@ -53,11 +53,14 @@ previous_block_histogram = []
 FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 current_action = {STATUS: COMPLETED}
 data = None
+sct = None
 
 
 def init():
     global inited
     if inited is False:
+        global sct
+        sct = mss.mss()
         global screen_width
         screen_width = GetSystemMetrics(0)
         global screen_height
@@ -119,6 +122,7 @@ def save_files():
 
 def process(working_memories, work_status, sequential_time_memories):
     init()
+    start = time.time()
     if current_action[STATUS] is IN_PROGRESS:
         calculate_action(current_action)
 
@@ -166,6 +170,8 @@ def process(working_memories, work_status, sequential_time_memories):
             new_slice_memory = explore()
             if new_slice_memory is not None:
                 sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+
+    # print 'frame used time	' + str(time.time()-start)
 
 
 def match_features(slice_memories):
@@ -248,7 +254,7 @@ def update_kernel_rank(kernel):
 
 # try to find more detail
 def search_feature():
-    # start = time.time()
+    start = time.time()
     channel = get_channel()
     img = get_region()
     kernel = get_kernel()
@@ -262,7 +268,7 @@ def search_feature():
         update_memory_indexes(channel, kernel, mem[constants.MID])
     update_kernel_rank(kernel)
     update_channel_rank(channel)
-    # print 'search_feature ' + str(time.time() - start)
+    # print 'search_feature	' + str(time.time() - start)
     return mem
 
 
@@ -299,13 +305,14 @@ def update_memory_indexes(channel, kernel, mid):
 def aware():
     start = time.time()
     duration = get_duration()
-    pil_image = ImageGrab.grab()
+    mon = {"top": 0, "left": 0, "width": screen_width, "height": screen_height}
+    pil_image = sct.grab(mon)
     full_img = np.array(pil_image)
     block = find_most_variable_region(full_img)
     if block is not None and block['v'] > REGION_VARIANCE_THRESHOLD:
         # move focus to variable region
         set_movement_absolute(block, duration)
-    # print 'aware ' + str(time.time() - start)
+    # print 'aware	' + str(time.time() - start)
 
 
 def find_most_variable_region(full_img):
@@ -572,7 +579,7 @@ def match_zoom_memories(memories):
 
 def crop(block):
     # start = time.time()
-    img = ImageGrab.grab(
-        bbox=(block[START_X], block[START_Y], block[START_X] + block[WIDTH], block[START_Y] + block[HEIGHT]))
-    # print 'crop ' + str(time.time() - start)  # average 0.05s
+    mon = {"top": block[START_Y], "left": block[START_X], "width": block[WIDTH], "height": block[HEIGHT]}
+    img = sct.grab(mon)
+    # print 'crop	' + str(time.time() - start)  # average 0.07s
     return np.array(img)

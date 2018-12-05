@@ -23,9 +23,9 @@ try:
     work_status = {}
     frames = 0
     while 1:
+        start = time.time()
         # print frames
         frames = frames + 1
-        start = time.time()
 
         status.calculate_status(work_status, PPS, frames)
 
@@ -48,6 +48,8 @@ try:
 
         if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
             working_memories = memory.cleanup_working_memories(working_memories, work_status)
+
+        print 'frame used time	' + str(time.time() - start)
 
 except KeyboardInterrupt:
     print("quiting...")
