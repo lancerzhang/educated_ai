@@ -34,11 +34,11 @@ MOVE = 'move'
 ZOOM_IN = 'zmi'
 ZOOM_OUT = 'zmo'
 CREATE_TIME = 'crt'
-USED_SPEED_FILE = 'vus.npy'
-USED_DEGREES_FILE = 'vud.npy'
-USED_KERNEL_FILE = 'vuk.npy'
-USED_CHANNEL_FILE = 'vuc.npy'
-MEMORY_INDEX_FILE = 'vmi.npy'
+USED_SPEED_FILE = 'data/vus.npy'
+USED_DEGREES_FILE = 'data/vud.npy'
+USED_KERNEL_FILE = 'data/vuk.npy'
+USED_CHANNEL_FILE = 'data/vuc.npy'
+MEMORY_INDEX_FILE = 'data/vmi.npy'
 VISION_KERNEL_FILE = 'kernels.npy'
 used_speed_rank = None
 used_degrees_rank = None
@@ -128,9 +128,13 @@ def process(working_memories, work_status, sequential_time_memories):
 
     slice_feature_memories = [mem for mem in working_memories if
                               mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
+                                  constants.STATUS] is constants.MATCHING and mem[
                                   constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FEATURE]
 
     matched_feature_memories = match_features(slice_feature_memories)
+
+    for mem in matched_feature_memories:
+        working_memories.append(mem)
 
     new_feature_memory = search_feature()
     if len(matched_feature_memories) > 0:
@@ -138,38 +142,50 @@ def process(working_memories, work_status, sequential_time_memories):
             matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)
     elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
         new_matched_feature_memories = match_features(new_slice_memories)
         new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)
 
     slice_movement_memories = [mem for mem in working_memories if
                                mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
+                                   constants.STATUS] is constants.MATCHING and mem[
                                    constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_MOVE]
     if current_action[STATUS] is not IN_PROGRESS:
         if len(slice_movement_memories) > 0:
-            match_movement_memories(slice_movement_memories)
+            mem = match_movement_memories(slice_movement_memories)
+            sequential_time_memories[constants.SLICE_MEMORY].append(mem)
+            working_memories.append(mem)
 
     slice_zoom_memories = [mem for mem in working_memories if
                            mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
+                               constants.STATUS] is constants.MATCHING and mem[
                                constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_ZOOM]
     if len(slice_zoom_memories) > 0:
-        match_zoom_memories(slice_zoom_memories)
+        mem = match_zoom_memories(slice_zoom_memories)
+        sequential_time_memories[constants.SLICE_MEMORY].append(mem)
+        working_memories.append(mem)
 
     if not work_status[constants.BUSY][constants.LONG_DURATION]:
         save_files()
 
     if not work_status[constants.BUSY][constants.SHORT_DURATION]:
         if current_action[STATUS] is not IN_PROGRESS:
-            aware()
+            new_slice_memory = aware()
+            if new_slice_memory is not None:
+                sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+                working_memories.append(new_slice_memory)
 
     if not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
         if current_action[STATUS] is not IN_PROGRESS:
             new_slice_memory = explore()
             if new_slice_memory is not None:
                 sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+                working_memories.append(new_slice_memory)
 
     # print 'frame used time	' + str(time.time()-start)
 
@@ -311,7 +327,7 @@ def aware():
     block = find_most_variable_region(full_img)
     if block is not None and block['v'] > REGION_VARIANCE_THRESHOLD:
         # move focus to variable region
-        set_movement_absolute(block, duration)
+        return set_movement_absolute(block, duration)
     # print 'aware	' + str(time.time() - start)
 
 
@@ -486,7 +502,7 @@ def set_movement_absolute(new_block, duration):
     degrees = calculate_degrees(new_block)
     length = math.hypot(new_block[START_Y] - current_block[START_Y], new_block[START_X] - current_block[START_X])
     speed = length / duration / constants.ACTUAL_SPEED_TIMES
-    set_movement_relative(degrees, speed, duration)
+    return set_movement_relative(degrees, speed, duration)
 
 
 def set_movement_relative(degrees, speed, duration):
@@ -564,6 +580,7 @@ def match_movement_memories(memories):
                       constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE, STATUS: IN_PROGRESS}
     mem[constants.STATUS] = constants.MATCHED
     memory.recall_memory(mem)
+    return mem
 
 
 def match_zoom_memories(memories):
@@ -575,6 +592,7 @@ def match_zoom_memories(memories):
         zoom_in()
     mem[constants.STATUS] = constants.MATCHED
     memory.recall_memory(mem)
+    return mem
 
 
 def crop(block):

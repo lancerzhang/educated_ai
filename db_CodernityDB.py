@@ -112,8 +112,8 @@ class DB_CodernityDB:
     INDEX_ACTOR_MOUSE = 'actor_mouse'
     db = None
 
-    def __init__(self):
-        self.db = Database('CodernityDB')
+    def __init__(self, folder='CodernityDB'):
+        self.db = Database(folder)
         try:
             self.db.open()
         except:

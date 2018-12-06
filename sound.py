@@ -22,8 +22,8 @@ FEATURE_INPUT_SIZE = 12
 FEATURE_THRESHOLD = 10
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
-USED_KERNEL_FILE = 'suk.npy'
-MEMORY_INDEX_FILE = 'smi.npy'
+USED_KERNEL_FILE = 'data/suk.npy'
+MEMORY_INDEX_FILE = 'data/smi.npy'
 SOUND_KERNEL_FILE = 'kernels.npy'
 used_kernel_rank = None
 sound_kernels = None
@@ -109,14 +109,20 @@ def save_files():
 def process(working_memories, work_status, sequential_time_memories):
     start = time.time()
     init()
+
     frequency_map = get_frequency_map()
     if frequency_map is None:
         return
+
     slice_feature_memories = [mem for mem in working_memories if
                               mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
+                                  constants.STATUS] is constants.MATCHING and mem[
                                   constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
 
     matched_feature_memories = match_features(frequency_map, slice_feature_memories)
+
+    for mem in matched_feature_memories:
+        working_memories.append(mem)
 
     new_feature_memory = search_feature(frequency_map)
     if len(matched_feature_memories) > 0:
@@ -124,12 +130,14 @@ def process(working_memories, work_status, sequential_time_memories):
             matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)
     elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
         new_matched_feature_memories = match_features(frequency_map, new_slice_memories)
         new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)
 
     # if not work_status[constants.BUSY][constants.SHORT_DURATION]:
     #     smm = aware(frequency_map)

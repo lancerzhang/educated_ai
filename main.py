@@ -1,4 +1,4 @@
-import time, util, memory, vision, status, sound, copy, actor, constants,thread
+import time, util, memory, vision, status, sound, copy, actor, constants, thread
 from data_service import DataService
 from tinydb import TinyDB
 from db_tinydb import DB_TinyDB
@@ -10,7 +10,7 @@ PPS = 5
 DPS = 1.0 / PPS
 
 # _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
-data_service = DataService(DB_CodernityDB())
+data_service = DataService(DB_CodernityDB(folder='data/CodernityDB/'))
 memory.data_service = data_service
 vision.data_service = data_service
 actor.data_service = data_service
@@ -23,27 +23,23 @@ try:
     working_memories = []
     work_status = {}
     frames = 0
-    status.init_status(work_status,PPS)
+    status.init_status(work_status, PPS)
     while 1:
         start = time.time()
         # print frames
         frames = frames + 1
 
-        print working_memories
         status.calculate_status(work_status, DPS, frames)
-
-        memory.associate(working_memories)
-        memory.prepare_expectation(working_memories)
 
         vision.process(working_memories, work_status, sequential_time_memories)
         sound.process(working_memories, work_status, sequential_time_memories)
         actor.process(working_memories, work_status, sequential_time_memories)
 
-        memory.check_expectation(working_memories, sequential_time_memories)
-        memory.compose(sequential_time_memories)
+        memory.associate(working_memories)
+        memory.prepare_expectation(working_memories)
 
-        vision.process(working_memories, work_status, sequential_time_memories)
-        sound.process(working_memories, work_status, sequential_time_memories)
+        memory.check_expectation(working_memories, sequential_time_memories)
+        memory.compose(working_memories, sequential_time_memories)
 
         # all end
         duration = util.time_diff(start)
