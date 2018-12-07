@@ -11,8 +11,6 @@ class TestDB(unittest.TestCase):
 
     def setUp(self):
         self.database = DB_CodernityDB()
-        for el in self.database.get_all():
-            self.database.remove(el.get('_id'))
 
     def test_get_memory(self):
         record = self.database.insert(
@@ -30,7 +28,10 @@ class TestDB(unittest.TestCase):
         clean_time = time.time() - 60
         clean_time = int(clean_time)
         records = self.database.search_by_last_call(clean_time)
-        print records
+        #clean up
+        for el in self.database.get_all():
+            print self.database.remove(el.get('_id'))
+        self.database.db.compact()
 
 
 if __name__ == "__main__":

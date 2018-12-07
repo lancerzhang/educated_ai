@@ -4,7 +4,7 @@ from CodernityDB.hash_index import HashIndex
 from CodernityDB.tree_index import TreeBasedIndex
 from CodernityDB.database import DatabasePathException
 from CodernityDB.database import RecordNotFound
-from CodernityDB.database import RecordDeleted
+from CodernityDB.database import DatabaseException
 
 
 class ActorMouseIndex(HashIndex):
@@ -125,30 +125,39 @@ class DB_CodernityDB:
 
     def insert(self, content):
         content.update({'_id': content.get(constants.MID)})
-        return self.db.insert(content)
+        record = self.db.insert(content)
+        doc = self.db.get('id', record.get('_id'))
+        return doc
 
     def get_by_id(self, eid):
         try:
             record = self.db.get('id', eid)
-        except:
+        except DatabaseException:
             record = None
         return record
 
     def get_all(self):
         records = self.db.all('id', with_doc=True)
-        return [x for x in records]
+        results = [x for x in records]
+        return results
 
     def update(self, content, eid):
-        record = self.db.get('id', eid)
+        try:
+            record = self.db.get('id', eid)
+        except DatabaseException:
+            record = None
         if record is not None:
             record.update(content)
             updated = self.db.update(record)
             return updated
 
     def remove(self, eid):
-        record = self.db.get('id', eid)
+        try:
+            record = self.db.get('id', eid)
+        except DatabaseException:
+            record = None
         if record is not None:
-            self.db.delete(record)
+            return self.db.delete(record)
 
     def search_by_last_call(self, last_call):
         records = []

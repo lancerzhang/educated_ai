@@ -106,7 +106,7 @@ def save_files():
     np.save(USED_KERNEL_FILE, used_kernel_rank)
 
 
-def process(working_memories, work_status, sequential_time_memories):
+def process(working_memories, sequential_time_memories, work_status):
     start = time.time()
     init()
 
@@ -115,14 +115,12 @@ def process(working_memories, work_status, sequential_time_memories):
         return
 
     slice_feature_memories = [mem for mem in working_memories if
-                              mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
-                                  constants.STATUS] is constants.MATCHING and mem[
-                                  constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
+                              mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
+                              mem[constants.STATUS] is constants.MATCHING and
+                              mem[constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
 
-    matched_feature_memories = match_features(frequency_map, slice_feature_memories)
-
-    for mem in matched_feature_memories:
-        working_memories.append(mem)
+    matched_feature_memories = match_features(frequency_map, slice_feature_memories, working_memories,
+                                              sequential_time_memories)
 
     new_feature_memory = search_feature(frequency_map)
     if len(matched_feature_memories) > 0:
@@ -133,7 +131,8 @@ def process(working_memories, work_status, sequential_time_memories):
         working_memories.append(new_slice_memory)
     elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
-        new_matched_feature_memories = match_features(frequency_map, new_slice_memories)
+        new_matched_feature_memories = match_features(frequency_map, new_slice_memories, working_memories,
+                                                      sequential_time_memories)
         new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
@@ -149,19 +148,20 @@ def process(working_memories, work_status, sequential_time_memories):
     # print 'process	' + str(time.time() - start)
 
 
-def match_features(frequency_map, slice_memories):
+def match_features(frequency_map, slice_memories, working_memories, sequential_time_memories):
     distinct_feature_memories = []
     slice_memory_children = {}
     memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
     for fmm in distinct_feature_memories:
         match_feature(frequency_map, fmm)
-    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
+    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,
+                                                                       working_memories, sequential_time_memories)
     return matched_feature_memories
 
 
 def match_feature(full_frequency_map, fmm):
     kernel = fmm[constants.KERNEL]
-    feature = fmm[constants.FEATURE]
+    feature = np.array(fmm[constants.FEATURE])
     # data_range = fmm[RANGE]
     # frequency_map = full_frequency_map[data_range[0]:data_range[1], :]
     # data = filter_feature(frequency_map, kernel, feature)
@@ -170,8 +170,9 @@ def match_feature(full_frequency_map, fmm):
     if data is None:
         return False  # not similar
     if data[constants.SIMILAR]:
+        new_feature = data[constants.FEATURE]
         # recall memory and update feature to average
-        memory.recall_memory(fmm, {constants.FEATURE: data[constants.FEATURE]})
+        memory.recall_memory(fmm, {constants.FEATURE: new_feature.tolist()})
         fmm[constants.STATUS] = constants.MATCHED
         update_kernel_rank(kernel)
     return data[constants.SIMILAR]
@@ -257,7 +258,7 @@ def search_memory(kernel, feature1):
         live_memories = memory.get_live_memories(memory_ids)
         if live_memories is not None:
             for mem in live_memories:
-                feature2 = mem[constants.FEATURE]
+                feature2 = np.array(mem[constants.FEATURE])
                 difference = util.np_array_diff(feature1, feature2)
                 if difference < FEATURE_SIMILARITY_THRESHOLD:
                     return mem

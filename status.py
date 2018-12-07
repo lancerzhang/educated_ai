@@ -7,7 +7,8 @@ REWARD_DATA = 'reward_data'
 SATISFIED_REWARD = 0.5
 
 
-def init_status(status, pps):
+def init_status(pps):
+    status = {}
     # if free in short time, find more detail, explore the world
     short_duration = [0] * 2 * pps
     # if free in middle time, try different flow, see which one is better (with higher reward)
@@ -21,6 +22,7 @@ def init_status(status, pps):
                                     constants.LONG_DURATION: False}})
     status.update({REWARD_DATA: rewards})
     status.update({constants.REWARD: False})
+    return status
 
 
 def calculate_workload(status, dps, frames, flag):
@@ -44,7 +46,7 @@ def calculate_status(status, dps, frames):
     calculate_workload(status, dps, frames, constants.SHORT_DURATION)
     calculate_workload(status, dps, frames, constants.MEDIUM_DURATION)
     calculate_workload(status, dps, frames, constants.LONG_DURATION)
-    calculate_reward(status,frames)
+    calculate_reward(status, frames)
 
 
 def find_max_reward(working_memories):
@@ -55,7 +57,7 @@ def find_max_reward(working_memories):
     return max_reward
 
 
-def update_status(status, processing_time, working_memories):
+def update_status(working_memories, status, processing_time):
     status[WORKLOAD_DATA][constants.SHORT_DURATION].pop(0)
     status[WORKLOAD_DATA][constants.SHORT_DURATION].append(processing_time)
     status[WORKLOAD_DATA][constants.MEDIUM_DURATION].pop(0)

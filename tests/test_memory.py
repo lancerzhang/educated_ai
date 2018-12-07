@@ -4,6 +4,7 @@ from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB
 
+
 class TestMemory(unittest.TestCase):
     data_service = None
     database = None
@@ -70,7 +71,7 @@ class TestMemory(unittest.TestCase):
         children = [1, 2, 3, 4, 5]
         forgot = [1, 3, 5]
         mem1 = self.data_service.add_memory({memory.CHILD_MEM: children})
-        memory.remove_dead_memories(memory.CHILD_MEM, children, forgot, mem1[constants.MID])
+        memory.reduce_list_field(memory.CHILD_MEM, children, forgot, mem1[constants.MID])
         mem = self.data_service._get_memory(mem1[constants.MID])
         self.assertEqual(2, len(mem[memory.CHILD_MEM]))
         self.assertEqual(4, mem[memory.CHILD_MEM][1])
@@ -103,9 +104,12 @@ class TestMemory(unittest.TestCase):
         self.assertIsNone(mem)
 
     def test_get_memories(self):
-        mem1 = self.data_service.add_memory({constants.STATUS: constants.MATCHED, constants.DURATION: 1, constants.REWARD: 0.5})
-        mem2 = self.data_service.add_memory({constants.STATUS: constants.MATCHING, constants.DURATION: 1, constants.REWARD: 0.6})
-        mem3 = self.data_service.add_memory({constants.STATUS: constants.EXPIRED, constants.DURATION: 3, constants.REWARD: 0.3})
+        mem1 = self.data_service.add_memory(
+            {constants.STATUS: constants.MATCHED, constants.DURATION: 1, constants.REWARD: 0.5})
+        mem2 = self.data_service.add_memory(
+            {constants.STATUS: constants.MATCHING, constants.DURATION: 1, constants.REWARD: 0.6})
+        mem3 = self.data_service.add_memory(
+            {constants.STATUS: constants.EXPIRED, constants.DURATION: 3, constants.REWARD: 0.3})
         memories = [mem1, mem2, mem3]
         matched_list = [x for x in memories if x[constants.STATUS] is constants.MATCHED]
         self.assertEqual(1, len(matched_list))
@@ -123,14 +127,17 @@ class TestMemory(unittest.TestCase):
         mem3.update({constants.MID: 3})
         mem4 = memory.BASIC_MEMORY.copy()
         mem4.update({constants.MID: 4})
-        mem5 = self.data_service.add_memory({constants.PARENT_MEM: [mem1[constants.MID], mem2[constants.MID], mem3[constants.MID]]})
-        mem6 = self.data_service.add_memory({constants.PARENT_MEM: [mem2[constants.MID], mem3[constants.MID], mem4[constants.MID]]})
+        mem5 = self.data_service.add_memory(
+            {constants.PARENT_MEM: [mem1[constants.MID], mem2[constants.MID], mem3[constants.MID]]})
+        mem6 = self.data_service.add_memory(
+            {constants.PARENT_MEM: [mem2[constants.MID], mem3[constants.MID], mem4[constants.MID]]})
         memories = [mem5, mem6]
         tobe_remove_list_ids = []
         related_memories = memory.find_max_related_memories(memories, tobe_remove_list_ids)
         self.assertEquals(2, len(related_memories))
         self.assertEquals(2, len(tobe_remove_list_ids))
-        mem7 = self.data_service.add_memory({constants.PARENT_MEM: [mem2[constants.MID], mem3[constants.MID], mem4[constants.MID]]})
+        mem7 = self.data_service.add_memory(
+            {constants.PARENT_MEM: [mem2[constants.MID], mem3[constants.MID], mem4[constants.MID]]})
         memories.append(mem7)
         tobe_remove_list_ids2 = []
         related_memories2 = memory.find_max_related_memories(memories, tobe_remove_list_ids2, 1)
@@ -141,11 +148,11 @@ class TestMemory(unittest.TestCase):
         child_mem = ['a1', 'b2', 'c3']
         mem1 = self.data_service.add_memory({memory.CHILD_MEM: child_mem})
         forget_ids = ['c3']
-        memory.remove_dead_memories(memory.CHILD_MEM, child_mem, forget_ids, mem1[constants.MID])
+        memory.reduce_list_field(memory.CHILD_MEM, child_mem, forget_ids, mem1[constants.MID])
         mem1b = self.data_service._get_memory(mem1[constants.MID])
         forget_ids2 = ['a1', 'b2']
         self.assertEquals(forget_ids2, mem1b[memory.CHILD_MEM])
-        memory.remove_dead_memories(memory.CHILD_MEM, mem1b[memory.CHILD_MEM], forget_ids2, mem1[constants.MID])
+        memory.reduce_list_field(memory.CHILD_MEM, mem1b[memory.CHILD_MEM], forget_ids2, mem1[constants.MID])
         mem1c = self.data_service._get_memory(mem1[constants.MID])
         self.assertIsNone(mem1c)
 
@@ -163,11 +170,12 @@ class TestMemory(unittest.TestCase):
         self.assertEquals(2, len(sub_memory_dict))
 
     def test_create_working_memory(self):
+        working_memories = []
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         mem1 = self.data_service.add_memory({constants.REWARD: 1})
         mem2 = self.data_service.add_memory({constants.REWARD: 2})
         memories = [mem1, mem2]
-        memory.create_working_memory(seq_time_memories, [memories], constants.SLICE_MEMORY)
+        memory.create_working_memory(working_memories, seq_time_memories, [memories], constants.SLICE_MEMORY)
         self.assertEquals(2, seq_time_memories[constants.SLICE_MEMORY][0][constants.REWARD])
 
     def test_append_working_memories(self):
@@ -189,7 +197,7 @@ class TestMemory(unittest.TestCase):
 
     def test_associate_slice_empty(self):
         memory.threshold_of_working_memories = 3
-        mem0 = self.data_service.add_memory({constants.END_TIME: 1})
+        mem0 = self.data_service.add_memory({constants.STATUS: constants.MATCHING, constants.END_TIME: 1})
         pmem1 = self.data_service.add_memory(
             {constants.LAST_RECALL: 1, constants.REWARD: 1, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
         pmem2 = self.data_service.add_memory(
@@ -227,11 +235,14 @@ class TestMemory(unittest.TestCase):
         new_time = time.time() + 10000
         sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         mem1 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED, constants.END_TIME: new_time})
+            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED,
+             constants.END_TIME: new_time})
         mem2 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED, constants.END_TIME: new_time})
+            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED,
+             constants.END_TIME: new_time})
         mem3 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING, constants.END_TIME: new_time})
+            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
+             constants.END_TIME: new_time})
         imem1 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
              memory.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]], constants.END_TIME: new_time})
@@ -242,9 +253,11 @@ class TestMemory(unittest.TestCase):
             {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              memory.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]], constants.END_TIME: new_time})
         smem2 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHED, constants.END_TIME: new_time})
+            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
+             constants.END_TIME: new_time})
         smem3 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING, constants.END_TIME: 1})
+            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+             constants.END_TIME: 1})
         working_memories = [mem1, mem2, imem1, imem2, smem1, smem2, smem3, mem3]
         memory.check_expectation(working_memories, sequential_time_memories)
         self.assertEquals(constants.MATCHED, imem1[constants.STATUS])
@@ -283,17 +296,27 @@ class TestMemory(unittest.TestCase):
         self.assertEquals(memory.LONG_MEMORY, working_memories2[1][constants.MEMORY_DURATION])
 
     def test_verify_slice_memory_match_result(self):
+        working_memories = []
+        sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         fmem1 = self.data_service.add_memory({constants.STATUS: constants.MATCHED})
         fmem2 = self.data_service.add_memory({constants.STATUS: constants.MATCHED})
         fmem3 = self.data_service.add_memory({constants.STATUS: constants.MATCHING})
-        smem1 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
-                                              memory.CHILD_MEM: [fmem1[constants.MID], fmem2[constants.MID]]})
-        smem2 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
-                                              memory.CHILD_MEM: [fmem1[constants.MID], fmem3[constants.MID]]})
+        smem1 = self.data_service.add_memory(
+            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
+             memory.CHILD_MEM: [fmem1[constants.MID], fmem2[constants.MID]]})
+        smem2 = self.data_service.add_memory(
+            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
+             memory.CHILD_MEM: [fmem1[constants.MID], fmem3[constants.MID]]})
         slice_memories = [smem1, smem2]
         slice_memory_children = {smem1[constants.MID]: [fmem1, fmem2], smem2[constants.MID]: [fmem1, fmem3]}
-        all_matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
+        all_matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,
+                                                                               working_memories,
+                                                                               sequential_time_memories)
         self.assertEquals(2, len(all_matched_feature_memories))
+
+    def test_increase_list_field(self):
+        #TODO
+        return
 
 
 if __name__ == "__main__":

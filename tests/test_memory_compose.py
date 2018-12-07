@@ -6,6 +6,7 @@ from db_tinydb import DB_TinyDB
 
 
 class TestMemory(unittest.TestCase):
+    working_memories = []
     data_service = None
     database = None
 
@@ -159,7 +160,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID]: mem})
         seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(1, len(working_memories[constants.SLICE_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.INSTANT_MEMORY]))
@@ -172,7 +173,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -185,7 +186,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 0, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(0, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -198,7 +199,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(2, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -211,7 +212,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(2, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -226,7 +227,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.1
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SLICE_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.INSTANT_MEMORY]))
@@ -241,7 +242,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.3
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -256,7 +257,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -271,7 +272,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.3
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(2, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -286,7 +287,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 3, len(working_memories[constants.SLICE_MEMORY]))
         # self.assertEqual(2, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
@@ -298,7 +299,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID]: mem})
         seq_time_memories[memory.INSTANT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(1, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.SHORT_MEMORY]))
@@ -311,7 +312,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -324,7 +325,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 0, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(0, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -337,7 +338,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(2, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -350,7 +351,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(2, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -365,7 +366,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 1
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.INSTANT_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.SHORT_MEMORY]))
@@ -380,7 +381,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 3
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -395,7 +396,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 1
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -410,7 +411,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(2, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -425,7 +426,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.INSTANT_MEMORY].append(mem)
             now = now + 2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 3, len(working_memories[memory.INSTANT_MEMORY]))
         # self.assertEqual(2, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.INSTANT_MEMORY]))
@@ -437,7 +438,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID]: mem})
         seq_time_memories[memory.SHORT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.LONG_MEMORY]))
@@ -450,7 +451,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.SHORT_MEMORY]))
@@ -463,7 +464,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 0, len(working_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(0, len(seq_time_memories[memory.SHORT_MEMORY]))
@@ -476,7 +477,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(2, len(seq_time_memories[memory.SHORT_MEMORY]))
@@ -489,7 +490,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(2, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.SHORT_MEMORY]))
@@ -504,7 +505,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 1
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.LONG_MEMORY]))
@@ -519,7 +520,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 3
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.LONG_MEMORY]))
@@ -534,7 +535,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(0, len(working_memories[memory.LONG_MEMORY]))
@@ -549,7 +550,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 3
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(0, len(seq_time_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.LONG_MEMORY]))
@@ -564,7 +565,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.SHORT_MEMORY].append(mem)
             now = now + 2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 3, len(working_memories[memory.SHORT_MEMORY]))
         self.assertEqual(3, len(seq_time_memories[memory.SHORT_MEMORY]))
         # self.assertEqual(1, len(working_memories[memory.LONG_MEMORY]))
@@ -576,7 +577,7 @@ class TestMemory(unittest.TestCase):
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         # working_memories[memory.LONG_MEMORY].update({mem[constants.ID]: mem})
         seq_time_memories[memory.LONG_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -588,7 +589,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 1):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 1 + 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1 + 1, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -600,7 +601,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 0):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -612,7 +613,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + 2):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 2 + 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1 + 2, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -624,7 +625,7 @@ class TestMemory(unittest.TestCase):
         for num in range(1, 1 + memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1 + 2, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1 + 2, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -638,7 +639,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 1
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -652,7 +653,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 3
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -666,7 +667,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(memory.COMPOSE_NUMBER - 1, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -680,7 +681,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 3
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(1, len(seq_time_memories[memory.LONG_MEMORY]))
 
@@ -694,7 +695,7 @@ class TestMemory(unittest.TestCase):
             # working_memories[memory.LONG_MEMORY].update({mem[constants.ID] + num: mem})
             seq_time_memories[memory.LONG_MEMORY].append(mem)
             now = now + 2
-        memory.compose(seq_time_memories)
+        memory.compose(self.working_memories, seq_time_memories)
         # self.assertEqual(memory.COMPOSE_NUMBER + 3 + 1, len(working_memories[memory.LONG_MEMORY]))
         self.assertEqual(3 + 1, len(seq_time_memories[memory.LONG_MEMORY]))
 

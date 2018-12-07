@@ -82,6 +82,12 @@ class TestUtil(unittest.TestCase):
         list3 = util.list_concat(list1, list2)
         self.assertEqual(4, len(list3))
 
+    def test_list_concat_empty(self):
+        list1 = []
+        list2 = [3, 4]
+        list3 = util.list_concat(list1, list2)
+        self.assertEqual(2, len(list3))
+
     def test_colorHist(self):
         arr1 = np.array([[[100, 200, 30], [14, 155, 256]],
                          [[79, 118, 190], [60, 110, 230]]])

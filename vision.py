@@ -120,21 +120,18 @@ def save_files():
     np.save(USED_CHANNEL_FILE, used_channel_rank)
 
 
-def process(working_memories, work_status, sequential_time_memories):
+def process(working_memories, sequential_time_memories, work_status):
     init()
     start = time.time()
     if current_action[STATUS] is IN_PROGRESS:
         calculate_action(current_action)
 
     slice_feature_memories = [mem for mem in working_memories if
-                              mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
-                                  constants.STATUS] is constants.MATCHING and mem[
-                                  constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FEATURE]
+                              mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
+                              mem[constants.STATUS] is constants.MATCHING and
+                              mem[constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FEATURE]
 
-    matched_feature_memories = match_features(slice_feature_memories)
-
-    for mem in matched_feature_memories:
-        working_memories.append(mem)
+    matched_feature_memories = match_features(slice_feature_memories, working_memories, sequential_time_memories)
 
     new_feature_memory = search_feature()
     if len(matched_feature_memories) > 0:
@@ -145,16 +142,16 @@ def process(working_memories, work_status, sequential_time_memories):
         working_memories.append(new_slice_memory)
     elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
-        new_matched_feature_memories = match_features(new_slice_memories)
+        new_matched_feature_memories = match_features(new_slice_memories, working_memories, sequential_time_memories)
         new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
         working_memories.append(new_slice_memory)
 
     slice_movement_memories = [mem for mem in working_memories if
-                               mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
-                                   constants.STATUS] is constants.MATCHING and mem[
-                                   constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_MOVE]
+                               mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
+                               mem[constants.STATUS] is constants.MATCHING and
+                               mem[constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_MOVE]
     if current_action[STATUS] is not IN_PROGRESS:
         if len(slice_movement_memories) > 0:
             mem = match_movement_memories(slice_movement_memories)
@@ -162,9 +159,9 @@ def process(working_memories, work_status, sequential_time_memories):
             working_memories.append(mem)
 
     slice_zoom_memories = [mem for mem in working_memories if
-                           mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and mem[
-                               constants.STATUS] is constants.MATCHING and mem[
-                               constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_ZOOM]
+                           mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
+                           mem[constants.STATUS] is constants.MATCHING and
+                           mem[constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_ZOOM]
     if len(slice_zoom_memories) > 0:
         mem = match_zoom_memories(slice_zoom_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(mem)
@@ -190,13 +187,14 @@ def process(working_memories, work_status, sequential_time_memories):
     # print 'frame used time	' + str(time.time()-start)
 
 
-def match_features(slice_memories):
+def match_features(slice_memories, working_memories, sequential_time_memories):
     distinct_feature_memories = []
     slice_memory_children = {}
     memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
     for fmm in distinct_feature_memories:
         match_feature(fmm)
-    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children)
+    matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,
+                                                                       working_memories, sequential_time_memories)
     return matched_feature_memories
 
 
@@ -207,12 +205,12 @@ def match_feature(fmm):
     img = get_region()
     channel_img = get_channel_img(img, channel)
     fmm.update({constants.STATUS: constants.MATCHING})
-    data = filter_feature(channel_img, kernel, feature)
+    data = filter_feature(channel_img, kernel, np.array(feature))
     if data is None:
         return False  # not similar
     if data[constants.SIMILAR]:
         # recall memory and update feature to average
-        memory.recall_memory(fmm, {constants.FEATURE: data[constants.FEATURE]})
+        memory.recall_memory(fmm, {constants.FEATURE: data[constants.FEATURE].tolist()})
         fmm[constants.STATUS] = constants.MATCHED
         update_channel_rank(channel)
         update_kernel_rank(kernel)
@@ -412,10 +410,10 @@ def get_duration():
 
 
 def explore():
-    ri = random.randint(0, 1)
+    ri = random.randint(0, 9)
     if ri == 0:
         return random_move()
-    else:
+    elif ri == 1:
         return random_zoom()
 
 
@@ -578,6 +576,7 @@ def match_movement_memories(memories):
     current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
                       constants.DURATION: mem[constants.DURATION], CREATE_TIME: time.time(),
                       constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE, STATUS: IN_PROGRESS}
+    mem.update({constants.HAPPEN_TIME: time.time()})
     mem[constants.STATUS] = constants.MATCHED
     memory.recall_memory(mem)
     return mem
@@ -590,8 +589,9 @@ def match_zoom_memories(memories):
         zoom_out()
     elif zoom_type is ZOOM_IN:
         zoom_in()
-    mem[constants.STATUS] = constants.MATCHED
     memory.recall_memory(mem)
+    mem[constants.STATUS] = constants.MATCHED
+    mem.update({constants.HAPPEN_TIME: time.time()})
     return mem
 
 

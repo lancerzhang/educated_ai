@@ -5,7 +5,7 @@ from db_tinydb import DB_TinyDB
 from db_CodernityDB import DB_CodernityDB
 
 # number of process per second
-PPS = 5
+PPS = 10
 # duration per process (s)
 DPS = 1.0 / PPS
 
@@ -21,9 +21,8 @@ try:
     # to group them as a new memory by time sequence
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     working_memories = []
-    work_status = {}
     frames = 0
-    status.init_status(work_status, PPS)
+    work_status = status.init_status(PPS)
     while 1:
         start = time.time()
         # print frames
@@ -31,9 +30,9 @@ try:
 
         status.calculate_status(work_status, DPS, frames)
 
-        vision.process(working_memories, work_status, sequential_time_memories)
-        sound.process(working_memories, work_status, sequential_time_memories)
-        actor.process(working_memories, work_status, sequential_time_memories)
+        vision.process(working_memories, sequential_time_memories, work_status)
+        sound.process(working_memories, sequential_time_memories, work_status)
+        actor.process(working_memories, sequential_time_memories, work_status)
 
         memory.associate(working_memories)
         memory.prepare_expectation(working_memories)
@@ -43,12 +42,13 @@ try:
 
         # all end
         duration = util.time_diff(start)
-        status.update_status(work_status, duration, working_memories)
+        status.update_status(working_memories, work_status, duration)
 
-        if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
-            working_memories = memory.cleanup_working_memories(working_memories, work_status)
-
-        # print 'frame used time	' + str(time.time() - start)
+        working_memories = memory.cleanup_working_memories(working_memories, work_status)
+        if frames % (PPS * 60) == 0:
+            data_service.housekeep()
+        print 'frame used time	' + str(time.time() - start)
+        print 'working_memories size ' + str(len(working_memories))
 
 except KeyboardInterrupt:
     print("quiting...")
