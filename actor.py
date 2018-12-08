@@ -8,6 +8,7 @@ pyautogui.PAUSE = 0.0001
 
 def process(working_memories, sequential_time_memories, work_status):
     actor_mouse_memories = [mem for mem in working_memories if
+                            constants.MEMORY_DURATION in mem and
                             mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                             mem[constants.STATUS] is constants.MATCHING and
                             mem[constants.PHYSICAL_MEMORY_TYPE] is constants.ACTOR_MOUSE]
@@ -41,10 +42,10 @@ def left_click():
     start = time.time()
     click_type = LEFT_CLICK
     pyautogui.click()
-    memories = data_service.search_actor_mouse(click_type)
+    memories = data_service.get_actor_mouse_memory(click_type)
     if memories is None or len(memories) == 0:
         action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE, constants.CLICK_TYPE: click_type}
-        action_memory = data_service.add_memory(action)
+        action_memory = memory.add_physical_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)
@@ -59,6 +60,6 @@ def explore():
     action_memory = left_click()
     slice_memory = None
     if action_memory is not None:
-        slice_memory = memory.add_slice_memory([action_memory])
+        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
     # print 'explore	' + str(time.time() - start)
     return slice_memory

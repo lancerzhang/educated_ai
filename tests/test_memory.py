@@ -70,36 +70,36 @@ class TestMemory(unittest.TestCase):
     def test_remove_memory_children(self):
         children = [1, 2, 3, 4, 5]
         forgot = [1, 3, 5]
-        mem1 = self.data_service.add_memory({memory.CHILD_MEM: children})
-        memory.reduce_list_field(memory.CHILD_MEM, children, forgot, mem1[constants.MID])
+        mem1 = self.data_service.add_memory({constants.CHILD_MEM: children})
+        memory.reduce_list_field(constants.CHILD_MEM, children, forgot, mem1[constants.MID])
         mem = self.data_service._get_memory(mem1[constants.MID])
-        self.assertEqual(2, len(mem[memory.CHILD_MEM]))
-        self.assertEqual(4, mem[memory.CHILD_MEM][1])
+        self.assertEqual(2, len(mem[constants.CHILD_MEM]))
+        self.assertEqual(4, mem[constants.CHILD_MEM][1])
 
     def get_live_sub_memories_empty(self):
-        mem1 = self.data_service.add_memory({memory.CHILD_MEM: []})
-        memories = memory.get_live_sub_memories(mem1, memory.CHILD_MEM)
+        mem1 = self.data_service.add_memory({constants.CHILD_MEM: []})
+        memories = memory.get_live_sub_memories(mem1, constants.CHILD_MEM)
         self.assertEqual(0, len(memories))
 
     def get_live_sub_memories_success(self):
         mem1 = self.data_service.add_memory()
         mem2 = self.data_service.add_memory()
-        mem3 = self.data_service.add_memory({memory.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID]]})
-        child_memories1 = memory.get_live_sub_memories(mem3, memory.CHILD_MEM)
+        mem3 = self.data_service.add_memory({constants.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID]]})
+        child_memories1 = memory.get_live_sub_memories(mem3, constants.CHILD_MEM)
         self.assertEqual(2, len(child_memories1))
 
-        mem4 = self.data_service.add_memory({memory.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID], 9]})
-        child_memories2 = memory.get_live_sub_memories(mem4, memory.CHILD_MEM)
+        mem4 = self.data_service.add_memory({constants.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID], 9]})
+        child_memories2 = memory.get_live_sub_memories(mem4, constants.CHILD_MEM)
         self.assertEqual(2, len(child_memories2))
         self.assertEqual(mem2[constants.MID], child_memories2[1][constants.MID])
 
-        el5 = self.data_service.add_memory({memory.CHILD_MEM: [mem1[constants.MID], 9, mem2[constants.MID]]})
-        child_memories3 = memory.get_live_sub_memories(el5, memory.CHILD_MEM)
+        el5 = self.data_service.add_memory({constants.CHILD_MEM: [mem1[constants.MID], 9, mem2[constants.MID]]})
+        child_memories3 = memory.get_live_sub_memories(el5, constants.CHILD_MEM)
         self.assertEqual(2, len(child_memories3))
         self.assertEqual(mem2[constants.MID], child_memories3[1][constants.MID])
 
-        el6 = self.data_service.add_memory({memory.CHILD_MEM: [8, 9]})
-        memory.get_live_sub_memories(el6, memory.CHILD_MEM)
+        el6 = self.data_service.add_memory({constants.CHILD_MEM: [8, 9]})
+        memory.get_live_sub_memories(el6, constants.CHILD_MEM)
         mem = self.data_service._get_memory(el6[constants.MID])
         self.assertIsNone(mem)
 
@@ -146,22 +146,22 @@ class TestMemory(unittest.TestCase):
 
     def test_remove_dead_memories(self):
         child_mem = ['a1', 'b2', 'c3']
-        mem1 = self.data_service.add_memory({memory.CHILD_MEM: child_mem})
+        mem1 = self.data_service.add_memory({constants.CHILD_MEM: child_mem})
         forget_ids = ['c3']
-        memory.reduce_list_field(memory.CHILD_MEM, child_mem, forget_ids, mem1[constants.MID])
+        memory.reduce_list_field(constants.CHILD_MEM, child_mem, forget_ids, mem1[constants.MID])
         mem1b = self.data_service._get_memory(mem1[constants.MID])
         forget_ids2 = ['a1', 'b2']
-        self.assertEquals(forget_ids2, mem1b[memory.CHILD_MEM])
-        memory.reduce_list_field(memory.CHILD_MEM, mem1b[memory.CHILD_MEM], forget_ids2, mem1[constants.MID])
+        self.assertEquals(forget_ids2, mem1b[constants.CHILD_MEM])
+        memory.reduce_list_field(constants.CHILD_MEM, mem1b[constants.CHILD_MEM], forget_ids2, mem1[constants.MID])
         mem1c = self.data_service._get_memory(mem1[constants.MID])
         self.assertIsNone(mem1c)
 
     def test_search_sub_memories(self):
         mem1 = self.data_service.add_memory()
         mem2 = self.data_service.add_memory()
-        mem3 = self.data_service.add_memory({memory.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID]]})
+        mem3 = self.data_service.add_memory({constants.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID]]})
         mem4 = self.data_service.add_memory()
-        mem6 = self.data_service.add_memory({memory.CHILD_MEM: [mem4[constants.MID], mem2[constants.MID]]})
+        mem6 = self.data_service.add_memory({constants.CHILD_MEM: [mem4[constants.MID], mem2[constants.MID]]})
         memories = [mem3, mem6]
         distinct_sub_memory_list = []
         sub_memory_dict = {}
@@ -221,12 +221,12 @@ class TestMemory(unittest.TestCase):
         mem2 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY})
         imem1 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
-             memory.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]]})
+             constants.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]]})
         imem2 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING})
         smem1 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
-             memory.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]]})
+             constants.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]]})
         working_memories = [imem1, smem1]
         memory.prepare_expectation(working_memories)
         self.assertEquals(4, len(working_memories))
@@ -245,13 +245,13 @@ class TestMemory(unittest.TestCase):
              constants.END_TIME: new_time})
         imem1 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
-             memory.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]], constants.END_TIME: new_time})
+             constants.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]], constants.END_TIME: new_time})
         imem2 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
-             memory.CHILD_MEM: [mem3[constants.MID]], constants.END_TIME: new_time})
+             constants.CHILD_MEM: [mem3[constants.MID]], constants.END_TIME: new_time})
         smem1 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
-             memory.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]], constants.END_TIME: new_time})
+             constants.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]], constants.END_TIME: new_time})
         smem2 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
              constants.END_TIME: new_time})
@@ -303,10 +303,10 @@ class TestMemory(unittest.TestCase):
         fmem3 = self.data_service.add_memory({constants.STATUS: constants.MATCHING})
         smem1 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
-             memory.CHILD_MEM: [fmem1[constants.MID], fmem2[constants.MID]]})
+             constants.CHILD_MEM: [fmem1[constants.MID], fmem2[constants.MID]]})
         smem2 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
-             memory.CHILD_MEM: [fmem1[constants.MID], fmem3[constants.MID]]})
+             constants.CHILD_MEM: [fmem1[constants.MID], fmem3[constants.MID]]})
         slice_memories = [smem1, smem2]
         slice_memory_children = {smem1[constants.MID]: [fmem1, fmem2], smem2[constants.MID]: [fmem1, fmem3]}
         all_matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,

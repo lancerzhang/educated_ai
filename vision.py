@@ -127,6 +127,7 @@ def process(working_memories, sequential_time_memories, work_status):
         calculate_action(current_action)
 
     slice_feature_memories = [mem for mem in working_memories if
+                              constants.MEMORY_DURATION in mem and
                               mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                               mem[constants.STATUS] is constants.MATCHING and
                               mem[constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FEATURE]
@@ -137,35 +138,37 @@ def process(working_memories, sequential_time_memories, work_status):
     if len(matched_feature_memories) > 0:
         if new_feature_memory is not None:
             matched_feature_memories.append(new_feature_memory)
-        new_slice_memory = memory.add_slice_memory(matched_feature_memories)
+        new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
         working_memories.append(new_slice_memory)
     elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
         new_matched_feature_memories = match_features(new_slice_memories, working_memories, sequential_time_memories)
         new_matched_feature_memories.append(new_feature_memory)
-        new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
+        new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
         working_memories.append(new_slice_memory)
 
     slice_movement_memories = [mem for mem in working_memories if
+                               constants.MEMORY_DURATION in mem and
                                mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                                mem[constants.STATUS] is constants.MATCHING and
                                mem[constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_MOVE]
     if current_action[STATUS] is not IN_PROGRESS:
         if len(slice_movement_memories) > 0:
-            mem = match_movement_memories(slice_movement_memories)
-            sequential_time_memories[constants.SLICE_MEMORY].append(mem)
-            working_memories.append(mem)
+            new_slice_memory = match_movement_memories(slice_movement_memories)
+            sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+            working_memories.append(new_slice_memory)
 
     slice_zoom_memories = [mem for mem in working_memories if
+                           constants.MEMORY_DURATION in mem and
                            mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                            mem[constants.STATUS] is constants.MATCHING and
                            mem[constants.PHYSICAL_MEMORY_TYPE] is constants.VISION_FOCUS_ZOOM]
     if len(slice_zoom_memories) > 0:
-        mem = match_zoom_memories(slice_zoom_memories)
-        sequential_time_memories[constants.SLICE_MEMORY].append(mem)
-        working_memories.append(mem)
+        new_slice_memory = match_zoom_memories(slice_zoom_memories)
+        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)
 
     if not work_status[constants.BUSY][constants.LONG_DURATION]:
         save_files()
@@ -210,7 +213,7 @@ def match_feature(fmm):
         return False  # not similar
     if data[constants.SIMILAR]:
         # recall memory and update feature to average
-        memory.recall_memory(fmm, {constants.FEATURE: data[constants.FEATURE].tolist()})
+        memory.recall_feature_memory(fmm, data[constants.FEATURE])
         fmm[constants.STATUS] = constants.MATCHED
         update_channel_rank(channel)
         update_kernel_rank(kernel)
@@ -276,7 +279,7 @@ def search_feature():
     data = filter_feature(channel_img, kernel)
     if data is None:
         return None
-    mem = search_memory(channel, kernel, data[constants.FEATURE])
+    mem = search_feature_memory(channel, kernel, data[constants.FEATURE])
     if mem is None:
         mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, data[constants.FEATURE])
         update_memory_indexes(channel, kernel, mem[constants.MID])
@@ -287,7 +290,7 @@ def search_feature():
 
 
 # search memory by kernel using index
-def search_memory(channel, kernel, feature1):
+def search_feature_memory(channel, kernel, feature1):
     global memory_indexes
     element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
                    None)
@@ -439,14 +442,14 @@ def random_zoom():
     if zoom_type is None:
         return None
     action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type}
-    memories = data_service.search_vision_zoom(zoom_type)
+    memories = data_service.get_vision_zoom_memory(zoom_type)
     if memories is None or len(memories) == 0:
-        action_memory = data_service.add_memory(action)
+        action_memory = memory.add_physical_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)
         action_memory = mem
-    slice_memory = memory.add_slice_memory([action_memory])
+    slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
     return slice_memory
 
 
@@ -507,14 +510,14 @@ def set_movement_relative(degrees, speed, duration):
     global current_action
     action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
               constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
-    memories = data_service.search_vision_movement(degrees, speed, duration)
+    memories = data_service.get_vision_move_memory(degrees, speed, duration)
     if memories is None or len(memories) == 0:
-        action_memory = data_service.add_memory(action)
+        action_memory = memory.add_physical_memory(action)
     else:
         mem = memories[0]
         memory.recall_memory(mem)
         action_memory = mem
-    slice_memory = memory.add_slice_memory([action_memory])
+    slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
     current_action = copy.deepcopy(action)
     current_action.update({CREATE_TIME: time.time(), STATUS: IN_PROGRESS})
     return slice_memory

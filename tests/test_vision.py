@@ -100,7 +100,7 @@ class TestVision(unittest.TestCase):
                                                feature_data1_1[constants.FEATURE])
         vision.update_memory_indexes(channel, kernel, mem[constants.MID])
         vision.update_memory_indexes(channel, kernel, '123')
-        new_mem = vision.search_memory(channel, kernel, feature_data1_2[constants.FEATURE])
+        new_mem = vision.search_feature_memory(channel, kernel, feature_data1_2[constants.FEATURE])
         self.assertIsNotNone(new_mem)
 
     def test_calculate_degrees(self):

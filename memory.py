@@ -10,8 +10,6 @@ INSTANT_MEMORY = '5itm'  # instant memory
 SHORT_MEMORY = '6stm'  # short time memory
 LONG_MEMORY = '7ltm'  # long time memory
 
-# data set of 'long/short/instant time memory', slice memory
-CHILD_MEM = 'cmy'
 # additional data
 CHILD_DAT1 = 'cd1'
 
@@ -34,7 +32,7 @@ data_service = None
 
 # use parent to find experience memories
 BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL: 0,
-                constants.PARENT_MEM: [], CHILD_MEM: []}
+                constants.PARENT_MEM: [], constants.CHILD_MEM: []}
 
 BASIC_MEMORY_GROUP_ARR = {constants.SLICE_MEMORY: [], SHORT_MEMORY: [], INSTANT_MEMORY: [], LONG_MEMORY: []}
 
@@ -82,7 +80,7 @@ def refresh(mem, recall=False, forget=False):
                         mem[constants.STRENGTH] = -1
                         deleted = True
                         break
-                    # if not mem.has_key(constants.FEATURE) and len(mem[CHILD_MEM]) <= 0:
+                    # if not mem.has_key(constants.FEATURE) and len(mem[constants.CHILD_MEM]) <= 0:
                     #     mem[STRENGTH] = -1
                     #     deleted = True
                     #     break
@@ -132,13 +130,13 @@ def increase_list_field(memories, field, new_id):
     for mem in memories:
         ids = mem[field]
         if new_id not in ids:
-            ids = util.list_concat(ids, [new_id])
+            ids = util.np_array_concat(ids, [new_id])
             data_service.update_memory({field: ids.tolist()}, mem[constants.MID])
 
 
 def reduce_list_field(field, sub_ids, forgot_ids, mid):
     new_sub = util.list_comprehension_new(sub_ids, forgot_ids)
-    if field == CHILD_MEM and len(new_sub) == 0:
+    if field == constants.CHILD_MEM and len(new_sub) == 0:
         data_service.remove_memory(mid)
     else:
         data_service.update_memory({field: new_sub}, mid)
@@ -183,16 +181,23 @@ def get_live_sub_memories(mem, field, existing_memories=None, limit=0, offset=0)
         if count >= total:
             break
     if len(forgot_ids) > 0:
-        reduce_list_field(CHILD_MEM, memory_ids, forgot_ids, mem[constants.MID])
-    if field is CHILD_MEM and len(memories) == 0:
+        reduce_list_field(constants.CHILD_MEM, memory_ids, forgot_ids, mem[constants.MID])
+    if field is constants.CHILD_MEM and len(memories) == 0:
         data_service.remove_memory(mem[constants.MID])
     return memories
 
 
 def search_sub_memories(memories, distinct_sub_memory_list, sub_memory_dict):
     for smm in memories:
-        live_children = get_live_sub_memories(smm, CHILD_MEM, distinct_sub_memory_list)
+        live_children = get_live_sub_memories(smm, constants.CHILD_MEM, distinct_sub_memory_list)
         sub_memory_dict.update({smm[constants.MID]: live_children})
+
+
+def recall_feature_memory(mem, feature):
+    if isinstance(feature, np.ndarray):
+        feature = feature.tolist()
+    update_content = {constants.FEATURE: feature}
+    recall_memory(mem, update_content)
 
 
 def recall_memory(mem, addition=None):
@@ -210,14 +215,11 @@ def create_working_memory(working_memories, seq_time_memories, children, duratio
         return
     for memories in children:
         if len(memories) > 0:
-            child_memory_ids = [mem[constants.MID] for mem in memories]
             child_memory_rewards = [mem[constants.REWARD] for mem in memories]
             new_reward = np.max(np.array(child_memory_rewards))
             # new_reward is int32, which will become "\x00\x00\x00\x00" when insert to CodernityDB
             reward = int(new_reward)
-            new_mem = data_service.add_memory(
-                {CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: duration_type,
-                 constants.HAPPEN_TIME: time.time(), constants.REWARD: reward, constants.STATUS: constants.MATCHED})
+            new_mem = add_collection_memory(duration_type, memories, reward)
             seq_time_memories[duration_type].append(new_mem)
             working_memories.append(new_mem)
             increase_list_field(memories, constants.PARENT_MEM, new_mem[constants.MID])
@@ -337,7 +339,7 @@ def associate(working_memories):
 def prepare_expectation(working_memories):
     pending_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
     for pmem in pending_memories:
-        live_children = get_live_sub_memories(pmem, CHILD_MEM)
+        live_children = get_live_sub_memories(pmem, constants.CHILD_MEM)
         if pmem[constants.MEMORY_DURATION] is INSTANT_MEMORY:
             append_working_memories(working_memories, live_children)
         elif pmem[constants.MEMORY_DURATION] is LONG_MEMORY or pmem[constants.MEMORY_DURATION] is SHORT_MEMORY:
@@ -351,7 +353,7 @@ def check_expectation(working_memories, sequential_time_memories):
             pmem[constants.STATUS] = constants.EXPIRED
             continue
         all_matched = True
-        child_ids = pmem[CHILD_MEM]
+        child_ids = pmem[constants.CHILD_MEM]
         for wmem in working_memories:
             if wmem[constants.MID] in child_ids:
                 if wmem[constants.STATUS] is not constants.MATCHED:
@@ -385,26 +387,41 @@ def cleanup_working_memories(working_memories, work_status):
 
 
 def add_vision_feature_memory(feature_type, channel, kernel, feature):
-    new_mem = data_service.add_memory(
+    if isinstance(feature, np.ndarray):
+        feature = feature.tolist()
+    new_mem = add_physical_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.CHANNEL: channel, constants.KERNEL: kernel,
-         constants.FEATURE: feature.tolist()})
+         constants.FEATURE: feature})
     new_mem.update({constants.HAPPEN_TIME: time.time()})
     return new_mem
 
 
 def add_feature_memory(feature_type, kernel, feature):
-    new_mem = data_service.add_memory(
+    if isinstance(feature, np.ndarray):
+        feature = feature.tolist()
+    new_mem = add_physical_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.KERNEL: kernel, constants.FEATURE: feature})
     new_mem.update({constants.HAPPEN_TIME: time.time()})
     return new_mem
 
 
-def add_slice_memory(child_memories):
+def add_collection_memory(mem_duration, child_memories, reward=0):
     child_memory_ids = [x[constants.MID] for x in child_memories]
-    new_mem = data_service.add_memory({CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+    old_mem = data_service.get_child_memory(child_memory_ids)
+    if old_mem is None:
+        new_mem = data_service.add_memory(
+            {constants.CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: mem_duration, constants.REWARD: reward})
+        increase_list_field(child_memories, constants.PARENT_MEM, new_mem[constants.MID])
+    else:
+        recall_memory(old_mem, {constants.REWARD: reward})
+        new_mem = data_service.get_memory(old_mem[constants.MID], True)
     new_mem.update({constants.HAPPEN_TIME: time.time(), constants.STATUS: constants.MATCHED})
-    increase_list_field(child_memories, constants.PARENT_MEM, new_mem[constants.MID])
     return new_mem
+
+
+# please make sure it's not duplicated before calling it
+def add_physical_memory(content):
+    return data_service.add_memory(content)
 
 
 def verify_slice_memory_match_result(slice_memories, slice_memory_children, working_memories, sequential_time_memories):
@@ -414,9 +431,6 @@ def verify_slice_memory_match_result(slice_memories, slice_memory_children, work
         smm_all_matched = True
         live_children = slice_memory_children.get(smm[constants.MID])
         for fmm in live_children:
-            if constants.STATUS not in fmm:
-                print 'error'
-                return
             if fmm[constants.STATUS] is constants.MATCHED:
                 if fmm[constants.MID] not in ids:
                     fmm.update({constants.HAPPEN_TIME: time.time()})

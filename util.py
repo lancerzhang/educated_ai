@@ -44,8 +44,20 @@ def list_comprehension_existing(list1, list2):
         list1.remove(el1)
 
 
-def list_concat(list1, list2):
-    return np.concatenate([list1, list2])
+def list_equal(list1, list2):
+    if len(list1) == len(list2):
+        diff = list_comprehension_new(list1, list2)
+        if len(diff) > 0:
+            return False
+        else:
+            return True
+    else:
+        return False
+
+
+def list_to_sorted_string(list1):
+    sorted_list = [x for x in sorted(list1)]
+    return ''.join(sorted_list)
 
 
 def delete_empty_surround(arr):
@@ -160,6 +172,10 @@ def np_matrix_diff(arr1, arr2):
     for i in range(0, len(arr1)):
         differences.append(np_array_diff(arr1[i], arr2[i]) * len(arr1))
     return differences
+
+
+def np_array_concat(list1, list2):
+    return np.concatenate([list1, list2])
 
 
 def get_high_rank(rank_list):

@@ -1,4 +1,4 @@
-import time, uuid, memory, constants
+import time, uuid, memory, constants, util
 
 
 class DataService:
@@ -26,7 +26,7 @@ class DataService:
         return self.db.get_all()
 
     def update_memory(self, content, mid):
-        self.db.update(content, mid)
+        return self.db.update(content, mid)
 
     def remove_memory(self, mid):
         self.db.remove(mid)
@@ -80,17 +80,38 @@ class DataService:
         result = self._get_memory(mid)
         return result
 
-    def search_vision_movement(self, degrees, speed, duration):
-        records = self.db.search_vision_movement(degrees, speed, duration)
-        self.refresh_memories(records, True)
-        return records
+    def get_vision_move_memory(self, degrees, speed, duration):
+        record = self.db.get_vision_move_memory(degrees, speed, duration)
+        if record is not None:
+            self.refresh_memories([record], True)
+        return record
 
-    def search_vision_zoom(self, zoom_type):
-        records = self.db.search_vision_zoom(zoom_type)
-        self.refresh_memories(records, True)
-        return records
+    def get_vision_zoom_memory(self, zoom_type):
+        record = self.db.get_vision_zoom_memory(zoom_type)
+        if record is not None:
+            self.refresh_memories([record], True)
+        return record
 
-    def search_actor_mouse(self, click_type):
-        records = self.db.search_actor_mouse(click_type)
-        self.refresh_memories(records, True)
-        return records
+    def get_actor_mouse_memory(self, click_type):
+        record = self.db.get_actor_mouse_memory(click_type)
+        if record is not None:
+            self.refresh_memories([record], True)
+        return record
+
+    def get_child_memory(self, child_mem):
+        record = self.db.get_child_memory(child_mem)
+        if record is not None:
+            self.refresh_memories([record], True)
+        return record
+
+    def find_duplication(self, field):
+        memories = self.get_all_memories()
+        count = 0
+        for i in range(0, len(memories) - 1):
+            list1 = memories[i].get(field)
+            for j in range(i + 1, len(memories)):
+                list2 = memories[j].get(field)
+                if len(list1) > 0 and util.list_equal(list1, list2):
+                    count = count + 1
+                    break
+        return count

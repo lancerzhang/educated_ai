@@ -79,13 +79,13 @@ class TestUtil(unittest.TestCase):
     def test_list_concat(self):
         list1 = [1, 2]
         list2 = [3, 4]
-        list3 = util.list_concat(list1, list2)
+        list3 = util.np_array_concat(list1, list2)
         self.assertEqual(4, len(list3))
 
     def test_list_concat_empty(self):
         list1 = []
         list2 = [3, 4]
-        list3 = util.list_concat(list1, list2)
+        list3 = util.np_array_concat(list1, list2)
         self.assertEqual(2, len(list3))
 
     def test_colorHist(self):
@@ -215,6 +215,22 @@ class TestUtil(unittest.TestCase):
         tuple = util.convert_1d_to_2d_index(4, 2)
         self.assertEqual(2, tuple[0])
         self.assertEqual(0, tuple[1])
+
+    def test_list_equal(self):
+        a1 = ['ab', 'cd']
+        a2 = ['ab', 'cd']
+        self.assertTrue(util.list_equal(a1, a2))
+        a3 = ['cd', 'ab']
+        self.assertTrue(util.list_equal(a1, a3))
+        a4 = ['aa']
+        self.assertFalse(util.list_equal(a1, a4))
+        a5 = ['ab', 'cd', 'aa']
+        self.assertFalse(util.list_equal(a1, a5))
+        a6 = []
+        self.assertFalse(util.list_equal(a1, a6))
+        self.assertFalse(util.list_equal(a6, a1))
+        a7 = []
+        self.assertTrue(util.list_equal(a6, a7))
 
 
 if __name__ == "__main__":

@@ -115,6 +115,7 @@ def process(working_memories, sequential_time_memories, work_status):
         return
 
     slice_feature_memories = [mem for mem in working_memories if
+                              constants.MEMORY_DURATION in mem and
                               mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                               mem[constants.STATUS] is constants.MATCHING and
                               mem[constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
@@ -126,7 +127,7 @@ def process(working_memories, sequential_time_memories, work_status):
     if len(matched_feature_memories) > 0:
         if new_feature_memory is not None:
             matched_feature_memories.append(new_feature_memory)
-        new_slice_memory = memory.add_slice_memory(matched_feature_memories)
+        new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
         working_memories.append(new_slice_memory)
     elif new_feature_memory is not None:
@@ -134,7 +135,7 @@ def process(working_memories, sequential_time_memories, work_status):
         new_matched_feature_memories = match_features(frequency_map, new_slice_memories, working_memories,
                                                       sequential_time_memories)
         new_matched_feature_memories.append(new_feature_memory)
-        new_slice_memory = memory.add_slice_memory(new_matched_feature_memories)
+        new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
         working_memories.append(new_slice_memory)
 
@@ -170,9 +171,8 @@ def match_feature(full_frequency_map, fmm):
     if data is None:
         return False  # not similar
     if data[constants.SIMILAR]:
-        new_feature = data[constants.FEATURE]
         # recall memory and update feature to average
-        memory.recall_memory(fmm, {constants.FEATURE: new_feature.tolist()})
+        memory.recall_feature_memory(fmm, data[constants.FEATURE])
         fmm[constants.STATUS] = constants.MATCHED
         update_kernel_rank(kernel)
     return data[constants.SIMILAR]
@@ -284,7 +284,7 @@ def aware(full_frequency_map):
     data = filter_feature(frequency_map, kernel)
     if range_data['v'] > REGION_VARIANCE_THRESHOLD:
         fmm = memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
-        smm = memory.add_slice_memory([fmm])
+        smm = memory.add_collection_memory(constants.SLICE_MEMORY, [fmm])
         return smm
     else:
         return None

@@ -48,7 +48,6 @@ try:
         if frames % (PPS * 60) == 0:
             data_service.housekeep()
         print 'frame used time	' + str(time.time() - start)
-        print 'working_memories size ' + str(len(working_memories))
 
 except KeyboardInterrupt:
     print("quiting...")
