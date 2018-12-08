@@ -4,6 +4,7 @@ from db_CodernityDB import DB_CodernityDB
 
 data_service = DataService(DB_CodernityDB(folder='data/CodernityDB/'))
 all_memories = data_service.get_all_memories()
+# print all_memories
 print str(len(all_memories)) + ' memories'
 
 # count=0
@@ -16,5 +17,5 @@ print str(len(all_memories)) + ' memories'
 # field1 = constants.PARENT_MEM
 # print str(data_service.find_duplication(field1)) + ' are equal in field ' + field1
 
-# field2 = constants.CHILD_MEM
-# print str(data_service.find_duplication(field2)) + ' are equal in field ' + field2
+field2 = constants.CHILD_MEM
+print str(data_service.find_duplication(field2)) + ' are equal in field ' + field2

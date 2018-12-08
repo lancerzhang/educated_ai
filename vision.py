@@ -136,7 +136,8 @@ def process(working_memories, sequential_time_memories, work_status):
 
     new_feature_memory = search_feature()
     if len(matched_feature_memories) > 0:
-        if new_feature_memory is not None:
+        matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
+        if new_feature_memory is not None and new_feature_memory[constants.MID] not in matched_feature_memories_ids:
             matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
@@ -144,7 +145,9 @@ def process(working_memories, sequential_time_memories, work_status):
     elif new_feature_memory is not None:
         new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
         new_matched_feature_memories = match_features(new_slice_memories, working_memories, sequential_time_memories)
-        new_matched_feature_memories.append(new_feature_memory)
+        new_matched_feature_memories_ids = [x[constants.MID] for x in new_matched_feature_memories]
+        if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
+            new_matched_feature_memories.append(new_feature_memory)
         new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories)
         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
         working_memories.append(new_slice_memory)

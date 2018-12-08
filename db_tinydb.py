@@ -33,19 +33,22 @@ class DB_TinyDB:
         query = Query()
         return self.table.search(query[constants.LAST_RECALL] < last_call)
 
-    def search_vision_movement(self, degrees, speed, duration):
+    def get_vision_move_memory(self, degrees, speed, duration):
         query = Query()
         return self.table.search(
             (query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_MOVE) & (
                     query[constants.DEGREES] == degrees) & (
                     query[constants.SPEED] == speed) & (query[constants.DURATION] == duration))
 
-    def search_vision_zoom(self, zoom_type):
+    def get_vision_zoom_memory(self, zoom_type):
         query = Query()
         return self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_ZOOM) & (
                 query[constants.ZOOM_TYPE] == zoom_type))
 
-    def search_actor_mouse(self, click_type):
+    def get_actor_mouse_memory(self, click_type):
         query = Query()
         return self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.ACTOR_MOUSE) & (
                 query[constants.CLICK_TYPE] == click_type))
+
+    def get_child_memory(self, child_mem):
+        return None

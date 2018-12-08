@@ -209,20 +209,34 @@ def recall_memory(mem, addition=None):
     data_service.update_memory(update_content, mem[constants.MID])
 
 
+def remove_continuous_duplicate_memory(memories):
+    curr_mem = memories[0]
+    new_memories = [curr_mem]
+    for i in range(1, len(memories)):
+        mem = memories[i]
+        if mem[constants.MID] is curr_mem[constants.MID]:
+            continue
+        else:
+            curr_mem = mem
+            new_memories.append(mem)
+    return new_memories
+
+
 # children is list of group memories [[m1, m2], [m3, m4]]
 def create_working_memory(working_memories, seq_time_memories, children, duration_type):
     if children is None or len(children) == 0:
         return
     for memories in children:
         if len(memories) > 0:
-            child_memory_rewards = [mem[constants.REWARD] for mem in memories]
+            child_memories = remove_continuous_duplicate_memory(memories)
+            child_memory_rewards = [mem[constants.REWARD] for mem in child_memories]
             new_reward = np.max(np.array(child_memory_rewards))
             # new_reward is int32, which will become "\x00\x00\x00\x00" when insert to CodernityDB
             reward = int(new_reward)
-            new_mem = add_collection_memory(duration_type, memories, reward)
+            new_mem = add_collection_memory(duration_type, child_memories, reward)
             seq_time_memories[duration_type].append(new_mem)
             working_memories.append(new_mem)
-            increase_list_field(memories, constants.PARENT_MEM, new_mem[constants.MID])
+            increase_list_field(child_memories, constants.PARENT_MEM, new_mem[constants.MID])
 
 
 # slice memories of 4 (COMPOSE_NUMBER) or within DURATION_INSTANT will be grouped as a new instant memory

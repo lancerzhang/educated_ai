@@ -314,8 +314,17 @@ class TestMemory(unittest.TestCase):
                                                                                sequential_time_memories)
         self.assertEquals(2, len(all_matched_feature_memories))
 
+    def test_remove_continuous_duplicate_memory(self):
+        mem1 = self.data_service.add_memory()
+        self.assertEqual(1, len(memory.remove_continuous_duplicate_memory([mem1])))
+        self.assertEqual(1, len(memory.remove_continuous_duplicate_memory([mem1, mem1])))
+        mem2 = self.data_service.add_memory()
+        self.assertEqual(2, len(memory.remove_continuous_duplicate_memory([mem1, mem2])))
+        self.assertEqual(2, len(memory.remove_continuous_duplicate_memory([mem1, mem1, mem2, mem2])))
+        self.assertEqual(2, len(memory.remove_continuous_duplicate_memory([mem1, mem2, mem2, mem2])))
+
     def test_increase_list_field(self):
-        #TODO
+        # TODO
         return
 
 

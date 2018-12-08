@@ -198,7 +198,8 @@ class DB_CodernityDB:
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
-                                  constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration})
+                                  constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration},
+                                 with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
             doc = None
@@ -208,7 +209,7 @@ class DB_CodernityDB:
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM,
-                                  constants.ZOOM_TYPE: zoom_type})
+                                  constants.ZOOM_TYPE: zoom_type}, with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
             doc = None
@@ -218,7 +219,7 @@ class DB_CodernityDB:
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE,
-                                  constants.CLICK_TYPE: click_type})
+                                  constants.CLICK_TYPE: click_type}, with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
             doc = None
@@ -226,7 +227,7 @@ class DB_CodernityDB:
 
     def get_child_memory(self, child_mem):
         try:
-            record = self.db.get(self.INDEX_CHILD_MEMORY, child_mem,with_doc=True)
+            record = self.db.get(self.INDEX_CHILD_MEMORY, child_mem, with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
             doc = None
