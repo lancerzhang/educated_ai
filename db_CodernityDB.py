@@ -182,7 +182,10 @@ class DB_CodernityDB:
         except DatabaseException:
             record = None
         if record is not None:
-            return self.db.delete(record)
+            try:
+                return self.db.delete(record)
+            except DatabaseException:
+                return None
 
     def search_by_last_call(self, last_call):
         records = []

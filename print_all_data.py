@@ -6,7 +6,10 @@ data_service = DataService(DB_CodernityDB(folder='data/CodernityDB/'))
 all_memories = data_service.get_all_memories()
 # print all_memories
 print str(len(all_memories)) + ' memories'
-
+# for mem in all_memories:
+#     if len(mem[constants.PARENT_MEM])>400:
+#         print mem
+print data_service.get_memory('9a05f42f611146fcb9af7bc1decb3cb4')
 # count=0
 # a1=['60c71f26728f47e4880ed6f54501dbd9', '60c71f26728f47e4880ed6f54501dbd9']
 # for mem in all_memories:
@@ -17,5 +20,5 @@ print str(len(all_memories)) + ' memories'
 # field1 = constants.PARENT_MEM
 # print str(data_service.find_duplication(field1)) + ' are equal in field ' + field1
 
-field2 = constants.CHILD_MEM
-print str(data_service.find_duplication(field2)) + ' are equal in field ' + field2
+# field2 = constants.CHILD_MEM
+# print str(data_service.find_duplication(field2)) + ' are equal in field ' + field2

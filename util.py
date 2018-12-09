@@ -30,7 +30,11 @@ def list_common(list1, list2):
 
 # count each element in a list, return a dict, key is the element in list, value is count
 def list_element_count(list1):
-    return dict((a, list1.count(a)) for a in list1)
+    # start = time.time()
+    # print list1
+    dict_count = dict((a, list1.count(a)) for a in set(list1))
+    # print 'list_element_count used time	' + str(time.time() - start)
+    return dict_count
 
 
 # list a - b, return new list

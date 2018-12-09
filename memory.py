@@ -94,13 +94,20 @@ def refresh(mem, recall=False, forget=False):
 
 # summarize all parent memories in a list
 def count_parent_id(memories):
+    start = time.time()
     parent_list = []
     for mem in memories:
-        parent_list += mem[constants.PARENT_MEM]
-    return util.list_element_count(parent_list)
+        # TODO, some memory has hundreds of parent, don't know why
+        if len(mem[constants.PARENT_MEM]) < 20:
+            parent_list += mem[constants.PARENT_MEM]
+    # print len(parent_list)
+    parent_count = util.list_element_count(parent_list)
+    # print 'count_parent_id used time	' + str(time.time() - start)
+    return parent_count
 
 
 def find_max_related_memories(memories, tobe_remove_list_ids, limit=4):
+    start = time.time()
     related_memories = []
     parent_counts = count_parent_id(memories)
     count = 0
@@ -113,16 +120,19 @@ def find_max_related_memories(memories, tobe_remove_list_ids, limit=4):
             tobe_remove_list_ids.append(key)
         if count >= limit:
             break
+    # print 'find_max_related_memories used time	' + str(time.time() - start)
     return related_memories
 
 
 def find_update_max_related_memories(memories, limit=4):
+    start = time.time()
     tobe_remove_list_ids = []
     related_memories = find_max_related_memories(memories, tobe_remove_list_ids, limit)
     if len(tobe_remove_list_ids) > 0:
         for mem in memories:
             reduce_list_field(constants.PARENT_MEM, mem[constants.PARENT_MEM], tobe_remove_list_ids,
                               mem[constants.MID])
+    # print 'find_update_max_related_memories used time	' + str(time.time() - start)
     return related_memories
 
 
@@ -207,18 +217,16 @@ def recall_memory(mem, addition=None):
     if addition is not None:
         update_content.update(addition)
     data_service.update_memory(update_content, mem[constants.MID])
+    mem.update(update_content)
 
 
-def remove_continuous_duplicate_memory(memories):
-    curr_mem = memories[0]
-    new_memories = [curr_mem]
-    for i in range(1, len(memories)):
-        mem = memories[i]
-        if mem[constants.MID] is curr_mem[constants.MID]:
-            continue
-        else:
-            curr_mem = mem
+def remove_duplicate_memory(memories):
+    new_memories = []
+    new_memories_ids = []
+    for mem in memories:
+        if mem[constants.MID] not in new_memories_ids:
             new_memories.append(mem)
+            new_memories_ids.append(mem[constants.MID])
     return new_memories
 
 
@@ -228,7 +236,7 @@ def create_working_memory(working_memories, seq_time_memories, children, duratio
         return
     for memories in children:
         if len(memories) > 0:
-            child_memories = remove_continuous_duplicate_memory(memories)
+            child_memories = remove_duplicate_memory(memories)
             child_memory_rewards = [mem[constants.REWARD] for mem in child_memories]
             new_reward = np.max(np.array(child_memory_rewards))
             # new_reward is int32, which will become "\x00\x00\x00\x00" when insert to CodernityDB
@@ -236,13 +244,13 @@ def create_working_memory(working_memories, seq_time_memories, children, duratio
             new_mem = add_collection_memory(duration_type, child_memories, reward)
             seq_time_memories[duration_type].append(new_mem)
             working_memories.append(new_mem)
-            increase_list_field(child_memories, constants.PARENT_MEM, new_mem[constants.MID])
 
 
 # slice memories of 4 (COMPOSE_NUMBER) or within DURATION_INSTANT will be grouped as a new instant memory
 # instant memories of 4 (COMPOSE_NUMBER) or within DURATION_SHORT will be grouped as a new short memory
 # short memories of 4 (COMPOSE_NUMBER) or within DURATION_LONG will be grouped as a new long memory
 def compose(working_memories, seq_time_memories):
+    start = time.time()
     result1 = split_seq_time_memories(seq_time_memories[constants.SLICE_MEMORY], DURATION_INSTANT)
     seq_time_memories[constants.SLICE_MEMORY] = result1[REST_OF_MEMORIES]
     create_working_memory(working_memories, seq_time_memories, result1[NEW_MEMORIES], INSTANT_MEMORY)
@@ -258,6 +266,7 @@ def compose(working_memories, seq_time_memories):
     result4 = split_seq_time_memories(seq_time_memories[LONG_MEMORY])
     seq_time_memories[LONG_MEMORY] = result4[REST_OF_MEMORIES]
     create_working_memory(working_memories, seq_time_memories, result4[NEW_MEMORIES], LONG_MEMORY)
+    # print 'compose used time	' + str(time.time() - start)
 
 
 # split memory array to certain groups by number or elapse time
@@ -340,6 +349,7 @@ def append_working_memories(memories, new_memories, limit=0):
 
 
 def associate(working_memories):
+    start = time.time()
     valid_working_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHED or
                               mem[constants.END_TIME] > time.time()]
     matched_memories = [mem for mem in valid_working_memories if mem[constants.STATUS] is constants.MATCHED]
@@ -347,10 +357,13 @@ def associate(working_memories):
     append_working_memories(valid_working_memories, related_memories)
     sorted_working_memories = sorted(valid_working_memories,
                                      key=lambda x: (x[constants.LAST_RECALL], x[constants.REWARD]), reverse=True)
-    return sorted_working_memories[0:threshold_of_working_memories:]
+    limited_sorted_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
+    # print 'associate used time	' + str(time.time() - start)
+    return limited_sorted_working_memories
 
 
 def prepare_expectation(working_memories):
+    start = time.time()
     pending_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
     for pmem in pending_memories:
         live_children = get_live_sub_memories(pmem, constants.CHILD_MEM)
@@ -358,9 +371,11 @@ def prepare_expectation(working_memories):
             append_working_memories(working_memories, live_children)
         elif pmem[constants.MEMORY_DURATION] is LONG_MEMORY or pmem[constants.MEMORY_DURATION] is SHORT_MEMORY:
             append_working_memories(working_memories, live_children, 1)
+    # print 'prepare_expectation used time	' + str(time.time() - start)
 
 
 def check_expectation(working_memories, sequential_time_memories):
+    start = time.time()
     pending_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
     for pmem in pending_memories:
         if time.time() > pmem[constants.END_TIME]:
@@ -378,6 +393,7 @@ def check_expectation(working_memories, sequential_time_memories):
             pmem[constants.STATUS] = constants.MATCHED
             pmem[constants.HAPPEN_TIME] = time.time()
             sequential_time_memories[pmem[constants.MEMORY_DURATION]].append(pmem)
+    # print 'check_expectation used time	' + str(time.time() - start)
 
 
 # matched / elder / child memory will be higher priority to clean up
@@ -386,6 +402,7 @@ def check_expectation(working_memories, sequential_time_memories):
 # pure memory recall (when free) will impact this, which it is "thinking"
 # interruption from environment can impact this, which it is "disturb"
 def cleanup_working_memories(working_memories, work_status):
+    start = time.time()
     valid_working_memories = [mem for mem in working_memories if
                               mem[constants.STATUS] is constants.MATCHED or mem[constants.END_TIME] > time.time()]
     if work_status[constants.REWARD]:
@@ -397,7 +414,9 @@ def cleanup_working_memories(working_memories, work_status):
         sorted_working_memories = sorted(valid_working_memories, key=lambda x: (
             x[constants.REWARD], x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL]),
                                          reverse=True)
-    return sorted_working_memories[0:threshold_of_working_memories:]
+    limited_sorted_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
+    # print 'frame used time	' + str(time.time() - start)
+    return limited_sorted_working_memories
 
 
 def add_vision_feature_memory(feature_type, channel, kernel, feature):
@@ -426,10 +445,11 @@ def add_collection_memory(mem_duration, child_memories, reward=0):
         new_mem = data_service.add_memory(
             {constants.CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: mem_duration, constants.REWARD: reward})
         increase_list_field(child_memories, constants.PARENT_MEM, new_mem[constants.MID])
+        new_mem.update({constants.HAPPEN_TIME: time.time(), constants.STATUS: constants.MATCHED})
     else:
         recall_memory(old_mem, {constants.REWARD: reward})
-        new_mem = data_service.get_memory(old_mem[constants.MID], True)
-    new_mem.update({constants.HAPPEN_TIME: time.time(), constants.STATUS: constants.MATCHED})
+        new_mem = old_mem
+        new_mem.update({constants.HAPPEN_TIME: time.time(), constants.STATUS: constants.MATCHED})
     return new_mem
 
 

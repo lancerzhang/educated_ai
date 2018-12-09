@@ -50,6 +50,7 @@ class DataService:
         return cleaned
 
     def housekeep(self):
+        start = time.time()
         print 'start to housekeep memory'
         clean_time = time.time() - 60
         clean_time = int(clean_time)
@@ -57,6 +58,7 @@ class DataService:
         print 'memories to be refresh:', len(records)
         cleaned = self.refresh_memories(records)
         print 'memories were deleted:', cleaned
+        print 'used time ' + str(time.time() - start)
         return cleaned
 
     # private method
@@ -112,6 +114,9 @@ class DataService:
             for j in range(i + 1, len(memories)):
                 list2 = memories[j].get(field)
                 if len(list1) > 0 and util.list_equal(list1, list2):
+                    # print memories[i]
+                    # print memories[j]
+                    # print ' '
                     count = count + 1
                     break
         return count
