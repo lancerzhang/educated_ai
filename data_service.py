@@ -3,6 +3,7 @@ import time, uuid, memory, constants, util
 
 class DataService:
     db = None
+    seq = 0
 
     def __init__(self, db):
         self.db = db
@@ -31,34 +32,52 @@ class DataService:
     def remove_memory(self, mid):
         self.db.remove(mid)
 
-    def refresh_memories(self, records, recall=False):
-        cleaned = 0
-        if records is None or len(records) == 0:
-            return cleaned
-        tobe_removed = []
-        for record in records:
-            memory.refresh(record, recall, True)
-            if record[constants.STRENGTH] == -1:
-                cleaned = cleaned + 1
-                self.remove_memory(record[constants.MID])
-                tobe_removed.append(record[constants.MID])
-        for mid in tobe_removed:
-            for record in records:
-                if record[constants.MID] == mid:
-                    records.remove(record)
-                    continue
-        return cleaned
+    def refresh_memories(self, memories, recall=False):
+        live_memories = []
+        if memories is None or len(memories) == 0:
+            return None
+        for mem in memories:
+            memory.refresh(mem, recall, True)
+            if mem[constants.STRENGTH] == -1:
+                self.remove_memory(mem[constants.MID])
+            else:
+                live_memories.append(mem)
+        return live_memories
 
-    def housekeep(self):
+    def full_housekeep(self):
         start = time.time()
+        self.seq = self.seq + 1
         print 'start to housekeep memory'
         clean_time = time.time() - 60
         clean_time = int(clean_time)
         records = self.db.search_by_last_call(clean_time)
         print 'memories to be refresh:', len(records)
-        cleaned = self.refresh_memories(records)
+        lives = self.refresh_memories(records)
+        if records is None:
+            cleaned = 0
+        elif lives is None:
+            cleaned = len(records)
+        else:
+            cleaned = str(len(records) - len(lives))
         print 'memories were deleted:', cleaned
-        print 'used time ' + str(time.time() - start)
+        print 'full_housekeep used time ' + str(time.time() - start)
+        return cleaned
+
+    def partial_housekeep(self):
+        start = time.time()
+        self.seq = self.seq + 1
+        print 'start to housekeep memory'
+        records = self.db.search_housekeep(self.seq % 100)
+        print 'memories to be refresh:', len(records)
+        lives = self.refresh_memories(records)
+        if records is None:
+            cleaned = 0
+        elif lives is None:
+            cleaned = len(records)
+        else:
+            cleaned = len(records) - len(lives)
+        print 'memories were deleted:', cleaned
+        print 'partial_housekeep used time ' + str(time.time() - start)
         return cleaned
 
     # private method
@@ -84,26 +103,18 @@ class DataService:
 
     def get_vision_move_memory(self, degrees, speed, duration):
         record = self.db.get_vision_move_memory(degrees, speed, duration)
-        if record is not None:
-            self.refresh_memories([record], True)
         return record
 
     def get_vision_zoom_memory(self, zoom_type):
         record = self.db.get_vision_zoom_memory(zoom_type)
-        if record is not None:
-            self.refresh_memories([record], True)
         return record
 
     def get_actor_mouse_memory(self, click_type):
         record = self.db.get_actor_mouse_memory(click_type)
-        if record is not None:
-            self.refresh_memories([record], True)
         return record
 
     def get_child_memory(self, child_mem):
         record = self.db.get_child_memory(child_mem)
-        if record is not None:
-            self.refresh_memories([record], True)
         return record
 
     def find_duplication(self, field):

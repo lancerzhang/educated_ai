@@ -45,11 +45,15 @@ try:
         status.update_status(working_memories, work_status, duration)
 
         working_memories = memory.cleanup_working_memories(working_memories, work_status)
+
         if frames % (PPS * 60) == 0:
-            data_service.housekeep()
-        print 'frame used time	' + str(time.time() - start)
+            data_service.full_housekeep()
+
+        if frames % (PPS * 10) == 0:
+            data_service.partial_housekeep()
+        # print 'frame used time	' + str(time.time() - start)
 
 except KeyboardInterrupt:
     print("quiting...")
     sound.start_thread = False
-    data_service.housekeep()
+    data_service.full_housekeep()

@@ -109,6 +109,26 @@ import constants,hashlib"""
             return hashlib.md5(mem_type + degrees + speed + duration).hexdigest()
 
 
+class HousekeepIndex(HashIndex):
+    sh_num = 100
+    custom_header = """from CodernityDB.hash_index import HashIndex
+import constants,hashlib"""
+
+    def __init__(self, *args, **kwargs):
+        kwargs['key_format'] = 'I'
+        super(HousekeepIndex, self).__init__(*args, **kwargs)
+
+    def make_key_value(self, data):
+        lcl = int(data.get(constants.LAST_RECALL))
+        if lcl is None:
+            return None
+        else:
+            return int(lcl) % self.sh_num, None
+
+    def make_key(self, key):
+        return int(key) % self.sh_num
+
+
 class LastRecallIndex(TreeBasedIndex):
     custom_header = """from CodernityDB.tree_index import TreeBasedIndex
 import constants"""
@@ -134,6 +154,7 @@ class DB_CodernityDB:
     INDEX_VISION_ZOOM = 'vision_zoom'
     INDEX_ACTOR_MOUSE = 'actor_mouse'
     INDEX_CHILD_MEMORY = 'child_memory'
+    HOUSEKEEP_CHILD_MEMORY = 'housekeep'
     db = None
 
     def __init__(self, folder='CodernityDB'):
@@ -147,6 +168,7 @@ class DB_CodernityDB:
             self.db.add_index(VisionZoomIndex(self.db.path, self.INDEX_VISION_ZOOM))
             self.db.add_index(ActorMouseIndex(self.db.path, self.INDEX_ACTOR_MOUSE))
             self.db.add_index(ChildMemoryIndex(self.db.path, self.INDEX_CHILD_MEMORY))
+            self.db.add_index(HousekeepIndex(self.db.path, self.HOUSEKEEP_CHILD_MEMORY))
 
     def insert(self, content):
         content.update({'_id': content.get(constants.MID)})
@@ -156,7 +178,7 @@ class DB_CodernityDB:
 
     def get_by_id(self, eid):
         try:
-            record = self.db.get('id', eid)
+            record = self.db.get('id', eid, with_doc=True)
         except DatabaseException:
             record = None
         return record
@@ -193,6 +215,13 @@ class DB_CodernityDB:
         # error is "RecordNotFound: Location '                              l' not found"
         # as the doc is not exist, don't know why
         db_records = self.db.get_many(self.INDEX_LAST_RECALL, end=last_call, with_doc=True)
+        for record in db_records:
+            records.append(record.get('doc'))
+        return records
+
+    def search_housekeep(self, sh_num):
+        records = []
+        db_records = self.db.get_many(self.HOUSEKEEP_CHILD_MEMORY, sh_num, with_doc=True)
         for record in db_records:
             records.append(record.get('doc'))
         return records

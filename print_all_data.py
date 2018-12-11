@@ -3,13 +3,15 @@ from data_service import DataService
 from db_CodernityDB import DB_CodernityDB
 
 data_service = DataService(DB_CodernityDB(folder='data/CodernityDB/'))
-all_memories = data_service.get_all_memories()
+data_service.full_housekeep()
+
+# all_memories = data_service.get_all_memories()
 # print all_memories
-print str(len(all_memories)) + ' memories'
+# print str(len(all_memories)) + ' memories'
 # for mem in all_memories:
 #     if len(mem[constants.PARENT_MEM])>400:
 #         print mem
-print data_service.get_memory('9a05f42f611146fcb9af7bc1decb3cb4')
+# print data_service.get_memory('8e86de49fd2e44e88a014829a063ec2c')
 # count=0
 # a1=['60c71f26728f47e4880ed6f54501dbd9', '60c71f26728f47e4880ed6f54501dbd9']
 # for mem in all_memories:
