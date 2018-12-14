@@ -1,5 +1,5 @@
 import constants, util, hashlib
-from CodernityDB.database import Database
+from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
 from CodernityDB.hash_index import HashIndex
 from CodernityDB.tree_index import TreeBasedIndex
 from CodernityDB.database import RecordNotFound
@@ -110,7 +110,7 @@ import constants,hashlib"""
 
 
 class HousekeepIndex(HashIndex):
-    sh_num = 100
+    sh_num = 30
     custom_header = """from CodernityDB.hash_index import HashIndex
 import constants,hashlib"""
 
@@ -158,12 +158,13 @@ class DB_CodernityDB:
     db = None
 
     def __init__(self, folder='CodernityDB'):
-        self.db = Database(folder)
+        self.db = SuperThreadSafeDatabase(folder)
         try:
             self.db.open()
         except:
             self.db.create()
-            self.db.add_index(LastRecallIndex(self.db.path, self.INDEX_LAST_RECALL))
+            # strange error when use tree index, disable it first
+            # self.db.add_index(LastRecallIndex(self.db.path, self.INDEX_LAST_RECALL))
             self.db.add_index(VisionMoveIndex(self.db.path, self.INDEX_VISION_MOVE))
             self.db.add_index(VisionZoomIndex(self.db.path, self.INDEX_VISION_ZOOM))
             self.db.add_index(ActorMouseIndex(self.db.path, self.INDEX_ACTOR_MOUSE))
@@ -191,22 +192,25 @@ class DB_CodernityDB:
     def update(self, content, eid):
         try:
             record = self.db.get('id', eid)
-        except DatabaseException:
+        except Exception:
             record = None
         if record is not None:
             record.update(content)
-            updated = self.db.update(record)
-            return updated
+            try:
+                updated = self.db.update(record)
+                return updated
+            except Exception:
+                return None
 
     def remove(self, eid):
         try:
             record = self.db.get('id', eid)
-        except DatabaseException:
+        except Exception:
             record = None
         if record is not None:
             try:
                 return self.db.delete(record)
-            except DatabaseException:
+            except Exception:
                 return None
 
     def search_by_last_call(self, last_call):

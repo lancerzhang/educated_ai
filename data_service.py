@@ -1,8 +1,8 @@
-import time, uuid, memory, constants, util
+import time, uuid, memory, constants, util, thread
 
 
 class DataService:
-    db = None
+    start_thread = True
     seq = 0
 
     def __init__(self, db):
@@ -44,13 +44,16 @@ class DataService:
                 live_memories.append(mem)
         return live_memories
 
+    # def schedule_housekeep(self):
+    #     self.seq = self.seq + 1
+    #     while self.start_thread:
+    #         self.full_housekeep()
+    #         time.sleep(30)
+
     def full_housekeep(self):
         start = time.time()
-        self.seq = self.seq + 1
-        print 'start to housekeep memory'
-        clean_time = time.time() - 60
-        clean_time = int(clean_time)
-        records = self.db.search_by_last_call(clean_time)
+        print '\nstart to full housekeep memory'
+        records = self.db.get_all()
         print 'memories to be refresh:', len(records)
         lives = self.refresh_memories(records)
         if records is None:
@@ -64,9 +67,9 @@ class DataService:
         return cleaned
 
     def partial_housekeep(self):
-        start = time.time()
         self.seq = self.seq + 1
-        print 'start to housekeep memory'
+        start = time.time()
+        print '\nstart to partial housekeep memory'
         records = self.db.search_housekeep(self.seq % 100)
         print 'memories to be refresh:', len(records)
         lives = self.refresh_memories(records)

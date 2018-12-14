@@ -1,4 +1,4 @@
-import time, util, memory, vision, status, sound, copy, actor, constants, thread
+import time, util, memory, vision, status, sound, copy, actor, thread, cv2
 from data_service import DataService
 from tinydb import TinyDB
 from db_tinydb import DB_TinyDB
@@ -18,6 +18,7 @@ actor.data_service = data_service
 try:
     print 'wake up.\n'
     thread.start_new_thread(sound.receive, ())
+    # thread.start_new_thread(data_service.schedule_housekeep, ())
     # to group them as a new memory by time sequence
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     working_memories = []
@@ -46,14 +47,15 @@ try:
 
         working_memories = memory.cleanup_working_memories(working_memories, work_status)
 
-        if frames % (PPS * 60) == 0:
+        if frames % (PPS * 15) == 0:
             data_service.full_housekeep()
-
-        if frames % (PPS * 10) == 0:
+        if frames % (PPS * 1) == 0:
             data_service.partial_housekeep()
+
         # print 'frame used time	' + str(time.time() - start)
+
 
 except KeyboardInterrupt:
     print("quiting...")
     sound.start_thread = False
-    data_service.full_housekeep()
+    # data_service.start_thread = False
