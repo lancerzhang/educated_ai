@@ -111,7 +111,7 @@ def save_files():
     global memory_indexes
     np.save(MEMORY_INDEX_FILE, memory_indexes)
     global used_kernel_rank
-    np.save(USED_KERNEL_FILE, used_kernel_rank)
+    np.save(USED_KERNEL_FILE, used_kernel_rank[0:100])
     global used_speed_rank
     np.save(USED_SPEED_FILE, used_speed_rank)
     global used_degrees_rank

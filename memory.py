@@ -424,7 +424,7 @@ def add_vision_feature_memory(feature_type, channel, kernel, feature):
         feature = feature.tolist()
     new_mem = add_physical_memory(
         {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.CHANNEL: channel, constants.KERNEL: kernel,
-         constants.FEATURE: feature})
+         constants.FEATURE: feature, constants.MEMORY_DURATION: constants.FEATURE_MEMORY})
     new_mem.update({constants.HAPPEN_TIME: time.time()})
     return new_mem
 
@@ -433,7 +433,8 @@ def add_feature_memory(feature_type, kernel, feature):
     if isinstance(feature, np.ndarray):
         feature = feature.tolist()
     new_mem = add_physical_memory(
-        {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.KERNEL: kernel, constants.FEATURE: feature})
+        {constants.PHYSICAL_MEMORY_TYPE: feature_type, constants.KERNEL: kernel, constants.FEATURE: feature,
+         constants.MEMORY_DURATION: constants.FEATURE_MEMORY})
     new_mem.update({constants.HAPPEN_TIME: time.time()})
     return new_mem
 
@@ -468,7 +469,7 @@ def verify_slice_memory_match_result(slice_memories, slice_memory_children, work
             if fmm[constants.STATUS] is constants.MATCHED:
                 if fmm[constants.MID] not in ids:
                     fmm.update({constants.HAPPEN_TIME: time.time()})
-                    working_memories.append(smm)
+                    working_memories.append(fmm)
                     all_matched_feature_memories.append(fmm)
                     ids.append(fmm[constants.MID])
             else:

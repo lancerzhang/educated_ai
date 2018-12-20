@@ -33,7 +33,7 @@ try:
 
         vision.process(working_memories, sequential_time_memories, work_status)
         sound.process(working_memories, sequential_time_memories, work_status)
-        actor.process(working_memories, sequential_time_memories, work_status)
+        # actor.process(working_memories, sequential_time_memories, work_status)
 
         memory.associate(working_memories)
         memory.prepare_expectation(working_memories)
@@ -41,9 +41,9 @@ try:
         memory.check_expectation(working_memories, sequential_time_memories)
         memory.compose(working_memories, sequential_time_memories)
 
-        # all end
-        duration = util.time_diff(start)
-        status.update_status(working_memories, work_status, duration)
+        # work end
+        work_duration = util.time_diff(start)
+        status.update_status(working_memories, work_status, work_duration)
 
         working_memories = memory.cleanup_working_memories(working_memories, work_status)
 
@@ -53,6 +53,11 @@ try:
             data_service.partial_housekeep()
 
         # print 'frame used time	' + str(time.time() - start)
+
+        # all end, sleep to avoid running too fast
+        all_duration = util.time_diff(start)
+        if all_duration < DPS:
+            time.sleep(DPS - all_duration)
 
 
 except KeyboardInterrupt:

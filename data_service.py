@@ -67,11 +67,14 @@ class DataService:
         return cleaned
 
     def partial_housekeep(self):
+        is_log = False
         self.seq = self.seq + 1
         start = time.time()
-        print '\nstart to partial housekeep memory'
+        if is_log:
+            print '\nstart to partial housekeep memory'
         records = self.db.search_housekeep(self.seq % 100)
-        print 'memories to be refresh:', len(records)
+        if is_log:
+            print 'memories to be refresh:', len(records)
         lives = self.refresh_memories(records)
         if records is None:
             cleaned = 0
@@ -79,8 +82,9 @@ class DataService:
             cleaned = len(records)
         else:
             cleaned = len(records) - len(lives)
-        print 'memories were deleted:', cleaned
-        print 'partial_housekeep used time ' + str(time.time() - start)
+        if is_log:
+            print 'memories were deleted:', cleaned
+            print 'partial_housekeep used time ' + str(time.time() - start)
         return cleaned
 
     # private method
