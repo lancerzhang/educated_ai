@@ -1,9 +1,19 @@
-import time, util, memory, status, sound, copy, actor, thread, cv2
 from data_adaptor import DataAdaptor
-from vision_screen import ScreenVision
-from tinydb import TinyDB
-from db_tinydb import DB_TinyDB
 from db_CodernityDB import DB_CodernityDB
+from db_tinydb import DB_TinyDB
+from tinydb import TinyDB
+from vision_screen import ScreenVision
+from vision_video_file import VideoFileVision
+import actor
+import copy
+import cv2
+import memory
+import sound
+import status
+import sys
+import thread
+import time
+import util
 
 # number of process per second
 PPS = 10
@@ -14,12 +24,14 @@ try:
     print 'wake up.\n'
     # _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
     data_service = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
-    vision = ScreenVision(data_service)
+    if len(sys.argv) == 2:
+        file_path = sys.argv[1]
+        vision = VideoFileVision(data_service, file_path)
+    else:
+        vision = ScreenVision(data_service)
     memory.data_service = data_service
     actor.data_service = data_service
     thread.start_new_thread(sound.receive, ())
-    # thread.start_new_thread(data_service.schedule_housekeep, ())
-    # to group them as a new memory by time sequence
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     working_memories = []
     frames = 0
@@ -58,6 +70,9 @@ try:
         all_duration = util.time_diff(start)
         if all_duration < DPS:
             time.sleep(DPS - all_duration)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 
 except KeyboardInterrupt:

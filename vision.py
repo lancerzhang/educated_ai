@@ -1,6 +1,13 @@
-import time, cv2, util, copy, random, math, memory, constants
+import constants
+import copy
+import cv2
+import math
+import memory
 import numpy as np
+import random
 import skimage.measure
+import time
+import util
 
 
 class Vision(object):
