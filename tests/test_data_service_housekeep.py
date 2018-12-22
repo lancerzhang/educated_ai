@@ -1,5 +1,5 @@
 import unittest, time, memory, constants
-from data_service import DataService
+from data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB
@@ -16,7 +16,7 @@ class TestDB(unittest.TestCase):
         # database = DB_CodernityDB()
         # for el in database.get_all():
         #     database.remove(el.get('_id'))
-        self.data_service = DataService(database)
+        self.data_service = DataAdaptor(database)
         memory.forget_memory = True
 
     def test_housekeep0(self):

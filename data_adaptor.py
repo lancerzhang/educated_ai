@@ -1,7 +1,7 @@
 import time, uuid, memory, constants, util, thread
 
 
-class DataService:
+class DataAdaptor:
     start_thread = True
     seq = 0
 

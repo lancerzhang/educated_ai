@@ -1,5 +1,5 @@
 import unittest, memory, constants
-from data_service import DataService
+from data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB
@@ -11,7 +11,7 @@ class TestUtil(unittest.TestCase):
 
     def setUp(self):
         database = DB_TinyDB(TinyDB(storage=MemoryStorage))
-        self.data = DataService(database)
+        self.data = DataAdaptor(database)
         memory.forget_memory = False
         memory.data_service = self.data
 

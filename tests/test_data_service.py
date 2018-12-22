@@ -1,5 +1,5 @@
 import unittest, sound, memory
-from data_service import DataService
+from data_adaptor import DataAdaptor
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB
@@ -12,7 +12,7 @@ class TestDB(unittest.TestCase):
     def setUp(self):
         database = DB_TinyDB(TinyDB(storage=MemoryStorage))
         # database = DB_CodernityDB()
-        self.data_service = DataService(database)
+        self.data_service = DataAdaptor(database)
         for el in database.get_all():
             database.remove(el.get('_id'))
 

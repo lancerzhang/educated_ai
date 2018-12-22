@@ -1,6 +1,6 @@
 import unittest, sound, constants
 import numpy as np
-from data_service import DataService
+from data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 
@@ -9,7 +9,7 @@ class TestSound(unittest.TestCase):
     database = None
 
     def setUp(self):
-        self.database = DataService(TinyDB(storage=MemoryStorage))
+        self.database = DataAdaptor(TinyDB(storage=MemoryStorage))
         sound.db = self.database
 
     def test_filter_feature(self):

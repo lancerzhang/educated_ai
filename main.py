@@ -1,5 +1,6 @@
-import time, util, memory, vision, status, sound, copy, actor, thread, cv2
-from data_service import DataService
+import time, util, memory, status, sound, copy, actor, thread, cv2
+from data_adaptor import DataAdaptor
+from vision_screen import ScreenVision
 from tinydb import TinyDB
 from db_tinydb import DB_TinyDB
 from db_CodernityDB import DB_CodernityDB
@@ -9,14 +10,13 @@ PPS = 10
 # duration per process (s)
 DPS = 1.0 / PPS
 
-# _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
-data_service = DataService(DB_CodernityDB(folder='data/CodernityDB/'))
-memory.data_service = data_service
-vision.data_service = data_service
-actor.data_service = data_service
-
 try:
     print 'wake up.\n'
+    # _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
+    data_service = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
+    vision = ScreenVision(data_service)
+    memory.data_service = data_service
+    actor.data_service = data_service
     thread.start_new_thread(sound.receive, ())
     # thread.start_new_thread(data_service.schedule_housekeep, ())
     # to group them as a new memory by time sequence

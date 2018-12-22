@@ -1,6 +1,6 @@
 import unittest, vision, memory, cv2, constants, time, math
 import numpy as np
-from data_service import DataService
+from data_adaptor import DataAdaptor
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
 from db_tinydb import DB_TinyDB
@@ -12,7 +12,7 @@ class TestVision(unittest.TestCase):
 
     def setUp(self):
         database = DB_TinyDB(TinyDB(storage=MemoryStorage))
-        self.data = DataService(database)
+        self.data = DataAdaptor(database)
         vision.data_service = self.data
         memory.forget_memory = False
         memory.data_service = self.data
