@@ -44,6 +44,27 @@ class DataAdaptor:
                 live_memories.append(mem)
         return live_memories
 
+    def cleanup_fields(self):
+        self.cleanup_field(constants.PARENT_MEM)
+
+    def cleanup_field(self, field):
+        start = time.time()
+        print 'start to cleanup_fields', field
+        memories = self.db.get_all()
+        for mem in memories:
+            original_list = mem[field]
+            # fine unique value from list
+            distinct_list = [x for x in set(original_list)]
+            new_list = []
+            for element in distinct_list:
+                sub_mem = self._get_memory(element)
+                if sub_mem is not None:
+                    new_list.append(element)
+            if len(new_list) != len(original_list):
+                print 'clean up from ', len(original_list), ' to ', len(new_list)
+                self.update_memory({field: new_list}, mem[constants.MID])
+        print 'cleanup_fields used time ' + str(time.time() - start)
+
     # def schedule_housekeep(self):
     #     self.seq = self.seq + 1
     #     while self.start_thread:

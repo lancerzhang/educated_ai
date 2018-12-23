@@ -1,12 +1,17 @@
 import util, constants
-from data_service import DataService
+from data_adaptor import DataAdaptor
 from db_CodernityDB import DB_CodernityDB
 
-data_service = DataService(DB_CodernityDB(folder='data/CodernityDB/'))
+data_service = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
+
 data_service.full_housekeep()
 
-# all_memories = data_service.get_all_memories()
-# print all_memories
+data_service.cleanup_fields()
+
+all_memories = data_service.get_all_memories()
+sorted_all_memories = sorted(all_memories, key=lambda x: (x[constants.RECALL]), reverse=True)
+print sorted_all_memories[0:20]
+
 # print str(len(all_memories)) + ' memories'
 # for mem in all_memories:
 #     if len(mem[constants.PARENT_MEM])>400:

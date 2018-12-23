@@ -15,7 +15,7 @@ class TestVision(unittest.TestCase):
         self.data = DataAdaptor(database)
         vision.data_service = self.data
         memory.forget_memory = False
-        memory.data_service = self.data
+        memory.data_adaptor = self.data
 
     def test_init(self):
         vision.init()

@@ -13,7 +13,7 @@ class TestUtil(unittest.TestCase):
         database = DB_TinyDB(TinyDB(storage=MemoryStorage))
         self.data = DataAdaptor(database)
         memory.forget_memory = False
-        memory.data_service = self.data
+        memory.data_adaptor = self.data
 
     def test_sort(self):
         el1 = self.data.add_memory({constants.HAPPEN_TIME: 1})

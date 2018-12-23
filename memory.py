@@ -1,5 +1,8 @@
-import time, random, util, constants
+import constants
 import numpy as np
+import random
+import time
+import util
 
 INTERVALS = 'itv'
 NEW_MEMORIES = 'nmm'
@@ -28,7 +31,7 @@ DURATION_LONG = 360
 # vision1.2
 
 
-data_service = None
+data_adaptor = None
 
 # use parent to find experience memories
 BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL: 0,
@@ -94,7 +97,7 @@ def refresh(mem, recall=False, forget=False):
 
 # summarize all parent memories in a list
 def count_parent_id(memories):
-    start = time.time()
+    # start = time.time()
     parent_list = []
     for mem in memories:
         # TODO, some memory has hundreds of parent, don't know why
@@ -107,12 +110,12 @@ def count_parent_id(memories):
 
 
 def find_max_related_memories(memories, tobe_remove_list_ids, limit=4):
-    start = time.time()
+    # start = time.time()
     related_memories = []
     parent_counts = count_parent_id(memories)
     count = 0
     for key in sorted(parent_counts, key=parent_counts.get, reverse=True):
-        mem = data_service.get_memory(key)
+        mem = data_adaptor.get_memory(key)
         if mem:
             related_memories.append(mem)
             count = count + 1
@@ -125,7 +128,7 @@ def find_max_related_memories(memories, tobe_remove_list_ids, limit=4):
 
 
 def find_update_max_related_memories(memories, limit=4):
-    start = time.time()
+    # start = time.time()
     tobe_remove_list_ids = []
     related_memories = find_max_related_memories(memories, tobe_remove_list_ids, limit)
     if len(tobe_remove_list_ids) > 0:
@@ -141,21 +144,21 @@ def increase_list_field(memories, field, new_id):
         ids = mem[field]
         if new_id not in ids:
             ids = util.np_array_concat(ids, [new_id])
-            data_service.update_memory({field: ids.tolist()}, mem[constants.MID])
+            data_adaptor.update_memory({field: ids.tolist()}, mem[constants.MID])
 
 
 def reduce_list_field(field, sub_ids, forgot_ids, mid):
     new_sub = util.list_comprehension_new(sub_ids, forgot_ids)
     if field == constants.CHILD_MEM and len(new_sub) == 0:
-        data_service.remove_memory(mid)
+        data_adaptor.remove_memory(mid)
     else:
-        data_service.update_memory({field: new_sub}, mid)
+        data_adaptor.update_memory({field: new_sub}, mid)
 
 
 def get_live_memories(memory_ids):
     memories = []
     for mid in memory_ids:
-        mem = data_service.get_memory(mid)
+        mem = data_adaptor.get_memory(mid)
         if mem is not None:
             memories.append(mem)
     return memories
@@ -179,7 +182,7 @@ def get_live_sub_memories(mem, field, existing_memories=None, limit=0, offset=0)
                     memories.append(sub_mem)
                     break
         if sub_mem is None:
-            sub_mem = data_service.get_memory(sub_id)
+            sub_mem = data_adaptor.get_memory(sub_id)
             if sub_mem is not None:
                 memories.append(sub_mem)
                 if existing_memories is not None:
@@ -193,7 +196,7 @@ def get_live_sub_memories(mem, field, existing_memories=None, limit=0, offset=0)
     if len(forgot_ids) > 0:
         reduce_list_field(constants.CHILD_MEM, memory_ids, forgot_ids, mem[constants.MID])
     if field is constants.CHILD_MEM and len(memories) == 0:
-        data_service.remove_memory(mem[constants.MID])
+        data_adaptor.remove_memory(mem[constants.MID])
     return memories
 
 
@@ -216,7 +219,7 @@ def recall_memory(mem, addition=None):
                       constants.LAST_RECALL: mem[constants.LAST_RECALL]}
     if addition is not None:
         update_content.update(addition)
-    data_service.update_memory(update_content, mem[constants.MID])
+    data_adaptor.update_memory(update_content, mem[constants.MID])
     mem.update(update_content)
 
 
@@ -250,7 +253,7 @@ def create_working_memory(working_memories, seq_time_memories, children, duratio
 # instant memories of 4 (COMPOSE_NUMBER) or within DURATION_SHORT will be grouped as a new short memory
 # short memories of 4 (COMPOSE_NUMBER) or within DURATION_LONG will be grouped as a new long memory
 def compose(working_memories, seq_time_memories):
-    start = time.time()
+    # start = time.time()
     result1 = split_seq_time_memories(seq_time_memories[constants.SLICE_MEMORY], DURATION_INSTANT)
     seq_time_memories[constants.SLICE_MEMORY] = result1[REST_OF_MEMORIES]
     create_working_memory(working_memories, seq_time_memories, result1[NEW_MEMORIES], INSTANT_MEMORY)
@@ -327,7 +330,7 @@ def convert_to_expectation(mem):
 
 def update_last_recall(memories):
     for mem in memories:
-        data_service.update_memory({constants.LAST_RECALL: int(time.time())}, mem[constants.MID])
+        data_adaptor.update_memory({constants.LAST_RECALL: int(time.time())}, mem[constants.MID])
 
 
 # append new memories to memories list if it's not exist
@@ -349,7 +352,7 @@ def append_working_memories(memories, new_memories, limit=0):
 
 
 def associate(working_memories):
-    start = time.time()
+    # start = time.time()
     valid_working_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHED or
                               mem[constants.END_TIME] > time.time()]
     matched_memories = [mem for mem in valid_working_memories if mem[constants.STATUS] is constants.MATCHED]
@@ -363,7 +366,7 @@ def associate(working_memories):
 
 
 def prepare_expectation(working_memories):
-    start = time.time()
+    # start = time.time()
     pending_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
     for pmem in pending_memories:
         live_children = get_live_sub_memories(pmem, constants.CHILD_MEM)
@@ -375,7 +378,7 @@ def prepare_expectation(working_memories):
 
 
 def check_expectation(working_memories, sequential_time_memories):
-    start = time.time()
+    # start = time.time()
     pending_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
     for pmem in pending_memories:
         if time.time() > pmem[constants.END_TIME]:
@@ -402,7 +405,7 @@ def check_expectation(working_memories, sequential_time_memories):
 # pure memory recall (when free) will impact this, which it is "thinking"
 # interruption from environment can impact this, which it is "disturb"
 def cleanup_working_memories(working_memories, work_status):
-    start = time.time()
+    # start = time.time()
     valid_working_memories = [mem for mem in working_memories if
                               mem[constants.STATUS] is constants.MATCHED or mem[constants.END_TIME] > time.time()]
     if work_status[constants.REWARD]:
@@ -441,9 +444,9 @@ def add_feature_memory(feature_type, kernel, feature):
 
 def add_collection_memory(mem_duration, child_memories, reward=0):
     child_memory_ids = [x[constants.MID] for x in child_memories]
-    old_mem = data_service.get_child_memory(child_memory_ids)
+    old_mem = data_adaptor.get_child_memory(child_memory_ids)
     if old_mem is None:
-        new_mem = data_service.add_memory(
+        new_mem = data_adaptor.add_memory(
             {constants.CHILD_MEM: child_memory_ids, constants.MEMORY_DURATION: mem_duration, constants.REWARD: reward})
         increase_list_field(child_memories, constants.PARENT_MEM, new_mem[constants.MID])
         new_mem.update({constants.HAPPEN_TIME: time.time(), constants.STATUS: constants.MATCHED})
@@ -456,7 +459,7 @@ def add_collection_memory(mem_duration, child_memories, reward=0):
 
 # please make sure it's not duplicated before calling it
 def add_physical_memory(content):
-    return data_service.add_memory(content)
+    return data_adaptor.add_memory(content)
 
 
 def verify_slice_memory_match_result(slice_memories, slice_memory_children, working_memories, sequential_time_memories):

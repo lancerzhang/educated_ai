@@ -21,21 +21,25 @@ PPS = 10
 DPS = 1.0 / PPS
 
 try:
-    print 'wake up.\n'
+    print 'initializing, please wait.\n'
     # _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
-    data_service = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
+    data_adaptor = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
+    data_adaptor.full_housekeep()
+    data_adaptor.cleanup_fields()
+
     if len(sys.argv) == 2:
         file_path = sys.argv[1]
-        vision = VideoFileVision(data_service, file_path)
+        vision = VideoFileVision(data_adaptor, file_path)
     else:
-        vision = ScreenVision(data_service)
-    memory.data_service = data_service
-    actor.data_service = data_service
+        vision = ScreenVision(data_adaptor)
+    memory.data_adaptor = data_adaptor
+    actor.data_adaptor = data_adaptor
     thread.start_new_thread(sound.receive, ())
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     working_memories = []
     frames = 0
     work_status = status.init_status(PPS)
+    print 'initialized.\n'
     while 1:
         start = time.time()
         # print frames
@@ -60,9 +64,9 @@ try:
         working_memories = memory.cleanup_working_memories(working_memories, work_status)
 
         if frames % (PPS * 15) == 0:
-            data_service.full_housekeep()
+            data_adaptor.full_housekeep()
         if frames % (PPS * 1) == 0:
-            data_service.partial_housekeep()
+            data_adaptor.partial_housekeep()
 
         # print 'frame used time	' + str(time.time() - start)
 

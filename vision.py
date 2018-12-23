@@ -434,6 +434,8 @@ class Vision(object):
         if temp_index < 0:
             return None
         self.roi_index = temp_index
+        self.current_block[self.WIDTH] = self.ROI_ARR[self.roi_index]
+        self.current_block[self.HEIGHT] = self.ROI_ARR[self.roi_index]
         return self.ZOOM_IN
 
     def zoom_out(self):
@@ -446,6 +448,8 @@ class Vision(object):
         if self.current_block[self.START_Y] + temp_width > self.SCREEN_HEIGHT:
             return None
         self.roi_index = temp_index
+        self.current_block[self.WIDTH] = self.ROI_ARR[self.roi_index]
+        self.current_block[self.HEIGHT] = self.ROI_ARR[self.roi_index]
         return self.ZOOM_OUT
 
     def get_region(self):

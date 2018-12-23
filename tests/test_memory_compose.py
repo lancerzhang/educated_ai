@@ -14,7 +14,7 @@ class TestMemory(unittest.TestCase):
         database = DB_TinyDB(TinyDB(storage=MemoryStorage))
         self.data_service = DataAdaptor(database)
         memory.forget_memory = False
-        memory.data_service = self.data_service
+        memory.data_adaptor = self.data_service
 
     def test_split_seq_time_memories_empty(self):
         memories = []
