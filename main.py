@@ -2,13 +2,13 @@ from data_adaptor import DataAdaptor
 from db_CodernityDB import DB_CodernityDB
 from db_tinydb import DB_TinyDB
 from tinydb import TinyDB
+from sound import Sound
 from vision_screen import ScreenVision
 from vision_video_file import VideoFileVision
 import actor
 import copy
 import cv2
 import memory
-import sound
 import status
 import sys
 import thread
@@ -19,7 +19,7 @@ import util
 PPS = 10
 # duration per process (s)
 DPS = 1.0 / PPS
-
+sound = None
 try:
     print 'initializing, please wait.\n'
     # _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
@@ -32,6 +32,7 @@ try:
         vision = VideoFileVision(data_adaptor, file_path)
     else:
         vision = ScreenVision(data_adaptor)
+    sound = Sound(data_adaptor)
     memory.data_adaptor = data_adaptor
     actor.data_adaptor = data_adaptor
     thread.start_new_thread(sound.receive, ())
@@ -76,6 +77,7 @@ try:
             time.sleep(DPS - all_duration)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            sound.start_thread = False
             break
 
 

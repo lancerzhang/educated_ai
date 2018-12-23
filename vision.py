@@ -194,7 +194,7 @@ class Vision(object):
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
         img = self.get_region()
-        channel_img = self.get_channel_img(img, channel)
+        channel_img = get_channel_img(img, channel)
         fmm.update({constants.STATUS: constants.MATCHING})
         data = self.filter_feature(channel_img, kernel, np.array(feature))
         if data is None:
@@ -259,7 +259,7 @@ class Vision(object):
         channel = self.get_channel()
         img = self.get_region()
         kernel = self.get_kernel()
-        channel_img = self.get_channel_img(img, channel)
+        channel_img = get_channel_img(img, channel)
         data = self.filter_feature(channel_img, kernel)
         if data is None:
             return None
@@ -314,7 +314,7 @@ class Vision(object):
     def find_most_variable_region(self, full_img):
         # start = time.time()
         new_block = {}
-        channel_img = self.get_channel_img(full_img, 'y')
+        channel_img = get_channel_img(full_img, 'y')
         this_block_histogram = self.calculate_block_histogram(channel_img)
         if len(self.previous_block_histogram) == 0:
             self.previous_block_histogram = this_block_histogram
@@ -416,18 +416,6 @@ class Vision(object):
             action_memory = mem
         slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
         return slice_memory
-
-    def get_channel_img(self, bgr, channel):
-        # start = time.time()
-        yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
-        y, u, v = cv2.split(yuv)
-        # print 'get_channel_img ' + str(time.time() - start)
-        if channel == 'y':
-            return y
-        elif channel == 'u':
-            return u
-        elif channel == 'v':
-            return v
 
     def zoom_in(self):
         temp_index = self.roi_index - 1
@@ -554,3 +542,16 @@ class Vision(object):
 
     def grab(self, top, left, width, height):
         return None
+
+
+def get_channel_img(bgr, channel):
+    # start = time.time()
+    yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
+    y, u, v = cv2.split(yuv)
+    # print 'get_channel_img ' + str(time.time() - start)
+    if channel == 'y':
+        return y
+    elif channel == 'u':
+        return u
+    elif channel == 'v':
+        return v

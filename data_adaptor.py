@@ -2,6 +2,7 @@ import time, uuid, memory, constants, util, thread
 
 
 class DataAdaptor:
+    is_log = False
     start_thread = True
     seq = 0
 
@@ -61,7 +62,8 @@ class DataAdaptor:
                 if sub_mem is not None:
                     new_list.append(element)
             if len(new_list) != len(original_list):
-                print 'clean up from ', len(original_list), ' to ', len(new_list)
+                if self.is_log:
+                    print 'clean up from ', len(original_list), ' to ', len(new_list)
                 self.update_memory({field: new_list}, mem[constants.MID])
         print 'cleanup_fields used time ' + str(time.time() - start)
 
@@ -88,13 +90,12 @@ class DataAdaptor:
         return cleaned
 
     def partial_housekeep(self):
-        is_log = False
         self.seq = self.seq + 1
         start = time.time()
-        if is_log:
+        if self.is_log:
             print '\nstart to partial housekeep memory'
         records = self.db.search_housekeep(self.seq % 100)
-        if is_log:
+        if self.is_log:
             print 'memories to be refresh:', len(records)
         lives = self.refresh_memories(records)
         if records is None:
@@ -103,7 +104,7 @@ class DataAdaptor:
             cleaned = len(records)
         else:
             cleaned = len(records) - len(lives)
-        if is_log:
+        if self.is_log:
             print 'memories were deleted:', cleaned
             print 'partial_housekeep used time ' + str(time.time() - start)
         return cleaned
