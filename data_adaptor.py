@@ -84,7 +84,7 @@ class DataAdaptor:
         elif lives is None:
             cleaned = len(records)
         else:
-            cleaned = str(len(records) - len(lives))
+            cleaned = len(records) - len(lives)
         print 'memories were deleted:', cleaned
         print 'full_housekeep used time ' + str(time.time() - start)
         return cleaned
