@@ -73,10 +73,17 @@ class DataAdaptor:
     #         self.full_housekeep()
     #         time.sleep(30)
 
-    def full_housekeep(self):
+    def gc(self, gc_type):
         start = time.time()
-        print '\nstart to full housekeep memory'
-        records = self.db.get_all()
+        print '\nstart to gc ', gc_type, ' memory'
+        if gc_type is constants.EDEN:
+            records = self.db.get_eden_memories()
+        elif gc_type is constants.YOUNG:
+            records = self.db.get_young_memories()
+        elif gc_type is constants.OLD:
+            records = self.db.get_old_memories()
+        else:
+            records = self.db.get_all()
         print 'memories to be refresh:', len(records)
         lives = self.refresh_memories(records)
         if records is None:
@@ -86,10 +93,13 @@ class DataAdaptor:
         else:
             cleaned = len(records) - len(lives)
         print 'memories were deleted:', cleaned
-        print 'full_housekeep used time ' + str(time.time() - start)
+        print gc_type, ' gc used time ' + str(time.time() - start)
         return cleaned
 
-    def partial_housekeep(self):
+    def full_gc(self):
+        return self.gc('full')
+
+    def partial_gc(self):
         self.seq = self.seq + 1
         start = time.time()
         if self.is_log:
@@ -144,6 +154,18 @@ class DataAdaptor:
 
     def get_child_memory(self, child_mem):
         record = self.db.get_child_memory(child_mem)
+        return record
+
+    def get_eden_memories(self):
+        record = self.db.get_eden_memories()
+        return record
+
+    def get_young_memories(self):
+        record = self.db.get_young_memories()
+        return record
+
+    def get_old_memories(self):
+        record = self.db.get_old_memories()
         return record
 
     def find_duplication(self, field):

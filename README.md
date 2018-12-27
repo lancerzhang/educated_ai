@@ -14,6 +14,7 @@ http://pythonware.com/products/pil/
 For Mac
 - install brew
 - install portaudio
+- install pyautoguid https://pyautogui.readthedocs.io/en/latest/install.html
 ``` bash
 brew install portaudio
 ```
@@ -27,3 +28,7 @@ pip install opencv-python
  ``` bash
  pip install -r requirements.txt
  ```
+
+if you see many CodernityDB debug log, remove 'print' in below line
+/python27/lib/python2.7/site-packages/CodernityDB/storage.py
+print locals()

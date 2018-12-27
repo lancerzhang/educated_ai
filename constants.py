@@ -47,3 +47,10 @@ MEMORIES = 'mms'
 ACTOR_MOUSE = 'atm'
 CLICK_TYPE = 'clt'
 
+# main
+process_per_second = 10
+
+# gc
+EDEN = 'eden'
+YOUNG = 'young'
+OLD = 'old'

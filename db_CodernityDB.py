@@ -110,7 +110,7 @@ import constants,hashlib"""
 
 
 class HousekeepIndex(HashIndex):
-    sh_num = 30
+    sh_num = 100
     custom_header = """from CodernityDB.hash_index import HashIndex
 import constants,hashlib"""
 
@@ -127,6 +127,25 @@ import constants,hashlib"""
 
     def make_key(self, key):
         return int(key) % self.sh_num
+
+
+class RecallIndex(HashIndex):
+    custom_header = """from CodernityDB.hash_index import HashIndex
+import constants"""
+
+    def __init__(self, *args, **kwargs):
+        kwargs['key_format'] = 'I'
+        super(RecallIndex, self).__init__(*args, **kwargs)
+
+    def make_key_value(self, data):
+        recall = data.get(constants.RECALL)
+        if recall is None:
+            return None
+        else:
+            return recall, None
+
+    def make_key(self, key):
+        return key
 
 
 class LastRecallIndex(TreeBasedIndex):
@@ -149,12 +168,13 @@ import constants"""
 
 
 class DB_CodernityDB:
+    INDEX_RECALL = 'recall'
     INDEX_LAST_RECALL = 'last_recall'
     INDEX_VISION_MOVE = 'vision_move'
     INDEX_VISION_ZOOM = 'vision_zoom'
     INDEX_ACTOR_MOUSE = 'actor_mouse'
     INDEX_CHILD_MEMORY = 'child_memory'
-    HOUSEKEEP_CHILD_MEMORY = 'housekeep'
+    INDEX_HOUSEKEEP = 'housekeep'
     db = None
 
     def __init__(self, folder='CodernityDB'):
@@ -164,12 +184,13 @@ class DB_CodernityDB:
         except:
             self.db.create()
             # strange error when use tree index, disable it first
-            # self.db.add_index(LastRecallIndex(self.db.path, self.INDEX_LAST_RECALL))
+            self.db.add_index(LastRecallIndex(self.db.path, self.INDEX_LAST_RECALL))
+            self.db.add_index(RecallIndex(self.db.path, self.INDEX_RECALL))
             self.db.add_index(VisionMoveIndex(self.db.path, self.INDEX_VISION_MOVE))
             self.db.add_index(VisionZoomIndex(self.db.path, self.INDEX_VISION_ZOOM))
             self.db.add_index(ActorMouseIndex(self.db.path, self.INDEX_ACTOR_MOUSE))
             self.db.add_index(ChildMemoryIndex(self.db.path, self.INDEX_CHILD_MEMORY))
-            self.db.add_index(HousekeepIndex(self.db.path, self.HOUSEKEEP_CHILD_MEMORY))
+            self.db.add_index(HousekeepIndex(self.db.path, self.INDEX_HOUSEKEEP))
 
     def insert(self, content):
         content.update({'_id': content.get(constants.MID)})
@@ -225,7 +246,35 @@ class DB_CodernityDB:
 
     def search_housekeep(self, sh_num):
         records = []
-        db_records = self.db.get_many(self.HOUSEKEEP_CHILD_MEMORY, sh_num, with_doc=True)
+        db_records = self.db.get_many(self.INDEX_HOUSEKEEP, sh_num, with_doc=True)
+        for record in db_records:
+            records.append(record.get('doc'))
+        return records
+
+    def get_eden_memories(self):
+        total_records = []
+        for recall in range(0, 2):
+            records = self.get_recall(recall)
+            total_records = total_records + records
+        return total_records
+
+    def get_young_memories(self):
+        total_records = []
+        for recall in range(2, 20):
+            records = self.get_recall(recall)
+            total_records = total_records + records
+        return total_records
+
+    def get_old_memories(self):
+        total_records = []
+        for recall in range(20, 100):
+            records = self.get_recall(recall)
+            total_records = total_records + records
+        return total_records
+
+    def get_recall(self, recall):
+        records = []
+        db_records = self.db.get_many(self.INDEX_RECALL, recall, with_doc=True)
         for record in db_records:
             records.append(record.get('doc'))
         return records
