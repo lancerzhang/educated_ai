@@ -54,3 +54,8 @@ process_per_second = 10
 EDEN = 'eden'
 YOUNG = 'young'
 OLD = 'old'
+
+# keyboard
+KEY_CTRL = 'ctrl'
+KEY_ALT = 'alt'
+KEY_SHIFT = 'shift'

@@ -1,8 +1,8 @@
 from data_adaptor import DataAdaptor
 from db_CodernityDB import DB_CodernityDB
 from db_tinydb import DB_TinyDB
+from keyboard_monitor import KeyboardMonitor
 from mgc import GC
-from pynput import keyboard
 from tinydb import TinyDB
 from sound import Sound
 from vision_screen import ScreenVision
@@ -20,21 +20,6 @@ import time
 import util
 
 sound = None
-# pressed_key = None
-#
-#
-# def on_release(key):
-#     global pressed_key
-#     pressed_key = key
-#     print('{0} released'.format(
-#         key))
-#     if key == keyboard.Key.esc:
-#         # Stop listener
-#         return False
-#
-#
-# with keyboard.Listener(on_release=on_release) as listener:
-#     listener.join()
 
 try:
     print 'initializing, please wait.\n'
@@ -42,6 +27,8 @@ try:
     # _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
     data_adaptor = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
     gc = GC(data_adaptor)
+    keyboard = KeyboardMonitor()
+    thread.start_new_thread(keyboard.start, ())
     if len(sys.argv) == 2:
         file_path = sys.argv[1]
         vision = VideoFileVision(data_adaptor, file_path)
@@ -94,23 +81,10 @@ try:
 
         last_process_time = all_duration
 
-        # print pressed_key
-        # # use special key as other keys need admin right on Mac
-        # if pressed_key == keyboard.Key.ctrl:
-        #     print 'pressed ctrl'
-        #     pressed_key = None
-        # elif pressed_key == keyboard.Key.alt:
-        #     print 'pressed alt'
-        #     pressed_key = None
-        # elif pressed_key == keyboard.Key.shift:
-        #     print 'pressed shift'
-        #     sound.start_thread = False
-        #     break
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = keyboard.get_key()
+        if key is constants.KEY_SHIFT:
             sound.start_thread = False
             break
-
 
 except KeyboardInterrupt:
     print("quiting...")
