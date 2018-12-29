@@ -7,7 +7,8 @@ REWARD_DATA = 'reward_data'
 SATISFIED_REWARD = 0.5
 
 
-def init_status(pps):
+def init_status():
+    pps = constants.process_per_second
     status = {}
     # if free in short time, find more detail, explore the world
     short_duration = [0] * 2 * pps
@@ -43,6 +44,7 @@ def calculate_reward(status, frames):
 
 
 def calculate_status(status, dps, frames):
+#    print status[constants.REWARD]
     calculate_workload(status, dps, frames, constants.SHORT_DURATION)
     calculate_workload(status, dps, frames, constants.MEDIUM_DURATION)
     calculate_workload(status, dps, frames, constants.LONG_DURATION)
