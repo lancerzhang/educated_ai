@@ -1,3 +1,4 @@
+from actor import Actor
 from data_adaptor import DataAdaptor
 from db_CodernityDB import DB_CodernityDB
 from db_tinydb import DB_TinyDB
@@ -7,7 +8,6 @@ from tinydb import TinyDB
 from sound import Sound
 from vision_screen import ScreenVision
 from vision_video_file import VideoFileVision
-import actor
 import constants
 import copy
 import cv2
@@ -36,7 +36,7 @@ try:
         vision = ScreenVision(data_adaptor)
     sound = Sound(data_adaptor)
     memory.data_adaptor = data_adaptor
-    actor.data_adaptor = data_adaptor
+    actor = Actor(data_adaptor)
     thread.start_new_thread(sound.receive, ())
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     working_memories = []
@@ -70,7 +70,7 @@ try:
         process_duration = util.time_diff(start)
         gc.process(process_duration)
 
-        # print 'frame used time	' + str(time.time() - start)
+        print 'frame used time	' + str(time.time() - start)
 
         # all end, sleep to avoid running too fast
         all_duration = util.time_diff(start)
