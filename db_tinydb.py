@@ -45,9 +45,9 @@ class DB_TinyDB:
         return self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_ZOOM) & (
                 query[constants.ZOOM_TYPE] == zoom_type))
 
-    def get_actor_mouse_memory(self, click_type):
+    def get_action_mouse_memory(self, click_type):
         query = Query()
-        return self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.ACTOR_MOUSE) & (
+        return self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.ACTION_MOUSE) & (
                 query[constants.CLICK_TYPE] == click_type))
 
     def get_child_memory(self, child_mem):

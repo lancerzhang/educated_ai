@@ -148,8 +148,8 @@ class DataAdaptor:
         record = self.db.get_vision_zoom_memory(zoom_type)
         return record
 
-    def get_actor_mouse_memory(self, click_type):
-        record = self.db.get_actor_mouse_memory(click_type)
+    def get_action_mouse_memory(self, click_type):
+        record = self.db.get_action_mouse_memory(click_type)
         return record
 
     def get_child_memory(self, child_mem):

@@ -4,7 +4,7 @@ import time
 from pynput.mouse import Button, Controller
 
 
-class Actor(object):
+class Action(object):
     LEFT_CLICK = 'lcl'
     data_adaptor = None
 
@@ -17,7 +17,7 @@ class Actor(object):
                                 constants.MEMORY_DURATION in mem and
                                 mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                                 mem[constants.STATUS] is constants.MATCHING and
-                                mem[constants.PHYSICAL_MEMORY_TYPE] is constants.ACTOR_MOUSE]
+                                mem[constants.PHYSICAL_MEMORY_TYPE] is constants.ACTION_MOUSE]
 
         matched_feature_memories = self.match_actor_mouse_memories(actor_mouse_memories)
 
@@ -45,9 +45,9 @@ class Actor(object):
     def left_click(self):
         click_type = self.LEFT_CLICK
         self.mouse.click(Button.left)
-        mem = self.data_adaptor.get_actor_mouse_memory(click_type)
+        mem = self.data_adaptor.get_action_mouse_memory(click_type)
         if mem is None:
-            action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE, constants.CLICK_TYPE: click_type}
+            action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTION_MOUSE, constants.CLICK_TYPE: click_type}
             action_memory = memory.add_physical_memory(action)
         else:
             memory.recall_memory(mem)

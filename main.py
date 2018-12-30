@@ -1,18 +1,15 @@
-from actor import Actor
+from action import Action
 from data_adaptor import DataAdaptor
 from db_CodernityDB import DB_CodernityDB
-from db_tinydb import DB_TinyDB
 from keyboard_monitor import KeyboardMonitor
 from mgc import GC
-from tinydb import TinyDB
 from sound import Sound
 from vision_screen import ScreenVision
 from vision_video_file import VideoFileVision
 import constants
 import copy
-import cv2
 import memory
-import numpy as np
+import reward
 import status
 import sys
 import thread
@@ -24,7 +21,6 @@ sound = None
 try:
     print 'initializing, please wait.\n'
     DPS = 1.0 / constants.process_per_second
-    # _data = Data(DB_TinyDB(TinyDB('TinyDB.json')))
     data_adaptor = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
     gc = GC(data_adaptor)
     keyboard = KeyboardMonitor()
@@ -36,7 +32,7 @@ try:
         vision = ScreenVision(data_adaptor)
     sound = Sound(data_adaptor)
     memory.data_adaptor = data_adaptor
-    actor = Actor(data_adaptor)
+    actor = Action(data_adaptor)
     thread.start_new_thread(sound.receive, ())
     sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
     working_memories = []
@@ -54,6 +50,12 @@ try:
         vision.process(working_memories, sequential_time_memories, work_status)
         sound.process(working_memories, sequential_time_memories, work_status)
         # actor.process(working_memories, sequential_time_memories, work_status)
+
+        key = keyboard.get_key()
+        if key is constants.KEY_SHIFT:
+            sound.start_thread = False
+            break
+        reward.process(sequential_time_memories, key)
 
         memory.associate(working_memories)
         memory.prepare_expectation(working_memories)
@@ -81,10 +83,6 @@ try:
 
         last_process_time = all_duration
 
-        key = keyboard.get_key()
-        if key is constants.KEY_SHIFT:
-            sound.start_thread = False
-            break
 
 except KeyboardInterrupt:
     print("quiting...")

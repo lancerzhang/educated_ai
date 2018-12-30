@@ -241,10 +241,13 @@ def create_working_memory(working_memories, seq_time_memories, children, duratio
         if len(memories) > 0:
             child_memories = remove_duplicate_memory(memories)
             child_memory_rewards = [mem[constants.REWARD] for mem in child_memories]
-            new_reward = np.max(np.array(child_memory_rewards))
+            max_reward = np.max(np.array(child_memory_rewards))
             # new_reward is int32, which will become "\x00\x00\x00\x00" when insert to CodernityDB
-            reward = int(new_reward)
-            new_mem = add_collection_memory(duration_type, child_memories, reward)
+            max_reward = int(max_reward)
+            new_reward = max_reward - 1
+            if new_reward < 0:
+                new_reward = 0
+            new_mem = add_collection_memory(duration_type, child_memories, new_reward)
             seq_time_memories[duration_type].append(new_mem)
             working_memories.append(new_mem)
 

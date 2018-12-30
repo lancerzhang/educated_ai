@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-cap = cv2.VideoCapture('D:/bak/test.mkv')
+cap = cv2.VideoCapture('../data/1440.mp4')
 
 while cap.isOpened():
     ret, frame = cap.read()

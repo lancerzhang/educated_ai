@@ -300,10 +300,10 @@ class DB_CodernityDB:
             doc = None
         return doc
 
-    def get_actor_mouse_memory(self, click_type):
+    def get_action_mouse_memory(self, click_type):
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
-                                 {constants.PHYSICAL_MEMORY_TYPE: constants.ACTOR_MOUSE,
+                                 {constants.PHYSICAL_MEMORY_TYPE: constants.ACTION_MOUSE,
                                   constants.CLICK_TYPE: click_type}, with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:

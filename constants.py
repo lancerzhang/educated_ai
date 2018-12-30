@@ -43,8 +43,9 @@ HAPPEN_TIME = 'hpt'
 LAST_USED_TIME = 'lut'
 MEMORIES = 'mms'
 
-# actor
-ACTOR_MOUSE = 'atm'
+# action
+ACTION_MOUSE = 'atm'
+ACTION_REWARD = 'arw'
 CLICK_TYPE = 'clt'
 
 # main
