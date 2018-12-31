@@ -488,6 +488,10 @@ class Vision(object):
 
     def calculate_action(self, action):
         elapse = time.time() - action[self.CREATE_TIME]
+        if elapse >= action[constants.DURATION]:
+            # if process slow, destination will be quite different
+            elapse = action[constants.DURATION]
+            action.update({self.STATUS: self.COMPLETED})
         # actual degrees is 10 times
         degrees = action[constants.DEGREES] * constants.ACTUAL_DEGREES_TIMES
         # actual speed is 50 times
@@ -496,8 +500,6 @@ class Vision(object):
         new_start_x = self.current_block[self.START_X] + (math.cos(math.radians(degrees)) * elapse * speed)
         self.current_block[self.START_X] = self.calculate_start_x(new_start_x)
         self.current_block[self.START_Y] = self.calculate_start_y(new_start_y)
-        if time.time() > (action[self.CREATE_TIME] + action[constants.DURATION]):
-            action.update({self.STATUS: self.COMPLETED})
 
     def calculate_block_histogram(self, channel_img):
         block_histogram = []
@@ -544,7 +546,6 @@ class Vision(object):
         new_start_y = mouse_y - self.current_block[self.HEIGHT] / 2
         new_block[self.START_X] = self.calculate_start_x(new_start_x)
         new_block[self.START_Y] = self.calculate_start_y(new_start_y)
-        print new_block
         return self.set_movement_absolute(new_block, 0.2)
 
 
@@ -552,7 +553,6 @@ def get_channel_img(bgr, channel):
     # start = time.time()
     yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
     y, u, v = cv2.split(yuv)
-    # print 'get_channel_img ' + str(time.time() - start)
     if channel == 'y':
         return y
     elif channel == 'u':
