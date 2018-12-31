@@ -4,7 +4,7 @@ import numpy as np
 WORKLOAD_DATA = 'duration_data'
 
 REWARD_DATA = 'reward_data'
-SATISFIED_REWARD = 0.5
+SATISFIED_REWARD = 45
 
 
 def init_status():
@@ -16,7 +16,8 @@ def init_status():
     middle_duration = [0] * 15 * pps
     # if free in long time, clean up memories
     long_duration = [0] * 60 * pps
-    rewards = [0] * 30 * pps
+    # satisfied reward in 5 seconds
+    rewards = [0] * 5 * pps
     status.update({WORKLOAD_DATA: {constants.SHORT_DURATION: short_duration, constants.MEDIUM_DURATION: middle_duration,
                                    constants.LONG_DURATION: long_duration}})
     status.update({constants.BUSY: {constants.SHORT_DURATION: False, constants.MEDIUM_DURATION: False,
@@ -37,6 +38,7 @@ def calculate_workload(status, dps, frames, flag):
 def calculate_reward(status, frames):
     if frames > len(status[REWARD_DATA]):
         max_reward = np.max(np.array(status[REWARD_DATA]))
+        #print max_reward
         if max_reward > SATISFIED_REWARD:
             status[constants.REWARD] = True
         else:
@@ -44,7 +46,7 @@ def calculate_reward(status, frames):
 
 
 def calculate_status(status, dps, frames):
-#    print status[constants.REWARD]
+    # print status[constants.REWARD]
     calculate_workload(status, dps, frames, constants.SHORT_DURATION)
     calculate_workload(status, dps, frames, constants.MEDIUM_DURATION)
     calculate_workload(status, dps, frames, constants.LONG_DURATION)

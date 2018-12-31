@@ -411,15 +411,16 @@ def cleanup_working_memories(working_memories, work_status):
     # start = time.time()
     valid_working_memories = [mem for mem in working_memories if
                               mem[constants.STATUS] is constants.MATCHED or mem[constants.END_TIME] > time.time()]
+    live_working_memories = valid_working_memories #data_adaptor.refresh_memories(valid_working_memories)
     if work_status[constants.REWARD]:
-        sorted_working_memories = sorted(valid_working_memories, key=lambda x: (
-            x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL], x[constants.REWARD]),
-                                         reverse=True)
+        sorted_working_memories = sorted(live_working_memories, key=lambda x: (
+            x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL],
+            x[constants.REWARD] * x[constants.STRENGTH]), reverse=True)
     else:
         # not satisfy, reward first
-        sorted_working_memories = sorted(valid_working_memories, key=lambda x: (
-            x[constants.REWARD], x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL]),
-                                         reverse=True)
+        sorted_working_memories = sorted(live_working_memories, key=lambda x: (
+            x[constants.REWARD] * x[constants.STRENGTH], x[constants.MEMORY_DURATION], x[constants.STATUS],
+            x[constants.LAST_RECALL]), reverse=True)
     limited_sorted_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
     # print 'frame used time	' + str(time.time() - start)
     return limited_sorted_working_memories

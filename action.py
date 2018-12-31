@@ -6,7 +6,6 @@ from pynput.mouse import Button, Controller
 
 class Action(object):
     LEFT_CLICK = 'lcl'
-    data_adaptor = None
 
     def __init__(self, ds):
         self.mouse = Controller()

@@ -46,13 +46,20 @@ class DataAdaptor:
         return live_memories
 
     def cleanup_fields(self):
-        self.cleanup_field(constants.PARENT_MEM)
+        self.cleanup_field(constants.PARENT_MEM, 'full')
 
-    def cleanup_field(self, field):
+    def cleanup_field(self, field, clean_type):
         start = time.time()
-        print 'start to cleanup_fields', field
-        memories = self.db.get_all()
-        for mem in memories:
+        print '\nstart to cleanup_fields ', clean_type, ' memory'
+        if clean_type is constants.EDEN:
+            records = self.db.get_eden_memories()
+        elif clean_type is constants.YOUNG:
+            records = self.db.get_young_memories()
+        elif clean_type is constants.OLD:
+            records = self.db.get_old_memories()
+        else:
+            records = self.db.get_all()
+        for mem in records:
             original_list = mem[field]
             # fine unique value from list
             distinct_list = [x for x in set(original_list)]
@@ -94,6 +101,8 @@ class DataAdaptor:
             cleaned = len(records) - len(lives)
         print 'memories were deleted:', cleaned
         print gc_type, ' gc used time ' + str(time.time() - start)
+        if gc_type is constants.YOUNG or gc_type is constants.OLD:
+            self.cleanup_field(constants.PARENT_MEM, gc_type)
         return cleaned
 
     def full_gc(self):

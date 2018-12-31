@@ -1,3 +1,4 @@
+from pynput.mouse import Controller
 import constants
 import copy
 import cv2
@@ -11,15 +12,10 @@ import util
 
 
 class Vision(object):
-    inited = False
-
-    # 1920	960	320	80	16
-    # 1080	540	180	45	9
     SCREEN_WIDTH = 0
     SCREEN_HEIGHT = 0
     ROI_ARR = [12, 36, 72, 144, 288]
     roi_index = 2
-    current_block = None
     START_X = 'sx'
     START_Y = 'sy'
     WIDTH = 'width'
@@ -48,20 +44,14 @@ class Vision(object):
     USED_CHANNEL_FILE = 'data/vuc.npy'
     MEMORY_INDEX_FILE = 'data/vmi.npy'
     VISION_KERNEL_FILE = 'kernels.npy'
-    used_speed_rank = None
-    used_degrees_rank = None
-    used_kernel_rank = None
-    used_channel_rank = None
-    memory_indexes = None
-    vision_kernels = None
     previous_energies = []
     previous_block_histogram = []
 
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
     current_action = {STATUS: COMPLETED}
-    data_service = None
 
     def __init__(self, ds):
+        self.mouse = Controller()
         self.data_service = ds
         center_x = self.SCREEN_WIDTH / 2
         center_y = self.SCREEN_HEIGHT / 2
@@ -104,7 +94,7 @@ class Vision(object):
         np.save(self.USED_DEGREES_FILE, self.used_degrees_rank)
         np.save(self.USED_CHANNEL_FILE, self.used_channel_rank)
 
-    def process(self, working_memories, sequential_time_memories, work_status):
+    def process(self, working_memories, sequential_time_memories, work_status, key):
         # start = time.time()
         if self.current_action[self.STATUS] is self.IN_PROGRESS:
             self.calculate_action(self.current_action)
@@ -163,20 +153,23 @@ class Vision(object):
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
 
-        if not work_status[constants.BUSY][constants.SHORT_DURATION]:
-            if self.current_action[self.STATUS] is not self.IN_PROGRESS:
-                new_slice_memory = self.aware()
-                if new_slice_memory is not None:
-                    sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-                    working_memories.append(new_slice_memory)
+        if self.current_action[self.STATUS] is not self.IN_PROGRESS:
+            if key is constants.KEY_ALT or key is constants.KEY_CTRL:
+                new_slice_memory = self.move_focus_to_mouse()
+                sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+                working_memories.append(new_slice_memory)
+            else:
+                if not work_status[constants.BUSY][constants.SHORT_DURATION]:
+                    new_slice_memory = self.aware()
+                    if new_slice_memory is not None:
+                        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+                        working_memories.append(new_slice_memory)
 
-        if not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
-            if self.current_action[self.STATUS] is not self.IN_PROGRESS:
-                new_slice_memory = self.explore()
-                if new_slice_memory is not None:
-                    sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-                    working_memories.append(new_slice_memory)
-
+                if not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
+                    new_slice_memory = self.explore()
+                    if new_slice_memory is not None:
+                        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+                        working_memories.append(new_slice_memory)
         # print 'frame used time	' + str(time.time()-start)
 
     def match_features(self, slice_memories, working_memories, sequential_time_memories):
@@ -542,6 +535,17 @@ class Vision(object):
 
     def grab(self, top, left, width, height):
         return None
+
+    def move_focus_to_mouse(self):
+        new_block = {}
+        mouse_x = int(self.mouse.position[0])
+        mouse_y = int(self.mouse.position[1])
+        new_start_x = mouse_x - self.current_block[self.WIDTH] / 2
+        new_start_y = mouse_y - self.current_block[self.HEIGHT] / 2
+        new_block[self.START_X] = self.calculate_start_x(new_start_x)
+        new_block[self.START_Y] = self.calculate_start_y(new_start_y)
+        print new_block
+        return self.set_movement_absolute(new_block, 0.2)
 
 
 def get_channel_img(bgr, channel):

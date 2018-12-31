@@ -5,7 +5,6 @@ import numpy as np
 
 
 class ScreenVision(Vision):
-    sct = None
 
     def __init__(self, ds):
         self.sct = mss.mss()

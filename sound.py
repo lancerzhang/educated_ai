@@ -36,10 +36,6 @@ class Sound(object):
     USED_KERNEL_FILE = 'data/suk.npy'
     MEMORY_INDEX_FILE = 'data/smi.npy'
     SOUND_KERNEL_FILE = 'kernels.npy'
-    used_kernel_rank = None
-    sound_kernels = None
-    memory_indexes = None
-    previous_phase = None
     previous_energies = []
 
     ROI_ARR = [3, 5, 9, 13]
@@ -51,7 +47,7 @@ class Sound(object):
 
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 
-    def __init__(self, ds):
+    def __init__(self):
         try:
             self.memory_indexes = np.load(self.MEMORY_INDEX_FILE)
         except IOError:
@@ -63,6 +59,7 @@ class Sound(object):
             self.used_kernel_rank = np.array([])
 
         self.sound_kernels = np.load(self.SOUND_KERNEL_FILE)
+        self.previous_phase = None
 
     def receive(self, phase_duration=DEFAULT_PHASE_DURATION):
         print 'start to receive data.\n'
