@@ -1,8 +1,15 @@
-import time, uuid, memory, constants, util, thread
+import constants
+import logging
+import memory
+import time
+import util
+import uuid
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S')
 
 
 class DataAdaptor:
-    is_debug = False
     start_thread = True
     seq = 0
 
@@ -50,7 +57,7 @@ class DataAdaptor:
 
     def cleanup_field(self, field, clean_type):
         start = time.time()
-        print '\nstart to cleanup_fields ', clean_type, ' memory'
+        logging.info('start to cleanup_fields {0} memory'.format(clean_type))
         if clean_type is constants.EDEN:
             records = self.db.get_eden_memories()
         elif clean_type is constants.YOUNG:
@@ -69,10 +76,9 @@ class DataAdaptor:
                 if sub_mem is not None:
                     new_list.append(element)
             if len(new_list) != len(original_list):
-                if self.is_debug:
-                    print 'clean up from ', len(original_list), ' to ', len(new_list)
+                logging.debug('clean up from {0} to {1}'.format(len(original_list), len(new_list)))
                 self.update_memory({field: new_list}, mem[constants.MID])
-        print 'cleanup_fields used time ' + str(time.time() - start)
+        logging.info('cleanup_fields used time {0}'.format(time.time() - start))
 
     # def schedule_housekeep(self):
     #     self.seq = self.seq + 1
@@ -82,7 +88,7 @@ class DataAdaptor:
 
     def gc(self, gc_type):
         start = time.time()
-        print '\nstart to gc ', gc_type, ' memory'
+        logging.info('start to gc {0} memory'.format(gc_type))
         if gc_type is constants.EDEN:
             records = self.db.get_eden_memories()
         elif gc_type is constants.YOUNG:
@@ -91,7 +97,7 @@ class DataAdaptor:
             records = self.db.get_old_memories()
         else:
             records = self.db.get_all()
-        print 'memories to be refresh:', len(records)
+        logging.info('memories to be refresh:{0}'.format(len(records)))
         lives = self.refresh_memories(records)
         if records is None:
             cleaned = 0
@@ -99,8 +105,8 @@ class DataAdaptor:
             cleaned = len(records)
         else:
             cleaned = len(records) - len(lives)
-        print 'memories were deleted:', cleaned
-        print gc_type, ' gc used time ' + str(time.time() - start)
+        logging.info('memories were deleted:{0}'.format(cleaned))
+        logging.info('{0} gc used time {1}'.format(gc_type, time.time() - start))
         if gc_type is constants.YOUNG or gc_type is constants.OLD:
             self.cleanup_field(constants.PARENT_MEM, gc_type)
         return cleaned
@@ -111,11 +117,9 @@ class DataAdaptor:
     def partial_gc(self):
         self.seq = self.seq + 1
         start = time.time()
-        if self.is_debug:
-            print '\nstart to partial housekeep memory'
+        logging.debug('start to partial housekeep memory')
         records = self.db.search_housekeep(self.seq % 100)
-        if self.is_debug:
-            print 'memories to be refresh:', len(records)
+        logging.debug('memories to be refresh:{0}'.format(len(records)))
         lives = self.refresh_memories(records)
         if records is None:
             cleaned = 0
@@ -123,9 +127,8 @@ class DataAdaptor:
             cleaned = len(records)
         else:
             cleaned = len(records) - len(lives)
-        if self.is_debug:
-            print 'memories were deleted:', cleaned
-            print 'partial_housekeep used time ' + str(time.time() - start)
+        logging.debug('memories were deleted:{0}'.format(cleaned))
+        logging.debug('partial_housekeep used time:{0}'.format(time.time() - start))
         return cleaned
 
     # private method
@@ -186,15 +189,12 @@ class DataAdaptor:
             for j in range(i + 1, len(memories)):
                 list2 = memories[j].get(field)
                 if len(list1) > 0 and util.list_equal(list1, list2):
-                    # print memories[i]
-                    # print memories[j]
-                    # print ' '
                     count = count + 1
                     break
         return count
 
     def synchronize_memory_time(self, system_last_active_time):
-        print 'start to synchronize memories'
+        logging.info('start to synchronize memories')
         gap = time.time() - system_last_active_time
         records = self.db.get_all()
         for mem in records:

@@ -1,11 +1,15 @@
 from vision import Vision
 import cv2
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S')
 
 
 class VideoFileVision(Vision):
 
     def __init__(self, ds, file_path):
-        print 'start to load video file'
+        logging.info('start to load video file')
         self.file_path = file_path
         self.cap = cv2.VideoCapture(file_path)
         self.SCREEN_WIDTH = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -14,7 +18,6 @@ class VideoFileVision(Vision):
         super(VideoFileVision, self).__init__(ds)
 
     def process(self, working_memories, sequential_time_memories, work_status, key):
-        # print self.current_block
         ret, self.frame = self.cap.read()
         if self.frame is None:
             self.cap = cv2.VideoCapture(self.file_path)

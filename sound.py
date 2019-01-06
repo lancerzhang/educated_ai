@@ -3,6 +3,7 @@ import constants
 import copy
 import cv2
 import librosa
+import logging
 import math
 import memory
 import numpy as np
@@ -12,6 +13,8 @@ import skimage.measure
 import time
 import util
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S')
 
 class Sound(object):
     start_thread = True
@@ -62,7 +65,7 @@ class Sound(object):
         self.previous_phase = None
 
     def receive(self, phase_duration=DEFAULT_PHASE_DURATION):
-        print 'start to receive sound data.\n'
+        logging.info('start to receive sound data.')
         try:
             audio = pyaudio.PyAudio()
             stream = audio.open(format=self.FORMAT,
@@ -102,8 +105,7 @@ class Sound(object):
         np.save(self.USED_KERNEL_FILE, self.used_kernel_rank)
 
     def process(self, working_memories, sequential_time_memories, work_status):
-        # start = time.time()
-
+        start = time.time()
         frequency_map = self.get_frequency_map()
         if frequency_map is None:
             return
@@ -143,7 +145,7 @@ class Sound(object):
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-        # print 'process	' + str(time.time() - start)
+        logging.debug('process used time:{0}'.format(time.time() - start))
 
     def match_features(self, frequency_map, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []

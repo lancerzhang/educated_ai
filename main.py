@@ -10,6 +10,7 @@ from vision_video_file import VideoFileVision
 import constants
 import copy
 import getopt
+import logging
 import memory
 import numpy as np
 import status
@@ -17,6 +18,9 @@ import sys
 import thread
 import time
 import util
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S')
 
 DATA_FOLDER = 'data/CodernityDB/'
 MAIN_CONFIG_FILE = 'data/main.npy'
@@ -48,7 +52,6 @@ def save_for_exit():
 
 def main(argv):
     is_hibernate = None
-    is_debug = False
     video_file = None
 
     try:
@@ -66,7 +69,7 @@ def main(argv):
             video_file = arg
 
     try:
-        print 'initializing, please wait.\n'
+        logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
         data_adaptor = DataAdaptor(DB_CodernityDB(folder=DATA_FOLDER))
         if is_hibernate is None or is_hibernate is not 'no':
@@ -90,7 +93,7 @@ def main(argv):
         frames = 0
         last_process_time = 0
         work_status = status.init_status()
-        print 'initialized.\n'
+        logging.info('initialized.')
         while 1:
             start = time.time()
             ts1 = time.time()
@@ -100,7 +103,7 @@ def main(argv):
                 save_for_exit()
                 break
 
-            # print frames
+            logging.debug('frame is {0} '.format(frames))
             frames = frames + 1
 
             status.calculate_status(work_status, dps, frames)
@@ -155,9 +158,10 @@ def main(argv):
             d9 = ts10 - ts9
 
             all_duration = util.time_diff(start)
-            print 'frame used time ', all_duration
-            if is_debug and all_duration > 0.2:
-                print 'used time detail ', np.around([d1, d2, d3, d4, d5, d6, d7, d8, d9], decimals=2)
+            logging.debug('frame used time {0} '.format(all_duration))
+            if all_duration > 0.2:
+                logging.debug(
+                    'used time detail {0} '.format(np.around([d1, d2, d3, d4, d5, d6, d7, d8, d9], decimals=2)))
 
             # all end, sleep to avoid running too fast
             if all_duration < dps:
@@ -167,7 +171,7 @@ def main(argv):
             last_process_time = all_duration
 
     except KeyboardInterrupt:
-        print("exit...")
+        logging.info('exit...')
         save_for_exit()
 
 

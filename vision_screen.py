@@ -1,13 +1,16 @@
 from vision import Vision
-import cv2
+import logging
 import mss
 import numpy as np
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S')
 
 
 class ScreenVision(Vision):
 
     def __init__(self, ds):
-        print 'start to capture screen.'
+        logging.info('start to capture screen.')
         self.sct = mss.mss()
         monitor = self.sct.monitors[1]
         self.SCREEN_WIDTH = monitor['width']

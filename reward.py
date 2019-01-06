@@ -1,18 +1,20 @@
 import constants
+import logging
 import memory
-import time
 from pynput.mouse import Button, Controller
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S')
 
 
 class Reward(object):
 
     def __init__(self):
-        self.is_debug = False
+        return
 
     def add_reward_memory(self, sequential_time_memories, reward):
         action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTION_REWARD, constants.REWARD: reward}
-        if self.is_debug:
-            print 'added reward memory ', action
+        logging.debug('added reward memory {0}'.format(action))
         action_memory = memory.add_physical_memory(action)
         slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory], reward)
         sequential_time_memories[constants.SLICE_MEMORY].append(slice_memory)

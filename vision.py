@@ -2,6 +2,7 @@ from pynput.mouse import Controller
 import constants
 import copy
 import cv2
+import logging
 import math
 import memory
 import numpy as np
@@ -9,6 +10,9 @@ import random
 import skimage.measure
 import time
 import util
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S')
 
 
 class Vision(object):
@@ -95,7 +99,7 @@ class Vision(object):
         np.save(self.USED_CHANNEL_FILE, self.used_channel_rank)
 
     def process(self, working_memories, sequential_time_memories, work_status, key):
-        # start = time.time()
+        start = time.time()
         if self.current_action[self.STATUS] is self.IN_PROGRESS:
             self.calculate_action(self.current_action)
 
@@ -178,8 +182,7 @@ class Vision(object):
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-
-        # print 'frame used time	' + str(time.time()-start)
+        logging.debug('process used time:{0}'.format(time.time() - start))
 
     def match_features(self, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []
@@ -211,7 +214,7 @@ class Vision(object):
 
     # match the experience vision sense
     def filter_feature(self, data, kernel, feature=None):
-        # start = time.time()
+        start = time.time()
         feature_data = copy.deepcopy(self.FEATURE_DATA)
         feature_data[constants.KERNEL] = kernel
         data_map = cv2.resize(data, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
@@ -238,7 +241,7 @@ class Vision(object):
                 feature_data[constants.FEATURE] = avg_feature
             else:
                 feature_data[constants.FEATURE] = new_feature
-        # print 'filter_feature ' + str(time.time() - start)
+        logging.debug('filter_feature used time:{0}'.format(time.time() - start))
         return feature_data
 
     # get a frequent use kernel or a random kernel by certain possibility
@@ -257,7 +260,7 @@ class Vision(object):
 
     # try to find more detail
     def search_feature(self):
-        # start = time.time()
+        start = time.time()
         channel = self.get_channel()
         img = self.get_region()
         kernel = self.get_kernel()
@@ -271,7 +274,7 @@ class Vision(object):
             self.update_memory_indexes(channel, kernel, mem[constants.MID])
         self.update_kernel_rank(kernel)
         self.update_channel_rank(channel)
-        # print 'search_feature	' + str(time.time() - start)
+        logging.debug('search_feature used time:{0}'.format(time.time() - start))
         return mem
 
     # search memory by kernel using index
@@ -303,7 +306,7 @@ class Vision(object):
                 memory_ids.append(mid)
 
     def aware(self):
-        # start = time.time()
+        start = time.time()
         duration = self.get_duration()
         pil_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         full_img = np.array(pil_image)
@@ -311,10 +314,10 @@ class Vision(object):
         if block is not None and block['v'] > self.REGION_VARIANCE_THRESHOLD:
             # move focus to variable region
             return self.set_movement_absolute(block, duration)
-        # print 'aware	' + str(time.time() - start)
+        logging.debug('aware used time:{0}'.format(time.time() - start))
 
     def find_most_variable_region(self, full_img):
-        # start = time.time()
+        start = time.time()
         new_block = {}
         channel_img = get_channel_img(full_img, 'y')
         this_block_histogram = self.calculate_block_histogram(channel_img)
@@ -337,7 +340,7 @@ class Vision(object):
             new_block[self.START_Y] = self.calculate_start_y(new_start_y)
             new_block.update({'v': max_var})
             self.previous_block_histogram = this_block_histogram
-        # print 'find_most_variable_region ' + str(time.time() - start)
+        logging.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
         return new_block
 
     def update_degrees_rank(self, degrees):
@@ -443,12 +446,12 @@ class Vision(object):
         return self.ZOOM_OUT
 
     def get_region(self):
-        # start = time.time()
+        start = time.time()
         roi_image = self.grab(self.current_block[self.START_Y], self.current_block[self.START_X],
                               self.current_block[self.WIDTH], self.current_block[self.HEIGHT])
         cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
         img = cv2.resize(cv_img, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
-        # print 'get_region ' + str(time.time() - start)
+        logging.debug('get_region used time:{0}'.format(time.time() - start))
         return img
 
     def set_movement_absolute(self, new_block, duration):
@@ -523,7 +526,7 @@ class Vision(object):
 
     def match_movement_memories(self, memories):
         mem = memories[0]
-        print 'reproduce movement ', mem
+        logging.info('reproduce movement {0}'.format(mem))
         memory.recall_memory(mem)
         self.current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
                                constants.DURATION: mem[constants.DURATION], self.CREATE_TIME: time.time(),
@@ -535,7 +538,7 @@ class Vision(object):
 
     def match_zoom_memories(self, memories):
         mem = memories[0]
-        print 'reproduce zoom ', mem
+        logging.info('reproduce zoom '.format(mem))
         memory.recall_memory(mem)
         zoom_type = mem[constants.ZOOM_TYPE]
         if zoom_type is self.ZOOM_OUT:
