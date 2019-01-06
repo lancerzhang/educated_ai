@@ -2,7 +2,7 @@ import time, uuid, memory, constants, util, thread
 
 
 class DataAdaptor:
-    is_log = False
+    is_debug = False
     start_thread = True
     seq = 0
 
@@ -69,7 +69,7 @@ class DataAdaptor:
                 if sub_mem is not None:
                     new_list.append(element)
             if len(new_list) != len(original_list):
-                if self.is_log:
+                if self.is_debug:
                     print 'clean up from ', len(original_list), ' to ', len(new_list)
                 self.update_memory({field: new_list}, mem[constants.MID])
         print 'cleanup_fields used time ' + str(time.time() - start)
@@ -111,10 +111,10 @@ class DataAdaptor:
     def partial_gc(self):
         self.seq = self.seq + 1
         start = time.time()
-        if self.is_log:
+        if self.is_debug:
             print '\nstart to partial housekeep memory'
         records = self.db.search_housekeep(self.seq % 100)
-        if self.is_log:
+        if self.is_debug:
             print 'memories to be refresh:', len(records)
         lives = self.refresh_memories(records)
         if records is None:
@@ -123,7 +123,7 @@ class DataAdaptor:
             cleaned = len(records)
         else:
             cleaned = len(records) - len(lives)
-        if self.is_log:
+        if self.is_debug:
             print 'memories were deleted:', cleaned
             print 'partial_housekeep used time ' + str(time.time() - start)
         return cleaned
@@ -133,7 +133,8 @@ class DataAdaptor:
         uid = str(uuid.uuid4())
         uid = uid.replace('-', '')
         content.update(
-            {constants.MID: uid, constants.STRENGTH: 100, constants.RECALL: 1, constants.LAST_RECALL: int(time.time())})
+            {constants.MID: uid, constants.STRENGTH: 100, constants.RECALL: 1,
+             constants.LAST_RECALL_TIME: int(time.time())})
         record = self.db.insert(content)
         return uid
 
@@ -191,3 +192,11 @@ class DataAdaptor:
                     count = count + 1
                     break
         return count
+
+    def synchronize_memory_time(self, system_last_active_time):
+        print 'start to synchronize memories'
+        gap = time.time() - system_last_active_time
+        records = self.db.get_all()
+        for mem in records:
+            last_recall_time = mem[constants.LAST_RECALL_TIME]
+            self.update_memory({constants.LAST_RECALL_TIME: last_recall_time + gap}, mem[constants.MID])

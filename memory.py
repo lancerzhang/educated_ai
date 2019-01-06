@@ -34,7 +34,7 @@ DURATION_LONG = 360
 data_adaptor = None
 
 # use parent to find experience memories
-BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL: 0,
+BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL_TIME: 0,
                 constants.PARENT_MEM: [], constants.CHILD_MEM: []}
 
 BASIC_MEMORY_GROUP_ARR = {constants.SLICE_MEMORY: [], SHORT_MEMORY: [], INSTANT_MEMORY: [], LONG_MEMORY: []}
@@ -65,7 +65,7 @@ threshold_of_working_memories = 50
 def refresh(mem, recall=False, forget=False):
     deleted = False
     now_time = int(time.time())
-    time_elapse = now_time - mem[constants.LAST_RECALL]
+    time_elapse = now_time - mem[constants.LAST_RECALL_TIME]
     if time_elapse < TIME_SEC[0]:
         return deleted
     count = 0
@@ -90,7 +90,7 @@ def refresh(mem, recall=False, forget=False):
                 # if this is recall, will update recall count and last recall time
                 if recall:
                     mem[constants.RECALL] = mem[constants.RECALL] + 1
-                    mem[constants.LAST_RECALL] = int(time.time())
+                    mem[constants.LAST_RECALL_TIME] = int(time.time())
             break
     return deleted
 
@@ -216,7 +216,7 @@ def recall_feature_memory(mem, feature):
 def recall_memory(mem, addition=None):
     refresh(mem, True, False)
     update_content = {constants.STRENGTH: mem[constants.STRENGTH], constants.RECALL: mem[constants.RECALL],
-                      constants.LAST_RECALL: mem[constants.LAST_RECALL]}
+                      constants.LAST_RECALL_TIME: mem[constants.LAST_RECALL_TIME]}
     if addition is not None:
         update_content.update(addition)
     data_adaptor.update_memory(update_content, mem[constants.MID])
@@ -333,7 +333,7 @@ def convert_to_expectation(mem):
 
 def update_last_recall(memories):
     for mem in memories:
-        data_adaptor.update_memory({constants.LAST_RECALL: int(time.time())}, mem[constants.MID])
+        data_adaptor.update_memory({constants.LAST_RECALL_TIME: int(time.time())}, mem[constants.MID])
 
 
 # append new memories to memories list if it's not exist
@@ -362,7 +362,7 @@ def associate(working_memories):
     related_memories = find_update_max_related_memories(matched_memories)
     append_working_memories(valid_working_memories, related_memories)
     sorted_working_memories = sorted(valid_working_memories,
-                                     key=lambda x: (x[constants.LAST_RECALL], x[constants.REWARD]), reverse=True)
+                                     key=lambda x: (x[constants.LAST_RECALL_TIME], x[constants.REWARD]), reverse=True)
     limited_sorted_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
     # print 'associate used time	' + str(time.time() - start)
     return limited_sorted_working_memories
@@ -414,13 +414,13 @@ def cleanup_working_memories(working_memories, work_status):
     live_working_memories = valid_working_memories #data_adaptor.refresh_memories(valid_working_memories)
     if work_status[constants.REWARD]:
         sorted_working_memories = sorted(live_working_memories, key=lambda x: (
-            x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL],
+            x[constants.MEMORY_DURATION], x[constants.STATUS], x[constants.LAST_RECALL_TIME],
             x[constants.REWARD] * x[constants.STRENGTH]), reverse=True)
     else:
         # not satisfy, reward first
         sorted_working_memories = sorted(live_working_memories, key=lambda x: (
             x[constants.REWARD] * x[constants.STRENGTH], x[constants.MEMORY_DURATION], x[constants.STATUS],
-            x[constants.LAST_RECALL]), reverse=True)
+            x[constants.LAST_RECALL_TIME]), reverse=True)
     limited_sorted_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
     # print 'frame used time	' + str(time.time() - start)
     return limited_sorted_working_memories

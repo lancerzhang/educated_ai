@@ -31,7 +31,7 @@ class DB_TinyDB:
 
     def search_by_last_call(self, last_call):
         query = Query()
-        return self.table.search(query[constants.LAST_RECALL] < last_call)
+        return self.table.search(query[constants.LAST_RECALL_TIME] < last_call)
 
     def get_vision_move_memory(self, degrees, speed, duration):
         query = Query()

@@ -127,6 +127,7 @@ class Vision(object):
             sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
             working_memories.append(new_slice_memory)
 
+        # when she's mature, below is the major way of focus move/zoom.
         slice_movement_memories = [mem for mem in working_memories if
                                    constants.MEMORY_DURATION in mem and
                                    mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
@@ -150,26 +151,34 @@ class Vision(object):
             sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
             working_memories.append(new_slice_memory)
 
-        if not work_status[constants.BUSY][constants.LONG_DURATION]:
-            self.save_files()
-
+        # when she's not mature, need to guide her.
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
             if key is constants.KEY_ALT or key is constants.KEY_CTRL:
+                # the 1st and most efficient way is to set focus directly, and reward it
                 new_slice_memory = self.move_focus_to_mouse()
                 sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
                 working_memories.append(new_slice_memory)
-            else:
+            elif work_status[constants.REWARD]:
+                # stay more time on reward region.
+                print ''
+            elif not work_status[constants.REWARD]:
+                # move out from current reward region.
                 if not work_status[constants.BUSY][constants.SHORT_DURATION]:
+                    # affected by environment vision change.
                     new_slice_memory = self.aware()
                     if new_slice_memory is not None:
                         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
                         working_memories.append(new_slice_memory)
-
-                if not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
+                if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
+                    # if environment not change, random do some change.
                     new_slice_memory = self.explore()
                     if new_slice_memory is not None:
                         sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
                         working_memories.append(new_slice_memory)
+
+        if not work_status[constants.BUSY][constants.LONG_DURATION]:
+            self.save_files()
+
         # print 'frame used time	' + str(time.time()-start)
 
     def match_features(self, slice_memories, working_memories, sequential_time_memories):
@@ -514,23 +523,25 @@ class Vision(object):
 
     def match_movement_memories(self, memories):
         mem = memories[0]
+        print 'reproduce movement ', mem
+        memory.recall_memory(mem)
         self.current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
                                constants.DURATION: mem[constants.DURATION], self.CREATE_TIME: time.time(),
                                constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
                                self.STATUS: self.IN_PROGRESS}
         mem.update({constants.HAPPEN_TIME: time.time()})
         mem[constants.STATUS] = constants.MATCHED
-        memory.recall_memory(mem)
         return mem
 
     def match_zoom_memories(self, memories):
         mem = memories[0]
+        print 'reproduce zoom ', mem
+        memory.recall_memory(mem)
         zoom_type = mem[constants.ZOOM_TYPE]
         if zoom_type is self.ZOOM_OUT:
             self.zoom_out()
         elif zoom_type is self.ZOOM_IN:
             self.zoom_in()
-        memory.recall_memory(mem)
         mem[constants.STATUS] = constants.MATCHED
         mem.update({constants.HAPPEN_TIME: time.time()})
         return mem
@@ -546,7 +557,7 @@ class Vision(object):
         new_start_y = mouse_y - self.current_block[self.HEIGHT] / 2
         new_block[self.START_X] = self.calculate_start_x(new_start_x)
         new_block[self.START_Y] = self.calculate_start_y(new_start_y)
-        return self.set_movement_absolute(new_block, 0.2)
+        return self.set_movement_absolute(new_block, 0.5)
 
 
 def get_channel_img(bgr, channel):

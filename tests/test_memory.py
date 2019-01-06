@@ -186,7 +186,7 @@ class TestMemory(unittest.TestCase):
         self.assertEquals(1, len(working_memories))
         self.assertGreater(working_memories[0][constants.START_TIME], 0)
         self.assertGreater(working_memories[0][constants.END_TIME], 0)
-        self.assertGreater(working_memories[0][constants.LAST_RECALL], 0)
+        self.assertGreater(working_memories[0][constants.LAST_RECALL_TIME], 0)
         memory.append_working_memories(working_memories, new_memories)
         self.assertEquals(1, len(working_memories))
         mem2 = self.data_service.add_memory({constants.MEMORY_DURATION: memory.INSTANT_MEMORY})
@@ -199,9 +199,9 @@ class TestMemory(unittest.TestCase):
         memory.threshold_of_working_memories = 3
         mem0 = self.data_service.add_memory({constants.STATUS: constants.MATCHING, constants.END_TIME: 1})
         pmem1 = self.data_service.add_memory(
-            {constants.LAST_RECALL: 1, constants.REWARD: 1, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+            {constants.LAST_RECALL_TIME: 1, constants.REWARD: 1, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
         pmem2 = self.data_service.add_memory(
-            {constants.LAST_RECALL: 2, constants.REWARD: 2, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+            {constants.LAST_RECALL_TIME: 2, constants.REWARD: 2, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
         now = time.time() + 100
         mem3 = self.data_service.add_memory(
             {constants.END_TIME: now, constants.STATUS: constants.MATCHED,
@@ -209,8 +209,8 @@ class TestMemory(unittest.TestCase):
         mem4 = self.data_service.add_memory(
             {constants.END_TIME: now, constants.STATUS: constants.MATCHED,
              constants.PARENT_MEM: [6, pmem1[constants.MID], pmem2[constants.MID], 8]})
-        mem3[constants.LAST_RECALL] = now
-        mem4[constants.LAST_RECALL] = now
+        mem3[constants.LAST_RECALL_TIME] = now
+        mem4[constants.LAST_RECALL_TIME] = now
         memories = [mem0, mem3, mem4]
         working_memories = memory.associate(memories)
         self.assertEqual(3, len(working_memories))

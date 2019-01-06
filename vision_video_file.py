@@ -5,6 +5,7 @@ import cv2
 class VideoFileVision(Vision):
 
     def __init__(self, ds, file_path):
+        print 'start to load video file'
         self.file_path = file_path
         self.cap = cv2.VideoCapture(file_path)
         self.SCREEN_WIDTH = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))

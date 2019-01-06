@@ -2,7 +2,7 @@ from pynput import keyboard
 import constants
 
 
-class KeyboardMonitor(object):
+class InputListener(object):
     key = ''
 
     def __init__(self):

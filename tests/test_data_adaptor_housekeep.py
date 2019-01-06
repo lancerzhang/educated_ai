@@ -20,7 +20,7 @@ class TestDB(unittest.TestCase):
         memory.forget_memory = True
 
     def test_housekeep0(self):
-        self.data_service._add_memory({constants.LAST_RECALL: time.time() - 50})
+        self.data_service._add_memory({constants.LAST_RECALL_TIME: time.time() - 50})
         cleaned = self.data_service.full_gc()
         self.assertEqual(0, cleaned)
 
@@ -29,7 +29,7 @@ class TestDB(unittest.TestCase):
         last_recall = time.time() - 65000000
         last_recall = int(last_recall)
         eid = self.data_service._add_memory()
-        self.data_service.update_memory({constants.LAST_RECALL: last_recall}, eid)
+        self.data_service.update_memory({constants.LAST_RECALL_TIME: last_recall}, eid)
         cleaned = self.data_service.full_gc()
         self.assertEqual(1, cleaned)
         self.assertEqual(0, len(self.data_service.get_all_memories()))
@@ -39,11 +39,11 @@ class TestDB(unittest.TestCase):
         last_recall1 = time.time() - 65000000
         last_recall1 = int(last_recall1)
         eid1 = self.data_service._add_memory()
-        self.data_service.update_memory({constants.LAST_RECALL: last_recall1}, eid1)
+        self.data_service.update_memory({constants.LAST_RECALL_TIME: last_recall1}, eid1)
         last_recall2 = time.time() - 50
         last_recall2 = int(last_recall2)
         eid2 = self.data_service._add_memory()
-        self.data_service.update_memory({constants.LAST_RECALL: last_recall2}, eid2)
+        self.data_service.update_memory({constants.LAST_RECALL_TIME: last_recall2}, eid2)
         cleaned = self.data_service.full_gc()
         self.assertEqual(1, cleaned)
         self.assertEqual(1, len(self.data_service.get_all_memories()))
@@ -53,13 +53,13 @@ class TestDB(unittest.TestCase):
         last_recall1 = time.time() - 65000000
         last_recall1 = int(last_recall1)
         eid1 = self.data_service._add_memory()
-        self.data_service.update_memory({constants.LAST_RECALL: last_recall1}, eid1)
+        self.data_service.update_memory({constants.LAST_RECALL_TIME: last_recall1}, eid1)
         last_recall2 = time.time() - 50
         last_recall2 = int(last_recall2)
         eid2 = self.data_service._add_memory()
-        self.data_service.update_memory({constants.LAST_RECALL: last_recall2}, eid2)
+        self.data_service.update_memory({constants.LAST_RECALL_TIME: last_recall2}, eid2)
         eid3 = self.data_service._add_memory()
-        self.data_service.update_memory({constants.LAST_RECALL: last_recall1}, eid3)
+        self.data_service.update_memory({constants.LAST_RECALL_TIME: last_recall1}, eid3)
         cleaned = self.data_service.full_gc()
         self.assertEqual(2, cleaned)
         self.assertEqual(1, len(self.data_service.get_all_memories()))

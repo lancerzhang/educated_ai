@@ -19,7 +19,7 @@ MID = 'mid'
 STRENGTH = 'str'
 RECALL = 'rcl'
 REWARD = 'rwd'
-LAST_RECALL = 'lrc'
+LAST_RECALL_TIME = 'lrt'
 KERNEL = 'knl'
 FEATURE = 'ftr'
 SIMILAR = 'sml'
@@ -50,6 +50,7 @@ CLICK_TYPE = 'clt'
 
 # main
 process_per_second = 10
+LAST_ACTIVE_TIME = 'lat'
 
 # gc
 EDEN = 'eden'

@@ -7,6 +7,7 @@ import numpy as np
 class ScreenVision(Vision):
 
     def __init__(self, ds):
+        print 'start to capture screen.'
         self.sct = mss.mss()
         monitor = self.sct.monitors[1]
         self.SCREEN_WIDTH = monitor['width']

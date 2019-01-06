@@ -119,7 +119,7 @@ import constants,hashlib"""
         super(HousekeepIndex, self).__init__(*args, **kwargs)
 
     def make_key_value(self, data):
-        lcl = int(data.get(constants.LAST_RECALL))
+        lcl = int(data.get(constants.LAST_RECALL_TIME))
         if lcl is None:
             return None
         else:
@@ -158,7 +158,7 @@ import constants"""
         super(LastRecallIndex, self).__init__(*args, **kwargs)
 
     def make_key_value(self, data):
-        a_val = data.get(constants.LAST_RECALL)
+        a_val = data.get(constants.LAST_RECALL_TIME)
         if a_val is not None:
             return a_val, None
         return None

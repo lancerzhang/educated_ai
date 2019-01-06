@@ -62,7 +62,7 @@ class Sound(object):
         self.previous_phase = None
 
     def receive(self, phase_duration=DEFAULT_PHASE_DURATION):
-        print 'start to receive data.\n'
+        print 'start to receive sound data.\n'
         try:
             audio = pyaudio.PyAudio()
             stream = audio.open(format=self.FORMAT,
