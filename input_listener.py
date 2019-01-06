@@ -1,5 +1,9 @@
 from pynput import keyboard
 import constants
+import logging
+
+logger = logging.getLogger('InputListener')
+logger.setLevel(logging.INFO)
 
 
 class InputListener(object):

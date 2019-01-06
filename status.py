@@ -3,8 +3,8 @@ import logging
 import util
 import numpy as np
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S')
+logger = logging.getLogger('status')
+logger.setLevel(logging.INFO)
 
 WORKLOAD_DATA = 'duration_data'
 REWARD_DATA = 'reward_data'
@@ -33,9 +33,10 @@ def init_status():
 
 def calculate_workload(status, dps, frames, flag):
     avg_workload = util.list_avg(status[WORKLOAD_DATA][flag])
+    logger.debug('avg_workload is {0}'.format(avg_workload))
     if frames > len(status[WORKLOAD_DATA][flag]) and avg_workload > dps * 0.8:
         status[constants.BUSY].update({flag: True})
-        logging.info('{0} status is busy.'.format(flag))
+        logger.warn('{0} status is busy.'.format(flag))
     else:
         status[constants.BUSY].update({flag: False})
 
@@ -43,7 +44,7 @@ def calculate_workload(status, dps, frames, flag):
 def calculate_reward(status, frames):
     if frames > len(status[REWARD_DATA]):
         max_reward = np.max(np.array(status[REWARD_DATA]))
-        logging.debug('max reward is '.format(max_reward))
+        logger.debug('max reward is {0} '.format(max_reward))
         if max_reward > SATISFIED_REWARD:
             status[constants.REWARD] = True
         else:
@@ -51,7 +52,7 @@ def calculate_reward(status, frames):
 
 
 def calculate_status(status, dps, frames):
-    logging.debug('status is '.format(status))
+    logger.debug('status is {0} '.format(status))
     calculate_workload(status, dps, frames, constants.SHORT_DURATION)
     calculate_workload(status, dps, frames, constants.MEDIUM_DURATION)
     calculate_workload(status, dps, frames, constants.LONG_DURATION)

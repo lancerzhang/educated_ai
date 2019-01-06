@@ -4,8 +4,8 @@ import memory
 import time
 from pynput.mouse import Button, Controller
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S')
+logger = logging.getLogger('Action')
+logger.setLevel(logging.INFO)
 
 
 class Action(object):
@@ -63,5 +63,5 @@ class Action(object):
         slice_memory = None
         if action_memory is not None:
             slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
-        logging.debug('explore used time:{0}'.format(time.time() - start))
+        logger.debug('explore used time:{0}'.format(time.time() - start))
         return slice_memory

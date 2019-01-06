@@ -13,8 +13,9 @@ import skimage.measure
 import time
 import util
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S')
+logger = logging.getLogger('Sound')
+logger.setLevel(logging.INFO)
+
 
 class Sound(object):
     start_thread = True
@@ -65,7 +66,7 @@ class Sound(object):
         self.previous_phase = None
 
     def receive(self, phase_duration=DEFAULT_PHASE_DURATION):
-        logging.info('start to receive sound data.')
+        logger.info('start to receive sound data.')
         try:
             audio = pyaudio.PyAudio()
             stream = audio.open(format=self.FORMAT,
@@ -145,7 +146,7 @@ class Sound(object):
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-        logging.debug('process used time:{0}'.format(time.time() - start))
+        logger.debug('process used time:{0}'.format(time.time() - start))
 
     def match_features(self, frequency_map, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []

@@ -11,8 +11,8 @@ import skimage.measure
 import time
 import util
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S')
+logger = logging.getLogger('Vision')
+logger.setLevel(logging.INFO)
 
 
 class Vision(object):
@@ -182,7 +182,7 @@ class Vision(object):
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-        logging.debug('process used time:{0}'.format(time.time() - start))
+        logger.debug('process used time:{0}'.format(time.time() - start))
 
     def match_features(self, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []
@@ -241,7 +241,7 @@ class Vision(object):
                 feature_data[constants.FEATURE] = avg_feature
             else:
                 feature_data[constants.FEATURE] = new_feature
-        logging.debug('filter_feature used time:{0}'.format(time.time() - start))
+        logger.debug('filter_feature used time:{0}'.format(time.time() - start))
         return feature_data
 
     # get a frequent use kernel or a random kernel by certain possibility
@@ -274,7 +274,7 @@ class Vision(object):
             self.update_memory_indexes(channel, kernel, mem[constants.MID])
         self.update_kernel_rank(kernel)
         self.update_channel_rank(channel)
-        logging.debug('search_feature used time:{0}'.format(time.time() - start))
+        logger.debug('search_feature used time:{0}'.format(time.time() - start))
         return mem
 
     # search memory by kernel using index
@@ -314,7 +314,7 @@ class Vision(object):
         if block is not None and block['v'] > self.REGION_VARIANCE_THRESHOLD:
             # move focus to variable region
             return self.set_movement_absolute(block, duration)
-        logging.debug('aware used time:{0}'.format(time.time() - start))
+        logger.debug('aware used time:{0}'.format(time.time() - start))
 
     def find_most_variable_region(self, full_img):
         start = time.time()
@@ -340,7 +340,7 @@ class Vision(object):
             new_block[self.START_Y] = self.calculate_start_y(new_start_y)
             new_block.update({'v': max_var})
             self.previous_block_histogram = this_block_histogram
-        logging.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
+        logger.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
         return new_block
 
     def update_degrees_rank(self, degrees):
@@ -451,7 +451,7 @@ class Vision(object):
                               self.current_block[self.WIDTH], self.current_block[self.HEIGHT])
         cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
         img = cv2.resize(cv_img, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
-        logging.debug('get_region used time:{0}'.format(time.time() - start))
+        logger.debug('get_region used time:{0}'.format(time.time() - start))
         return img
 
     def set_movement_absolute(self, new_block, duration):
@@ -526,7 +526,7 @@ class Vision(object):
 
     def match_movement_memories(self, memories):
         mem = memories[0]
-        logging.info('reproduce movement {0}'.format(mem))
+        logger.info('reproduce movement {0}'.format(mem))
         memory.recall_memory(mem)
         self.current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
                                constants.DURATION: mem[constants.DURATION], self.CREATE_TIME: time.time(),
@@ -538,7 +538,7 @@ class Vision(object):
 
     def match_zoom_memories(self, memories):
         mem = memories[0]
-        logging.info('reproduce zoom '.format(mem))
+        logger.info('reproduce zoom '.format(mem))
         memory.recall_memory(mem)
         zoom_type = mem[constants.ZOOM_TYPE]
         if zoom_type is self.ZOOM_OUT:

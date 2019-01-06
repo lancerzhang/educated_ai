@@ -5,8 +5,8 @@ import time
 import util
 import uuid
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S')
+logger = logging.getLogger('DataAdaptor')
+logger.setLevel(logging.INFO)
 
 
 class DataAdaptor:
@@ -57,7 +57,7 @@ class DataAdaptor:
 
     def cleanup_field(self, field, clean_type):
         start = time.time()
-        logging.info('start to cleanup_fields {0} memory'.format(clean_type))
+        logger.info('start to cleanup_fields {0} memory'.format(clean_type))
         if clean_type is constants.EDEN:
             records = self.db.get_eden_memories()
         elif clean_type is constants.YOUNG:
@@ -76,9 +76,9 @@ class DataAdaptor:
                 if sub_mem is not None:
                     new_list.append(element)
             if len(new_list) != len(original_list):
-                logging.debug('clean up from {0} to {1}'.format(len(original_list), len(new_list)))
+                logger.debug('clean up from {0} to {1}'.format(len(original_list), len(new_list)))
                 self.update_memory({field: new_list}, mem[constants.MID])
-        logging.info('cleanup_fields used time {0}'.format(time.time() - start))
+        logger.info('cleanup_fields used time {0}'.format(time.time() - start))
 
     # def schedule_housekeep(self):
     #     self.seq = self.seq + 1
@@ -88,7 +88,7 @@ class DataAdaptor:
 
     def gc(self, gc_type):
         start = time.time()
-        logging.info('start to gc {0} memory'.format(gc_type))
+        logger.info('start to gc {0} memory'.format(gc_type))
         if gc_type is constants.EDEN:
             records = self.db.get_eden_memories()
         elif gc_type is constants.YOUNG:
@@ -97,7 +97,7 @@ class DataAdaptor:
             records = self.db.get_old_memories()
         else:
             records = self.db.get_all()
-        logging.info('memories to be refresh:{0}'.format(len(records)))
+        logger.info('memories to be refresh:{0}'.format(len(records)))
         lives = self.refresh_memories(records)
         if records is None:
             cleaned = 0
@@ -105,8 +105,8 @@ class DataAdaptor:
             cleaned = len(records)
         else:
             cleaned = len(records) - len(lives)
-        logging.info('memories were deleted:{0}'.format(cleaned))
-        logging.info('{0} gc used time {1}'.format(gc_type, time.time() - start))
+        logger.info('memories were deleted:{0}'.format(cleaned))
+        logger.info('{0} gc used time {1}'.format(gc_type, time.time() - start))
         if gc_type is constants.YOUNG or gc_type is constants.OLD:
             self.cleanup_field(constants.PARENT_MEM, gc_type)
         return cleaned
@@ -117,9 +117,9 @@ class DataAdaptor:
     def partial_gc(self):
         self.seq = self.seq + 1
         start = time.time()
-        logging.debug('start to partial housekeep memory')
+        logger.debug('start to partial housekeep memory')
         records = self.db.search_housekeep(self.seq % 100)
-        logging.debug('memories to be refresh:{0}'.format(len(records)))
+        logger.debug('memories to be refresh:{0}'.format(len(records)))
         lives = self.refresh_memories(records)
         if records is None:
             cleaned = 0
@@ -127,8 +127,8 @@ class DataAdaptor:
             cleaned = len(records)
         else:
             cleaned = len(records) - len(lives)
-        logging.debug('memories were deleted:{0}'.format(cleaned))
-        logging.debug('partial_housekeep used time:{0}'.format(time.time() - start))
+        logger.debug('memories were deleted:{0}'.format(cleaned))
+        logger.debug('partial_housekeep used time:{0}'.format(time.time() - start))
         return cleaned
 
     # private method
@@ -194,7 +194,7 @@ class DataAdaptor:
         return count
 
     def synchronize_memory_time(self, system_last_active_time):
-        logging.info('start to synchronize memories')
+        logger.info('start to synchronize memories')
         gap = time.time() - system_last_active_time
         records = self.db.get_all()
         for mem in records:
