@@ -36,7 +36,7 @@ def calculate_workload(status, dps, frames, flag):
     logger.debug('avg_workload is {0}'.format(avg_workload))
     if frames > len(status[WORKLOAD_DATA][flag]) and avg_workload > dps * 0.8:
         status[constants.BUSY].update({flag: True})
-        logger.warn('{0} status is busy.'.format(flag))
+        logger.debug('{0} status is busy.'.format(flag))
     else:
         status[constants.BUSY].update({flag: False})
 

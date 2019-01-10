@@ -20,6 +20,7 @@ class Vision(object):
     SCREEN_HEIGHT = 0
     ROI_ARR = [12, 36, 72, 144, 288]
     roi_index = 2
+    ROI_INDEX_NAME = 'ROI_INDEX'
     START_X = 'sx'
     START_Y = 'sy'
     WIDTH = 'width'
@@ -31,9 +32,9 @@ class Vision(object):
     POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
     NUMBER_SUB_REGION = 10
     REGION_VARIANCE_THRESHOLD = 0.05
-    MAX_DEGREES = 36  # actuial is 10 times
+    MAX_DEGREES = 36  # actual is 10 times
     MAX_SPEED = 40  # actual is 50 times, pixel
-    MAX_DURATION = 5  # actuial is 10%
+    MAX_DURATION = 5  # actual is 10%
 
     STATUS = 'sts'
     IN_PROGRESS = 'pgs'
@@ -41,6 +42,14 @@ class Vision(object):
     MOVE = 'move'
     ZOOM_IN = 'zmi'
     ZOOM_OUT = 'zmo'
+    ZOOM_LEFT_TOP = 'zlt'
+    ZOOM_RIGHT_TOP = 'zrt'
+    ZOOM_LEFT_BOTTOM = 'zlb'
+    ZOOM_RIGHT_BOTTOM = 'zrb'
+    MOVE_UP = 27
+    MOVE_DOWN = 9
+    MOVE_LEFT = 18
+    MOVE_RIGHT = 0
     CREATE_TIME = 'crt'
     USED_SPEED_FILE = 'data/vus.npy'
     USED_DEGREES_FILE = 'data/vud.npy'
@@ -101,7 +110,7 @@ class Vision(object):
     def process(self, working_memories, sequential_time_memories, work_status, key):
         start = time.time()
         if self.current_action[self.STATUS] is self.IN_PROGRESS:
-            self.calculate_action(self.current_action)
+            self.calculate_move_action(self.current_action)
 
         slice_feature_memories = [mem for mem in working_memories if
                                   constants.MEMORY_DURATION in mem and
@@ -112,14 +121,13 @@ class Vision(object):
         matched_feature_memories = self.match_features(slice_feature_memories, working_memories,
                                                        sequential_time_memories)
 
-        new_feature_memory = self.search_feature()
+        new_slice_memory = None
+        new_feature_memory = self.search_feature_memory(self.current_block)
         if len(matched_feature_memories) > 0:
             matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
             if new_feature_memory is not None and new_feature_memory[constants.MID] not in matched_feature_memories_ids:
                 matched_feature_memories.append(new_feature_memory)
             new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories)
-            sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-            working_memories.append(new_slice_memory)
         elif new_feature_memory is not None:
             new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
             new_matched_feature_memories = self.match_features(new_slice_memories, working_memories,
@@ -128,8 +136,7 @@ class Vision(object):
             if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
                 new_matched_feature_memories.append(new_feature_memory)
             new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories)
-            sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-            working_memories.append(new_slice_memory)
+        add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's mature, below is the major way of focus move/zoom.
         slice_movement_memories = [mem for mem in working_memories if
@@ -141,8 +148,7 @@ class Vision(object):
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
             if len(slice_movement_memories) > 0:
                 new_slice_memory = self.match_movement_memories(slice_movement_memories)
-                sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-                working_memories.append(new_slice_memory)
+                add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         slice_zoom_memories = [mem for mem in working_memories if
                                constants.MEMORY_DURATION in mem and
@@ -152,33 +158,25 @@ class Vision(object):
 
         if len(slice_zoom_memories) > 0:
             new_slice_memory = self.match_zoom_memories(slice_zoom_memories)
-            sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-            working_memories.append(new_slice_memory)
+            add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's not mature, need to guide her.
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
             if key is constants.KEY_ALT or key is constants.KEY_CTRL:
                 # the 1st and most efficient way is to set focus directly, and reward it
                 new_slice_memory = self.move_focus_to_mouse()
-                sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-                working_memories.append(new_slice_memory)
             elif work_status[constants.REWARD]:
                 # stay more time on reward region.
-                print ''
+                new_slice_memory = self.dig()
             elif not work_status[constants.REWARD]:
                 # move out from current reward region.
                 if not work_status[constants.BUSY][constants.SHORT_DURATION]:
                     # affected by environment vision change.
                     new_slice_memory = self.aware()
-                    if new_slice_memory is not None:
-                        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-                        working_memories.append(new_slice_memory)
                 if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
                     # if environment not change, random do some change.
                     new_slice_memory = self.explore()
-                    if new_slice_memory is not None:
-                        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-                        working_memories.append(new_slice_memory)
+        add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
@@ -198,7 +196,7 @@ class Vision(object):
         channel = fmm[constants.CHANNEL]
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
-        img = self.get_region()
+        img = self.get_region(self.current_block)
         channel_img = get_channel_img(img, channel)
         fmm.update({constants.STATUS: constants.MATCHING})
         data = self.filter_feature(channel_img, kernel, np.array(feature))
@@ -258,27 +256,26 @@ class Vision(object):
     def update_kernel_rank(self, kernel):
         self.used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, self.used_kernel_rank)
 
-    # try to find more detail
-    def search_feature(self):
+    # try to search more detail
+    def search_feature_memory(self, block):
         start = time.time()
-        channel = self.get_channel()
-        img = self.get_region()
-        kernel = self.get_kernel()
-        channel_img = get_channel_img(img, channel)
-        data = self.filter_feature(channel_img, kernel)
-        if data is None:
+        feature_data = self.search_feature(block)
+        if feature_data is None:
             return None
-        mem = self.search_feature_memory(channel, kernel, data[constants.FEATURE])
+        channel = feature_data[constants.CHANNEL]
+        kernel = feature_data[constants.KERNEL]
+        feature = feature_data[constants.FEATURE]
+        mem = self.find_feature_memory(channel, kernel, feature)
         if mem is None:
-            mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, data[constants.FEATURE])
+            mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
             self.update_memory_indexes(channel, kernel, mem[constants.MID])
         self.update_kernel_rank(kernel)
         self.update_channel_rank(channel)
         logger.debug('search_feature used time:{0}'.format(time.time() - start))
         return mem
 
-    # search memory by kernel using index
-    def search_feature_memory(self, channel, kernel, feature1):
+    # find memory by kernel using index
+    def find_feature_memory(self, channel, kernel, feature1):
         element = next(
             (x for x in self.memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
             None)
@@ -336,8 +333,8 @@ class Vision(object):
             new_index_x, new_index_y = util.convert_1d_to_2d_index(max_index, self.NUMBER_SUB_REGION)
             new_start_x = new_index_x * width
             new_start_y = new_index_y * height
-            new_block[self.START_X] = self.calculate_start_x(new_start_x)
-            new_block[self.START_Y] = self.calculate_start_y(new_start_y)
+            new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
+            new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
             new_block.update({'v': max_var})
             self.previous_block_histogram = this_block_histogram
         logger.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
@@ -384,14 +381,70 @@ class Vision(object):
     def get_duration(self):
         return random.randint(1, self.MAX_DURATION) / 10.0
 
-    def explore(self):
-        ri = random.randint(0, 9)
+    def search_feature(self, block):
+        channel = self.get_channel()
+        img = self.get_region(block)
+        kernel = self.get_kernel()
+        channel_img = get_channel_img(img, channel)
+        feature_data = self.filter_feature(channel_img, kernel)
+        if feature_data:
+            feature_data[constants.CHANNEL] = channel
+        return feature_data
+
+    def dig(self):
+        ri = random.randint(0, 2)
         if ri == 0:
-            return self.random_move()
+            return self.random_move_aside()
+        elif ri == 1:
+            return self.random_zoom(self.ZOOM_IN)
+        elif ri == 2:
+            return self.random_zoom(self.ZOOM_OUT)
+
+    def try_move_aside(self, move_direction):
+        new_block = copy.deepcopy(self.current_block)
+        if move_direction is self.MOVE_UP:
+            new_block[self.START_Y] = new_block[self.START_Y] - self.current_block[self.HEIGHT]
+        elif move_direction is self.MOVE_DOWN:
+            new_block[self.START_Y] = new_block[self.START_Y] + self.current_block[self.HEIGHT]
+        elif move_direction is self.MOVE_LEFT:
+            new_block[self.START_X] = new_block[self.START_X] - self.current_block[self.WIDTH]
+        elif move_direction is self.MOVE_RIGHT:
+            new_block[self.START_X] = new_block[self.START_X] + self.current_block[self.WIDTH]
+        if not self.verify_block(new_block):
+            return None
+        return new_block
+
+    def random_move_aside(self):
+        move_direction = self.random_direction_straight()
+        new_block = self.try_move_aside(move_direction)
+        if new_block is None:
+            return None
+        feature_data = self.search_feature(new_block)
+        if feature_data is None:
+            return None
+        degrees = move_direction
+        speed = -1
+        duration = 0
+        action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
+                  constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
+        memories = self.data_service.get_vision_move_memory(degrees, speed, duration)
+        if memories is None or len(memories) == 0:
+            action_memory = memory.add_physical_memory(action)
+        else:
+            mem = memories[0]
+            memory.recall_memory(mem)
+            action_memory = mem
+        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
+        return slice_memory
+
+    def explore(self):
+        ri = random.randint(0, 1)
+        if ri == 0:
+            return self.random_move_away()
         elif ri == 1:
             return self.random_zoom()
 
-    def random_move(self):
+    def random_move_away(self):
         # random move, explore the world
         degrees = self.get_degrees()
         self.update_degrees_rank(degrees)
@@ -403,16 +456,48 @@ class Vision(object):
         slice_memory = self.set_movement_relative(degrees, speed, duration)
         return slice_memory
 
-    def random_zoom(self):
-        ri = random.randint(0, 1)
+    def random_direction_straight(self):
+        ri = random.randint(0, 3)
         if ri == 0:
-            zoom_type = self.zoom_in()
+            return self.MOVE_UP
+        elif ri == 1:
+            return self.MOVE_DOWN
+        elif ri == 2:
+            return self.MOVE_LEFT
         else:
-            zoom_type = self.zoom_out()
+            return self.MOVE_RIGHT
+
+    def random_direction_angle(self):
+        ri = random.randint(0, 3)
+        if ri == 0:
+            return self.ZOOM_LEFT_TOP
+        elif ri == 1:
+            return self.ZOOM_RIGHT_TOP
+        elif ri == 2:
+            return self.ZOOM_LEFT_BOTTOM
+        else:
+            return self.ZOOM_RIGHT_BOTTOM
+
+    def random_zoom(self, zoom_type=None):
         if zoom_type is None:
+            ri = random.randint(0, 1)
+            if ri == 0:
+                zoom_type = self.ZOOM_IN
+            else:
+                zoom_type = self.ZOOM_OUT
+        zoom_direction = self.random_direction_angle()
+        if zoom_type is self.ZOOM_IN:
+            new_block = self.try_zoom_in(zoom_direction)
+        else:
+            new_block = self.try_zoom_out(zoom_direction)
+        if new_block is None:
             return None
-        action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type}
-        memories = self.data_service.get_vision_zoom_memory(zoom_type)
+        feature_data = self.search_feature(new_block)
+        if feature_data is None:
+            return None
+        action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type,
+                  constants.ZOOM_DIRECTION: zoom_direction}
+        memories = self.data_service.get_vision_zoom_memory(zoom_type, zoom_direction)
         if memories is None or len(memories) == 0:
             action_memory = memory.add_physical_memory(action)
         else:
@@ -422,33 +507,57 @@ class Vision(object):
         slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
         return slice_memory
 
-    def zoom_in(self):
+    def try_zoom_in(self, zoom_direction):
         temp_index = self.roi_index - 1
         if temp_index < 0:
             return None
-        self.roi_index = temp_index
-        self.current_block[self.WIDTH] = self.ROI_ARR[self.roi_index]
-        self.current_block[self.HEIGHT] = self.ROI_ARR[self.roi_index]
-        return self.ZOOM_IN
+        new_block = copy.deepcopy(self.current_block)
+        new_block[self.ROI_INDEX_NAME] = temp_index
+        new_block[self.WIDTH] = self.ROI_ARR[temp_index]
+        new_block[self.HEIGHT] = self.ROI_ARR[temp_index]
+        if zoom_direction is self.ZOOM_RIGHT_TOP:
+            new_block[self.START_X] = new_block[self.START_X] + new_block[self.WIDTH]
+        elif zoom_direction is self.ZOOM_LEFT_BOTTOM:
+            new_block[self.START_Y] = new_block[self.START_Y] + new_block[self.HEIGHT]
+        elif zoom_direction is self.ZOOM_RIGHT_BOTTOM:
+            new_block[self.START_X] = new_block[self.START_X] + new_block[self.WIDTH]
+            new_block[self.START_Y] = new_block[self.START_Y] + new_block[self.HEIGHT]
+        return new_block
 
-    def zoom_out(self):
+    def try_zoom_out(self, zoom_direction):
         temp_index = self.roi_index + 1
         if temp_index > (len(self.ROI_ARR) - 1):
             return None
-        temp_width = self.ROI_ARR[temp_index]
-        if self.current_block[self.START_X] + temp_width > self.SCREEN_WIDTH:
+        new_block = copy.deepcopy(self.current_block)
+        new_block[self.ROI_INDEX_NAME] = temp_index
+        new_block[self.WIDTH] = self.ROI_ARR[temp_index]
+        new_block[self.HEIGHT] = self.ROI_ARR[temp_index]
+        if zoom_direction is self.ZOOM_LEFT_TOP:
+            new_block[self.START_X] = new_block[self.START_X] - self.current_block[self.WIDTH]
+            new_block[self.START_Y] = new_block[self.START_Y] - self.current_block[self.HEIGHT]
+        elif zoom_direction is self.ZOOM_RIGHT_TOP:
+            new_block[self.START_Y] = new_block[self.START_Y] - self.current_block[self.HEIGHT]
+        elif zoom_direction is self.ZOOM_LEFT_BOTTOM:
+            new_block[self.START_X] = new_block[self.START_X] - self.current_block[self.WIDTH]
+        if not self.verify_block(new_block):
             return None
-        if self.current_block[self.START_Y] + temp_width > self.SCREEN_HEIGHT:
-            return None
-        self.roi_index = temp_index
-        self.current_block[self.WIDTH] = self.ROI_ARR[self.roi_index]
-        self.current_block[self.HEIGHT] = self.ROI_ARR[self.roi_index]
-        return self.ZOOM_OUT
+        return new_block
 
-    def get_region(self):
+    def verify_block(self, block):
+        if block[self.START_X] < 0:
+            return False
+        if block[self.START_Y] < 0:
+            return False
+        if block[self.START_X] + block[self.WIDTH] > self.SCREEN_WIDTH:
+            return False
+        if block[self.START_Y] + block[self.HEIGHT] > self.SCREEN_HEIGHT:
+            return False
+        return True
+
+    def get_region(self, block):
         start = time.time()
-        roi_image = self.grab(self.current_block[self.START_Y], self.current_block[self.START_X],
-                              self.current_block[self.WIDTH], self.current_block[self.HEIGHT])
+        roi_image = self.grab(block[self.START_Y], block[self.START_X],
+                              block[self.WIDTH], block[self.HEIGHT])
         cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
         img = cv2.resize(cv_img, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
         logger.debug('get_region used time:{0}'.format(time.time() - start))
@@ -476,7 +585,7 @@ class Vision(object):
         self.current_action.update({self.CREATE_TIME: time.time(), self.STATUS: self.IN_PROGRESS})
         return slice_memory
 
-    def calculate_start_x(self, new_start_x):
+    def restrict_edge_start_x(self, new_start_x):
         actual_start_x = new_start_x
         if new_start_x < 0:
             actual_start_x = 0
@@ -484,7 +593,7 @@ class Vision(object):
             actual_start_x = self.SCREEN_WIDTH - self.current_block[self.WIDTH]
         return int(round(actual_start_x))
 
-    def calculate_start_y(self, new_start_y):
+    def restrict_edge_start_y(self, new_start_y):
         actual_start_y = new_start_y
         if new_start_y < 0:
             actual_start_y = 0
@@ -498,20 +607,29 @@ class Vision(object):
         degrees = math.degrees(radians)
         return int(round(degrees / float(constants.ACTUAL_DEGREES_TIMES)))
 
-    def calculate_action(self, action):
+    def try_move_away(self, elapse, degrees, speed):
+        # actual degrees is 10 times
+        actual_degrees = degrees * constants.ACTUAL_DEGREES_TIMES
+        # actual speed is 50 times
+        actual_speed = speed * constants.ACTUAL_SPEED_TIMES
+        new_start_y = self.current_block[self.START_Y] + math.sin(math.radians(actual_degrees)) * elapse * actual_speed
+        new_start_x = self.current_block[self.START_X] + math.cos(math.radians(actual_degrees)) * elapse * actual_speed
+        new_block = copy.deepcopy(self.current_block)
+        new_block[self.START_X] = int(new_start_x)
+        new_block[self.START_Y] = int(new_start_y)
+        if not self.verify_block(new_block):
+            return None
+        return new_block
+
+    def calculate_move_action(self, action):
         elapse = time.time() - action[self.CREATE_TIME]
         if elapse >= action[constants.DURATION]:
             # if process slow, destination will be quite different
             elapse = action[constants.DURATION]
             action.update({self.STATUS: self.COMPLETED})
-        # actual degrees is 10 times
-        degrees = action[constants.DEGREES] * constants.ACTUAL_DEGREES_TIMES
-        # actual speed is 50 times
-        speed = action[constants.SPEED] * constants.ACTUAL_SPEED_TIMES
-        new_start_y = self.current_block[self.START_Y] + (math.sin(math.radians(degrees)) * elapse * speed)
-        new_start_x = self.current_block[self.START_X] + (math.cos(math.radians(degrees)) * elapse * speed)
-        self.current_block[self.START_X] = self.calculate_start_x(new_start_x)
-        self.current_block[self.START_Y] = self.calculate_start_y(new_start_y)
+        new_block = self.try_move_away(elapse, action[constants.DEGREES], action[constants.SPEED])
+        if new_block:
+            self.current_block = new_block
 
     def calculate_block_histogram(self, channel_img):
         block_histogram = []
@@ -527,24 +645,39 @@ class Vision(object):
     def match_movement_memories(self, memories):
         mem = memories[0]
         logger.info('reproduce movement {0}'.format(mem))
+        degrees = mem[constants.DEGREES]
+        speed = mem[constants.SPEED]
+        duration = mem[constants.DURATION]
+        if duration == 0:
+            new_block = self.try_move_aside(degrees)
+            if not new_block:
+                return None
+            self.current_block = new_block
+        else:
+            new_block = self.try_move_away(duration, degrees, speed)
+            if not new_block:
+                return None
+            self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
+                                   self.CREATE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
         memory.recall_memory(mem)
-        self.current_action = {constants.DEGREES: mem[constants.DEGREES], constants.SPEED: mem[constants.SPEED],
-                               constants.DURATION: mem[constants.DURATION], self.CREATE_TIME: time.time(),
-                               constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
-                               self.STATUS: self.IN_PROGRESS}
-        mem.update({constants.HAPPEN_TIME: time.time()})
         mem[constants.STATUS] = constants.MATCHED
+        mem.update({constants.HAPPEN_TIME: time.time()})
         return mem
 
     def match_zoom_memories(self, memories):
         mem = memories[0]
         logger.info('reproduce zoom '.format(mem))
-        memory.recall_memory(mem)
         zoom_type = mem[constants.ZOOM_TYPE]
+        zoom_direction = mem[constants.ZOOM_DIRECTION]
         if zoom_type is self.ZOOM_OUT:
-            self.zoom_out()
-        elif zoom_type is self.ZOOM_IN:
-            self.zoom_in()
+            new_block = self.try_zoom_out(zoom_direction)
+        else:
+            new_block = self.try_zoom_in(zoom_direction)
+        if new_block is None:
+            return None
+        self.roi_index = new_block[self.ROI_INDEX_NAME]
+        self.current_block = new_block
+        memory.recall_memory(mem)
         mem[constants.STATUS] = constants.MATCHED
         mem.update({constants.HAPPEN_TIME: time.time()})
         return mem
@@ -558,8 +691,8 @@ class Vision(object):
         mouse_y = int(self.mouse.position[1])
         new_start_x = mouse_x - self.current_block[self.WIDTH] / 2
         new_start_y = mouse_y - self.current_block[self.HEIGHT] / 2
-        new_block[self.START_X] = self.calculate_start_x(new_start_x)
-        new_block[self.START_Y] = self.calculate_start_y(new_start_y)
+        new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
+        new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
         return self.set_movement_absolute(new_block, 0.5)
 
 
@@ -573,3 +706,9 @@ def get_channel_img(bgr, channel):
         return u
     elif channel == 'v':
         return v
+
+
+def add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories):
+    if new_slice_memory is not None:
+        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)

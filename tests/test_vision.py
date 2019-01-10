@@ -94,7 +94,7 @@ class TestVision(unittest.TestCase):
                                                feature_data1_1[constants.FEATURE])
         self.vision.update_memory_indexes(channel, kernel, mem[constants.MID])
         self.vision.update_memory_indexes(channel, kernel, '123')
-        new_mem = self.vision.search_feature_memory(channel, kernel, feature_data1_2[constants.FEATURE])
+        new_mem = self.vision.find_feature_memory(channel, kernel, feature_data1_2[constants.FEATURE])
         self.assertIsNotNone(new_mem)
 
     def test_calculate_degrees(self):
@@ -128,13 +128,13 @@ class TestVision(unittest.TestCase):
         action[constants.DURATION] = 2
         self.vision.current_block = {self.vision.START_X: 100, self.vision.START_Y: 100, self.vision.WIDTH: 50,
                                      self.vision.HEIGHT: 50}
-        self.vision.calculate_action(action)
+        self.vision.calculate_move_action(action)
         self.assertEqual(110, self.vision.current_block[self.vision.START_Y])
         self.assertEqual(117, int(self.vision.current_block[self.vision.START_X]))
         self.vision.current_block = {self.vision.START_X: 1900, self.vision.START_Y: 1000, self.vision.WIDTH: 100,
                                      self.vision.HEIGHT: 100}
         action[self.vision.CREATE_TIME] = time.time() - 5
-        self.vision.calculate_action(action)
+        self.vision.calculate_move_action(action)
         self.assertEqual(980, self.vision.current_block[self.vision.START_Y])
         self.assertEqual(1820, int(self.vision.current_block[self.vision.START_X]))
         self.assertEqual(self.vision.COMPLETED, action[self.vision.STATUS])
@@ -159,7 +159,7 @@ class TestVision(unittest.TestCase):
         action[constants.DEGREES] = degrees1
         action[constants.SPEED] = math.sqrt(sx * sx + sy * sy) / constants.ACTUAL_SPEED_TIMES
         action[constants.DURATION] = duration
-        self.vision.calculate_action(action)
+        self.vision.calculate_move_action(action)
         self.assertEqual(nx, self.vision.current_block[self.vision.START_X])
         self.assertEqual(ny, self.vision.current_block[self.vision.START_Y])
 
@@ -195,10 +195,10 @@ class TestVision(unittest.TestCase):
 
     def test_zoom_in(self):
         self.vision.roi_index = 1
-        self.vision.zoom_in()
+        self.vision.try_zoom_in()
         self.assertEqual(0, self.vision.roi_index)
         self.vision.roi_index = 0
-        self.vision.zoom_in()
+        self.vision.try_zoom_in()
         self.assertEqual(0, self.vision.roi_index)
 
     def test_zoom_out(self):
@@ -207,14 +207,14 @@ class TestVision(unittest.TestCase):
         self.vision.current_block = {self.vision.START_X: 100, self.vision.START_Y: 100, self.vision.WIDTH: 50,
                                      self.vision.HEIGHT: 50}
         self.vision.roi_index = 0
-        self.vision.zoom_out()
+        self.vision.try_zoom_out()
         self.assertEqual(1, self.vision.roi_index)
         max_index = len(self.vision.ROI_ARR) - 1
         self.vision.roi_index = max_index
-        self.vision.zoom_out()
+        self.vision.try_zoom_out()
         self.assertEqual(max_index, self.vision.roi_index)
         self.vision.roi_index = 2
-        self.vision.zoom_out()
+        self.vision.try_zoom_out()
         self.assertEqual(2, self.vision.roi_index)
 
     def test_get_duration(self):

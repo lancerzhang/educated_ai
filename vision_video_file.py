@@ -30,4 +30,8 @@ class VideoFileVision(Vision):
         cv2.waitKey(1)
 
     def grab(self, top, left, width, height):
+        top = int(top)
+        left = int(left)
+        width = int(width)
+        height = int(height)
         return self.frame[top:top + height, left:left + width]

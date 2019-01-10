@@ -2,6 +2,7 @@
 VISION_FOCUS_MOVE = 'vfm'
 VISION_FOCUS_ZOOM = 'vfz'
 ZOOM_TYPE = 'zmt'
+ZOOM_DIRECTION = 'zdt'
 DEGREES = 'dgr'
 SPEED = 'spd'
 DURATION = 'drt'

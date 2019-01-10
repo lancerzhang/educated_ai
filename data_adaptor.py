@@ -157,8 +157,8 @@ class DataAdaptor:
         record = self.db.get_vision_move_memory(degrees, speed, duration)
         return record
 
-    def get_vision_zoom_memory(self, zoom_type):
-        record = self.db.get_vision_zoom_memory(zoom_type)
+    def get_vision_zoom_memory(self, zoom_type, zoom_direction):
+        record = self.db.get_vision_zoom_memory(zoom_type, zoom_direction)
         return record
 
     def get_action_mouse_memory(self, click_type):

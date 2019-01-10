@@ -98,8 +98,8 @@ class Sound(object):
                     self.phases.popleft()
                 self.phases.append(frame_data)
 
-        except KeyboardInterrupt:
-            pass
+        except:
+            self.save_files()
 
     def save_files(self):
         np.save(self.MEMORY_INDEX_FILE, self.memory_indexes)
@@ -120,14 +120,13 @@ class Sound(object):
         matched_feature_memories = self.match_features(frequency_map, slice_feature_memories, working_memories,
                                                        sequential_time_memories)
 
-        new_feature_memory = self.search_feature(frequency_map)
+        new_slice_memory = None
+        new_feature_memory = self.search_feature_memory(frequency_map)
         if len(matched_feature_memories) > 0:
             matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
             if new_feature_memory is not None and new_feature_memory[constants.MID] not in matched_feature_memories_ids:
                 matched_feature_memories.append(new_feature_memory)
             new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories)
-            sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-            working_memories.append(new_slice_memory)
         elif new_feature_memory is not None:
             new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
             new_matched_feature_memories = self.match_features(frequency_map, new_slice_memories, working_memories,
@@ -136,8 +135,7 @@ class Sound(object):
             if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
                 new_matched_feature_memories.append(new_feature_memory)
             new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories)
-            sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-            working_memories.append(new_slice_memory)
+        add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # if not work_status[constants.BUSY][constants.SHORT_DURATION]:
         #     smm = aware(frequency_map)
@@ -222,8 +220,8 @@ class Sound(object):
     def update_kernel_rank(self, kernel):
         self.used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, self.used_kernel_rank)
 
-    # try to find more detail
-    def search_feature(self, full_frequency_map):
+    # try to search more detail
+    def search_feature_memory(self, full_frequency_map):
         kernel = self.get_kernel()
         # range_width = get_range()
         # energies = get_energy(full_frequency_map)
@@ -235,7 +233,7 @@ class Sound(object):
         data = self.filter_feature(full_frequency_map, kernel)
         if data is None:
             return None
-        mem = self.search_memory(kernel, data[constants.FEATURE])
+        mem = self.find_feature_memory(kernel, data[constants.FEATURE])
         if mem is None:
             mem = memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
             self.update_memory_indexes(kernel, mem[constants.MID])
@@ -243,7 +241,7 @@ class Sound(object):
         return mem
 
     # search memory by kernel using index
-    def search_memory(self, kernel, feature1):
+    def find_feature_memory(self, kernel, feature1):
         element = next((x for x in self.memory_indexes if x[constants.KERNEL] == kernel), None)
         if element is not None:
             memory_ids = element[constants.MEMORIES]
@@ -357,3 +355,9 @@ def get_range_energy(energy, range_width):
     for i in range(0, len(energy) - range_width):
         range_energies.append(np.average(energy[i:i + range_width]))
     return np.array(range_energies)
+
+
+def add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories):
+    if new_slice_memory is not None:
+        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)

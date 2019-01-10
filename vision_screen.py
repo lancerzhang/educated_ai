@@ -15,6 +15,10 @@ class ScreenVision(Vision):
         super(ScreenVision, self).__init__(ds)
 
     def grab(self, top, left, width, height):
+        top = int(top)
+        left = int(left)
+        width = int(width)
+        height = int(height)
         mon = {"top": top, "left": left, "width": width, "height": height}
         img = self.sct.grab(mon)
         return np.array(img)

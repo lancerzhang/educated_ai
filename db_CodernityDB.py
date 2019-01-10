@@ -66,18 +66,20 @@ import constants,hashlib"""
     def make_key_value(self, data):
         mem_type = data.get(constants.PHYSICAL_MEMORY_TYPE)
         zoom_type = data.get(constants.ZOOM_TYPE)
-        if mem_type is None or zoom_type is None:
+        zoom_direction = data.get(constants.ZOOM_DIRECTION)
+        if mem_type is None or zoom_type is None or zoom_direction is None:
             return None
         else:
-            return hashlib.md5(mem_type + zoom_type).hexdigest(), None
+            return hashlib.md5(mem_type + zoom_type + zoom_direction).hexdigest(), None
 
     def make_key(self, key):
         mem_type = key.get(constants.PHYSICAL_MEMORY_TYPE)
         zoom_type = key.get(constants.ZOOM_TYPE)
-        if mem_type is None or zoom_type is None:
+        zoom_direction = key.get(constants.ZOOM_DIRECTION)
+        if mem_type is None or zoom_type is None or zoom_direction is None:
             return None
         else:
-            return hashlib.md5(mem_type + zoom_type).hexdigest()
+            return hashlib.md5(mem_type + zoom_type + zoom_direction).hexdigest()
 
 
 class VisionMoveIndex(HashIndex):
@@ -290,11 +292,12 @@ class DB_CodernityDB:
             doc = None
         return doc
 
-    def get_vision_zoom_memory(self, zoom_type):
+    def get_vision_zoom_memory(self, zoom_type, zoom_direction):
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM,
-                                  constants.ZOOM_TYPE: zoom_type}, with_doc=True)
+                                  constants.ZOOM_TYPE: zoom_type, constants.ZOOM_DIRECTION: zoom_direction},
+                                 with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
             doc = None
