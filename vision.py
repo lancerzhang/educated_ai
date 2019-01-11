@@ -12,7 +12,7 @@ import time
 import util
 
 logger = logging.getLogger('Vision')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Vision(object):
@@ -50,7 +50,7 @@ class Vision(object):
     MOVE_DOWN = 9
     MOVE_LEFT = 18
     MOVE_RIGHT = 0
-    CREATE_TIME = 'crt'
+    LAST_MOVE_TIME = 'lmt'
     USED_SPEED_FILE = 'data/vus.npy'
     USED_DEGREES_FILE = 'data/vud.npy'
     USED_KERNEL_FILE = 'data/vuk.npy'
@@ -168,14 +168,14 @@ class Vision(object):
             elif work_status[constants.REWARD]:
                 # stay more time on reward region.
                 new_slice_memory = self.dig()
-            elif not work_status[constants.REWARD]:
-                # move out from current reward region.
-                if not work_status[constants.BUSY][constants.SHORT_DURATION]:
-                    # affected by environment vision change.
-                    new_slice_memory = self.aware()
-                if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
-                    # if environment not change, random do some change.
-                    new_slice_memory = self.explore()
+            # elif not work_status[constants.REWARD]:
+            #     # move out from current reward region.
+            #     if not work_status[constants.BUSY][constants.SHORT_DURATION]:
+            #         # affected by environment vision change.
+            #         new_slice_memory = self.aware()
+            #     if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
+            #         # if environment not change, random do some change.
+            #         new_slice_memory = self.explore()
         add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
@@ -212,7 +212,6 @@ class Vision(object):
 
     # match the experience vision sense
     def filter_feature(self, data, kernel, feature=None):
-        start = time.time()
         feature_data = copy.deepcopy(self.FEATURE_DATA)
         feature_data[constants.KERNEL] = kernel
         data_map = cv2.resize(data, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
@@ -239,7 +238,6 @@ class Vision(object):
                 feature_data[constants.FEATURE] = avg_feature
             else:
                 feature_data[constants.FEATURE] = new_feature
-        logger.debug('filter_feature used time:{0}'.format(time.time() - start))
         return feature_data
 
     # get a frequent use kernel or a random kernel by certain possibility
@@ -258,7 +256,6 @@ class Vision(object):
 
     # try to search more detail
     def search_feature_memory(self, block):
-        start = time.time()
         feature_data = self.search_feature(block)
         if feature_data is None:
             return None
@@ -271,7 +268,6 @@ class Vision(object):
             self.update_memory_indexes(channel, kernel, mem[constants.MID])
         self.update_kernel_rank(kernel)
         self.update_channel_rank(channel)
-        logger.debug('search_feature used time:{0}'.format(time.time() - start))
         return mem
 
     # find memory by kernel using index
@@ -555,22 +551,23 @@ class Vision(object):
         return True
 
     def get_region(self, block):
-        start = time.time()
         roi_image = self.grab(block[self.START_Y], block[self.START_X],
                               block[self.WIDTH], block[self.HEIGHT])
         cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
         img = cv2.resize(cv_img, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
-        logger.debug('get_region used time:{0}'.format(time.time() - start))
         return img
 
     def set_movement_absolute(self, new_block, duration):
+        logger.debug('set_movement_absolute')
         degrees = self.calculate_degrees(new_block)
         length = math.hypot(new_block[self.START_Y] - self.current_block[self.START_Y],
                             new_block[self.START_X] - self.current_block[self.START_X])
         speed = length / duration / constants.ACTUAL_SPEED_TIMES
+        logger.debug('absolute params is {0} {1} {2}'.format(degrees, speed, duration))
         return self.set_movement_relative(degrees, speed, duration)
 
     def set_movement_relative(self, degrees, speed, duration):
+        logger.debug('set_movement_relative')
         action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
                   constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
         memories = self.data_service.get_vision_move_memory(degrees, speed, duration)
@@ -582,7 +579,7 @@ class Vision(object):
             action_memory = mem
         slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
         self.current_action = copy.deepcopy(action)
-        self.current_action.update({self.CREATE_TIME: time.time(), self.STATUS: self.IN_PROGRESS})
+        self.current_action.update({self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS})
         return slice_memory
 
     def restrict_edge_start_x(self, new_start_x):
@@ -622,14 +619,24 @@ class Vision(object):
         return new_block
 
     def calculate_move_action(self, action):
-        elapse = time.time() - action[self.CREATE_TIME]
-        if elapse >= action[constants.DURATION]:
+        logger.debug('calculate_move_action')
+        elapse = time.time() - action[self.LAST_MOVE_TIME]
+        duration = action[constants.DURATION]
+        degrees = action[constants.DEGREES]
+        speed = action[constants.SPEED]
+        if elapse >= duration:
             # if process slow, destination will be quite different
-            elapse = action[constants.DURATION]
+            elapse = duration
             action.update({self.STATUS: self.COMPLETED})
-        new_block = self.try_move_away(elapse, action[constants.DEGREES], action[constants.SPEED])
+        logger.debug('elapse is {0}, degrees is {1}, speed is {2}'.format(elapse, degrees, speed))
+        new_block = self.try_move_away(elapse, degrees, speed)
+        logger.debug('new block is {0}'.format(new_block))
         if new_block:
             self.current_block = new_block
+            action[self.LAST_MOVE_TIME] = time.time()
+            action[constants.DURATION] = duration - elapse
+        else:
+            action.update({self.STATUS: self.COMPLETED})
 
     def calculate_block_histogram(self, channel_img):
         block_histogram = []
@@ -658,7 +665,7 @@ class Vision(object):
             if not new_block:
                 return None
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
-                                   self.CREATE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
+                                   self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
         memory.recall_memory(mem)
         mem[constants.STATUS] = constants.MATCHED
         mem.update({constants.HAPPEN_TIME: time.time()})
@@ -686,6 +693,7 @@ class Vision(object):
         return None
 
     def move_focus_to_mouse(self):
+        logger.debug('move_focus_to_mouse')
         new_block = {}
         mouse_x = int(self.mouse.position[0])
         mouse_y = int(self.mouse.position[1])
@@ -693,6 +701,8 @@ class Vision(object):
         new_start_y = mouse_y - self.current_block[self.HEIGHT] / 2
         new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
         new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
+        logger.debug('current block is {0}'.format(self.current_block))
+        logger.debug('new block is {0}'.format(new_block))
         return self.set_movement_absolute(new_block, 0.5)
 
 

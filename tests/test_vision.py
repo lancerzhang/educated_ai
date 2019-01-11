@@ -122,7 +122,7 @@ class TestVision(unittest.TestCase):
         self.vision.SCREEN_WIDTH = 1920
         self.vision.SCREEN_HEIGHT = 1080
         action = self.vision.current_action.copy()
-        action[self.vision.CREATE_TIME] = time.time() - 0.2
+        action[self.vision.LAST_MOVE_TIME] = time.time() - 0.2
         action[constants.DEGREES] = 3
         action[constants.SPEED] = 2
         action[constants.DURATION] = 2
@@ -133,7 +133,7 @@ class TestVision(unittest.TestCase):
         self.assertEqual(117, int(self.vision.current_block[self.vision.START_X]))
         self.vision.current_block = {self.vision.START_X: 1900, self.vision.START_Y: 1000, self.vision.WIDTH: 100,
                                      self.vision.HEIGHT: 100}
-        action[self.vision.CREATE_TIME] = time.time() - 5
+        action[self.vision.LAST_MOVE_TIME] = time.time() - 5
         self.vision.calculate_move_action(action)
         self.assertEqual(980, self.vision.current_block[self.vision.START_Y])
         self.assertEqual(1820, int(self.vision.current_block[self.vision.START_X]))
@@ -155,7 +155,7 @@ class TestVision(unittest.TestCase):
         self.assertEqual(3, degrees1)
         action = self.vision.current_action.copy()
         duration = 1
-        action[self.vision.CREATE_TIME] = time.time() - duration
+        action[self.vision.LAST_MOVE_TIME] = time.time() - duration
         action[constants.DEGREES] = degrees1
         action[constants.SPEED] = math.sqrt(sx * sx + sy * sy) / constants.ACTUAL_SPEED_TIMES
         action[constants.DURATION] = duration
