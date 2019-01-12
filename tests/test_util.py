@@ -232,6 +232,12 @@ class TestUtil(unittest.TestCase):
         a7 = []
         self.assertTrue(util.list_equal(a6, a7))
 
+    def test_np_array_all_same(self):
+        a1 = np.array([1, 2])
+        self.assertFalse(util.np_array_all_same(a1))
+        a1 = np.array([2, 2])
+        self.assertTrue(util.np_array_all_same(a1))
+
 
 if __name__ == "__main__":
     unittest.main()

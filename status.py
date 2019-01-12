@@ -21,7 +21,7 @@ def init_status():
     # if free in long time, clean up memories
     long_duration = [0] * 60 * pps
     # satisfied reward in 5 seconds
-    rewards = [0] * 5 * pps
+    rewards = [0] * 2 * pps
     status.update({WORKLOAD_DATA: {constants.SHORT_DURATION: short_duration, constants.MEDIUM_DURATION: middle_duration,
                                    constants.LONG_DURATION: long_duration}})
     status.update({constants.BUSY: {constants.SHORT_DURATION: False, constants.MEDIUM_DURATION: False,
@@ -33,8 +33,9 @@ def init_status():
 
 def calculate_workload(status, dps, frames, flag):
     avg_workload = util.list_avg(status[WORKLOAD_DATA][flag])
-    logger.debug('avg_workload is {0}'.format(avg_workload))
-    if frames > len(status[WORKLOAD_DATA][flag]) and avg_workload > dps * 0.8:
+    logger.debug(' {0} status list is {1}'.format(flag, status[WORKLOAD_DATA][flag]))
+    logger.debug('{0} avg_workload is {1}'.format(flag, avg_workload))
+    if frames > len(status[WORKLOAD_DATA][flag]) and avg_workload > dps:
         status[constants.BUSY].update({flag: True})
         logger.debug('{0} status is busy.'.format(flag))
     else:

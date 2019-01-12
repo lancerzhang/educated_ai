@@ -12,7 +12,7 @@ import time
 import util
 
 logger = logging.getLogger('Vision')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Vision(object):
@@ -162,6 +162,7 @@ class Vision(object):
 
         # when she's not mature, need to guide her.
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
+            logger.debug('reward is {0}'.format(work_status[constants.REWARD]))
             if key is constants.KEY_ALT or key is constants.KEY_CTRL:
                 # the 1st and most efficient way is to set focus directly, and reward it
                 new_slice_memory = self.move_focus_to_mouse()
@@ -224,8 +225,11 @@ class Vision(object):
                                                          (self.POOL_BLOCK_SIZE, self.POOL_BLOCK_SIZE), np.max)
         # reduce not obvious feature
         threshold_feature = np.where(new_feature_pool2 < self.FEATURE_THRESHOLD, 0, new_feature_pool2)
-        if threshold_feature.sum() == 0:
+        sum_feature = threshold_feature.sum()
+        if sum_feature == 0:
             return None  # no any feature found
+        if util.np_array_all_same(threshold_feature):
+            return None  # useless feature data
         standard_feature = util.standardize_feature(threshold_feature)
         new_feature = standard_feature.flatten().astype(int)
         if feature is None:
@@ -388,6 +392,7 @@ class Vision(object):
         return feature_data
 
     def dig(self):
+        logger.debug('dig')
         ri = random.randint(0, 2)
         if ri == 0:
             return self.random_move_aside()
@@ -411,13 +416,17 @@ class Vision(object):
         return new_block
 
     def random_move_aside(self):
+        logger.debug('random_move_aside')
         move_direction = self.random_direction_straight()
         new_block = self.try_move_aside(move_direction)
         if new_block is None:
             return None
+        logger.debug('new_block is {0}'.format(new_block))
         feature_data = self.search_feature(new_block)
+        logger.debug('feature_data is {0}'.format(feature_data))
         if feature_data is None:
             return None
+        self.current_block = new_block
         degrees = move_direction
         speed = -1
         duration = 0
@@ -475,6 +484,7 @@ class Vision(object):
             return self.ZOOM_RIGHT_BOTTOM
 
     def random_zoom(self, zoom_type=None):
+        logger.debug('random_zoom')
         if zoom_type is None:
             ri = random.randint(0, 1)
             if ri == 0:
@@ -488,9 +498,12 @@ class Vision(object):
             new_block = self.try_zoom_out(zoom_direction)
         if new_block is None:
             return None
+        logger.debug('new_block is {0}'.format(new_block))
         feature_data = self.search_feature(new_block)
+        logger.debug('feature_data is {0}'.format(feature_data))
         if feature_data is None:
             return None
+        self.current_block = new_block
         action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type,
                   constants.ZOOM_DIRECTION: zoom_direction}
         memories = self.data_service.get_vision_zoom_memory(zoom_type, zoom_direction)

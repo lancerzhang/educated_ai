@@ -182,6 +182,11 @@ def np_array_concat(list1, list2):
     return np.concatenate([list1, list2])
 
 
+def np_array_all_same(list1):
+    list2 = [list1[0]] * len(list1)
+    return (list1 == list2).all()
+
+
 def get_high_rank(rank_list):
     ri = random.randint(0, 9)
     if len(rank_list) == 0 or ri == 0:
