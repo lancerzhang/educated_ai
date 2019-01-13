@@ -175,7 +175,7 @@ class TestVision(unittest.TestCase):
         self.vision.SCREEN_WIDTH = width
         self.vision.SCREEN_HEIGHT = height
         self.vision.NUMBER_SUB_REGION = 2
-        hist1 = self.vision.calculate_block_histogram(img1)
+        hist1 = self.vision.calculate_blocks_histogram(img1)
         self.assertEqual(4, len(hist1))
 
     def test_find_most_variable_region(self):
@@ -184,12 +184,12 @@ class TestVision(unittest.TestCase):
         self.vision.SCREEN_WIDTH = width
         self.vision.SCREEN_HEIGHT = height
         self.vision.NUMBER_SUB_REGION = 2
-        hist1 = self.vision.calculate_block_histogram(img1)
+        hist1 = self.vision.calculate_blocks_histogram(img1)
         self.vision.previous_block_histogram = hist1
         self.vision.current_block = {self.vision.START_X: 0, self.vision.START_Y: 0, self.vision.WIDTH: 8,
                                      self.vision.HEIGHT: 8}
         img2 = cv2.imread('rgb2.jpg', 1)
-        block = self.vision.find_most_variable_region(img2)
+        block = self.vision.find_most_variable_block(img2)
         self.assertEqual(width / 2, block[self.vision.START_X])
         self.assertEqual(height / 2, block[self.vision.START_Y])
 

@@ -30,7 +30,6 @@ class Vision(object):
     FEATURE_THRESHOLD = 20
     FEATURE_SIMILARITY_THRESHOLD = 0.2
     POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
-    NUMBER_SUB_REGION = 10
     REGION_VARIANCE_THRESHOLD = 0.05
     MAX_DEGREES = 36  # actual is 10 times
     MAX_SPEED = 40  # actual is 50 times, pixel
@@ -58,7 +57,7 @@ class Vision(object):
     MEMORY_INDEX_FILE = 'data/vmi.npy'
     VISION_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
-    previous_block_histogram = []
+    previous_full_image = None
 
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
     current_action = {STATUS: COMPLETED}
@@ -161,6 +160,7 @@ class Vision(object):
             add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's not mature, need to guide her.
+        this_full_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
             logger.debug('reward is {0}'.format(work_status[constants.REWARD]))
             if key is constants.KEY_ALT or key is constants.KEY_CTRL:
@@ -169,15 +169,18 @@ class Vision(object):
             elif work_status[constants.REWARD]:
                 # stay more time on reward region.
                 new_slice_memory = self.dig()
-            # elif not work_status[constants.REWARD]:
-            #     # move out from current reward region.
-            #     if not work_status[constants.BUSY][constants.SHORT_DURATION]:
-            #         # affected by environment vision change.
-            #         new_slice_memory = self.aware()
-            #     if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
-            #         # if environment not change, random do some change.
-            #         new_slice_memory = self.explore()
+            elif not work_status[constants.REWARD]:
+                # move out from current reward region.
+                new_slice_memory_aware = self.aware(this_full_image)
+                if new_slice_memory_aware:
+                    # affected by environment vision change.
+                    new_slice_memory = new_slice_memory_aware
+                else:
+                    if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
+                        # if environment not change, random do some change.
+                        new_slice_memory = self.explore()
         add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+        self.previous_full_image = this_full_image
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
@@ -302,41 +305,49 @@ class Vision(object):
             if mid not in memory_ids:
                 memory_ids.append(mid)
 
-    def aware(self):
+    def aware(self, image):
+        logger.info('aware')
         start = time.time()
         duration = self.get_duration()
-        pil_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
-        full_img = np.array(pil_image)
-        block = self.find_most_variable_region(full_img)
-        if block is not None and block['v'] > self.REGION_VARIANCE_THRESHOLD:
-            # move focus to variable region
-            return self.set_movement_absolute(block, duration)
+        block = self.find_most_variable_block(image)
+        logger.debug('variable block is {0}'.format(block))
+        logger.debug('current block is {0}'.format(self.current_block))
+        if block is None:
+            return None
+        if block['v'] < self.REGION_VARIANCE_THRESHOLD:
+            return None
         logger.debug('aware used time:{0}'.format(time.time() - start))
+        # move focus to variable region
+        return self.set_movement_absolute(block, duration)
 
-    def find_most_variable_region(self, full_img):
+    def find_most_variable_block(self, this_full_image):
         start = time.time()
         new_block = {}
-        channel_img = get_channel_img(full_img, 'y')
-        this_block_histogram = self.calculate_block_histogram(channel_img)
-        if len(self.previous_block_histogram) == 0:
-            self.previous_block_histogram = this_block_histogram
+        if self.previous_full_image is None:
             return None
         else:
-            diff_arr = util.np_matrix_diff(this_block_histogram, self.previous_block_histogram)
-            self.previous_block_histogram = this_block_histogram
+            # logger.debug('compare channel img {0}'.format((self.previous_full_image == this_full_image).all()))
+            blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
+            blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
+            previous_block_histogram = self.calculate_blocks_histogram(self.previous_full_image, blocks_x, blocks_y)
+            this_block_histogram = self.calculate_blocks_histogram(this_full_image, blocks_x, blocks_y)
+            # logger.debug('previous histogram array is {0}'.format(previous_block_histogram))
+            # logger.debug('this histogram array is {0}'.format(this_block_histogram))
+            diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
             max_index = np.argmax(diff_arr)
             max_var = diff_arr[max_index]
             if max_var < self.REGION_VARIANCE_THRESHOLD:
                 return None
-            width = self.SCREEN_WIDTH / self.NUMBER_SUB_REGION
-            height = self.SCREEN_HEIGHT / self.NUMBER_SUB_REGION
-            new_index_x, new_index_y = util.convert_1d_to_2d_index(max_index, self.NUMBER_SUB_REGION)
-            new_start_x = new_index_x * width
-            new_start_y = new_index_y * height
+            # logger.debug('diff histogram array is {0}'.format(diff_arr))
+            # logger.debug('max_var is {0}'.format(max_var))
+            # np.save('pimg.npy', self.previous_full_image)
+            # np.save('timg.npy', this_full_image)
+            new_index_x, new_index_y = util.find_2d_index(max_index, blocks_x)
+            new_start_x = new_index_x * self.current_block[self.WIDTH]
+            new_start_y = new_index_y * self.current_block[self.HEIGHT]
             new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
             new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
             new_block.update({'v': max_var})
-            self.previous_block_histogram = this_block_histogram
         logger.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
         return new_block
 
@@ -443,13 +454,16 @@ class Vision(object):
         return slice_memory
 
     def explore(self):
-        ri = random.randint(0, 1)
+        logger.debug('explore')
+        # large random number to reduce the possibility
+        ri = random.randint(0, 40)
         if ri == 0:
             return self.random_move_away()
         elif ri == 1:
             return self.random_zoom()
 
     def random_move_away(self):
+        logger.debug('random_move_away')
         # random move, explore the world
         degrees = self.get_degrees()
         self.update_degrees_rank(degrees)
@@ -651,16 +665,20 @@ class Vision(object):
         else:
             action.update({self.STATUS: self.COMPLETED})
 
-    def calculate_block_histogram(self, channel_img):
-        block_histogram = []
-        width = self.SCREEN_WIDTH / self.NUMBER_SUB_REGION
-        height = self.SCREEN_HEIGHT / self.NUMBER_SUB_REGION
-        for j in range(0, self.NUMBER_SUB_REGION):
-            for i in range(0, self.NUMBER_SUB_REGION):
-                ret = channel_img[j * height:(j + 1) * height, i * width:(i + 1) * width]
+    def calculate_blocks_histogram(self, full_image, blocks_x, blocks_y):
+        blocks_histogram = []
+        width = self.current_block[self.WIDTH]
+        height = self.current_block[self.HEIGHT]
+        b, g, r = cv2.split(full_image)
+        for j in range(0, blocks_y):
+            for i in range(0, blocks_x):
+                ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                ret_g = g[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                ret_r = r[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                ret = np.concatenate([ret_b, ret_g, ret_r])
                 hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
-                block_histogram.append(hist_np)
-        return block_histogram
+                blocks_histogram.append(hist_np)
+        return blocks_histogram
 
     def match_movement_memories(self, memories):
         mem = memories[0]

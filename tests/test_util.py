@@ -199,20 +199,20 @@ class TestUtil(unittest.TestCase):
         difference2 = util.np_matrix_diff(arr3, arr4)
         self.assertEqual(0.4, util.list_avg(difference2))
 
-    def test_convert_1d_to_2d_index(self):
-        tuple = util.convert_1d_to_2d_index(0, 2)
+    def test_find_2d_index(self):
+        tuple = util.find_2d_index(0, 2)
         self.assertEqual(0, tuple[0])
         self.assertEqual(0, tuple[1])
-        tuple = util.convert_1d_to_2d_index(1, 2)
+        tuple = util.find_2d_index(1, 2)
         self.assertEqual(0, tuple[0])
         self.assertEqual(1, tuple[1])
-        tuple = util.convert_1d_to_2d_index(2, 2)
+        tuple = util.find_2d_index(2, 2)
         self.assertEqual(1, tuple[0])
         self.assertEqual(0, tuple[1])
-        tuple = util.convert_1d_to_2d_index(3, 2)
+        tuple = util.find_2d_index(3, 2)
         self.assertEqual(1, tuple[0])
         self.assertEqual(1, tuple[1])
-        tuple = util.convert_1d_to_2d_index(4, 2)
+        tuple = util.find_2d_index(4, 2)
         self.assertEqual(2, tuple[0])
         self.assertEqual(0, tuple[1])
 

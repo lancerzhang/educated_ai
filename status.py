@@ -48,7 +48,7 @@ def calculate_reward(status, frames):
         logger.debug('max reward is {0} '.format(max_reward))
         if max_reward > SATISFIED_REWARD:
             status[constants.REWARD] = True
-            logging.info('reward is true.')
+            logging.debug('reward is true.')
         else:
             status[constants.REWARD] = False
 

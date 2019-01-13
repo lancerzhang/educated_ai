@@ -174,7 +174,9 @@ def np_array_diff(arr1, arr2):
 def np_matrix_diff(arr1, arr2):
     differences = []
     for i in range(0, len(arr1)):
-        differences.append(np_array_diff(arr1[i], arr2[i]) * len(arr1))
+        difference = np_array_diff(arr1[i], arr2[i])
+        differences.append(difference)
+        # differences.append(difference * len(arr1))
     return differences
 
 
@@ -220,7 +222,7 @@ def string_to_feature_matrix(str_feature):
     return matrix
 
 
-def convert_1d_to_2d_index(index1, width):
-    x = index1 / width
-    y = index1 % width
+def find_2d_index(indexes, width):
+    y = indexes / width
+    x = indexes % width
     return (x, y)

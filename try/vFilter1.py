@@ -30,7 +30,7 @@ filter5 = np.array([[0.5, 0.5, 0.5],
                     [0.5, 0.5, 0.5],
                     [0.5, 0.5, 0.5]])
 
-new_img=cv2.resize(img,(3,3))
+new_img = cv2.resize(img, (3, 3))
 cov = cv2.filter2D(new_img, -1, filter5)
 cv2.imshow('image', cov)
 print cov
