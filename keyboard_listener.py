@@ -6,7 +6,7 @@ logger = logging.getLogger('InputListener')
 logger.setLevel(logging.INFO)
 
 
-class InputListener(object):
+class KeyboardListener(object):
     key = ''
 
     def __init__(self):

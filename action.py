@@ -1,6 +1,7 @@
 import constants
 import logging
 import memory
+import random
 import time
 from pynput.mouse import Button, Controller
 
@@ -15,7 +16,7 @@ class Action(object):
         self.mouse = Controller()
         self.data_adaptor = ds
 
-    def process(self, working_memories, sequential_time_memories, work_status):
+    def process(self, working_memories, sequential_time_memories, work_status, button):
         actor_mouse_memories = [mem for mem in working_memories if
                                 constants.MEMORY_DURATION in mem and
                                 mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
@@ -27,11 +28,13 @@ class Action(object):
         for mem in matched_feature_memories:
             working_memories.append(mem)
 
-        if not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
-            new_slice_memory = self.explore()
+        if button is constants.MOUSE_LEFT:
+            new_slice_memory = self.feel_left_click()
             if new_slice_memory is not None:
                 sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
                 working_memories.append(new_slice_memory)
+        elif not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
+            self.explore()
 
     def match_actor_mouse_memories(self, memories):
         matched_memories = []
@@ -45,9 +48,9 @@ class Action(object):
                 matched_memories.append(mem)
         return matched_memories
 
-    def left_click(self):
+    def feel_left_click(self):
+        logger.debug('feel_left_click')
         click_type = self.LEFT_CLICK
-        self.mouse.click(Button.left)
         mem = self.data_adaptor.get_action_mouse_memory(click_type)
         if mem is None:
             action = {constants.PHYSICAL_MEMORY_TYPE: constants.ACTION_MOUSE, constants.CLICK_TYPE: click_type}
@@ -55,13 +58,16 @@ class Action(object):
         else:
             memory.recall_memory(mem)
             action_memory = mem
-        return action_memory
+        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
+        return slice_memory
+
+    def left_click(self):
+        self.mouse.click(Button.left)
+        return self.feel_left_click()
 
     def explore(self):
-        start = time.time()
-        action_memory = self.left_click()
-        slice_memory = None
-        if action_memory is not None:
-            slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
-        logger.debug('explore used time:{0}'.format(time.time() - start))
-        return slice_memory
+        ri = random.randint(0, 100)
+        if ri > 0:
+            return
+        self.mouse.click(Button.left)
+        logger.debug('explore')

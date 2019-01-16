@@ -1,7 +1,8 @@
 from action import Action
 from data_adaptor import DataAdaptor
 from db_CodernityDB import DB_CodernityDB
-from input_listener import InputListener
+from keyboard_listener import KeyboardListener
+from mouse_listener import MouseListener
 from mgc import GC
 from reward import Reward
 from sound import Sound
@@ -79,7 +80,9 @@ def main(argv):
                 data_adaptor.synchronize_memory_time(configs[0][constants.LAST_ACTIVE_TIME])
         gc = GC(data_adaptor)
         reward_controller = Reward()
-        keyboard_listener = InputListener()
+        mouse_listener = MouseListener()
+        keyboard_listener = KeyboardListener()
+        thread.start_new_thread(mouse_listener.start, ())
         thread.start_new_thread(keyboard_listener.start, ())
         if video_file:
             vision_controller = VideoFileVision(data_adaptor, video_file)
@@ -99,6 +102,7 @@ def main(argv):
             start = time.time()
             ts1 = time.time()
 
+            button = mouse_listener.get_button()
             key = keyboard_listener.get_key()
             if key is constants.KEY_SHIFT:
                 save_for_exit()
@@ -118,7 +122,7 @@ def main(argv):
             d2 = ts3 - ts2
 
             sound_controller.process(working_memories, sequential_time_memories, work_status)
-            # actor.process(working_memories, sequential_time_memories, work_status)
+            action_controller.process(working_memories, sequential_time_memories, work_status, button)
 
             ts4 = time.time()
             d3 = ts4 - ts3

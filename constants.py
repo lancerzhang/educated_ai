@@ -50,7 +50,7 @@ ACTION_REWARD = 'arw'
 CLICK_TYPE = 'clt'
 
 # main
-process_per_second = 5 # adjust according to your process unit
+process_per_second = 5  # adjust according to your process unit
 LAST_ACTIVE_TIME = 'lat'
 
 # gc
@@ -62,3 +62,4 @@ OLD = 'old'
 KEY_CTRL = 'ctrl'
 KEY_ALT = 'alt'
 KEY_SHIFT = 'shift'
+MOUSE_LEFT = 'mouse_left'
