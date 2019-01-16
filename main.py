@@ -19,7 +19,8 @@ import thread
 import time
 import util
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+logging.basicConfig(filename='app.log', level=logging.INFO,
+                    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S')
 
 DATA_FOLDER = 'data/CodernityDB/'
@@ -72,7 +73,7 @@ def main(argv):
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
         data_adaptor = DataAdaptor(DB_CodernityDB(folder=DATA_FOLDER))
-        if is_hibernate is None or is_hibernate is not 'no':
+        if is_hibernate is None or is_hibernate is 'yes':
             configs = load_main_conf()
             if configs:
                 data_adaptor.synchronize_memory_time(configs[0][constants.LAST_ACTIVE_TIME])

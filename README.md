@@ -26,6 +26,13 @@ pip install opencv-python
  ``` bash
  pip install -r requirements.txt
  ```
+- Configure matplotlib
+ ``` bash
+$ cat ~/.matplotlib/matplotlibrc
+backend: TkAgg
+ ```
+## Train
+5 minutes, 30 minutes, 12 hours, 1 day, 2 days, 4 days, 7 days, 15 days
 ## Other
 if you see many CodernityDB debug log, remove 'print' in below line
 /python27/lib/python2.7/site-packages/CodernityDB/storage.py

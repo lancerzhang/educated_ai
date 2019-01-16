@@ -306,7 +306,7 @@ class Vision(object):
                 memory_ids.append(mid)
 
     def aware(self, image):
-        logger.info('aware')
+        logger.debug('aware')
         start = time.time()
         duration = self.get_duration()
         block = self.find_most_variable_block(image)
@@ -639,8 +639,8 @@ class Vision(object):
         new_start_y = self.current_block[self.START_Y] + math.sin(math.radians(actual_degrees)) * elapse * actual_speed
         new_start_x = self.current_block[self.START_X] + math.cos(math.radians(actual_degrees)) * elapse * actual_speed
         new_block = copy.deepcopy(self.current_block)
-        new_block[self.START_X] = int(new_start_x)
-        new_block[self.START_Y] = int(new_start_y)
+        new_block[self.START_X] = int(round(new_start_x))
+        new_block[self.START_Y] = int(round(new_start_y))
         if not self.verify_block(new_block):
             return None
         return new_block

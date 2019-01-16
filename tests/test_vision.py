@@ -135,33 +135,33 @@ class TestVision(unittest.TestCase):
                                      self.vision.HEIGHT: 100}
         action[self.vision.LAST_MOVE_TIME] = time.time() - 5
         self.vision.calculate_move_action(action)
-        self.assertEqual(980, self.vision.current_block[self.vision.START_Y])
-        self.assertEqual(1820, int(self.vision.current_block[self.vision.START_X]))
+        self.assertEqual(1000, self.vision.current_block[self.vision.START_Y])
+        self.assertEqual(1900, int(self.vision.current_block[self.vision.START_X]))
         self.assertEqual(self.vision.COMPLETED, action[self.vision.STATUS])
 
     def test_calculate_action_degrees(self):
         self.vision.SCREEN_WIDTH = 1920
         self.vision.SCREEN_HEIGHT = 1080
-        cx = 100
-        cy = 100
-        self.vision.current_block = {self.vision.START_X: cx, self.vision.START_Y: cy, self.vision.WIDTH: 50,
+        current_x = 100
+        current_y = 100
+        self.vision.current_block = {self.vision.START_X: current_x, self.vision.START_Y: current_y, self.vision.WIDTH: 50,
                                      self.vision.HEIGHT: 50}
-        sx = 17
-        sy = 10
-        nx = cx + sx
-        ny = cy + sy
-        new_block1 = {self.vision.START_X: nx, self.vision.START_Y: ny}
+        step_x = 17
+        step_y = 10
+        new_x = current_x + step_x
+        new_y = current_y + step_y
+        new_block1 = {self.vision.START_X: new_x, self.vision.START_Y: new_y}
         degrees1 = self.vision.calculate_degrees(new_block1)
         self.assertEqual(3, degrees1)
         action = self.vision.current_action.copy()
         duration = 1
         action[self.vision.LAST_MOVE_TIME] = time.time() - duration
         action[constants.DEGREES] = degrees1
-        action[constants.SPEED] = math.sqrt(sx * sx + sy * sy) / constants.ACTUAL_SPEED_TIMES
+        action[constants.SPEED] = math.sqrt(step_x * step_x + step_y * step_y) / constants.ACTUAL_SPEED_TIMES
         action[constants.DURATION] = duration
         self.vision.calculate_move_action(action)
-        self.assertEqual(nx, self.vision.current_block[self.vision.START_X])
-        self.assertEqual(ny, self.vision.current_block[self.vision.START_Y])
+        self.assertEqual(new_x, self.vision.current_block[self.vision.START_X])
+        self.assertEqual(new_y, self.vision.current_block[self.vision.START_Y])
 
     def test_set_movement_absolute(self):
         self.vision.current_block = {self.vision.START_X: 100, self.vision.START_Y: 100}
@@ -170,22 +170,21 @@ class TestVision(unittest.TestCase):
         self.assertEqual(1, self.vision.current_action[constants.SPEED])
 
     def test_calculate_block_histogram(self):
-        img1 = cv2.imread('rgb1.jpg', 0)
-        height, width = img1.shape
+        img0 = cv2.imread('rgb1.jpg', 0)
+        height, width = img0.shape
         self.vision.SCREEN_WIDTH = width
         self.vision.SCREEN_HEIGHT = height
-        self.vision.NUMBER_SUB_REGION = 2
-        hist1 = self.vision.calculate_blocks_histogram(img1)
+        img1 = cv2.imread('rgb1.jpg', 1)
+        hist1 = self.vision.calculate_blocks_histogram(img1, 2, 2)
         self.assertEqual(4, len(hist1))
 
     def test_find_most_variable_region(self):
-        img1 = cv2.imread('rgb1.jpg', 0)
-        height, width = img1.shape
+        img0 = cv2.imread('rgb1.jpg', 0)
+        height, width = img0.shape
         self.vision.SCREEN_WIDTH = width
         self.vision.SCREEN_HEIGHT = height
-        self.vision.NUMBER_SUB_REGION = 2
-        hist1 = self.vision.calculate_blocks_histogram(img1)
-        self.vision.previous_block_histogram = hist1
+        img1 = cv2.imread('rgb1.jpg', 1)
+        self.vision.previous_full_image = img1
         self.vision.current_block = {self.vision.START_X: 0, self.vision.START_Y: 0, self.vision.WIDTH: 8,
                                      self.vision.HEIGHT: 8}
         img2 = cv2.imread('rgb2.jpg', 1)
@@ -193,29 +192,29 @@ class TestVision(unittest.TestCase):
         self.assertEqual(width / 2, block[self.vision.START_X])
         self.assertEqual(height / 2, block[self.vision.START_Y])
 
-    def test_zoom_in(self):
+    def test_try_zoom_in(self):
         self.vision.roi_index = 1
-        self.vision.try_zoom_in()
-        self.assertEqual(0, self.vision.roi_index)
+        new_block = self.vision.try_zoom_in(Vision.ZOOM_LEFT_TOP)
+        self.assertEqual(0, new_block[Vision.ROI_INDEX_NAME])
         self.vision.roi_index = 0
-        self.vision.try_zoom_in()
-        self.assertEqual(0, self.vision.roi_index)
+        self.vision.try_zoom_in(Vision.ZOOM_LEFT_TOP)
+        self.assertEqual(0, new_block[Vision.ROI_INDEX_NAME])
 
-    def test_zoom_out(self):
+    def test_try_zoom_out(self):
         self.vision.SCREEN_WIDTH = 200
         self.vision.SCREEN_HEIGHT = 200
         self.vision.current_block = {self.vision.START_X: 100, self.vision.START_Y: 100, self.vision.WIDTH: 50,
                                      self.vision.HEIGHT: 50}
         self.vision.roi_index = 0
-        self.vision.try_zoom_out()
-        self.assertEqual(1, self.vision.roi_index)
+        new_block = self.vision.try_zoom_out(Vision.ZOOM_RIGHT_BOTTOM)
+        self.assertEqual(1, new_block[Vision.ROI_INDEX_NAME])
         max_index = len(self.vision.ROI_ARR) - 1
         self.vision.roi_index = max_index
-        self.vision.try_zoom_out()
-        self.assertEqual(max_index, self.vision.roi_index)
+        new_block = self.vision.try_zoom_out(Vision.ZOOM_RIGHT_BOTTOM)
+        self.assertIsNone(new_block)
         self.vision.roi_index = 2
-        self.vision.try_zoom_out()
-        self.assertEqual(2, self.vision.roi_index)
+        new_block = self.vision.try_zoom_out(Vision.ZOOM_RIGHT_BOTTOM)
+        self.assertIsNone(new_block)
 
     def test_get_duration(self):
         result = self.vision.get_duration()

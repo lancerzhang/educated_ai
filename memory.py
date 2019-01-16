@@ -1,8 +1,12 @@
 import constants
+import logging
 import numpy as np
 import random
 import time
 import util
+
+logger = logging.getLogger('memory')
+logger.setLevel(logging.INFO)
 
 INTERVALS = 'itv'
 NEW_MEMORIES = 'nmm'
@@ -189,7 +193,7 @@ def get_live_sub_memories(mem, field, existing_memories=None, limit=0, offset=0)
                     existing_memories.append(sub_mem)
             else:
                 forgot_ids.append(sub_id)
-                print "forgot something"
+                logger.debug('forgot something')
         count = count + 1
         if count >= total:
             break

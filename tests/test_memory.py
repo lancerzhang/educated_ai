@@ -173,7 +173,7 @@ class TestMemory(unittest.TestCase):
         working_memories = []
         seq_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
         mem1 = self.data_service.add_memory({constants.REWARD: 1})
-        mem2 = self.data_service.add_memory({constants.REWARD: 2})
+        mem2 = self.data_service.add_memory({constants.REWARD: 3})
         memories = [mem1, mem2]
         memory.create_working_memory(working_memories, seq_time_memories, [memories], constants.SLICE_MEMORY)
         self.assertEquals(2, seq_time_memories[constants.SLICE_MEMORY][0][constants.REWARD])

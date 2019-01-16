@@ -175,21 +175,26 @@ class Sound(object):
 
     # match the experience sound sense
     def filter_feature(self, raw, kernel, feature=None):
+        logger.debug('filter_feature')
         # map to image color range
         color_data = raw / (self.MAX_FREQUENCY / 256)
         data = color_data.astype(np.uint8)
         feature_data = copy.deepcopy(self.FEATURE_DATA)
         feature_data[constants.KERNEL] = kernel
         data_map = cv2.resize(data, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
+        logger.debug('data map is {0}'.format(np.around(data_map, decimals=2)))
         kernel_arr = util.string_to_feature_matrix(kernel)
         cov = cv2.filter2D(data_map, -1, kernel_arr)
         # down-sampling once use max pool, size is 50% of origin
         new_feature_pool1 = skimage.measure.block_reduce(cov, (self.POOL_BLOCK_SIZE, self.POOL_BLOCK_SIZE), np.max)
+        logger.debug('new_feature_pool1 is {0}'.format(new_feature_pool1))
         # down-sampling again use max pool, size is 25% of origin
         new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1,
                                                          (self.POOL_BLOCK_SIZE, self.POOL_BLOCK_SIZE), np.max)
+        logger.debug('new_feature_pool2 is {0}'.format(new_feature_pool2))
         # reduce not obvious feature
         threshold_feature = np.where(new_feature_pool2 < self.FEATURE_THRESHOLD, 0, new_feature_pool2)
+        logger.debug('threshold_feature is {0}'.format(threshold_feature))
         if threshold_feature.sum() == 0:
             return None  # no any feature found
         standard_feature = util.standardize_feature(threshold_feature)
@@ -222,6 +227,7 @@ class Sound(object):
 
     # try to search more detail
     def search_feature_memory(self, full_frequency_map):
+        logger.debug('search_feature_memory')
         kernel = self.get_kernel()
         # range_width = get_range()
         # energies = get_energy(full_frequency_map)
@@ -233,6 +239,7 @@ class Sound(object):
         data = self.filter_feature(full_frequency_map, kernel)
         if data is None:
             return None
+        logger.debug('feature data is {0}'.format(data))
         mem = self.find_feature_memory(kernel, data[constants.FEATURE])
         if mem is None:
             mem = memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
@@ -310,6 +317,7 @@ class Sound(object):
         frequency_map = librosa.feature.melspectrogram(y=data, sr=self.SAMPLE_RATE, n_mels=map_height,
                                                        hop_length=self.HOP_LENGTH,
                                                        fmax=self.MAX_FREQUENCY)
+        logger.debug('frequency_map is {0}'.format(frequency_map))
         self.previous_phase = phase
         return frequency_map
 

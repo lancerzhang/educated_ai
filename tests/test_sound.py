@@ -12,7 +12,7 @@ class TestSound(unittest.TestCase):
     def setUp(self):
         self.database = DataAdaptor(TinyDB(storage=MemoryStorage))
         self.data = DataAdaptor(self.database)
-        self.sound = Sound(self.data)
+        self.sound = Sound()
 
     def test_filter_feature(self):
         kernel1 = '-1,-1,1,-1,-1,0,1,0,1'
