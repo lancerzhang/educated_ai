@@ -132,7 +132,7 @@ def main(argv):
             ts5 = time.time()
             d4 = ts5 - ts4
 
-            memory.associate(working_memories)
+            working_memories = memory.associate(working_memories)
             memory.prepare_expectation(working_memories)
             memory.check_expectation(working_memories, sequential_time_memories)
 

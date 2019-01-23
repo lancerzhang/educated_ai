@@ -2,7 +2,7 @@ import util, constants
 from data_adaptor import DataAdaptor
 from db_CodernityDB import DB_CodernityDB
 
-data_service = DataAdaptor(DB_CodernityDB(folder='data/CodernityDB/'))
+data_service = DataAdaptor(DB_CodernityDB(folder='../data/CodernityDB/'))
 
 
 def count_memories():
