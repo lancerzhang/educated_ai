@@ -21,6 +21,7 @@ class Action(object):
                                 constants.MEMORY_DURATION in mem and
                                 mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                                 mem[constants.STATUS] is constants.MATCHING and
+                                constants.PHYSICAL_MEMORY_TYPE in mem and
                                 mem[constants.PHYSICAL_MEMORY_TYPE] is constants.ACTION_MOUSE]
 
         matched_feature_memories = self.match_actor_mouse_memories(actor_mouse_memories)
@@ -42,9 +43,7 @@ class Action(object):
             click_type = mem[constants.CLICK_TYPE]
             if click_type is self.LEFT_CLICK:
                 self.mouse.click(Button.left)
-                mem[constants.STATUS] = constants.MATCHED
                 memory.recall_memory(mem)
-                mem.update({constants.HAPPEN_TIME: time.time()})
                 matched_memories.append(mem)
         return matched_memories
 
@@ -58,7 +57,7 @@ class Action(object):
         else:
             memory.recall_memory(mem)
             action_memory = mem
-        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory])
+        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory], constants.ACTION_MOUSE)
         return slice_memory
 
     def left_click(self):

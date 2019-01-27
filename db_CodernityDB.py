@@ -222,7 +222,8 @@ class DB_CodernityDB:
             try:
                 updated = self.db.update(record)
                 return updated
-            except Exception:
+            except Exception as e:
+                # print e
                 return None
 
     def remove(self, eid):
@@ -233,7 +234,8 @@ class DB_CodernityDB:
         if record is not None:
             try:
                 return self.db.delete(record)
-            except Exception:
+            except Exception as e:
+                # print e
                 return None
 
     def search_by_last_call(self, last_call):

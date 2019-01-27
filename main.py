@@ -39,7 +39,7 @@ def load_main_conf():
 
 
 def save_main_config():
-    config = {constants.LAST_ACTIVE_TIME: time.time()}
+    config = {constants.LAST_SYSTEM_TIME: time.time()}
     np.save(MAIN_CONFIG_FILE, np.array([config]))
 
 
@@ -77,7 +77,7 @@ def main(argv):
         if is_hibernate is None or is_hibernate is 'yes':
             configs = load_main_conf()
             if configs:
-                data_adaptor.synchronize_memory_time(configs[0][constants.LAST_ACTIVE_TIME])
+                data_adaptor.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
         gc = GC(data_adaptor)
         reward_controller = Reward()
         mouse_listener = MouseListener()
@@ -100,8 +100,6 @@ def main(argv):
         logging.info('initialized.')
         while 1:
             start = time.time()
-            ts1 = time.time()
-
             button = mouse_listener.get_button()
             key = keyboard_listener.get_key()
             if key is constants.KEY_SHIFT:
@@ -112,61 +110,25 @@ def main(argv):
             frames = frames + 1
 
             status.calculate_status(work_status, dps, frames)
-
-            ts2 = time.time()
-            d1 = ts2 - ts1
-
+            memory.associate(working_memories)
+            memory.prepare_expectation(working_memories)
             vision_controller.process(working_memories, sequential_time_memories, work_status, key)
-
-            ts3 = time.time()
-            d2 = ts3 - ts2
-
             sound_controller.process(working_memories, sequential_time_memories, work_status)
             action_controller.process(working_memories, sequential_time_memories, work_status, button)
-
-            ts4 = time.time()
-            d3 = ts4 - ts3
-
             reward_controller.process(sequential_time_memories, key)
-
-            ts5 = time.time()
-            d4 = ts5 - ts4
-
-            working_memories = memory.associate(working_memories)
-            memory.prepare_expectation(working_memories)
-            memory.check_expectation(working_memories, sequential_time_memories)
-
-            ts6 = time.time()
-            d5 = ts6 - ts5
-
+            memory.check_expectations(working_memories, sequential_time_memories)
             memory.compose(working_memories, sequential_time_memories)
-
-            ts7 = time.time()
-            d6 = ts7 - ts6
 
             # work end
             work_duration = util.time_diff(start)
             status.update_status(working_memories, work_status, work_duration)
-
-            ts8 = time.time()
-            d7 = ts8 - ts7
-
-            working_memories = memory.cleanup_working_memories(working_memories, work_status)
-
-            ts9 = time.time()
-            d8 = ts9 - ts8
+            working_memories = memory.cleanup_working_memories(working_memories)
 
             process_duration = util.time_diff(start)
             gc.process(process_duration)
 
-            ts10 = time.time()
-            d9 = ts10 - ts9
-
             all_duration = util.time_diff(start)
             logging.debug('frame used time {0} '.format(all_duration))
-            if all_duration > 0.2:
-                logging.debug(
-                    'used time detail {0} '.format(np.around([d1, d2, d3, d4, d5, d6, d7, d8, d9], decimals=2)))
 
             # all end, sleep to avoid running too fast
             if all_duration < dps:

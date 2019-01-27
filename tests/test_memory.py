@@ -196,7 +196,6 @@ class TestMemory(unittest.TestCase):
         self.assertEquals(2, len(working_memories))
 
     def test_associate_slice_empty(self):
-        memory.threshold_of_working_memories = 3
         mem0 = self.data_service.add_memory({constants.STATUS: constants.MATCHING, constants.END_TIME: 1})
         pmem1 = self.data_service.add_memory(
             {constants.LAST_RECALL_TIME: 1, constants.REWARD: 1, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
@@ -205,16 +204,15 @@ class TestMemory(unittest.TestCase):
         now = time.time() + 100
         mem3 = self.data_service.add_memory(
             {constants.END_TIME: now, constants.STATUS: constants.MATCHED,
-             constants.PARENT_MEM: [5, 6, pmem1[constants.MID], pmem2[constants.MID]]})
+             constants.PARENT_MEM: [5, 6, pmem1[constants.MID], 7]})
         mem4 = self.data_service.add_memory(
-            {constants.END_TIME: now, constants.STATUS: constants.MATCHED,
-             constants.PARENT_MEM: [6, pmem1[constants.MID], pmem2[constants.MID], 8]})
+            {constants.END_TIME: now, constants.STATUS: constants.MATCHING,
+             constants.PARENT_MEM: [6, 7, pmem2[constants.MID], 8]})
         mem3[constants.LAST_RECALL_TIME] = now
         mem4[constants.LAST_RECALL_TIME] = now
-        memories = [mem0, mem3, mem4]
-        working_memories = memory.associate(memories)
-        self.assertEqual(3, len(working_memories))
-        self.assertEqual(2, working_memories[2][constants.REWARD])
+        working_memories = [mem0, mem3, mem4]
+        memory.associate(working_memories)
+        self.assertEqual(4, len(working_memories))
 
     def test_prepare_expectation(self):
         mem1 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY})
@@ -259,41 +257,43 @@ class TestMemory(unittest.TestCase):
             {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.END_TIME: 1})
         working_memories = [mem1, mem2, imem1, imem2, smem1, smem2, smem3, mem3]
-        memory.check_expectation(working_memories, sequential_time_memories)
+        memory.check_expectations(working_memories, sequential_time_memories)
         self.assertEquals(constants.MATCHED, imem1[constants.STATUS])
         self.assertEquals(constants.MATCHING, imem2[constants.STATUS])
         self.assertEquals(constants.MATCHING, smem1[constants.STATUS])
         self.assertEquals(constants.EXPIRED, smem3[constants.STATUS])
         self.assertEquals(1, len(sequential_time_memories[memory.INSTANT_MEMORY]))
         matched_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHED]
-        self.assertEquals(5, len(matched_memories))
+        self.assertEquals(4, len(matched_memories))
         matching_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
-        self.assertEquals(2, len(matching_memories))
+        self.assertEquals(3, len(matching_memories))
         expired_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.EXPIRED]
         self.assertEquals(1, len(expired_memories))
 
     def test_cleanup_working_memories(self):
         new_time = time.time() + 10000
-        reward = {constants.REWARD: True}
+        now_time = time.time()
         mem1 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.LONG_MEMORY, constants.STATUS: constants.MATCHED, constants.REWARD: 2,
-             constants.END_TIME: new_time})
+            {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHED, constants.REWARD: 2,
+             constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time})
         mem2 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.LONG_MEMORY, constants.STATUS: constants.MATCHING, constants.REWARD: 1,
-             constants.END_TIME: new_time})
+             constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time - 10})
         mem3 = self.data_service.add_memory(
             {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHED, constants.REWARD: 1,
-             constants.END_TIME: new_time})
-        memories = [mem1, mem2, mem3]
+             constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time - 5})
+        mem4 = self.data_service.add_memory(
+            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING, constants.REWARD: 1,
+             constants.END_TIME: now_time - 5, constants.LAST_ACTIVE_TIME: now_time - 5})
+        memories = [mem1, mem2, mem3, mem4]
         memory.threshold_of_working_memories = 2
-        working_memories = memory.cleanup_working_memories(memories, reward)
+        working_memories = memory.cleanup_working_memories(memories)
         self.assertEquals(2, len(working_memories))
-        self.assertEquals(1, working_memories[0][constants.REWARD])
-        self.assertEquals(memory.LONG_MEMORY, working_memories[0][constants.MEMORY_DURATION])
-        reward2 = {constants.REWARD: False}
-        working_memories2 = memory.cleanup_working_memories(memories, reward2)
-        self.assertEquals(2, working_memories2[0][constants.REWARD])
-        self.assertEquals(memory.LONG_MEMORY, working_memories2[1][constants.MEMORY_DURATION])
+        self.assertEquals(memory.INSTANT_MEMORY, working_memories[0][constants.MEMORY_DURATION])
+        self.assertEquals(memory.SHORT_MEMORY, working_memories[1][constants.MEMORY_DURATION])
+        memory.threshold_of_working_memories = 4
+        working_memories2 = memory.cleanup_working_memories(memories)
+        self.assertEquals(3, len(working_memories2))
 
     def test_verify_slice_memory_match_result(self):
         working_memories = []
@@ -325,6 +325,10 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(2, len(memory.remove_duplicate_memory([mem1, mem2, mem1, mem2])))
 
     def test_increase_list_field(self):
+        # TODO
+        return
+
+    def test_activate_parent_memories(self):
         # TODO
         return
 

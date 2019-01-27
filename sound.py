@@ -115,6 +115,7 @@ class Sound(object):
                                   constants.MEMORY_DURATION in mem and
                                   mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                                   mem[constants.STATUS] is constants.MATCHING and
+                                  constants.PHYSICAL_MEMORY_TYPE in mem and
                                   mem[constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
 
         matched_feature_memories = self.match_features(frequency_map, slice_feature_memories, working_memories,
@@ -126,7 +127,8 @@ class Sound(object):
             matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
             if new_feature_memory is not None and new_feature_memory[constants.MID] not in matched_feature_memories_ids:
                 matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories)
+            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
+                                                            constants.SOUND_FEATURE)
         elif new_feature_memory is not None:
             new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
             new_matched_feature_memories = self.match_features(frequency_map, new_slice_memories, working_memories,
@@ -134,7 +136,8 @@ class Sound(object):
             new_matched_feature_memories_ids = [x[constants.MID] for x in new_matched_feature_memories]
             if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
                 new_matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories)
+            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories,
+                                                            constants.SOUND_FEATURE)
         add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # if not work_status[constants.BUSY][constants.SHORT_DURATION]:
@@ -169,7 +172,6 @@ class Sound(object):
         if data[constants.SIMILAR]:
             # recall memory and update feature to average
             memory.recall_feature_memory(fmm, data[constants.FEATURE])
-            fmm[constants.STATUS] = constants.MATCHED
             self.update_kernel_rank(kernel)
         return data[constants.SIMILAR]
 
@@ -278,7 +280,7 @@ class Sound(object):
         data = self.filter_feature(frequency_map, kernel)
         if range_data['v'] > self.REGION_VARIANCE_THRESHOLD:
             fmm = memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
-            smm = memory.add_collection_memory(constants.SLICE_MEMORY, [fmm])
+            smm = memory.add_collection_memory(constants.SLICE_MEMORY, [fmm], constants.SOUND_FEATURE)
             return smm
         else:
             return None

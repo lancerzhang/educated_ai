@@ -39,9 +39,9 @@ MATCHED = '5mcd'
 EXPIRED = '4xpd'
 START_TIME = 'stt'
 END_TIME = 'edt'
+LAST_ACTIVE_TIME = 'lat'
 MEMORY_DURATION = 'mmd'
 HAPPEN_TIME = 'hpt'
-LAST_USED_TIME = 'lut'
 MEMORIES = 'mms'
 
 # action
@@ -51,7 +51,7 @@ CLICK_TYPE = 'clt'
 
 # main
 process_per_second = 8  # adjust according to your process unit
-LAST_ACTIVE_TIME = 'lat'
+LAST_SYSTEM_TIME = 'lst'
 
 # gc
 EDEN = 'eden'

@@ -23,6 +23,9 @@ def list_physical_memories():
             print mem
 
 
-print count_memories()
-print list_top_memories(constants.RECALL)
-# print list_top_memories(constants.REWARD)
+# print count_memories()
+field = constants.RECALL
+# field = constants.REWARD
+# memories = list_top_memories(field)
+# print [x[field] for x in memories]
+print data_service.get_memory('46f1ac1dcb694f0780ca9d497e6e85d2')
