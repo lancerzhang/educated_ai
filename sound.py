@@ -97,9 +97,8 @@ class Sound(object):
                     # ignore non-process phase
                     self.phases.popleft()
                 self.phases.append(frame_data)
-
         except:
-            self.save_files()
+            pass
 
     def save_files(self):
         np.save(self.MEMORY_INDEX_FILE, self.memory_indexes)

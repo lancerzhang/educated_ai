@@ -111,6 +111,7 @@ class Vision(object):
         if self.current_action[self.STATUS] is self.IN_PROGRESS:
             self.calculate_move_action(self.current_action)
 
+        new_slice_memory = None
         slice_feature_memories = [mem for mem in working_memories if
                                   constants.MEMORY_DURATION in mem and
                                   mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
@@ -122,25 +123,24 @@ class Vision(object):
             logger.debug('slice_feature_memories is {0}'.format(slice_feature_memories))
             matched_feature_memories = self.match_features(slice_feature_memories, working_memories,
                                                            sequential_time_memories)
-
-        new_slice_memory = None
-        new_feature_memory = self.search_feature_memory(self.current_block)
-        if len(matched_feature_memories) > 0:
-            matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
-            if new_feature_memory is not None and new_feature_memory[constants.MID] not in matched_feature_memories_ids:
-                matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
-                                                            constants.VISION_FEATURE)
-        elif new_feature_memory is not None:
-            new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
-            new_matched_feature_memories = self.match_features(new_slice_memories, working_memories,
-                                                               sequential_time_memories)
-            new_matched_feature_memories_ids = [x[constants.MID] for x in new_matched_feature_memories]
-            if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
-                new_matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories,
-                                                            constants.VISION_FEATURE)
-        add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+            new_feature_memory = self.search_feature_memory(self.current_block)
+            if len(matched_feature_memories) > 0:
+                matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
+                if new_feature_memory is not None and \
+                        new_feature_memory[constants.MID] not in matched_feature_memories_ids:
+                    matched_feature_memories.append(new_feature_memory)
+                new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
+                                                                constants.VISION_FEATURE)
+            elif new_feature_memory is not None:
+                new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
+                new_matched_feature_memories = self.match_features(new_slice_memories, working_memories,
+                                                                   sequential_time_memories)
+                new_matched_feature_memories_ids = [x[constants.MID] for x in new_matched_feature_memories]
+                if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
+                    new_matched_feature_memories.append(new_feature_memory)
+                new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories,
+                                                                constants.VISION_FEATURE)
+            add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's mature, below is the major way of focus move/zoom.
         slice_movement_memories = [mem for mem in working_memories if
@@ -152,7 +152,7 @@ class Vision(object):
         logger.debug('len of slice_movement_memories is {0}'.format(len(slice_movement_memories)))
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
             if len(slice_movement_memories) > 0:
-                logger.debug('slice_movement_memories is {0}'.format(slice_movement_memories))
+                logger.debug('slice movement memories is {0}'.format(slice_movement_memories))
                 new_slice_memory = self.match_movement_memories(slice_movement_memories)
                 add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
@@ -188,7 +188,8 @@ class Vision(object):
                     if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
                         # if environment not change, random do some change.
                         new_slice_memory = self.explore()
-        add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+        if new_slice_memory:
+            add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
         self.previous_full_image = this_full_image
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
@@ -203,6 +204,7 @@ class Vision(object):
             self.match_feature(fmm)
         matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,
                                                                            working_memories, sequential_time_memories)
+        logger.info('reproduce feature memories {0}'.format(matched_feature_memories))
         return matched_feature_memories
 
     def match_feature(self, fmm):

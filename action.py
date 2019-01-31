@@ -24,10 +24,11 @@ class Action(object):
                                 constants.PHYSICAL_MEMORY_TYPE in mem and
                                 mem[constants.PHYSICAL_MEMORY_TYPE] is constants.ACTION_MOUSE]
 
-        matched_feature_memories = self.match_actor_mouse_memories(actor_mouse_memories)
+        if len(actor_mouse_memories) > 0:
+            matched_feature_memories = self.match_actor_mouse_memories(actor_mouse_memories)
 
-        for mem in matched_feature_memories:
-            working_memories.append(mem)
+            for mem in matched_feature_memories:
+                working_memories.append(mem)
 
         if button is constants.MOUSE_LEFT:
             new_slice_memory = self.feel_left_click()
@@ -40,6 +41,7 @@ class Action(object):
     def match_actor_mouse_memories(self, memories):
         matched_memories = []
         for mem in memories:
+            logger.info('reproduce actor_mouse_memories {0}'.format(mem))
             click_type = mem[constants.CLICK_TYPE]
             if click_type is self.LEFT_CLICK:
                 self.mouse.click(Button.left)

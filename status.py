@@ -4,7 +4,7 @@ import util
 import numpy as np
 
 logger = logging.getLogger('status')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 WORKLOAD_DATA = 'duration_data'
 REWARD_DATA = 'reward_data'
@@ -79,3 +79,14 @@ def update_status(working_memories, status, processing_time):
     max_reward = find_max_reward(working_memories)
     status[REWARD_DATA].pop(0)
     status[REWARD_DATA].append(max_reward)
+    debug_working_memories(working_memories)
+
+
+def debug_working_memories(working_memories):
+    if logger.getEffectiveLevel() is logging.DEBUG:
+        for mem in working_memories:
+            # exclude expectation, which don't have happen time
+            if constants.HAPPEN_TIME in mem:
+                survive_time = mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]
+                if survive_time > 0.5:
+                    logger.debug('survive working memory is {0}'.format(mem))
