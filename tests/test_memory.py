@@ -179,7 +179,7 @@ class TestMemory(unittest.TestCase):
         self.assertEquals(2, seq_time_memories[constants.SLICE_MEMORY][0][constants.REWARD])
 
     def test_append_working_memories(self):
-        mem1 = self.data_service.add_memory({constants.MEMORY_DURATION: memory.INSTANT_MEMORY})
+        mem1 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.INSTANT_MEMORY})
         working_memories = []
         new_memories = [mem1]
         memory.append_working_memories(working_memories, new_memories)
@@ -189,8 +189,8 @@ class TestMemory(unittest.TestCase):
         self.assertGreater(working_memories[0][constants.LAST_RECALL_TIME], 0)
         memory.append_working_memories(working_memories, new_memories)
         self.assertEquals(1, len(working_memories))
-        mem2 = self.data_service.add_memory({constants.MEMORY_DURATION: memory.INSTANT_MEMORY})
-        mem3 = self.data_service.add_memory({constants.MEMORY_DURATION: memory.INSTANT_MEMORY})
+        mem2 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.INSTANT_MEMORY})
+        mem3 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.INSTANT_MEMORY})
         new_memories2 = [mem2, mem3]
         memory.append_working_memories(working_memories, new_memories2, 1)
         self.assertEquals(2, len(working_memories))
@@ -218,12 +218,12 @@ class TestMemory(unittest.TestCase):
         mem1 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY})
         mem2 = self.data_service.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY})
         imem1 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]]})
         imem2 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING})
+            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING})
         smem1 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]]})
         working_memories = [imem1, smem1]
         memory.prepare_expectation(working_memories)
@@ -242,19 +242,19 @@ class TestMemory(unittest.TestCase):
             {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
              constants.END_TIME: new_time})
         imem1 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]], constants.END_TIME: new_time})
         imem2 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [mem3[constants.MID]], constants.END_TIME: new_time})
         smem1 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]], constants.END_TIME: new_time})
         smem2 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
+            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
              constants.END_TIME: new_time})
         smem3 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.END_TIME: 1})
         working_memories = [mem1, mem2, imem1, imem2, smem1, smem2, smem3, mem3]
         memory.check_expectations(working_memories, sequential_time_memories)
@@ -262,7 +262,7 @@ class TestMemory(unittest.TestCase):
         self.assertEquals(constants.MATCHING, imem2[constants.STATUS])
         self.assertEquals(constants.MATCHING, smem1[constants.STATUS])
         self.assertEquals(constants.EXPIRED, smem3[constants.STATUS])
-        self.assertEquals(1, len(sequential_time_memories[memory.INSTANT_MEMORY]))
+        self.assertEquals(1, len(sequential_time_memories[constants.INSTANT_MEMORY]))
         matched_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHED]
         self.assertEquals(4, len(matched_memories))
         matching_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
@@ -274,23 +274,23 @@ class TestMemory(unittest.TestCase):
         new_time = time.time() + 10000
         now_time = time.time()
         mem1 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.INSTANT_MEMORY, constants.STATUS: constants.MATCHED, constants.REWARD: 2,
+            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHED, constants.REWARD: 2,
              constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time})
         mem2 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.LONG_MEMORY, constants.STATUS: constants.MATCHING, constants.REWARD: 1,
+            {constants.MEMORY_DURATION: constants.LONG_MEMORY, constants.STATUS: constants.MATCHING, constants.REWARD: 1,
              constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time - 10})
         mem3 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHED, constants.REWARD: 1,
+            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHED, constants.REWARD: 1,
              constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time - 5})
         mem4 = self.data_service.add_memory(
-            {constants.MEMORY_DURATION: memory.SHORT_MEMORY, constants.STATUS: constants.MATCHING, constants.REWARD: 1,
+            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING, constants.REWARD: 1,
              constants.END_TIME: now_time - 5, constants.LAST_ACTIVE_TIME: now_time - 5})
         memories = [mem1, mem2, mem3, mem4]
         memory.threshold_of_working_memories = 2
         working_memories = memory.cleanup_working_memories(memories)
         self.assertEquals(2, len(working_memories))
-        self.assertEquals(memory.INSTANT_MEMORY, working_memories[0][constants.MEMORY_DURATION])
-        self.assertEquals(memory.SHORT_MEMORY, working_memories[1][constants.MEMORY_DURATION])
+        self.assertEquals(constants.INSTANT_MEMORY, working_memories[0][constants.MEMORY_DURATION])
+        self.assertEquals(constants.SHORT_MEMORY, working_memories[1][constants.MEMORY_DURATION])
         memory.threshold_of_working_memories = 4
         working_memories2 = memory.cleanup_working_memories(memories)
         self.assertEquals(3, len(working_memories2))

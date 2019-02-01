@@ -189,6 +189,11 @@ def np_array_all_same(list1):
     return (list1 == list2).all()
 
 
+def np_array_group_by_count(list1):
+    unique, counts = numpy.unique(list1, return_counts=True)
+    return dict(zip(unique, counts))
+
+
 def get_high_rank(rank_list):
     ri = random.randint(0, 9)
     if len(rank_list) == 0 or ri == 0:
@@ -201,13 +206,13 @@ def get_high_rank(rank_list):
 
 
 def update_rank_list(key_key, key_value, rank_list):
-    element = next((x for x in rank_list if x[key_key] is key_value), None)
+    element = next((x for x in rank_list if x[key_key] == key_value), None)
     if element is None:
         element = {key_key: key_value, USED_COUNT: 1}
         rank_list = np.append(rank_list, element)
     else:
         element[USED_COUNT] = element[USED_COUNT] + 1
-    return sorted(rank_list, key=lambda x: (x[key_key]), reverse=True)
+    return sorted(rank_list, key=lambda x: (x[USED_COUNT]), reverse=True)
 
 
 def matrix_to_string(matrix):

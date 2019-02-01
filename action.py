@@ -39,15 +39,19 @@ class Action(object):
             self.explore()
 
     def match_actor_mouse_memories(self, memories):
-        matched_memories = []
-        for mem in memories:
-            logger.info('reproduce actor_mouse_memories {0}'.format(mem))
-            click_type = mem[constants.CLICK_TYPE]
-            if click_type is self.LEFT_CLICK:
-                self.mouse.click(Button.left)
-                memory.recall_memory(mem)
-                matched_memories.append(mem)
-        return matched_memories
+        slice_memory = memories[0]
+        feature_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
+        if len(feature_memories) < 1:
+            return
+        mem = feature_memories[0]  # assume only one feature memory
+        logger.info('reproduce actor_mouse_memories {0}'.format(mem))
+        click_type = mem[constants.CLICK_TYPE]
+        if click_type is self.LEFT_CLICK:
+            self.mouse.click(Button.left)
+            memory.recall_memory(mem)
+            memory.recall_memory(slice_memory)
+            return slice_memory
+        return None
 
     def feel_left_click(self):
         logger.debug('feel_left_click')

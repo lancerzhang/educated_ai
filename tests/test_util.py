@@ -158,11 +158,13 @@ class TestUtil(unittest.TestCase):
         rank_list = util.update_rank_list(SPEED, 4, rank_list)
         self.assertEquals(4, len(rank_list))
         rank_list2 = np.array([])
-        kernel1 = '-1, -1, 1,-1, -1, 0,1, 0, 1'
+        kernel0 = '1, -1, 1,-1, -1, 0, 1, 0, 1'
+        rank_list2 = util.update_rank_list('knl', kernel0, rank_list2)
+        kernel1 = '-1, -1, 1,-1, -1, 0, 1, 0, 1'
         rank_list2 = util.update_rank_list('knl', kernel1, rank_list2)
-        kernel2 = '-1, -1, 1,-1, -1, 0,1, 0, 1'
+        kernel2 = '-1, -1, 1,-1, -1, 0, 1, 0, 1'
         rank_list2 = util.update_rank_list('knl', kernel2, rank_list2)
-        self.assertIsNotNone(rank_list2)
+        self.assertEquals(2, rank_list2[0][util.USED_COUNT])
 
     def test_get_high_rank(self):
         SPEED = 'spd'

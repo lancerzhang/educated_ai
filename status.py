@@ -33,11 +33,11 @@ def init_status():
 
 def calculate_workload(status, dps, frames, flag):
     avg_workload = util.list_avg(status[WORKLOAD_DATA][flag])
-    logger.debug(' {0} status list is {1}'.format(flag, status[WORKLOAD_DATA][flag]))
-    logger.debug('{0} avg_workload is {1}'.format(flag, avg_workload))
+    # logger.debug(' {0} status list is {1}'.format(flag, status[WORKLOAD_DATA][flag]))
+    # logger.debug('{0} avg_workload is {1}'.format(flag, avg_workload))
     if frames > len(status[WORKLOAD_DATA][flag]) and avg_workload > dps:
         status[constants.BUSY].update({flag: True})
-        logger.debug('{0} status is busy.'.format(flag))
+        # logger.debug('{0} status is busy.'.format(flag))
     else:
         status[constants.BUSY].update({flag: False})
 
@@ -54,7 +54,7 @@ def calculate_reward(status, frames):
 
 
 def calculate_status(status, dps, frames):
-    logger.debug('status is {0} '.format(status))
+    # logger.debug('status is {0} '.format(status))
     calculate_workload(status, dps, frames, constants.SHORT_DURATION)
     calculate_workload(status, dps, frames, constants.MEDIUM_DURATION)
     calculate_workload(status, dps, frames, constants.LONG_DURATION)
@@ -79,14 +79,56 @@ def update_status(working_memories, status, processing_time):
     max_reward = find_max_reward(working_memories)
     status[REWARD_DATA].pop(0)
     status[REWARD_DATA].append(max_reward)
-    debug_working_memories(working_memories)
+    working_memories_statistics(working_memories)
 
 
-def debug_working_memories(working_memories):
+def working_memories_statistics(working_memories):
     if logger.getEffectiveLevel() is logging.DEBUG:
-        for mem in working_memories:
-            # exclude expectation, which don't have happen time
-            if constants.HAPPEN_TIME in mem:
-                survive_time = mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]
-                if survive_time > 0.5:
-                    logger.debug('survive working memory is {0}'.format(mem))
+        # memory_survive_detail(working_memories)
+        memory_survive_statistics(working_memories)
+        memory_duration_statistics(working_memories)
+        memory_recall_statistics(working_memories)
+        memory_reward_statistics(working_memories)
+        memory_status_statistics(working_memories)
+
+
+def memory_status_statistics(working_memories):
+    status_data = [mem[constants.STATUS] for mem in working_memories]
+    status_dict = util.np_array_group_by_count(status_data)
+    logger.debug('count of status is {0}'.format(status_dict))
+
+
+def memory_reward_statistics(working_memories):
+    reward_data = [mem[constants.REWARD] for mem in working_memories]
+    reward_dict = util.np_array_group_by_count(reward_data)
+    logger.debug('count of reward is {0}'.format(reward_dict))
+
+
+def memory_recall_statistics(working_memories):
+    recall_data = [mem[constants.RECALL] for mem in working_memories]
+    recall_dict = util.np_array_group_by_count(recall_data)
+    logger.debug('count of recall is {0}'.format(recall_dict))
+
+
+def memory_duration_statistics(working_memories):
+    memory_duration_data = [mem[constants.MEMORY_DURATION] for mem in working_memories if
+                            constants.MEMORY_DURATION in mem]
+    memory_duration_dict = util.np_array_group_by_count(memory_duration_data)
+    logger.debug('count of memory duration is {0}'.format(memory_duration_dict))
+
+
+def memory_survive_statistics(working_memories):
+    memory_survive_data = [int(mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]) for mem in
+                           working_memories if constants.HAPPEN_TIME in mem]
+    memory_survive_dict = util.np_array_group_by_count(memory_survive_data)
+    logger.debug('count of memory survive is {0}'.format(memory_survive_dict))
+
+
+def memory_survive_detail(working_memories):
+    for mem in working_memories:
+        # exclude expectation, which don't have happen time
+        if constants.HAPPEN_TIME in mem:
+            survive_time = mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]
+            if survive_time > 10:
+                logger.debug('{0} survive_time is {1}'.format(mem[constants.MID], survive_time))
+                # logger.debug('survive working memory is {0}'.format(mem))

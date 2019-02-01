@@ -15,10 +15,6 @@ NEW_MEMORIES = 'nmm'
 REST_OF_MEMORIES = 'rom'
 COMPOSE_NUMBER = 4
 
-INSTANT_MEMORY = '5itm'  # instant memory
-SHORT_MEMORY = '6stm'  # short time memory
-LONG_MEMORY = '7ltm'  # long time memory
-
 # additional data
 CHILD_DAT1 = 'cd1'
 
@@ -43,7 +39,7 @@ data_adaptor = None
 BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL_TIME: 0,
                 constants.PARENT_MEM: [], constants.CHILD_MEM: []}
 
-BASIC_MEMORY_GROUP_ARR = {constants.SLICE_MEMORY: [], SHORT_MEMORY: [], INSTANT_MEMORY: [], LONG_MEMORY: []}
+BASIC_MEMORY_GROUP_ARR = {constants.SLICE_MEMORY: [], constants.SHORT_MEMORY: [], constants.INSTANT_MEMORY: [], constants.LONG_MEMORY: []}
 
 # The first recall time, if less than 60 seconds, memory strength is 100%, and then 99% for 61 seconds ... 21% for 35 days
 # TIME_SEC = [60, 61, 63, 66, 70, 75, 81, 88, 96, 105, 115, 126, 138, 151, 165, 180, 196, 213, 231, 250, 270, 291, 313, 336, 360, 385, 411, 438, 466, 495, 525, 540, 600, 660, 720,
@@ -268,19 +264,19 @@ def compose(working_memories, seq_time_memories):
     # start = time.time()
     result1 = split_seq_time_memories(seq_time_memories[constants.SLICE_MEMORY], DURATION_INSTANT)
     seq_time_memories[constants.SLICE_MEMORY] = result1[REST_OF_MEMORIES]
-    create_working_memory(working_memories, seq_time_memories, result1[NEW_MEMORIES], INSTANT_MEMORY)
+    create_working_memory(working_memories, seq_time_memories, result1[NEW_MEMORIES], constants.INSTANT_MEMORY)
 
-    result2 = split_seq_time_memories(seq_time_memories[INSTANT_MEMORY], DURATION_SHORT)
-    seq_time_memories[INSTANT_MEMORY] = result2[REST_OF_MEMORIES]
-    create_working_memory(working_memories, seq_time_memories, result2[NEW_MEMORIES], SHORT_MEMORY)
+    result2 = split_seq_time_memories(seq_time_memories[constants.INSTANT_MEMORY], DURATION_SHORT)
+    seq_time_memories[constants.INSTANT_MEMORY] = result2[REST_OF_MEMORIES]
+    create_working_memory(working_memories, seq_time_memories, result2[NEW_MEMORIES], constants.SHORT_MEMORY)
 
-    result3 = split_seq_time_memories(seq_time_memories[SHORT_MEMORY], DURATION_LONG)
-    seq_time_memories[SHORT_MEMORY] = result3[REST_OF_MEMORIES]
-    create_working_memory(working_memories, seq_time_memories, result3[NEW_MEMORIES], LONG_MEMORY)
+    result3 = split_seq_time_memories(seq_time_memories[constants.SHORT_MEMORY], DURATION_LONG)
+    seq_time_memories[constants.SHORT_MEMORY] = result3[REST_OF_MEMORIES]
+    create_working_memory(working_memories, seq_time_memories, result3[NEW_MEMORIES], constants.LONG_MEMORY)
 
-    result4 = split_seq_time_memories(seq_time_memories[LONG_MEMORY])
-    seq_time_memories[LONG_MEMORY] = result4[REST_OF_MEMORIES]
-    create_working_memory(working_memories, seq_time_memories, result4[NEW_MEMORIES], LONG_MEMORY)
+    result4 = split_seq_time_memories(seq_time_memories[constants.LONG_MEMORY])
+    seq_time_memories[constants.LONG_MEMORY] = result4[REST_OF_MEMORIES]
+    create_working_memory(working_memories, seq_time_memories, result4[NEW_MEMORIES], constants.LONG_MEMORY)
     # print 'compose used time	' + str(time.time() - start)
 
 
@@ -330,11 +326,11 @@ def split_seq_time_memories(memories, gap=60.0):
 def convert_to_expectation(mem):
     exp = {constants.STATUS: constants.MATCHING, constants.START_TIME: time.time(),
            constants.LAST_ACTIVE_TIME: time.time()}
-    if mem[constants.MEMORY_DURATION] is INSTANT_MEMORY:
+    if mem[constants.MEMORY_DURATION] is constants.INSTANT_MEMORY:
         exp.update({constants.END_TIME: time.time() + DURATION_INSTANT})
-    elif mem[constants.MEMORY_DURATION] is SHORT_MEMORY:
+    elif mem[constants.MEMORY_DURATION] is constants.SHORT_MEMORY:
         exp.update({constants.END_TIME: time.time() + DURATION_SHORT})
-    elif mem[constants.MEMORY_DURATION] is LONG_MEMORY:
+    elif mem[constants.MEMORY_DURATION] is constants.LONG_MEMORY:
         exp.update({constants.END_TIME: time.time() + DURATION_LONG})
     elif mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY:
         exp.update({constants.END_TIME: time.time() + DURATION_SLICE})
@@ -377,10 +373,10 @@ def prepare_expectation(working_memories):
     logger.debug('len of pending_memories is {0}'.format(len(pending_memories)))
     for pmem in pending_memories:
         live_children = get_live_sub_memories(pmem, constants.CHILD_MEM)
-        if pmem[constants.MEMORY_DURATION] is INSTANT_MEMORY:
-            logger.debug('INSTANT_MEMORY live_children is {0}'.format(live_children))
+        if pmem[constants.MEMORY_DURATION] is constants.INSTANT_MEMORY:
+            logger.debug('constants.INSTANT_MEMORY live_children is {0}'.format(live_children))
             append_working_memories(working_memories, live_children)
-        elif pmem[constants.MEMORY_DURATION] is LONG_MEMORY or pmem[constants.MEMORY_DURATION] is SHORT_MEMORY:
+        elif pmem[constants.MEMORY_DURATION] is constants.LONG_MEMORY or pmem[constants.MEMORY_DURATION] is constants.SHORT_MEMORY:
             logger.debug('live_children is {0}'.format(live_children))
             append_working_memories(working_memories, live_children, 1)
     # print 'prepare_expectation used time	' + str(time.time() - start)
@@ -411,26 +407,26 @@ def check_expectations(working_memories, sequential_time_memories):
     pending_instant_memories = [mem for mem in working_memories if
                                 mem[constants.STATUS] is constants.MATCHING and
                                 constants.MEMORY_DURATION in mem and
-                                mem[constants.MEMORY_DURATION] is INSTANT_MEMORY]
+                                mem[constants.MEMORY_DURATION] is constants.INSTANT_MEMORY]
     check_expectation(pending_instant_memories, working_memories, sequential_time_memories)
 
     pending_short_memories = [mem for mem in working_memories if
                               mem[constants.STATUS] is constants.MATCHING and
                               constants.MEMORY_DURATION in mem and
-                              mem[constants.MEMORY_DURATION] is SHORT_MEMORY]
+                              mem[constants.MEMORY_DURATION] is constants.SHORT_MEMORY]
     check_expectation(pending_short_memories, working_memories, sequential_time_memories)
 
     pending_long_memories = [mem for mem in working_memories if
                              mem[constants.STATUS] is constants.MATCHING and
                              constants.MEMORY_DURATION in mem and
-                             mem[constants.MEMORY_DURATION] is LONG_MEMORY]
+                             mem[constants.MEMORY_DURATION] is constants.LONG_MEMORY]
     match_count = check_expectation(pending_long_memories, working_memories, sequential_time_memories)
 
     while match_count > 0:
         # something change on long memory, try to match high level parent long memory
         pending_long_memories = [mem for mem in working_memories if
                                  mem[constants.STATUS] is constants.MATCHING and
-                                 mem[constants.MEMORY_DURATION] is LONG_MEMORY]
+                                 mem[constants.MEMORY_DURATION] is constants.LONG_MEMORY]
         match_count = check_expectation(pending_long_memories, working_memories, sequential_time_memories)
     # print 'check_expectation used time	' + str(time.time() - start)
 
@@ -443,6 +439,9 @@ def cleanup_working_memories(working_memories):
                                      reverse=True)
     limited_sorted_working_memories = sorted_working_memories[0:threshold_of_working_memories:]
     # print 'frame used time	' + str(time.time() - start)
+    for mem in limited_sorted_working_memories:
+        # as they survive, update last active time
+        mem.update({constants.LAST_ACTIVE_TIME: time.time()})
     return limited_sorted_working_memories
 
 

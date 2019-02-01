@@ -110,21 +110,22 @@ class Sound(object):
         if frequency_map is None:
             return
 
+        new_slice_memory = None
         slice_feature_memories = [mem for mem in working_memories if
                                   constants.MEMORY_DURATION in mem and
                                   mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
                                   mem[constants.STATUS] is constants.MATCHING and
                                   constants.PHYSICAL_MEMORY_TYPE in mem and
                                   mem[constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
-
+        logger.debug('len of slice_feature_memories is {0}'.format(len(slice_feature_memories)))
+        logger.debug('slice feature memories is {0}'.format(slice_feature_memories))
         matched_feature_memories = self.match_features(frequency_map, slice_feature_memories, working_memories,
                                                        sequential_time_memories)
-
-        new_slice_memory = None
         new_feature_memory = self.search_feature_memory(frequency_map)
         if len(matched_feature_memories) > 0:
             matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
-            if new_feature_memory is not None and new_feature_memory[constants.MID] not in matched_feature_memories_ids:
+            if new_feature_memory is not None and \
+                    new_feature_memory[constants.MID] not in matched_feature_memories_ids:
                 matched_feature_memories.append(new_feature_memory)
             new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
                                                             constants.SOUND_FEATURE)
