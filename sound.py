@@ -138,7 +138,7 @@ class Sound(object):
                 new_matched_feature_memories.append(new_feature_memory)
             new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories,
                                                             constants.SOUND_FEATURE)
-        add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+        memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # if not work_status[constants.BUSY][constants.SHORT_DURATION]:
         #     smm = aware(frequency_map)
@@ -366,8 +366,3 @@ def get_range_energy(energy, range_width):
         range_energies.append(np.average(energy[i:i + range_width]))
     return np.array(range_energies)
 
-
-def add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories):
-    if new_slice_memory is not None:
-        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-        working_memories.append(new_slice_memory)

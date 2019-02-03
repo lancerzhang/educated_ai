@@ -39,7 +39,8 @@ data_adaptor = None
 BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL: 0, constants.REWARD: 0, constants.LAST_RECALL_TIME: 0,
                 constants.PARENT_MEM: [], constants.CHILD_MEM: []}
 
-BASIC_MEMORY_GROUP_ARR = {constants.SLICE_MEMORY: [], constants.SHORT_MEMORY: [], constants.INSTANT_MEMORY: [], constants.LONG_MEMORY: []}
+BASIC_MEMORY_GROUP_ARR = {constants.SLICE_MEMORY: [], constants.SHORT_MEMORY: [], constants.INSTANT_MEMORY: [],
+                          constants.LONG_MEMORY: []}
 
 # The first recall time, if less than 60 seconds, memory strength is 100%, and then 99% for 61 seconds ... 21% for 35 days
 # TIME_SEC = [60, 61, 63, 66, 70, 75, 81, 88, 96, 105, 115, 126, 138, 151, 165, 180, 196, 213, 231, 250, 270, 291, 313, 336, 360, 385, 411, 438, 466, 495, 525, 540, 600, 660, 720,
@@ -324,6 +325,8 @@ def split_seq_time_memories(memories, gap=60.0):
 
 
 def convert_to_expectation(mem):
+    if constants.MEMORY_DURATION not in mem:
+        logger.error('error_memory is {0}'.format(mem))
     exp = {constants.STATUS: constants.MATCHING, constants.START_TIME: time.time(),
            constants.LAST_ACTIVE_TIME: time.time()}
     if mem[constants.MEMORY_DURATION] is constants.INSTANT_MEMORY:
@@ -372,11 +375,13 @@ def prepare_expectation(working_memories):
     pending_memories = [mem for mem in working_memories if mem[constants.STATUS] is constants.MATCHING]
     logger.debug('len of pending_memories is {0}'.format(len(pending_memories)))
     for pmem in pending_memories:
+        logger.debug('parent memory is {0}'.format(pmem))
         live_children = get_live_sub_memories(pmem, constants.CHILD_MEM)
         if pmem[constants.MEMORY_DURATION] is constants.INSTANT_MEMORY:
             logger.debug('constants.INSTANT_MEMORY live_children is {0}'.format(live_children))
             append_working_memories(working_memories, live_children)
-        elif pmem[constants.MEMORY_DURATION] is constants.LONG_MEMORY or pmem[constants.MEMORY_DURATION] is constants.SHORT_MEMORY:
+        elif pmem[constants.MEMORY_DURATION] is constants.LONG_MEMORY or pmem[
+            constants.MEMORY_DURATION] is constants.SHORT_MEMORY:
             logger.debug('live_children is {0}'.format(live_children))
             append_working_memories(working_memories, live_children, 1)
     # print 'prepare_expectation used time	' + str(time.time() - start)
@@ -404,6 +409,9 @@ def check_expectation(pending_memories, working_memories, sequential_time_memori
 
 def check_expectations(working_memories, sequential_time_memories):
     # start = time.time()
+    error_memories = [mem for mem in working_memories if constants.STATUS not in mem]
+    if len(error_memories) > 0:
+        logger.error('error_memories is {0}'.format(error_memories))
     pending_instant_memories = [mem for mem in working_memories if
                                 mem[constants.STATUS] is constants.MATCHING and
                                 constants.MEMORY_DURATION in mem and
@@ -527,3 +535,9 @@ def verify_slice_memory_match_result(slice_memories, slice_memory_children, work
             sequential_time_memories[constants.SLICE_MEMORY].append(smm)
             working_memories.append(smm)
     return all_matched_feature_memories
+
+
+def add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories):
+    if new_slice_memory is not None:
+        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
+        working_memories.append(new_slice_memory)

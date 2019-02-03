@@ -139,7 +139,7 @@ class Vision(object):
                 new_matched_feature_memories.append(new_feature_memory)
             new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories,
                                                             constants.VISION_FEATURE)
-        add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+        memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's mature, below is the major way of focus move/zoom.
         slice_movement_memories = [mem for mem in working_memories if
@@ -153,7 +153,7 @@ class Vision(object):
             if len(slice_movement_memories) > 0:
                 logger.debug('slice movement memories is {0}'.format(slice_movement_memories))
                 new_slice_memory = self.match_movement_memories(slice_movement_memories)
-                add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+                memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         slice_zoom_memories = [mem for mem in working_memories if
                                constants.MEMORY_DURATION in mem and
@@ -165,7 +165,7 @@ class Vision(object):
         if len(slice_zoom_memories) > 0:
             logger.debug('slice_zoom_memories is {0}'.format(slice_zoom_memories))
             new_slice_memory = self.match_zoom_memories(slice_zoom_memories)
-            add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+            memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's not mature, need to guide her.
         this_full_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
@@ -188,7 +188,7 @@ class Vision(object):
                         # if environment not change, random do some change.
                         new_slice_memory = self.explore()
         if new_slice_memory:
-            add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+            memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
         self.previous_full_image = this_full_image
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
@@ -697,11 +697,11 @@ class Vision(object):
         feature_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
         if len(feature_memories) < 1:
             return
-        mem = feature_memories[0]  # assume only one feature memory
-        logger.info('reproduce movement {0}'.format(mem))
-        degrees = mem[constants.DEGREES]
-        speed = mem[constants.SPEED]
-        duration = mem[constants.DURATION]
+        feature_memory = feature_memories[0]  # assume only one feature memory
+        logger.info('reproduce movement {0}'.format(feature_memory))
+        degrees = feature_memory[constants.DEGREES]
+        speed = feature_memory[constants.SPEED]
+        duration = feature_memory[constants.DURATION]
         if duration == 0:
             new_block = self.try_move_aside(degrees)
             if not new_block:
@@ -713,18 +713,18 @@ class Vision(object):
                 return None
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
-        memory.recall_memory(mem)
-        return mem
+        memory.recall_memory(feature_memory)
+        return slice_memory
 
     def match_zoom_memories(self, memories):
         slice_memory = memories[0]
         feature_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
         if len(feature_memories) < 1:
             return
-        mem = feature_memories[0]  # assume only one feature memory
-        logger.info('reproduce zoom '.format(mem))
-        zoom_type = mem[constants.ZOOM_TYPE]
-        zoom_direction = mem[constants.ZOOM_DIRECTION]
+        feature_memory = feature_memories[0]  # assume only one feature memory
+        logger.info('reproduce zoom '.format(feature_memory))
+        zoom_type = feature_memory[constants.ZOOM_TYPE]
+        zoom_direction = feature_memory[constants.ZOOM_DIRECTION]
         if zoom_type is self.ZOOM_OUT:
             new_block = self.try_zoom_out(zoom_direction)
         else:
@@ -733,8 +733,8 @@ class Vision(object):
             return None
         self.roi_index = new_block[self.ROI_INDEX_NAME]
         self.current_block = new_block
-        memory.recall_memory(mem)
-        return mem
+        memory.recall_memory(feature_memory)
+        return slice_memory
 
     def grab(self, top, left, width, height):
         return None
@@ -765,7 +765,4 @@ def get_channel_img(bgr, channel):
         return v
 
 
-def add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories):
-    if new_slice_memory is not None:
-        sequential_time_memories[constants.SLICE_MEMORY].append(new_slice_memory)
-        working_memories.append(new_slice_memory)
+
