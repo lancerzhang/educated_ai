@@ -294,6 +294,8 @@ def split_seq_time_memories(memories, gap=60.0):
     add_datas = []
     add_data = []
     for mem in memories:
+        if constants.HAPPEN_TIME not in mem:
+            logger.error('error memory is {0}'.format(mem))
         this_time = mem[constants.HAPPEN_TIME]
         if last_time == 0:
             distance = 0
@@ -517,23 +519,23 @@ def activate_parent_memories(slice_memory, working_memories):
 def verify_slice_memory_match_result(slice_memories, slice_memory_children, working_memories, sequential_time_memories):
     all_matched_feature_memories = []
     ids = []
-    for smm in slice_memories:
+    for slice_memory in slice_memories:
         smm_all_matched = True
-        live_children = slice_memory_children.get(smm[constants.MID])
-        for fmm in live_children:
-            if fmm[constants.STATUS] is constants.MATCHED:
-                if fmm[constants.MID] not in ids:
-                    fmm.update({constants.HAPPEN_TIME: time.time()})
-                    working_memories.append(fmm)
-                    all_matched_feature_memories.append(fmm)
-                    ids.append(fmm[constants.MID])
+        live_children = slice_memory_children.get(slice_memory[constants.MID])
+        for feature_memory in live_children:
+            if feature_memory[constants.STATUS] is constants.MATCHED:
+                if feature_memory[constants.MID] not in ids:
+                    feature_memory.update({constants.HAPPEN_TIME: time.time()})
+                    working_memories.append(feature_memory)
+                    all_matched_feature_memories.append(feature_memory)
+                    ids.append(feature_memory[constants.MID])
             else:
                 smm_all_matched = False
         if smm_all_matched:
-            recall_memory(smm)
-            activate_parent_memories(smm, working_memories)
-            sequential_time_memories[constants.SLICE_MEMORY].append(smm)
-            working_memories.append(smm)
+            recall_memory(slice_memory)
+            activate_parent_memories(slice_memory, working_memories)
+            sequential_time_memories[constants.SLICE_MEMORY].append(slice_memory)
+            working_memories.append(slice_memory)
     return all_matched_feature_memories
 
 

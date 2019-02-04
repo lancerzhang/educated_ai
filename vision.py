@@ -694,14 +694,14 @@ class Vision(object):
 
     def match_movement_memories(self, memories):
         slice_memory = memories[0]
-        feature_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
-        if len(feature_memories) < 1:
+        physical_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
+        if len(physical_memories) < 1:
             return
-        feature_memory = feature_memories[0]  # assume only one feature memory
-        logger.info('reproduce movement {0}'.format(feature_memory))
-        degrees = feature_memory[constants.DEGREES]
-        speed = feature_memory[constants.SPEED]
-        duration = feature_memory[constants.DURATION]
+        physical_memory = physical_memories[0]  # assume only one feature memory
+        logger.info('reproduce movement {0}'.format(physical_memory))
+        degrees = physical_memory[constants.DEGREES]
+        speed = physical_memory[constants.SPEED]
+        duration = physical_memory[constants.DURATION]
         if duration == 0:
             new_block = self.try_move_aside(degrees)
             if not new_block:
@@ -713,18 +713,19 @@ class Vision(object):
                 return None
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
-        memory.recall_memory(feature_memory)
+        memory.recall_memory(physical_memory)
+        memory.recall_memory(slice_memory)
         return slice_memory
 
     def match_zoom_memories(self, memories):
         slice_memory = memories[0]
-        feature_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
-        if len(feature_memories) < 1:
+        physical_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
+        if len(physical_memories) < 1:
             return
-        feature_memory = feature_memories[0]  # assume only one feature memory
-        logger.info('reproduce zoom '.format(feature_memory))
-        zoom_type = feature_memory[constants.ZOOM_TYPE]
-        zoom_direction = feature_memory[constants.ZOOM_DIRECTION]
+        physical_memory = physical_memories[0]  # assume only one feature memory
+        logger.info('reproduce zoom '.format(physical_memory))
+        zoom_type = physical_memory[constants.ZOOM_TYPE]
+        zoom_direction = physical_memory[constants.ZOOM_DIRECTION]
         if zoom_type is self.ZOOM_OUT:
             new_block = self.try_zoom_out(zoom_direction)
         else:
@@ -733,7 +734,8 @@ class Vision(object):
             return None
         self.roi_index = new_block[self.ROI_INDEX_NAME]
         self.current_block = new_block
-        memory.recall_memory(feature_memory)
+        memory.recall_memory(physical_memory)
+        memory.recall_memory(slice_memory)
         return slice_memory
 
     def grab(self, top, left, width, height):
