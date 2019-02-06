@@ -144,7 +144,8 @@ class TestVision(unittest.TestCase):
         self.vision.SCREEN_HEIGHT = 1080
         current_x = 100
         current_y = 100
-        self.vision.current_block = {self.vision.START_X: current_x, self.vision.START_Y: current_y, self.vision.WIDTH: 50,
+        self.vision.current_block = {self.vision.START_X: current_x, self.vision.START_Y: current_y,
+                                     self.vision.WIDTH: 50,
                                      self.vision.HEIGHT: 50}
         step_x = 17
         step_y = 10
@@ -220,6 +221,17 @@ class TestVision(unittest.TestCase):
         result = self.vision.get_duration()
         self.assertGreater(result, 0)
         self.assertLess(result, 0.6)
+
+    def test_calculate_feature_process_status(self):
+        self.vision.last_feature_process_time = time.time() - self.vision.FEATURE_PROCESS_STABLE_DURATION + 0.1
+        self.vision.calculate_feature_process_status()
+        self.assertEqual(self.vision.FEATURE_PROCESS_STATUS_NORMAL, self.vision.feature_process_status)
+        self.vision.last_feature_process_time = time.time() - self.vision.FEATURE_PROCESS_STABLE_DURATION - 0.1
+        self.vision.calculate_feature_process_status()
+        self.assertEqual(self.vision.FEATURE_PROCESS_STATUS_DIGGING, self.vision.feature_process_status)
+        self.vision.last_feature_process_time = time.time() - self.vision.FEATURE_PROCESS_STABLE_DURATION * 2 - 0.1
+        self.vision.calculate_feature_process_status()
+        self.assertEqual(self.vision.FEATURE_PROCESS_STATUS_EXPLORING, self.vision.feature_process_status)
 
 
 if __name__ == "__main__":

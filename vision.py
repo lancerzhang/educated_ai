@@ -33,7 +33,15 @@ class Vision(object):
     REGION_VARIANCE_THRESHOLD = 0.05
     MAX_DEGREES = 36  # actual is 10 times
     MAX_SPEED = 40  # actual is 50 times, pixel
-    MAX_DURATION = 5  # actual is 10%
+    MAX_DURATION = 5  # actual is 0.5s
+    feature_process_status = 0
+    FEATURE_PROCESS_STATUS_NORMAL = 0
+    FEATURE_PROCESS_STATUS_DIGGING = 1
+    FEATURE_PROCESS_STATUS_EXPLORING = 2
+    FEATURE_PROCESS_STABLE_DURATION = 0.33
+    this_feature_result = ''
+    last_feature_result = ''
+    last_feature_process_time = 0
 
     STATUS = 'sts'
     IN_PROGRESS = 'pgs'
@@ -65,6 +73,7 @@ class Vision(object):
     def __init__(self, ds):
         self.mouse = Controller()
         self.data_service = ds
+        self.last_feature_process_time = time.time()
         center_x = self.SCREEN_WIDTH / 2
         center_y = self.SCREEN_HEIGHT / 2
         width = self.ROI_ARR[self.roi_index]
@@ -169,22 +178,21 @@ class Vision(object):
 
         # when she's not mature, need to guide her.
         this_full_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        self.calculate_feature_process_status()
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
-            logger.debug('reward is {0}'.format(work_status[constants.REWARD]))
             if key is constants.KEY_ALT or key is constants.KEY_CTRL:
                 # the 1st and most efficient way is to set focus directly, and reward it
                 new_slice_memory = self.move_focus_to_mouse()
-            elif work_status[constants.REWARD]:
-                # stay more time on reward region.
-                new_slice_memory = self.dig()
-            elif not work_status[constants.REWARD]:
+            else:
                 # move out from current reward region.
                 new_slice_memory_aware = self.aware(this_full_image)
                 if new_slice_memory_aware:
                     # affected by environment vision change.
                     new_slice_memory = new_slice_memory_aware
                 else:
-                    if not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
+                    if self.feature_process_status is self.FEATURE_PROCESS_STATUS_DIGGING:
+                        new_slice_memory = self.dig()
+                    elif self.feature_process_status is self.FEATURE_PROCESS_STATUS_EXPLORING:
                         # if environment not change, random do some change.
                         new_slice_memory = self.explore()
         if new_slice_memory:
@@ -213,15 +221,16 @@ class Vision(object):
         img = self.get_region(self.current_block)
         channel_img = get_channel_img(img, channel)
         fmm.update({constants.STATUS: constants.MATCHING})
-        data = self.filter_feature(channel_img, kernel, np.array(feature))
-        if data is None:
+        feature_data = self.filter_feature(channel_img, kernel, np.array(feature))
+        if feature_data is None:
             return False  # not similar
-        if data[constants.SIMILAR]:
+        if feature_data[constants.SIMILAR]:
             # recall memory and update feature to average
-            memory.recall_feature_memory(fmm, data[constants.FEATURE])
+            memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
             self.update_channel_rank(channel)
             self.update_kernel_rank(kernel)
-        return data[constants.SIMILAR]
+            self.this_feature_result = get_feature_result(channel, kernel, feature_data[constants.FEATURE])
+        return feature_data[constants.SIMILAR]
 
     # match the experience vision sense
     def filter_feature(self, data, kernel, feature=None):
@@ -278,6 +287,7 @@ class Vision(object):
         channel = feature_data[constants.CHANNEL]
         kernel = feature_data[constants.KERNEL]
         feature = feature_data[constants.FEATURE]
+        self.this_feature_result = get_feature_result(channel, kernel, feature)
         mem = self.find_feature_memory(channel, kernel, feature)
         if mem is None:
             mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
@@ -754,6 +764,24 @@ class Vision(object):
         logger.debug('new block is {0}'.format(new_block))
         return self.set_movement_absolute(new_block, 0.5)
 
+    def calculate_feature_process_status(self):
+        logger.debug('feature_process_status is {0}'.format(self.feature_process_status))
+        logger.debug('last_feature_result is {0}'.format(self.last_feature_result))
+        logger.debug('this_feature_result is {0}'.format(self.this_feature_result))
+        logger.debug('last_feature_process_time is {0}'.format(self.last_feature_process_time))
+        if self.last_feature_result != self.this_feature_result:
+            self.last_feature_process_time = time.time()
+        self.last_feature_result = self.this_feature_result
+        elapse = time.time() - self.last_feature_process_time
+        if elapse <= self.FEATURE_PROCESS_STABLE_DURATION:
+            self.feature_process_status = self.FEATURE_PROCESS_STATUS_NORMAL
+        elif elapse > self.FEATURE_PROCESS_STABLE_DURATION and \
+                self.feature_process_status is self.FEATURE_PROCESS_STATUS_NORMAL:
+            self.feature_process_status = self.FEATURE_PROCESS_STATUS_DIGGING
+        elif elapse > self.FEATURE_PROCESS_STABLE_DURATION * 2 and \
+                self.feature_process_status is self.FEATURE_PROCESS_STATUS_DIGGING:
+            self.feature_process_status = self.FEATURE_PROCESS_STATUS_EXPLORING
+
 
 def get_channel_img(bgr, channel):
     # start = time.time()
@@ -767,4 +795,6 @@ def get_channel_img(bgr, channel):
         return v
 
 
-
+def get_feature_result(channel, kernel, feature_data):
+    feature_data_str = ''.join(str(e) for e in feature_data)
+    return channel + kernel + feature_data_str

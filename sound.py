@@ -118,7 +118,7 @@ class Sound(object):
                                   constants.PHYSICAL_MEMORY_TYPE in mem and
                                   mem[constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
         logger.debug('len of slice_feature_memories is {0}'.format(len(slice_feature_memories)))
-        logger.debug('slice feature memories is {0}'.format(slice_feature_memories))
+        logger.debug('slice_feature_memories is {0}'.format(slice_feature_memories))
         matched_feature_memories = self.match_features(frequency_map, slice_feature_memories, working_memories,
                                                        sequential_time_memories)
         new_feature_memory = self.search_feature_memory(frequency_map)
@@ -157,23 +157,24 @@ class Sound(object):
             self.match_feature(frequency_map, fmm)
         matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,
                                                                            working_memories, sequential_time_memories)
+        logger.info('reproduce feature memories {0}'.format(matched_feature_memories))
         return matched_feature_memories
 
     def match_feature(self, full_frequency_map, fmm):
         kernel = fmm[constants.KERNEL]
-        feature = np.array(fmm[constants.FEATURE])
+        feature = fmm[constants.FEATURE]
         # data_range = fmm[RANGE]
         # frequency_map = full_frequency_map[data_range[0]:data_range[1], :]
         # data = filter_feature(frequency_map, kernel, feature)
         fmm.update({constants.STATUS: constants.MATCHING})
-        data = self.filter_feature(full_frequency_map, kernel, feature)
-        if data is None:
+        feature_data = self.filter_feature(full_frequency_map, kernel, np.array(feature))
+        if feature_data is None:
             return False  # not similar
-        if data[constants.SIMILAR]:
+        if feature_data[constants.SIMILAR]:
             # recall memory and update feature to average
-            memory.recall_feature_memory(fmm, data[constants.FEATURE])
+            memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
             self.update_kernel_rank(kernel)
-        return data[constants.SIMILAR]
+        return feature_data[constants.SIMILAR]
 
     # match the experience sound sense
     def filter_feature(self, raw, kernel, feature=None):
@@ -197,7 +198,8 @@ class Sound(object):
         # reduce not obvious feature
         threshold_feature = np.where(new_feature_pool2 < self.FEATURE_THRESHOLD, 0, new_feature_pool2)
         logger.debug('threshold_feature is {0}'.format(threshold_feature))
-        if threshold_feature.sum() == 0:
+        sum_feature = threshold_feature.sum()
+        if sum_feature == 0:
             return None  # no any feature found
         standard_feature = util.standardize_feature(threshold_feature)
         new_feature = standard_feature.flatten().astype(int)
