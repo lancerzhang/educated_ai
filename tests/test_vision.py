@@ -179,7 +179,7 @@ class TestVision(unittest.TestCase):
         hist1 = self.vision.calculate_blocks_histogram(img1, 2, 2)
         self.assertEqual(4, len(hist1))
 
-    def test_find_most_variable_region(self):
+    def test_find_most_variable_block(self):
         img0 = cv2.imread('rgb1.jpg', 0)
         height, width = img0.shape
         self.vision.SCREEN_WIDTH = width
@@ -192,6 +192,32 @@ class TestVision(unittest.TestCase):
         block = self.vision.find_most_variable_block(img2)
         self.assertEqual(width / 2, block[self.vision.START_X])
         self.assertEqual(height / 2, block[self.vision.START_Y])
+
+    def test_sum_block_histogram(self):
+        cells_histogram = np.array([[1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4]])
+        self.vision.ROI_ARR[0] = 1
+        self.vision.SCREEN_WIDTH = 4
+        self.vision.SCREEN_HEIGHT = 4
+        self.vision.current_block = {self.vision.WIDTH: 2, self.vision.HEIGHT: 2}
+        blocks_histogram = self.vision.sum_blocks_histogram(cells_histogram)
+        self.assertEqual(6, blocks_histogram[0])
+        self.assertEqual(14, blocks_histogram[1])
+        self.assertEqual(6, blocks_histogram[2])
+        self.assertEqual(14, blocks_histogram[3])
+
+    def test_find_most_variable_block_by_cells(self):
+        img0 = cv2.imread('gray1.jpg', 0)
+        height, width = img0.shape
+        self.vision.SCREEN_WIDTH = width
+        self.vision.SCREEN_HEIGHT = height
+        img1 = cv2.imread('gray1.jpg', 1)
+        self.vision.previous_cells_histogram = self.vision.calculate_cells_histogram(img1)
+        self.vision.current_block = {self.vision.START_X: 0, self.vision.START_Y: 0, self.vision.WIDTH: 12,
+                                     self.vision.HEIGHT: 12}
+        img2 = cv2.imread('gray2.jpg', 1)
+        block = self.vision.find_most_variable_block_by_cells(img2)
+        self.assertEqual(36, block[self.vision.START_X])
+        self.assertEqual(36, block[self.vision.START_Y])
 
     def test_try_zoom_in(self):
         self.vision.roi_index = 1

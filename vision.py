@@ -65,6 +65,8 @@ class Vision(object):
     MEMORY_INDEX_FILE = 'data/vmi.npy'
     VISION_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
+    previous_cells_histogram = None
+    # this_cells_histogram = None
     previous_full_image = None
 
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
@@ -131,6 +133,7 @@ class Vision(object):
         logger.debug('slice_feature_memories is {0}'.format(slice_feature_memories))
         matched_feature_memories = self.match_features(slice_feature_memories, working_memories,
                                                        sequential_time_memories)
+
         new_feature_memory = self.search_feature_memory(self.current_block)
         if len(matched_feature_memories) > 0:
             matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
@@ -197,11 +200,18 @@ class Vision(object):
                         new_slice_memory = self.explore()
         if new_slice_memory:
             memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+
+        # if self.this_cells_histogram is None:
+        #     self.previous_cells_histogram = self.calculate_cells_histogram(this_full_image)
+        # else:
+        #     self.previous_cells_histogram = self.this_cells_histogram
+        #     self.this_cells_histogram = None
+
         self.previous_full_image = this_full_image
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-        logger.debug('process used time:{0}'.format(time.time() - start))
+        logger.debug('vision process used time total:{0}'.format(time.time() - start))
 
     def match_features(self, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []
@@ -348,8 +358,13 @@ class Vision(object):
             # logger.debug('compare channel img {0}'.format((self.previous_full_image == this_full_image).all()))
             blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
             blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
+            # this_cells_histogram = self.calculate_cells_histogram(this_full_image)
+            # self.this_cells_histogram = this_cells_histogram  # save a copy
+            # previous_block_histogram = self.sum_blocks_histogram(self.previous_cells_histogram)
+            # this_block_histogram = self.sum_blocks_histogram(this_cells_histogram)
             previous_block_histogram = self.calculate_blocks_histogram(self.previous_full_image, blocks_x, blocks_y)
             this_block_histogram = self.calculate_blocks_histogram(this_full_image, blocks_x, blocks_y)
+
             # logger.debug('previous histogram array is {0}'.format(previous_block_histogram))
             # logger.debug('this histogram array is {0}'.format(this_block_histogram))
             diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
@@ -361,6 +376,33 @@ class Vision(object):
             # logger.debug('max_var is {0}'.format(max_var))
             # np.save('pimg.npy', self.previous_full_image)
             # np.save('timg.npy', this_full_image)
+            new_index_x, new_index_y = util.find_2d_index(max_index, blocks_x)
+            new_start_x = new_index_x * self.current_block[self.WIDTH]
+            new_start_y = new_index_y * self.current_block[self.HEIGHT]
+            new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
+            new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
+            new_block.update({'v': max_var})
+        logger.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
+        return new_block
+
+    def find_most_variable_block_by_cells(self, this_full_image):
+        start = time.time()
+        new_block = {}
+        if self.previous_cells_histogram is None:
+            return None
+        else:
+            blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
+            blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
+            this_cells_histogram = self.calculate_cells_histogram(this_full_image)
+            # self.this_cells_histogram = this_cells_histogram  # save a copy
+            previous_block_histogram = self.sum_blocks_histogram(self.previous_cells_histogram)
+            this_block_histogram = self.sum_blocks_histogram(this_cells_histogram)
+
+            diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
+            max_index = np.argmax(diff_arr)
+            max_var = diff_arr[max_index]
+            if max_var < self.REGION_VARIANCE_THRESHOLD:
+                return None
             new_index_x, new_index_y = util.find_2d_index(max_index, blocks_x)
             new_start_x = new_index_x * self.current_block[self.WIDTH]
             new_start_y = new_index_y * self.current_block[self.HEIGHT]
@@ -687,19 +729,63 @@ class Vision(object):
         else:
             action.update({self.STATUS: self.COMPLETED})
 
+    def calculate_cells_histogram(self, full_image):
+        start = time.time()
+        cells_histogram = []
+        width = self.ROI_ARR[0]
+        height = self.ROI_ARR[0]
+        # b, g, r = cv2.split(full_image)
+        gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
+        cells_x = self.SCREEN_WIDTH / width
+        cells_y = self.SCREEN_HEIGHT / height
+        for j in range(0, cells_y):
+            for i in range(0, cells_x):
+                # ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                # ret_g = g[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                # ret_r = r[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                # ret = np.concatenate([ret_b, ret_g, ret_r])
+                ret = gray_image[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
+                cells_histogram.append(hist_np)
+        logger.debug('calculate_cells_histogram used time:{0}'.format(time.time() - start))
+        return cells_histogram
+
+    def sum_blocks_histogram(self, cells_histogram):
+        blocks_histogram = []
+        times = self.current_block[self.WIDTH] / self.ROI_ARR[0]
+        blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
+        blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
+        for j in range(0, blocks_y):
+            for i in range(0, blocks_x):
+                hist = None
+                for h in range(0, times):
+                    for w in range(0, times):
+                        index = (j * times + h) * times * blocks_x + i * times + w
+                        temp = cells_histogram[index]
+                        if hist is None:
+                            hist = temp
+                        else:
+                            hist = hist + temp
+                blocks_histogram.append(hist)
+        return blocks_histogram
+
     def calculate_blocks_histogram(self, full_image, blocks_x, blocks_y):
+        start = time.time()
         blocks_histogram = []
         width = self.current_block[self.WIDTH]
         height = self.current_block[self.HEIGHT]
-        b, g, r = cv2.split(full_image)
+        # b, g, r = cv2.split(full_image)
+        gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
         for j in range(0, blocks_y):
             for i in range(0, blocks_x):
-                ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                ret_g = g[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                ret_r = r[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                ret = np.concatenate([ret_b, ret_g, ret_r])
+                # ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                # ret_g = g[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                # ret_r = r[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                # ret = np.concatenate([ret_b, ret_g, ret_r])
+                ret = gray_image[j * height:(j + 1) * height, i * width:(i + 1) * width]
                 hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
                 blocks_histogram.append(hist_np)
+        logger.debug('calculate_blocks_histogram used time:{0}'.format(time.time() - start))
         return blocks_histogram
 
     def match_movement_memories(self, memories):
