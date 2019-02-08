@@ -65,9 +65,8 @@ class Vision(object):
     MEMORY_INDEX_FILE = 'data/vmi.npy'
     VISION_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
-    previous_cells_histogram = None
-    # this_cells_histogram = None
     previous_full_image = None
+    previous_histogram1 = None
 
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
     current_action = {STATUS: COMPLETED}
@@ -201,17 +200,11 @@ class Vision(object):
         if new_slice_memory:
             memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
-        # if self.this_cells_histogram is None:
-        #     self.previous_cells_histogram = self.calculate_cells_histogram(this_full_image)
-        # else:
-        #     self.previous_cells_histogram = self.this_cells_histogram
-        #     self.this_cells_histogram = None
-
         self.previous_full_image = this_full_image
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-        logger.debug('vision process used time total:{0}'.format(time.time() - start))
+        logger.debug('vision_process_used_time_total:{0}'.format(time.time() - start))
 
     def match_features(self, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []
@@ -338,7 +331,8 @@ class Vision(object):
         logger.debug('aware')
         start = time.time()
         duration = self.get_duration()
-        block = self.find_most_variable_block(image)
+        block = self.find_most_variable_block_division(image, 0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT,
+                                                       self.current_block[self.WIDTH], self.current_block[self.HEIGHT])
         logger.debug('variable block is {0}'.format(block))
         logger.debug('current block is {0}'.format(self.current_block))
         if block is None:
@@ -358,12 +352,16 @@ class Vision(object):
             # logger.debug('compare channel img {0}'.format((self.previous_full_image == this_full_image).all()))
             blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
             blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
+            block_width = self.current_block[self.WIDTH]
+            block_height = self.current_block[self.HEIGHT]
             # this_cells_histogram = self.calculate_cells_histogram(this_full_image)
             # self.this_cells_histogram = this_cells_histogram  # save a copy
             # previous_block_histogram = self.sum_blocks_histogram(self.previous_cells_histogram)
             # this_block_histogram = self.sum_blocks_histogram(this_cells_histogram)
-            previous_block_histogram = self.calculate_blocks_histogram(self.previous_full_image, blocks_x, blocks_y)
-            this_block_histogram = self.calculate_blocks_histogram(this_full_image, blocks_x, blocks_y)
+            previous_block_histogram = self.calculate_blocks_histogram(self.previous_full_image, blocks_x, blocks_y,
+                                                                       block_width, block_height)
+            this_block_histogram = self.calculate_blocks_histogram(this_full_image, blocks_x, blocks_y, block_width,
+                                                                   block_height)
 
             # logger.debug('previous histogram array is {0}'.format(previous_block_histogram))
             # logger.debug('this histogram array is {0}'.format(this_block_histogram))
@@ -385,32 +383,48 @@ class Vision(object):
         logger.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
         return new_block
 
-    def find_most_variable_block_by_cells(self, this_full_image):
+    # reduce number of histogram call,it's time consuming
+    def find_most_variable_block_division(self, this_full_image, start_x, start_y, width, height, focus_width,
+                                          focus_height):
         start = time.time()
         new_block = {}
-        if self.previous_cells_histogram is None:
+        if self.previous_full_image is None:
+            self.previous_histogram1 = self.calculate_blocks_histogram(this_full_image, 2, 2, width / 2, height / 2)
             return None
+        this_valid_region = this_full_image[start_y:start_y + height, start_x:start_x + width]
+        previous_valid_region = self.previous_full_image[start_y:start_y + height, start_x:start_x + width]
+        blocks_x = 2
+        blocks_y = 2
+        block_width = width / blocks_x
+        block_height = height / blocks_y
+        this_block_histogram = self.calculate_blocks_histogram(this_valid_region, blocks_x, blocks_y, block_width,
+                                                               block_height)
+        if width == self.SCREEN_WIDTH:
+            # use cache to speed up
+            previous_block_histogram = self.previous_histogram1
+            self.previous_histogram1 = this_block_histogram
         else:
-            blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
-            blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
-            this_cells_histogram = self.calculate_cells_histogram(this_full_image)
-            # self.this_cells_histogram = this_cells_histogram  # save a copy
-            previous_block_histogram = self.sum_blocks_histogram(self.previous_cells_histogram)
-            this_block_histogram = self.sum_blocks_histogram(this_cells_histogram)
-
-            diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
-            max_index = np.argmax(diff_arr)
-            max_var = diff_arr[max_index]
-            if max_var < self.REGION_VARIANCE_THRESHOLD:
-                return None
-            new_index_x, new_index_y = util.find_2d_index(max_index, blocks_x)
-            new_start_x = new_index_x * self.current_block[self.WIDTH]
-            new_start_y = new_index_y * self.current_block[self.HEIGHT]
-            new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
-            new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
-            new_block.update({'v': max_var})
-        logger.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
-        return new_block
+            previous_block_histogram = self.calculate_blocks_histogram(previous_valid_region, blocks_x, blocks_y,
+                                                                       block_width, block_height)
+        diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
+        max_index = np.argmax(diff_arr)
+        max_var = diff_arr[max_index]
+        if max_var < self.REGION_VARIANCE_THRESHOLD:
+            return None
+        new_index_x, new_index_y = util.find_2d_index(max_index, blocks_x)
+        new_start_x = start_x + new_index_x * block_width
+        new_start_y = start_y + new_index_y * block_height
+        valid_start_x = self.restrict_edge_start_x(new_start_x)
+        valid_start_y = self.restrict_edge_start_y(new_start_y)
+        new_block[self.START_X] = valid_start_x
+        new_block[self.START_Y] = valid_start_y
+        new_block.update({'v': max_var})
+        # print 'find_most_variable_block_division used time:{0}'.format(time.time() - start)
+        if width > focus_width:
+            return self.find_most_variable_block_division(this_full_image, valid_start_x, valid_start_y, width / 2,
+                                                          height / 2, focus_width, focus_height)
+        else:
+            return new_block
 
     def update_degrees_rank(self, degrees):
         self.used_degrees_rank = util.update_rank_list(constants.DEGREES, degrees, self.used_degrees_rank)
@@ -729,6 +743,7 @@ class Vision(object):
         else:
             action.update({self.STATUS: self.COMPLETED})
 
+    # deprecated, low performance
     def calculate_cells_histogram(self, full_image):
         start = time.time()
         cells_histogram = []
@@ -750,6 +765,7 @@ class Vision(object):
         logger.debug('calculate_cells_histogram used time:{0}'.format(time.time() - start))
         return cells_histogram
 
+    # deprecated, low performance
     def sum_blocks_histogram(self, cells_histogram):
         blocks_histogram = []
         times = self.current_block[self.WIDTH] / self.ROI_ARR[0]
@@ -769,20 +785,18 @@ class Vision(object):
                 blocks_histogram.append(hist)
         return blocks_histogram
 
-    def calculate_blocks_histogram(self, full_image, blocks_x, blocks_y):
+    def calculate_blocks_histogram(self, full_image, blocks_x, blocks_y, block_width, block_height):
         start = time.time()
         blocks_histogram = []
-        width = self.current_block[self.WIDTH]
-        height = self.current_block[self.HEIGHT]
         # b, g, r = cv2.split(full_image)
         gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
         for j in range(0, blocks_y):
             for i in range(0, blocks_x):
-                # ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                # ret_g = g[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                # ret_r = r[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                # ret_b = b[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
+                # ret_g = g[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
+                # ret_r = r[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
                 # ret = np.concatenate([ret_b, ret_g, ret_r])
-                ret = gray_image[j * height:(j + 1) * height, i * width:(i + 1) * width]
+                ret = gray_image[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
                 hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
                 blocks_histogram.append(hist_np)
         logger.debug('calculate_blocks_histogram used time:{0}'.format(time.time() - start))

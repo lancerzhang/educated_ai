@@ -176,7 +176,7 @@ class TestVision(unittest.TestCase):
         self.vision.SCREEN_WIDTH = width
         self.vision.SCREEN_HEIGHT = height
         img1 = cv2.imread('rgb1.jpg', 1)
-        hist1 = self.vision.calculate_blocks_histogram(img1, 2, 2)
+        hist1 = self.vision.calculate_blocks_histogram(img1, 2, 2, width / 2, height / 2)
         self.assertEqual(4, len(hist1))
 
     def test_find_most_variable_block(self):
@@ -193,6 +193,24 @@ class TestVision(unittest.TestCase):
         self.assertEqual(width / 2, block[self.vision.START_X])
         self.assertEqual(height / 2, block[self.vision.START_Y])
 
+    def test_find_most_variable_block_division(self):
+        img0 = cv2.imread('1920a.jpg', 0)
+        height, width = img0.shape
+        self.vision.SCREEN_WIDTH = width
+        self.vision.SCREEN_HEIGHT = height
+        img1 = cv2.imread('1920a.jpg', 1)
+        img2 = cv2.imread('1920b.jpg', 1)
+        self.vision.previous_full_image = img1
+        focus_width = 12
+        self.vision.previous_histogram1 = self.vision.calculate_blocks_histogram(img1, 2, 2, width / 2, height / 2)
+        self.vision.current_block = {self.vision.START_X: 0, self.vision.START_Y: 0, self.vision.WIDTH: focus_width,
+                                     self.vision.HEIGHT: focus_width}
+        start = time.time()
+        block = self.vision.find_most_variable_block_division(img2, 0, 0, width, height, focus_width, focus_width)
+        print 'test_find_most_variable_block_division used time:{0}'.format(time.time() - start)
+        self.assertEqual(420, block[self.vision.START_X])
+        self.assertEqual(202, block[self.vision.START_Y])
+
     def test_sum_block_histogram(self):
         cells_histogram = np.array([[1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4]])
         self.vision.ROI_ARR[0] = 1
@@ -204,20 +222,6 @@ class TestVision(unittest.TestCase):
         self.assertEqual(14, blocks_histogram[1])
         self.assertEqual(6, blocks_histogram[2])
         self.assertEqual(14, blocks_histogram[3])
-
-    def test_find_most_variable_block_by_cells(self):
-        img0 = cv2.imread('gray1.jpg', 0)
-        height, width = img0.shape
-        self.vision.SCREEN_WIDTH = width
-        self.vision.SCREEN_HEIGHT = height
-        img1 = cv2.imread('gray1.jpg', 1)
-        self.vision.previous_cells_histogram = self.vision.calculate_cells_histogram(img1)
-        self.vision.current_block = {self.vision.START_X: 0, self.vision.START_Y: 0, self.vision.WIDTH: 12,
-                                     self.vision.HEIGHT: 12}
-        img2 = cv2.imread('gray2.jpg', 1)
-        block = self.vision.find_most_variable_block_by_cells(img2)
-        self.assertEqual(36, block[self.vision.START_X])
-        self.assertEqual(36, block[self.vision.START_Y])
 
     def test_try_zoom_in(self):
         self.vision.roi_index = 1

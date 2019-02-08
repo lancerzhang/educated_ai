@@ -128,7 +128,7 @@ def main(argv):
             gc.process(process_duration)
 
             all_duration = util.time_diff(start)
-            logging.debug('frame used time {0} '.format(all_duration))
+            logging.info('frame used time {0} '.format(all_duration))
 
             # all end, sleep to avoid running too fast
             if all_duration < dps:
