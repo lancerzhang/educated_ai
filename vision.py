@@ -12,7 +12,7 @@ import time
 import util
 
 logger = logging.getLogger('Vision')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Vision(object):
@@ -34,14 +34,13 @@ class Vision(object):
     MAX_DEGREES = 36  # actual is 10 times
     MAX_SPEED = 40  # actual is 50 times, pixel
     MAX_DURATION = 5  # actual is 0.5s
-    feature_process_status = 0
-    FEATURE_PROCESS_STATUS_NORMAL = 0
-    FEATURE_PROCESS_STATUS_DIGGING = 1
-    FEATURE_PROCESS_STATUS_EXPLORING = 2
-    FEATURE_PROCESS_STABLE_DURATION = 0.33
-    this_feature_result = ''
-    last_feature_result = ''
-    last_feature_process_time = 0
+    PROCESS_STATUS_NORMAL = 0
+    PROCESS_STATUS_DIGGING = 1
+    PROCESS_STATUS_EXPLORING = 2
+    PROCESS_STABLE_DURATION = 0.33
+    focus_status = 0
+    last_focus_state = ''
+    last_focus_state_time = 0
 
     STATUS = 'sts'
     IN_PROGRESS = 'pgs'
@@ -74,7 +73,6 @@ class Vision(object):
     def __init__(self, ds):
         self.mouse = Controller()
         self.data_service = ds
-        self.last_feature_process_time = time.time()
         center_x = self.SCREEN_WIDTH / 2
         center_y = self.SCREEN_HEIGHT / 2
         width = self.ROI_ARR[self.roi_index]
@@ -180,7 +178,7 @@ class Vision(object):
 
         # when she's not mature, need to guide her.
         this_full_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
-        self.calculate_feature_process_status()
+        self.calculate_vision_focus_state()
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
             if key is constants.KEY_ALT or key is constants.KEY_CTRL:
                 # the 1st and most efficient way is to set focus directly, and reward it
@@ -192,9 +190,9 @@ class Vision(object):
                     # affected by environment vision change.
                     new_slice_memory = new_slice_memory_aware
                 else:
-                    if self.feature_process_status is self.FEATURE_PROCESS_STATUS_DIGGING:
+                    if self.focus_status is self.PROCESS_STATUS_DIGGING:
                         new_slice_memory = self.dig()
-                    elif self.feature_process_status is self.FEATURE_PROCESS_STATUS_EXPLORING:
+                    elif self.focus_status is self.PROCESS_STATUS_EXPLORING:
                         # if environment not change, random do some change.
                         new_slice_memory = self.explore()
         if new_slice_memory:
@@ -218,6 +216,8 @@ class Vision(object):
         return matched_feature_memories
 
     def match_feature(self, fmm):
+        if constants.CHANNEL not in fmm:
+            logger.error('match_feature_error_memory is {0}'.format(fmm))
         channel = fmm[constants.CHANNEL]
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
@@ -232,7 +232,7 @@ class Vision(object):
             memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
             self.update_channel_rank(channel)
             self.update_kernel_rank(kernel)
-            self.this_feature_result = get_feature_result(channel, kernel, feature_data[constants.FEATURE])
+            # self.this_feature_result = get_feature_result(channel, kernel, feature_data[constants.FEATURE])
         return feature_data[constants.SIMILAR]
 
     # match the experience vision sense
@@ -290,7 +290,7 @@ class Vision(object):
         channel = feature_data[constants.CHANNEL]
         kernel = feature_data[constants.KERNEL]
         feature = feature_data[constants.FEATURE]
-        self.this_feature_result = get_feature_result(channel, kernel, feature)
+        # self.this_feature_result = get_feature_result(channel, kernel, feature)
         mem = self.find_feature_memory(channel, kernel, feature)
         if mem is None:
             mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
@@ -386,7 +386,7 @@ class Vision(object):
     # reduce number of histogram call,it's time consuming
     def find_most_variable_block_division(self, this_full_image, start_x, start_y, width, height, focus_width,
                                           focus_height):
-        start = time.time()
+        # start = time.time()
         new_block = {}
         if self.previous_full_image is None:
             self.previous_histogram1 = self.calculate_blocks_histogram(this_full_image, 2, 2, width / 2, height / 2)
@@ -849,7 +849,7 @@ class Vision(object):
         return slice_memory
 
     def grab(self, top, left, width, height):
-        return None
+        raise NotImplementedError("error message")
 
     def move_focus_to_mouse(self):
         logger.debug('move_focus_to_mouse')
@@ -864,23 +864,28 @@ class Vision(object):
         logger.debug('new block is {0}'.format(new_block))
         return self.set_movement_absolute(new_block, 0.5)
 
-    def calculate_feature_process_status(self):
-        logger.debug('feature_process_status is {0}'.format(self.feature_process_status))
-        logger.debug('last_feature_result is {0}'.format(self.last_feature_result))
-        logger.debug('this_feature_result is {0}'.format(self.this_feature_result))
-        logger.debug('last_feature_process_time is {0}'.format(self.last_feature_process_time))
-        if self.last_feature_result != self.this_feature_result:
-            self.last_feature_process_time = time.time()
-        self.last_feature_result = self.this_feature_result
-        elapse = time.time() - self.last_feature_process_time
-        if elapse <= self.FEATURE_PROCESS_STABLE_DURATION:
-            self.feature_process_status = self.FEATURE_PROCESS_STATUS_NORMAL
-        elif elapse > self.FEATURE_PROCESS_STABLE_DURATION and \
-                self.feature_process_status is self.FEATURE_PROCESS_STATUS_NORMAL:
-            self.feature_process_status = self.FEATURE_PROCESS_STATUS_DIGGING
-        elif elapse > self.FEATURE_PROCESS_STABLE_DURATION * 2 and \
-                self.feature_process_status is self.FEATURE_PROCESS_STATUS_DIGGING:
-            self.feature_process_status = self.FEATURE_PROCESS_STATUS_EXPLORING
+    def calculate_vision_focus_state(self):
+        this_focus_state = self.get_focus_state(self.current_block)
+        logger.debug('focus_status is {0}'.format(self.focus_status))
+        logger.debug('last_focus_state is {0}'.format(self.last_focus_state))
+        logger.debug('this_focus_state is {0}'.format(this_focus_state))
+        logger.debug('last_focus_state_time is {0}'.format(self.last_focus_state_time))
+        if self.last_focus_state != this_focus_state:
+            self.last_focus_state_time = time.time()
+        self.last_focus_state = this_focus_state
+        elapse = time.time() - self.last_focus_state_time
+        if elapse <= self.PROCESS_STABLE_DURATION:
+            self.focus_status = self.PROCESS_STATUS_NORMAL
+        elif elapse > self.PROCESS_STABLE_DURATION and \
+                self.focus_status is self.PROCESS_STATUS_NORMAL:
+            self.focus_status = self.PROCESS_STATUS_DIGGING
+        elif elapse > self.PROCESS_STABLE_DURATION * 2 and \
+                self.focus_status is self.PROCESS_STATUS_DIGGING:
+            self.focus_status = self.PROCESS_STATUS_EXPLORING
+
+    def get_focus_state(self, block):
+        list1 = [block[self.START_X], block[self.START_Y], block[self.WIDTH], block[self.HEIGHT]]
+        return ','.join(str(e) for e in list1)
 
 
 def get_channel_img(bgr, channel):

@@ -443,6 +443,12 @@ def check_expectations(working_memories, sequential_time_memories):
 
 def cleanup_working_memories(working_memories):
     # start = time.time()
+    error_memories1 = [mem for mem in working_memories if constants.STATUS not in mem]
+    if len(error_memories1) > 0:
+        logger.error('error_memories1 is {0}'.format(error_memories1))
+    error_memories2 = [mem for mem in working_memories if constants.END_TIME not in mem]
+    if len(error_memories2) > 0:
+        logger.error('error_memories is {0}'.format(error_memories2))
     valid_working_memories = [mem for mem in working_memories if
                               mem[constants.STATUS] is constants.MATCHED or mem[constants.END_TIME] > time.time()]
     sorted_working_memories = sorted(valid_working_memories, key=lambda x: (x[constants.LAST_ACTIVE_TIME]),

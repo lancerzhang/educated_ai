@@ -253,15 +253,15 @@ class TestVision(unittest.TestCase):
         self.assertLess(result, 0.6)
 
     def test_calculate_feature_process_status(self):
-        self.vision.last_feature_process_time = time.time() - self.vision.FEATURE_PROCESS_STABLE_DURATION + 0.1
-        self.vision.calculate_feature_process_status()
-        self.assertEqual(self.vision.FEATURE_PROCESS_STATUS_NORMAL, self.vision.feature_process_status)
-        self.vision.last_feature_process_time = time.time() - self.vision.FEATURE_PROCESS_STABLE_DURATION - 0.1
-        self.vision.calculate_feature_process_status()
-        self.assertEqual(self.vision.FEATURE_PROCESS_STATUS_DIGGING, self.vision.feature_process_status)
-        self.vision.last_feature_process_time = time.time() - self.vision.FEATURE_PROCESS_STABLE_DURATION * 2 - 0.1
-        self.vision.calculate_feature_process_status()
-        self.assertEqual(self.vision.FEATURE_PROCESS_STATUS_EXPLORING, self.vision.feature_process_status)
+        self.vision.last_focus_state_time = time.time() - self.vision.PROCESS_STABLE_DURATION + 0.1
+        self.vision.calculate_vision_focus_state()
+        self.assertEqual(self.vision.PROCESS_STATUS_NORMAL, self.vision.focus_status)
+        self.vision.last_focus_state_time = time.time() - self.vision.PROCESS_STABLE_DURATION - 0.1
+        self.vision.calculate_vision_focus_state()
+        self.assertEqual(self.vision.PROCESS_STATUS_DIGGING, self.vision.focus_status)
+        self.vision.last_focus_state_time = time.time() - self.vision.PROCESS_STABLE_DURATION * 2 - 0.1
+        self.vision.calculate_vision_focus_state()
+        self.assertEqual(self.vision.PROCESS_STATUS_EXPLORING, self.vision.focus_status)
 
 
 if __name__ == "__main__":

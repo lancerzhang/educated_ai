@@ -95,33 +95,33 @@ def working_memories_statistics(working_memories):
 def memory_status_statistics(working_memories):
     status_data = [mem[constants.STATUS] for mem in working_memories]
     status_dict = util.np_array_group_by_count(status_data)
-    logger.debug('count of status is {0}'.format(status_dict))
+    logger.debug('memory_status_statistics is {0}'.format(status_dict))
 
 
 def memory_reward_statistics(working_memories):
     reward_data = [mem[constants.REWARD] for mem in working_memories]
     reward_dict = util.np_array_group_by_count(reward_data)
-    logger.debug('count of reward is {0}'.format(reward_dict))
+    logger.debug('memory_reward_statistics is {0}'.format(reward_dict))
 
 
 def memory_recall_statistics(working_memories):
     recall_data = [mem[constants.RECALL] for mem in working_memories]
     recall_dict = util.np_array_group_by_count(recall_data)
-    logger.debug('count of recall is {0}'.format(recall_dict))
+    logger.debug('memory_recall_statistics is {0}'.format(recall_dict))
 
 
 def memory_duration_statistics(working_memories):
     memory_duration_data = [mem[constants.MEMORY_DURATION] for mem in working_memories if
                             constants.MEMORY_DURATION in mem]
     memory_duration_dict = util.np_array_group_by_count(memory_duration_data)
-    logger.debug('count of memory duration is {0}'.format(memory_duration_dict))
+    logger.debug('memory_duration_statistics is {0}'.format(memory_duration_dict))
 
 
 def memory_survive_statistics(working_memories):
     memory_survive_data = [int(mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]) for mem in
                            working_memories if constants.HAPPEN_TIME in mem]
     memory_survive_dict = util.np_array_group_by_count(memory_survive_data)
-    logger.debug('count of memory survive is {0}'.format(memory_survive_dict))
+    logger.debug('memory_survive_statistics is {0}'.format(memory_survive_dict))
 
 
 def memory_survive_detail(working_memories):
