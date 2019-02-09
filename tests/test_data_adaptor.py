@@ -1,16 +1,16 @@
-import unittest, sound, memory
+import unittest, sound, bio_memory
 from data_adaptor import DataAdaptor
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
-from db_tinydb import DB_TinyDB
-from db_CodernityDB import DB_CodernityDB
+from data_tinydb import DataTinyDB
+from data_CodernityDB import DataCodernityDB
 
 
 class TestDB(unittest.TestCase):
     data_service = None
 
     def setUp(self):
-        database = DB_TinyDB(TinyDB(storage=MemoryStorage))
+        database = DataTinyDB(TinyDB(storage=MemoryStorage))
         # database = DB_CodernityDB()
         self.data_service = DataAdaptor(database)
         for el in database.get_all():

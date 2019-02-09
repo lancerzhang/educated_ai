@@ -2,9 +2,9 @@ import constants
 import numpy as np
 import util
 from data_adaptor import DataAdaptor
-from db_CodernityDB import DB_CodernityDB
+from data_CodernityDB import DataCodernityDB
 
-data_service = DataAdaptor(DB_CodernityDB(folder='../data/CodernityDB/'))
+data_service = DataAdaptor(DataCodernityDB(folder='../data/CodernityDB/'))
 
 
 def count_memories():
@@ -15,6 +15,12 @@ def count_memories():
 def list_top_memories(field, limit=20):
     all_memories = data_service.get_all_memories()
     sorted_all_memories = sorted(all_memories, key=lambda x: (x[field]), reverse=True)
+    return sorted_all_memories[0:limit]
+
+
+def list_top_sub_memories(field, limit=20):
+    all_memories = data_service.get_all_memories()
+    sorted_all_memories = sorted(all_memories, key=lambda x: (len(x[field])), reverse=True)
     return sorted_all_memories[0:limit]
 
 
@@ -34,10 +40,10 @@ def print_used_data():
 # print count_memories()
 field = constants.RECALL
 # field = constants.REWARD
-# memories = list_top_memories(field)
-# print [x[field] for x in memories]
-print data_service.get_memory('3979da8538a542b08891cc9a80170e3c')
+# memories = list_top_memories(field,50)
+field = constants.PARENT_MEM
+memories = list_top_sub_memories(field, 50)
+print [len(x[field]) for x in memories]
+# print data_service.get_memory('6df897947e1d45eb8913bbc0af7ab5b2')
 
-print_used_data()
-# kernel = np.load('../data/vuk.npy')
-# print util.np_array_group_by_count([x['knl'] for x in kernel])
+# print_used_data()

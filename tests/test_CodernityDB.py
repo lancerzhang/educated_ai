@@ -1,16 +1,16 @@
-import unittest, sound, memory, time, constants
+import unittest, sound, bio_memory, time, constants
 from data_adaptor import DataAdaptor
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
-from db_tinydb import DB_TinyDB
-from db_CodernityDB import DB_CodernityDB
+from data_tinydb import DataTinyDB
+from data_CodernityDB import DataCodernityDB
 
 
 class TestDB(unittest.TestCase):
     database = None
 
     def setUp(self):
-        self.database = DB_CodernityDB()
+        self.database = DataCodernityDB()
         for el in self.database.get_all():
             self.database.remove(el.get('_id'))
         self.database.db.compact()

@@ -6,13 +6,13 @@ import numpy as np
 
 class ScreenVision(Vision):
 
-    def __init__(self, ds):
+    def __init__(self, bm):
         logging.info('start to capture screen.')
         self.sct = mss.mss()
         monitor = self.sct.monitors[1]
         self.SCREEN_WIDTH = monitor['width']
         self.SCREEN_HEIGHT = monitor['height']
-        super(ScreenVision, self).__init__(ds)
+        super(ScreenVision, self).__init__(bm)
 
     def grab(self, top, left, width, height):
         top = int(top)

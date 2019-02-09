@@ -156,7 +156,7 @@ import constants"""
 
     def __init__(self, *args, **kwargs):
         kwargs['node_capacity'] = 13
-        kwargs['key_format'] = 'I'
+        kwargs['key_format'] = 'L'
         super(LastRecallIndex, self).__init__(*args, **kwargs)
 
     def make_key_value(self, data):
@@ -169,7 +169,7 @@ import constants"""
         return key
 
 
-class DB_CodernityDB:
+class DataCodernityDB:
     INDEX_RECALL = 'recall'
     INDEX_LAST_RECALL = 'last_recall'
     INDEX_VISION_MOVE = 'vision_move'

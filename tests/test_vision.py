@@ -1,22 +1,23 @@
-import unittest, vision, memory, cv2, constants, time, math
-import numpy as np
+from bio_memory import BioMemory
 from data_adaptor import DataAdaptor
 from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
-from db_tinydb import DB_TinyDB
+from data_tinydb import DataTinyDB
 from vision import Vision
+
+import unittest, vision, bio_memory, cv2, constants, time, math
+import numpy as np
 
 
 class TestVision(unittest.TestCase):
-    data = None
-    database = None
 
     def setUp(self):
-        database = DB_TinyDB(TinyDB(storage=MemoryStorage))
-        self.data = DataAdaptor(database)
-        memory.forget_memory = False
-        memory.data_adaptor = self.data
-        self.vision = Vision(self.data)
+        database = DataTinyDB(TinyDB(storage=MemoryStorage))
+        da = DataAdaptor(database)
+        bm = BioMemory(da)
+        bm.forget_memory = False
+        self.bio_memory = bm
+        self.vision = Vision(bm)
 
     def test_filter_feature1(self):
         data = np.array([[10, 20, 30, 40, 50, 60],
@@ -90,8 +91,8 @@ class TestVision(unittest.TestCase):
         feature_data1_1 = self.vision.filter_feature(img1_1, kernel)
         feature_data1_2 = self.vision.filter_feature(img1_2, kernel)
         channel = 'y'
-        mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel,
-                                               feature_data1_1[constants.FEATURE])
+        mem = self.bio_memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel,
+                                                        feature_data1_1[constants.FEATURE])
         self.vision.update_memory_indexes(channel, kernel, mem[constants.MID])
         self.vision.update_memory_indexes(channel, kernel, '123')
         new_mem = self.vision.find_feature_memory(channel, kernel, feature_data1_2[constants.FEATURE])
@@ -208,8 +209,8 @@ class TestVision(unittest.TestCase):
         start = time.time()
         block = self.vision.find_most_variable_block_division(img2, 0, 0, width, height, focus_width, focus_width)
         print 'test_find_most_variable_block_division used time:{0}'.format(time.time() - start)
-        self.assertEqual(420, block[self.vision.START_X])
-        self.assertEqual(202, block[self.vision.START_Y])
+        self.assertEqual(423, block[self.vision.START_X])
+        self.assertEqual(212, block[self.vision.START_Y])
 
     def test_sum_block_histogram(self):
         cells_histogram = np.array([[1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4]])

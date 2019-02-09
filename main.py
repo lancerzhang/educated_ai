@@ -1,6 +1,7 @@
 from action import Action
+from bio_memory import BioMemory
 from data_adaptor import DataAdaptor
-from db_CodernityDB import DB_CodernityDB
+from data_CodernityDB import DataCodernityDB
 from keyboard_listener import KeyboardListener
 from mouse_listener import MouseListener
 from mgc import GC
@@ -12,7 +13,7 @@ import constants
 import copy
 import getopt
 import logging
-import memory
+import bio_memory
 import numpy as np
 import status
 import sys
@@ -45,6 +46,7 @@ def save_main_config():
 
 def save_for_exit():
     save_main_config()
+    logging.info('saved and exiting...')
     if sound:
         sound.save_files()
         sound.start_thread = False
@@ -73,26 +75,26 @@ def main(argv):
     try:
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
-        data_adaptor = DataAdaptor(DB_CodernityDB(folder=DATA_FOLDER))
-        if is_hibernate is None or is_hibernate is 'yes':
+        da = DataAdaptor(DataCodernityDB(folder=DATA_FOLDER))
+        bm = BioMemory(da)
+        if is_hibernate and is_hibernate == 'yes':
             configs = load_main_conf()
             if configs:
-                data_adaptor.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
-        gc = GC(data_adaptor)
-        reward_controller = Reward()
+                da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
+        gc = GC(da)
+        reward_controller = Reward(bm)
         mouse_listener = MouseListener()
         keyboard_listener = KeyboardListener()
         thread.start_new_thread(mouse_listener.start, ())
         thread.start_new_thread(keyboard_listener.start, ())
         if video_file:
-            vision_controller = VideoFileVision(data_adaptor, video_file)
+            vision_controller = VideoFileVision(bm, video_file)
         else:
-            vision_controller = ScreenVision(data_adaptor)
-        sound_controller = Sound()
-        memory.data_adaptor = data_adaptor
-        action_controller = Action(data_adaptor)
+            vision_controller = ScreenVision(bm)
+        sound_controller = Sound(bm)
+        action_controller = Action(bm)
         thread.start_new_thread(sound_controller.receive, ())
-        sequential_time_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_ARR)
+        sequential_time_memories = copy.deepcopy(bm.BASIC_MEMORY_GROUP_ARR)
         working_memories = []
         frames = 0
         last_process_time = 0
@@ -110,19 +112,19 @@ def main(argv):
             frames = frames + 1
 
             status.calculate_status(work_status, dps, frames)
-            memory.associate(working_memories)
-            memory.prepare_expectation(working_memories)
+            bm.associate(working_memories)
+            bm.prepare_expectation(working_memories)
             vision_controller.process(working_memories, sequential_time_memories, work_status, key)
             sound_controller.process(working_memories, sequential_time_memories, work_status)
             action_controller.process(working_memories, sequential_time_memories, work_status, button)
             reward_controller.process(sequential_time_memories, key)
-            memory.check_expectations(working_memories, sequential_time_memories)
-            memory.compose(working_memories, sequential_time_memories)
+            bm.check_expectations(working_memories, sequential_time_memories)
+            bm.compose(working_memories, sequential_time_memories)
 
             # work end
             work_duration = util.time_diff(start)
             status.update_status(working_memories, work_status, work_duration)
-            working_memories = memory.cleanup_working_memories(working_memories)
+            working_memories = bm.cleanup_working_memories(working_memories)
 
             process_duration = util.time_diff(start)
             gc.process(process_duration)
@@ -138,7 +140,6 @@ def main(argv):
             last_process_time = all_duration
 
     except KeyboardInterrupt:
-        logging.info('exit...')
         save_for_exit()
 
 

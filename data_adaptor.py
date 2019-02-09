@@ -1,6 +1,6 @@
+from bio_memory import BioMemory
 import constants
 import logging
-import memory
 import time
 import util
 import uuid
@@ -15,6 +15,8 @@ class DataAdaptor:
 
     def __init__(self, db):
         self.db = db
+        bm = BioMemory(self)
+        self.bio_memory = bm
 
     # return None if not found
     # do not use directly, we usually need to refresh it before getting it
@@ -25,7 +27,7 @@ class DataAdaptor:
     def get_memory(self, mid, recall=False):
         mem = self._get_memory(mid)
         if mem is not None:
-            memory.refresh(mem, recall, True)
+            self.bio_memory.refresh(mem, recall, True)
             if mem[constants.STRENGTH] == -1:
                 self.remove_memory(mem[constants.MID])
                 return None
@@ -45,7 +47,7 @@ class DataAdaptor:
         if memories is None or len(memories) == 0:
             return None
         for mem in memories:
-            memory.refresh(mem, recall, True)
+            self.bio_memory.refresh(mem, recall, True)
             if mem[constants.STRENGTH] == -1:
                 self.remove_memory(mem[constants.MID])
             else:
@@ -143,7 +145,7 @@ class DataAdaptor:
 
     # it return new created record id, normally not use it
     def _add_memory(self, addition=None):
-        new_memory = memory.BASIC_MEMORY.copy()
+        new_memory = self.bio_memory.BASIC_MEMORY.copy()
         if addition is not None:
             new_memory.update(addition)
         return self._add_record(new_memory)

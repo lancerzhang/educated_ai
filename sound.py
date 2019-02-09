@@ -5,7 +5,6 @@ import cv2
 import librosa
 import logging
 import math
-import memory
 import numpy as np
 import pyaudio
 import random
@@ -51,7 +50,8 @@ class Sound(object):
 
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 
-    def __init__(self):
+    def __init__(self, bm):
+        self.bio_memory = bm
         try:
             self.memory_indexes = np.load(self.MEMORY_INDEX_FILE)
         except IOError:
@@ -127,18 +127,19 @@ class Sound(object):
             if new_feature_memory is not None and \
                     new_feature_memory[constants.MID] not in matched_feature_memories_ids:
                 matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
-                                                            constants.SOUND_FEATURE)
+            new_slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
+                                                                     constants.SOUND_FEATURE)
         elif new_feature_memory is not None:
-            new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
+            new_slice_memories = self.bio_memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
             new_matched_feature_memories = self.match_features(frequency_map, new_slice_memories, working_memories,
                                                                sequential_time_memories)
             new_matched_feature_memories_ids = [x[constants.MID] for x in new_matched_feature_memories]
             if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
                 new_matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories,
-                                                            constants.SOUND_FEATURE)
-        memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+            new_slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY,
+                                                                     new_matched_feature_memories,
+                                                                     constants.SOUND_FEATURE)
+        self.bio_memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # if not work_status[constants.BUSY][constants.SHORT_DURATION]:
         #     smm = aware(frequency_map)
@@ -152,11 +153,13 @@ class Sound(object):
     def match_features(self, frequency_map, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []
         slice_memory_children = {}
-        memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
+        self.bio_memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
         for fmm in distinct_feature_memories:
             self.match_feature(frequency_map, fmm)
-        matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,
-                                                                           working_memories, sequential_time_memories)
+        matched_feature_memories = self.bio_memory.verify_slice_memory_match_result(slice_memories,
+                                                                                    slice_memory_children,
+                                                                                    working_memories,
+                                                                                    sequential_time_memories)
         logger.info('reproduce feature memories {0}'.format(matched_feature_memories))
         return matched_feature_memories
 
@@ -172,7 +175,7 @@ class Sound(object):
             return False  # not similar
         if feature_data[constants.SIMILAR]:
             # recall memory and update feature to average
-            memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
+            self.bio_memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
             self.update_kernel_rank(kernel)
         return feature_data[constants.SIMILAR]
 
@@ -246,7 +249,7 @@ class Sound(object):
         logger.debug('feature data is {0}'.format(data))
         mem = self.find_feature_memory(kernel, data[constants.FEATURE])
         if mem is None:
-            mem = memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
+            mem = self.bio_memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
             self.update_memory_indexes(kernel, mem[constants.MID])
         self.update_kernel_rank(kernel)
         return mem
@@ -256,7 +259,7 @@ class Sound(object):
         element = next((x for x in self.memory_indexes if x[constants.KERNEL] == kernel), None)
         if element is not None:
             memory_ids = element[constants.MEMORIES]
-            live_memories = memory.get_live_memories(memory_ids)
+            live_memories = self.bio_memory.get_live_memories(memory_ids)
             if live_memories is not None:
                 for mem in live_memories:
                     feature2 = mem[constants.FEATURE]
@@ -281,8 +284,8 @@ class Sound(object):
         kernel = self.get_kernel()
         data = self.filter_feature(frequency_map, kernel)
         if range_data['v'] > self.REGION_VARIANCE_THRESHOLD:
-            fmm = memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
-            smm = memory.add_collection_memory(constants.SLICE_MEMORY, [fmm], constants.SOUND_FEATURE)
+            fmm = self.bio_memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
+            smm = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, [fmm], constants.SOUND_FEATURE)
             return smm
         else:
             return None
@@ -367,4 +370,3 @@ def get_range_energy(energy, range_width):
     for i in range(0, len(energy) - range_width):
         range_energies.append(np.average(energy[i:i + range_width]))
     return np.array(range_energies)
-

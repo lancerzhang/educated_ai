@@ -4,7 +4,7 @@ from tinydb_smartcache import SmartCacheTable
 from tinydb.database import Document
 
 
-class DB_TinyDB:
+class DataTinyDB:
     db_instance = None
     table = None
 

@@ -1,9 +1,9 @@
-import unittest, time, memory, constants
+import unittest, time, bio_memory, constants
 from data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from db_tinydb import DB_TinyDB
-from db_CodernityDB import DB_CodernityDB
+from data_tinydb import DataTinyDB
+from data_CodernityDB import DataCodernityDB
 from CodernityDB.database import Database
 
 
@@ -12,12 +12,12 @@ class TestDB(unittest.TestCase):
     database = None
 
     def setUp(self):
-        database = DB_TinyDB(TinyDB(storage=MemoryStorage))
+        database = DataTinyDB(TinyDB(storage=MemoryStorage))
         # database = DB_CodernityDB()
         # for el in database.get_all():
         #     database.remove(el.get('_id'))
         self.data_service = DataAdaptor(database)
-        memory.forget_memory = True
+        bio_memory.forget_memory = True
 
     def test_housekeep0(self):
         self.data_service._add_memory({constants.LAST_RECALL_TIME: time.time() - 50})

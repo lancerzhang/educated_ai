@@ -4,7 +4,6 @@ import copy
 import cv2
 import logging
 import math
-import memory
 import numpy as np
 import random
 import skimage.measure
@@ -70,9 +69,9 @@ class Vision(object):
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
     current_action = {STATUS: COMPLETED}
 
-    def __init__(self, ds):
+    def __init__(self, bm):
         self.mouse = Controller()
-        self.data_service = ds
+        self.bio_memory = bm
         center_x = self.SCREEN_WIDTH / 2
         center_y = self.SCREEN_HEIGHT / 2
         width = self.ROI_ARR[self.roi_index]
@@ -137,18 +136,25 @@ class Vision(object):
             if new_feature_memory is not None and \
                     new_feature_memory[constants.MID] not in matched_feature_memories_ids:
                 matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
-                                                            constants.VISION_FEATURE)
+            new_slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
+                                                                     constants.VISION_FEATURE)
         elif new_feature_memory is not None:
-            new_slice_memories = memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
+            if new_feature_memory[constants.MEMORY_DURATION] != constants.FEATURE_MEMORY:
+                logger.error('new_feature_memory error is {0}'.format(new_feature_memory))
+            new_slice_memories = self.bio_memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
+            error_memories = [mem for mem in new_slice_memories if
+                              mem[constants.MEMORY_DURATION] != constants.SLICE_MEMORY]
+            if len(error_memories) > 0:
+                logger.error('{0} new_slice_memories error is {1}'.format(new_feature_memory, error_memories))
             new_matched_feature_memories = self.match_features(new_slice_memories, working_memories,
                                                                sequential_time_memories)
             new_matched_feature_memories_ids = [x[constants.MID] for x in new_matched_feature_memories]
             if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
                 new_matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, new_matched_feature_memories,
-                                                            constants.VISION_FEATURE)
-        memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+            new_slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY,
+                                                                     new_matched_feature_memories,
+                                                                     constants.VISION_FEATURE)
+        self.bio_memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's mature, below is the major way of focus move/zoom.
         slice_movement_memories = [mem for mem in working_memories if
@@ -162,7 +168,7 @@ class Vision(object):
             if len(slice_movement_memories) > 0:
                 logger.debug('slice movement memories is {0}'.format(slice_movement_memories))
                 new_slice_memory = self.match_movement_memories(slice_movement_memories)
-                memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+                self.bio_memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         slice_zoom_memories = [mem for mem in working_memories if
                                constants.MEMORY_DURATION in mem and
@@ -174,7 +180,7 @@ class Vision(object):
         if len(slice_zoom_memories) > 0:
             logger.debug('slice_zoom_memories is {0}'.format(slice_zoom_memories))
             new_slice_memory = self.match_zoom_memories(slice_zoom_memories)
-            memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+            self.bio_memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         # when she's not mature, need to guide her.
         this_full_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
@@ -196,7 +202,7 @@ class Vision(object):
                         # if environment not change, random do some change.
                         new_slice_memory = self.explore()
         if new_slice_memory:
-            memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
+            self.bio_memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
 
         self.previous_full_image = this_full_image
 
@@ -207,12 +213,14 @@ class Vision(object):
     def match_features(self, slice_memories, working_memories, sequential_time_memories):
         distinct_feature_memories = []
         slice_memory_children = {}
-        memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
+        self.bio_memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
         for fmm in distinct_feature_memories:
             self.match_feature(fmm)
-        matched_feature_memories = memory.verify_slice_memory_match_result(slice_memories, slice_memory_children,
-                                                                           working_memories, sequential_time_memories)
-        logger.info('reproduce feature memories {0}'.format(matched_feature_memories))
+        matched_feature_memories = self.bio_memory.verify_slice_memory_match_result(slice_memories,
+                                                                                    slice_memory_children,
+                                                                                    working_memories,
+                                                                                    sequential_time_memories)
+        logger.debug('reproduce feature memories {0}'.format(matched_feature_memories))
         return matched_feature_memories
 
     def match_feature(self, fmm):
@@ -229,7 +237,7 @@ class Vision(object):
             return False  # not similar
         if feature_data[constants.SIMILAR]:
             # recall memory and update feature to average
-            memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
+            self.bio_memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
             self.update_channel_rank(channel)
             self.update_kernel_rank(kernel)
             # self.this_feature_result = get_feature_result(channel, kernel, feature_data[constants.FEATURE])
@@ -293,7 +301,7 @@ class Vision(object):
         # self.this_feature_result = get_feature_result(channel, kernel, feature)
         mem = self.find_feature_memory(channel, kernel, feature)
         if mem is None:
-            mem = memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
+            mem = self.bio_memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
             self.update_memory_indexes(channel, kernel, mem[constants.MID])
         self.update_kernel_rank(kernel)
         self.update_channel_rank(channel)
@@ -306,7 +314,7 @@ class Vision(object):
             None)
         if element is not None:
             memory_ids = element[constants.MEMORIES]
-            live_memories = memory.get_live_memories(memory_ids)
+            live_memories = self.bio_memory.get_live_memories(memory_ids)
             if live_memories is not None:
                 for mem in live_memories:
                     feature2 = mem[constants.FEATURE]
@@ -518,15 +526,15 @@ class Vision(object):
         duration = 0
         action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
                   constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
-        memories = self.data_service.get_vision_move_memory(degrees, speed, duration)
+        memories = self.bio_memory.get_vision_move_memory(degrees, speed, duration)
         if memories is None or len(memories) == 0:
-            action_memory = memory.add_physical_memory(action)
+            action_memory = self.bio_memory.add_physical_memory(action)
         else:
             mem = memories[0]
-            memory.recall_memory(mem)
+            self.bio_memory.recall_memory(mem)
             action_memory = mem
-        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory],
-                                                    constants.VISION_FOCUS_MOVE)
+        slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory],
+                                                             constants.VISION_FOCUS_MOVE)
         return slice_memory
 
     def explore(self):
@@ -596,15 +604,15 @@ class Vision(object):
         self.current_block = new_block
         action = {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM, constants.ZOOM_TYPE: zoom_type,
                   constants.ZOOM_DIRECTION: zoom_direction}
-        memories = self.data_service.get_vision_zoom_memory(zoom_type, zoom_direction)
+        memories = self.bio_memory.get_vision_zoom_memory(zoom_type, zoom_direction)
         if memories is None or len(memories) == 0:
-            action_memory = memory.add_physical_memory(action)
+            action_memory = self.bio_memory.add_physical_memory(action)
         else:
             mem = memories[0]
-            memory.recall_memory(mem)
+            self.bio_memory.recall_memory(mem)
             action_memory = mem
-        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory],
-                                                    constants.VISION_FOCUS_ZOOM)
+        slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory],
+                                                             constants.VISION_FOCUS_ZOOM)
         return slice_memory
 
     def try_zoom_in(self, zoom_direction):
@@ -674,15 +682,15 @@ class Vision(object):
         logger.debug('set_movement_relative')
         action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
                   constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE}
-        memories = self.data_service.get_vision_move_memory(degrees, speed, duration)
+        memories = self.bio_memory.get_vision_move_memory(degrees, speed, duration)
         if memories is None or len(memories) == 0:
-            action_memory = memory.add_physical_memory(action)
+            action_memory = self.bio_memory.add_physical_memory(action)
         else:
             mem = memories[0]
-            memory.recall_memory(mem)
+            self.bio_memory.recall_memory(mem)
             action_memory = mem
-        slice_memory = memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory],
-                                                    constants.VISION_FOCUS_MOVE)
+        slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, [action_memory],
+                                                             constants.VISION_FOCUS_MOVE)
         self.current_action = copy.deepcopy(action)
         self.current_action.update({self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS})
         return slice_memory
@@ -804,7 +812,7 @@ class Vision(object):
 
     def match_movement_memories(self, memories):
         slice_memory = memories[0]
-        physical_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
+        physical_memories = self.bio_memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
         if len(physical_memories) < 1:
             return
         physical_memory = physical_memories[0]  # assume only one feature memory
@@ -823,13 +831,13 @@ class Vision(object):
                 return None
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration,
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
-        memory.recall_memory(physical_memory)
-        memory.recall_memory(slice_memory)
+        self.bio_memory.recall_memory(physical_memory)
+        self.bio_memory.recall_memory(slice_memory)
         return slice_memory
 
     def match_zoom_memories(self, memories):
         slice_memory = memories[0]
-        physical_memories = memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
+        physical_memories = self.bio_memory.get_live_sub_memories(slice_memory, constants.CHILD_MEM)
         if len(physical_memories) < 1:
             return
         physical_memory = physical_memories[0]  # assume only one feature memory
@@ -844,8 +852,8 @@ class Vision(object):
             return None
         self.roi_index = new_block[self.ROI_INDEX_NAME]
         self.current_block = new_block
-        memory.recall_memory(physical_memory)
-        memory.recall_memory(slice_memory)
+        self.bio_memory.recall_memory(physical_memory)
+        self.bio_memory.recall_memory(slice_memory)
         return slice_memory
 
     def grab(self, top, left, width, height):

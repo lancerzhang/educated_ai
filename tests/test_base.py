@@ -1,8 +1,8 @@
-import unittest, memory, constants
+import unittest, bio_memory, constants
 from data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from db_tinydb import DB_TinyDB
+from data_tinydb import DataTinyDB
 
 
 class TestUtil(unittest.TestCase):
@@ -10,10 +10,10 @@ class TestUtil(unittest.TestCase):
     database = None
 
     def setUp(self):
-        database = DB_TinyDB(TinyDB(storage=MemoryStorage))
+        database = DataTinyDB(TinyDB(storage=MemoryStorage))
         self.data = DataAdaptor(database)
-        memory.forget_memory = False
-        memory.data_adaptor = self.data
+        bio_memory.forget_memory = False
+        bio_memory.data_adaptor = self.data
 
     def test_sort(self):
         el1 = self.data.add_memory({constants.HAPPEN_TIME: 1})
