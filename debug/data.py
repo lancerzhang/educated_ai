@@ -1,8 +1,7 @@
-import constants
+from components import constants
 import numpy as np
-import util
-from data_adaptor import DataAdaptor
-from data_CodernityDB import DataCodernityDB
+from components.data_adaptor import DataAdaptor
+from components.data_CodernityDB import DataCodernityDB
 
 data_service = DataAdaptor(DataCodernityDB(folder='../data/CodernityDB/'))
 

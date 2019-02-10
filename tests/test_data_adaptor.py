@@ -1,9 +1,8 @@
-import unittest, sound, bio_memory
-from data_adaptor import DataAdaptor
-from tinydb import TinyDB, Query
+import unittest
+from components.data_adaptor import DataAdaptor
+from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from data_tinydb import DataTinyDB
-from data_CodernityDB import DataCodernityDB
+from components.data_tinydb import DataTinyDB
 
 
 class TestDB(unittest.TestCase):

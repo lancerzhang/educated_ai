@@ -1,8 +1,6 @@
-from mgc import GC
-from mock import patch, Mock, MagicMock
-import constants
+from components.mgc import GC
+from mock import patch
 import unittest
-import numpy as np
 
 
 class TestUtil(unittest.TestCase):
@@ -10,7 +8,7 @@ class TestUtil(unittest.TestCase):
     def setUp(self):
         return
 
-    @patch("data_adaptor.DataAdaptor")
+    @patch("components.data_adaptor.DataAdaptor")
     def test_gc(self, da):
         gc = GC(da)
         for i in range(0, 60):

@@ -1,4 +1,5 @@
-import util,cv2
+import cv2
+from components import util
 
 im1=cv2.imread('head1.jpg',1)
 im2=cv2.imread('head2.jpg',1)

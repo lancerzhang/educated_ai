@@ -1,7 +1,5 @@
-import constants, uuid
+import constants
 from tinydb import Query
-from tinydb_smartcache import SmartCacheTable
-from tinydb.database import Document
 
 
 class DataTinyDB:

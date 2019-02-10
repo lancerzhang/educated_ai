@@ -1,4 +1,5 @@
-import thread, time, sound
+import thread, time
+from components import sound
 import librosa
 import matplotlib.pyplot as plt
 import librosa.display as dsp

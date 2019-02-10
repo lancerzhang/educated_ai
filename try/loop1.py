@@ -1,6 +1,6 @@
 import time
 import msvcrt
-import util
+from components import util
 
 # number of process per second
 pps = 10

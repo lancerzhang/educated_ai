@@ -1,25 +1,22 @@
-from action import Action
-from bio_memory import BioMemory
-from data_adaptor import DataAdaptor
-from data_CodernityDB import DataCodernityDB
-from keyboard_listener import KeyboardListener
-from mouse_listener import MouseListener
-from mgc import GC
-from reward import Reward
-from sound import Sound
-from vision_screen import ScreenVision
-from vision_video_file import VideoFileVision
-import constants
+from components.action import Action
+from components.bio_memory import BioMemory
+from components.data_adaptor import DataAdaptor
+from components.data_CodernityDB import DataCodernityDB
+from components.keyboard_listener import KeyboardListener
+from components.mouse_listener import MouseListener
+from components.mgc import GC
+from components.reward import Reward
+from components.sound import Sound
+from components.vision_screen import ScreenVision
+from components.vision_video_file import VideoFileVision
+from components import constants, util, status
 import copy
 import getopt
 import logging
-import bio_memory
 import numpy as np
-import status
 import sys
 import thread
 import time
-import util
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',

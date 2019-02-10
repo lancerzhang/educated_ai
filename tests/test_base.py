@@ -1,8 +1,9 @@
-import unittest, bio_memory, constants
-from data_adaptor import DataAdaptor
+import unittest
+from components import constants, bio_memory
+from components.data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from data_tinydb import DataTinyDB
+from components.data_tinydb import DataTinyDB
 
 
 class TestUtil(unittest.TestCase):

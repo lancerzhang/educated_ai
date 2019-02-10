@@ -1,11 +1,12 @@
-from bio_memory import BioMemory
-from data_adaptor import DataAdaptor
-from tinydb import TinyDB, Query
+from components.bio_memory import BioMemory
+from components.data_adaptor import DataAdaptor
+from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from data_tinydb import DataTinyDB
-from vision import Vision
+from components.data_tinydb import DataTinyDB
+from components.vision import Vision
 
-import unittest, vision, bio_memory, cv2, constants, time, math
+import unittest, cv2, time, math
+from components import vision, constants
 import numpy as np
 
 

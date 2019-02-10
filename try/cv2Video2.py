@@ -1,6 +1,5 @@
-import histogramCv as his
 import cv2
-import util
+from components import util
 
 cap = cv2.VideoCapture('D:/bak/test.mkv')
 frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)

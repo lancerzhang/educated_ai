@@ -8,7 +8,8 @@ from CodernityDB.database import DatabaseException
 
 class ChildMemoryIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-import constants,util,hashlib"""
+from components import constants,util
+import hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '32s'
@@ -32,7 +33,8 @@ import constants,util,hashlib"""
 
 class ActorMouseIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-import constants,hashlib"""
+from components import constants
+import hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '32s'
@@ -57,7 +59,8 @@ import constants,hashlib"""
 
 class VisionZoomIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-import constants,hashlib"""
+from components import constants
+import hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '32s'
@@ -84,7 +87,8 @@ import constants,hashlib"""
 
 class VisionMoveIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-import constants,hashlib"""
+from components import constants
+import hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '32s'
@@ -114,14 +118,15 @@ import constants,hashlib"""
 class HousekeepIndex(HashIndex):
     sh_num = 100
     custom_header = """from CodernityDB.hash_index import HashIndex
-import constants,hashlib"""
+from components import constants
+import hashlib"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = 'I'
         super(HousekeepIndex, self).__init__(*args, **kwargs)
 
     def make_key_value(self, data):
-        lcl = int(data.get(constants.LAST_RECALL_TIME))
+        lcl = data.get(constants.LAST_RECALL_TIME)
         if lcl is None:
             return None
         else:
@@ -133,7 +138,7 @@ import constants,hashlib"""
 
 class RecallIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-import constants"""
+from components import constants"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = 'I'
@@ -152,7 +157,7 @@ import constants"""
 
 class LastRecallIndex(TreeBasedIndex):
     custom_header = """from CodernityDB.tree_index import TreeBasedIndex
-import constants"""
+from components import constants"""
 
     def __init__(self, *args, **kwargs):
         kwargs['node_capacity'] = 13

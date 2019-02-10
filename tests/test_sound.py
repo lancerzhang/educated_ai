@@ -1,18 +1,24 @@
-import unittest, sound, constants
-import numpy as np
-from data_adaptor import DataAdaptor
+from components.bio_memory import BioMemory
+from components.data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from sound import Sound
+from components.data_tinydb import DataTinyDB
+from components.sound import Sound
+from components import constants
+import numpy as np
+import unittest
 
 
 class TestSound(unittest.TestCase):
     database = None
 
     def setUp(self):
-        self.database = DataAdaptor(TinyDB(storage=MemoryStorage))
-        self.data = DataAdaptor(self.database)
-        self.sound = Sound()
+        database = DataTinyDB(TinyDB(storage=MemoryStorage))
+        da = DataAdaptor(database)
+        bm = BioMemory(da)
+        bm.forget_memory = False
+        self.bio_memory = bm
+        self.sound = Sound(bm)
 
     def test_filter_feature(self):
         kernel1 = '-1,-1,1,-1,-1,0,1,0,1'

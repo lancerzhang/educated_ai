@@ -5,9 +5,8 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import librosa, math, audioop, time, pyaudio,util
-import matplotlib.pyplot as plt
-import librosa.display as dsp
+import math, audioop, pyaudio
+from components import util
 import numpy as np
 
 CHUNK = 1024

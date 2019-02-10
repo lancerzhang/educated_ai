@@ -5,7 +5,8 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import librosa, math, audioop, time, pyaudio, util
+import librosa, math, audioop, pyaudio
+from components import util
 import matplotlib.pyplot as plt
 import librosa.display as dsp
 import numpy as np

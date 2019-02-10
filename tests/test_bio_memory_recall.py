@@ -1,9 +1,9 @@
-from bio_memory import BioMemory
-from data_adaptor import DataAdaptor
+from components.bio_memory import BioMemory
+from components.data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from data_tinydb import DataTinyDB
-import constants
+from components.data_tinydb import DataTinyDB
+from components import constants
 import time
 import unittest
 

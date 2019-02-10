@@ -1,10 +1,9 @@
-import unittest, time, bio_memory, constants
-from data_adaptor import DataAdaptor
+import unittest, time
+from components import constants, bio_memory
+from components.data_adaptor import DataAdaptor
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-from data_tinydb import DataTinyDB
-from data_CodernityDB import DataCodernityDB
-from CodernityDB.database import Database
+from components.data_tinydb import DataTinyDB
 
 
 class TestDB(unittest.TestCase):
