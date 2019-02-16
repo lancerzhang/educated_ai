@@ -7,10 +7,10 @@ from components.mouse_listener import MouseListener
 from components.mgc import GC
 from components.reward import Reward
 from components.sound import Sound
+from components.status import Status
 from components.vision_screen import ScreenVision
 from components.vision_video_file import VideoFileVision
 from components import constants, util, status
-import copy
 import getopt
 import logging
 import numpy as np
@@ -89,13 +89,11 @@ def main(argv):
         else:
             vision_controller = ScreenVision(bm)
         sound_controller = Sound(bm)
-        action_controller = Action(bm)
         thread.start_new_thread(sound_controller.receive, ())
-        sequential_time_memories = copy.deepcopy(bm.BASIC_MEMORY_GROUP_ARR)
-        working_memories = []
+        action_controller = Action(bm)
+        status_controller = Status(bm)
         frames = 0
         last_process_time = 0
-        work_status = status.init_status()
         logging.info('initialized.')
         while 1:
             start = time.time()
@@ -108,20 +106,21 @@ def main(argv):
             logging.debug('frame is {0} '.format(frames))
             frames = frames + 1
 
-            status.calculate_status(work_status, dps, frames)
-            bm.associate(working_memories)
-            bm.prepare_expectation(working_memories)
-            vision_controller.process(working_memories, sequential_time_memories, work_status, key)
-            sound_controller.process(working_memories, sequential_time_memories, work_status)
-            action_controller.process(working_memories, sequential_time_memories, work_status, button)
-            reward_controller.process(sequential_time_memories, key)
-            bm.check_expectations(working_memories, sequential_time_memories)
-            bm.compose(working_memories, sequential_time_memories)
+            status_controller.calculate_status(dps, frames)
+            work_status = status_controller.status
+            bm.associate()
+            bm.prepare_expectation()
+            vision_controller.process(work_status, key)
+            sound_controller.process(work_status)
+            action_controller.process(work_status, button)
+            reward_controller.process(key)
+            bm.check_expectations()
+            bm.compose()
 
             # work end
             work_duration = util.time_diff(start)
-            status.update_status(working_memories, work_status, work_duration)
-            working_memories = bm.cleanup_working_memories(working_memories)
+            status_controller.update_status(work_duration)
+            bm.cleanup_working_memories()
 
             process_duration = util.time_diff(start)
             gc.process(process_duration)

@@ -43,8 +43,8 @@ class TestDB(unittest.TestCase):
         self.database.insert(
             {'lrc': 1578892851, 'rwd': 0, 'cmy': [], 'pmy': [], 'mid': '773701af1bb745d4a21be7defbfc53f2', 'rcl': 1,
              'str': 100, constants.CHILD_MEM: child_mem1})
-        self.assertIsNotNone(self.database.get_child_memory(child_mem1))
-        self.assertIsNotNone(self.database.get_child_memory(reverse_chile_mem1))
+        self.assertIsNotNone(self.database.get_by_child_memories(child_mem1))
+        self.assertIsNotNone(self.database.get_by_child_memories(reverse_chile_mem1))
 
 
 if __name__ == "__main__":

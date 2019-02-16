@@ -98,7 +98,7 @@ import hashlib"""
         mem_type = data.get(constants.PHYSICAL_MEMORY_TYPE)
         degrees = str(data.get(constants.DEGREES))
         speed = str(data.get(constants.SPEED))
-        duration = str(data.get(constants.DURATION))
+        duration = str(data.get(constants.MOVE_DURATION))
         if mem_type is None or degrees is None or speed is None or duration is None:
             return None
         else:
@@ -108,7 +108,7 @@ import hashlib"""
         mem_type = key.get(constants.PHYSICAL_MEMORY_TYPE)
         degrees = str(key.get(constants.DEGREES))
         speed = str(key.get(constants.SPEED))
-        duration = str(key.get(constants.DURATION))
+        duration = str(key.get(constants.MOVE_DURATION))
         if mem_type is None or degrees is None or speed is None or duration is None:
             return None
         else:
@@ -145,7 +145,7 @@ from components import constants"""
         super(RecallIndex, self).__init__(*args, **kwargs)
 
     def make_key_value(self, data):
-        recall = data.get(constants.RECALL)
+        recall = data.get(constants.RECALL_COUNT)
         if recall is None:
             return None
         else:
@@ -292,7 +292,7 @@ class DataCodernityDB:
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
-                                  constants.DEGREES: degrees, constants.SPEED: speed, constants.DURATION: duration},
+                                  constants.DEGREES: degrees, constants.SPEED: speed, constants.MOVE_DURATION: duration},
                                  with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
@@ -310,19 +310,19 @@ class DataCodernityDB:
             doc = None
         return doc
 
-    def get_action_mouse_memory(self, click_type):
+    def get_mouse_click_memory(self, click_type):
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
-                                 {constants.PHYSICAL_MEMORY_TYPE: constants.ACTION_MOUSE,
+                                 {constants.PHYSICAL_MEMORY_TYPE: constants.ACTION_MOUSE_CLICK,
                                   constants.CLICK_TYPE: click_type}, with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
             doc = None
         return doc
 
-    def get_child_memory(self, child_mem):
+    def get_by_child_ids(self, id_list):
         try:
-            record = self.db.get(self.INDEX_CHILD_MEMORY, child_mem, with_doc=True)
+            record = self.db.get(self.INDEX_CHILD_MEMORY, id_list, with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:
             doc = None

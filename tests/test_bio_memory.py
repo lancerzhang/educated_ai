@@ -109,19 +109,19 @@ class TestBioMemory(unittest.TestCase):
 
     def test_get_memories(self):
         mem1 = self.data_adaptor.add_memory(
-            {constants.STATUS: constants.MATCHED, constants.DURATION: 1, constants.REWARD: 0.5})
+            {constants.STATUS: constants.MATCHED, constants.MOVE_DURATION: 1, constants.REWARD: 0.5})
         mem2 = self.data_adaptor.add_memory(
-            {constants.STATUS: constants.MATCHING, constants.DURATION: 1, constants.REWARD: 0.6})
+            {constants.STATUS: constants.MATCHING, constants.MOVE_DURATION: 1, constants.REWARD: 0.6})
         mem3 = self.data_adaptor.add_memory(
-            {constants.STATUS: constants.EXPIRED, constants.DURATION: 3, constants.REWARD: 0.3})
+            {constants.STATUS: constants.EXPIRED, constants.MOVE_DURATION: 3, constants.REWARD: 0.3})
         memories = [mem1, mem2, mem3]
         matched_list = [x for x in memories if x[constants.STATUS] is constants.MATCHED]
         self.assertEqual(1, len(matched_list))
-        sorted_list1 = sorted(memories, key=lambda x: (x[constants.DURATION]), reverse=True)
+        sorted_list1 = sorted(memories, key=lambda x: (x[constants.MOVE_DURATION]), reverse=True)
         self.assertEqual(constants.EXPIRED, sorted_list1[0][constants.STATUS])
         sorted_list2 = sorted(memories, key=lambda x: (x[constants.REWARD]), reverse=True)
         self.assertEqual(constants.MATCHING, sorted_list2[0][constants.STATUS])
-        sorted_list3 = sorted(memories, key=lambda x: (x[constants.DURATION], x[constants.REWARD]))
+        sorted_list3 = sorted(memories, key=lambda x: (x[constants.MOVE_DURATION], x[constants.REWARD]))
         self.assertEqual(constants.MATCHED, sorted_list3[0][constants.STATUS])
 
     def test_find_max_related_memories(self):
@@ -180,32 +180,32 @@ class TestBioMemory(unittest.TestCase):
         mem1 = self.data_adaptor.add_memory({constants.REWARD: 1})
         mem2 = self.data_adaptor.add_memory({constants.REWARD: 3})
         memories = [mem1, mem2]
-        self.bio_memory.create_working_memory(working_memories, seq_time_memories, [memories], constants.SLICE_MEMORY)
+        self.bio_memory.add_collection_memories(working_memories, seq_time_memories, [memories], constants.SLICE_MEMORY)
         self.assertEquals(2, seq_time_memories[constants.SLICE_MEMORY][0][constants.REWARD])
 
     def test_append_working_memories(self):
-        mem1 = self.data_adaptor.add_memory({constants.MEMORY_DURATION: constants.INSTANT_MEMORY})
+        mem1 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY})
         working_memories = []
         new_memories = [mem1]
-        self.bio_memory.append_working_memories(working_memories, new_memories)
+        self.bio_memory.new_working_memories(working_memories, new_memories)
         self.assertEquals(1, len(working_memories))
         self.assertGreater(working_memories[0][constants.START_TIME], 0)
         self.assertGreater(working_memories[0][constants.END_TIME], 0)
         self.assertGreater(working_memories[0][constants.LAST_RECALL_TIME], 0)
-        self.bio_memory.append_working_memories(working_memories, new_memories)
+        self.bio_memory.new_working_memories(working_memories, new_memories)
         self.assertEquals(1, len(working_memories))
-        mem2 = self.data_adaptor.add_memory({constants.MEMORY_DURATION: constants.INSTANT_MEMORY})
-        mem3 = self.data_adaptor.add_memory({constants.MEMORY_DURATION: constants.INSTANT_MEMORY})
+        mem2 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY})
+        mem3 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY})
         new_memories2 = [mem2, mem3]
-        self.bio_memory.append_working_memories(working_memories, new_memories2, 1)
+        self.bio_memory.new_working_memories(working_memories, new_memories2, 1)
         self.assertEquals(2, len(working_memories))
 
     def test_associate_slice_empty(self):
         mem0 = self.data_adaptor.add_memory({constants.STATUS: constants.MATCHING, constants.END_TIME: 1})
         pmem1 = self.data_adaptor.add_memory(
-            {constants.LAST_RECALL_TIME: 1, constants.REWARD: 1, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+            {constants.LAST_RECALL_TIME: 1, constants.REWARD: 1, constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY})
         pmem2 = self.data_adaptor.add_memory(
-            {constants.LAST_RECALL_TIME: 2, constants.REWARD: 2, constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+            {constants.LAST_RECALL_TIME: 2, constants.REWARD: 2, constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY})
         now = time.time() + 100
         mem3 = self.data_adaptor.add_memory(
             {constants.END_TIME: now, constants.STATUS: constants.MATCHED,
@@ -220,15 +220,15 @@ class TestBioMemory(unittest.TestCase):
         self.assertEqual(4, len(working_memories))
 
     def test_prepare_expectation(self):
-        mem1 = self.data_adaptor.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY})
-        mem2 = self.data_adaptor.add_memory({constants.MEMORY_DURATION: constants.SLICE_MEMORY})
+        mem1 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY})
+        mem2 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY})
         imem1 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]]})
         imem2 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING})
+            {constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING})
         smem1 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]]})
         working_memories = [imem1, smem1]
         self.bio_memory.prepare_expectation(working_memories)
@@ -238,28 +238,28 @@ class TestBioMemory(unittest.TestCase):
         new_time = time.time() + 10000
         sequential_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         mem1 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED,
              constants.END_TIME: new_time})
         mem2 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHED,
              constants.END_TIME: new_time})
         mem3 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
              constants.END_TIME: new_time})
         imem1 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, mem1[constants.MID], mem2[constants.MID]], constants.END_TIME: new_time})
         imem2 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [mem3[constants.MID]], constants.END_TIME: new_time})
         smem1 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]], constants.END_TIME: new_time})
         smem2 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
              constants.END_TIME: new_time})
         smem3 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.END_TIME: 1})
         working_memories = [mem1, mem2, imem1, imem2, smem1, smem2, smem3, mem3]
         self.bio_memory.check_expectations(working_memories, sequential_time_memories)
@@ -279,27 +279,27 @@ class TestBioMemory(unittest.TestCase):
         new_time = time.time() + 10000
         now_time = time.time()
         mem1 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHED,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY, constants.STATUS: constants.MATCHED,
              constants.REWARD: 2,
              constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time})
         mem2 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.LONG_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.LONG_MEMORY, constants.STATUS: constants.MATCHING,
              constants.REWARD: 1,
              constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time - 10})
         mem3 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHED,
              constants.REWARD: 1,
              constants.END_TIME: new_time, constants.LAST_ACTIVE_TIME: now_time - 5})
         mem4 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.REWARD: 1,
              constants.END_TIME: now_time - 5, constants.LAST_ACTIVE_TIME: now_time - 5})
         memories = [mem1, mem2, mem3, mem4]
         self.bio_memory.THRESHOLD_OF_WORKING_MEMORIES = 2
         working_memories = self.bio_memory.cleanup_working_memories(memories)
         self.assertEquals(2, len(working_memories))
-        self.assertEquals(constants.INSTANT_MEMORY, working_memories[0][constants.MEMORY_DURATION])
-        self.assertEquals(constants.SHORT_MEMORY, working_memories[1][constants.MEMORY_DURATION])
+        self.assertEquals(constants.INSTANT_MEMORY, working_memories[0][constants.VIRTUAL_MEMORY_TYPE])
+        self.assertEquals(constants.SHORT_MEMORY, working_memories[1][constants.VIRTUAL_MEMORY_TYPE])
         self.bio_memory.THRESHOLD_OF_WORKING_MEMORIES = 4
         working_memories2 = self.bio_memory.cleanup_working_memories(memories)
         self.assertEquals(3, len(working_memories2))
@@ -311,17 +311,17 @@ class TestBioMemory(unittest.TestCase):
         fmem2 = self.data_adaptor.add_memory({constants.STATUS: constants.MATCHED})
         fmem3 = self.data_adaptor.add_memory({constants.STATUS: constants.MATCHING})
         smem1 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [fmem1[constants.MID], fmem2[constants.MID]]})
         smem2 = self.data_adaptor.add_memory(
-            {constants.MEMORY_DURATION: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
+            {constants.VIRTUAL_MEMORY_TYPE: constants.SLICE_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [fmem1[constants.MID], fmem3[constants.MID]]})
         slice_memories = [smem1, smem2]
         slice_memory_children = {smem1[constants.MID]: [fmem1, fmem2], smem2[constants.MID]: [fmem1, fmem3]}
-        all_matched_feature_memories = self.bio_memory.verify_slice_memory_match_result(slice_memories,
-                                                                                        slice_memory_children,
-                                                                                        working_memories,
-                                                                                        sequential_time_memories)
+        all_matched_feature_memories = self.bio_memory.verify_matching_memories(slice_memories,
+                                                                                slice_memory_children,
+                                                                                working_memories,
+                                                                                sequential_time_memories)
         self.assertEquals(2, len(all_matched_feature_memories))
 
     def test_remove_continuous_duplicate_memory(self):

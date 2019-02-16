@@ -14,13 +14,13 @@ class VideoFileVision(Vision):
         self.source_frame = None
         super(VideoFileVision, self).__init__(bm)
 
-    def process(self, working_memories, sequential_time_memories, work_status, key):
+    def process(self, work_status, key):
         ret, self.source_frame = self.cap.read()
         if self.source_frame is None:
             self.cap = cv2.VideoCapture(self.file_path)
             ret, self.source_frame = self.cap.read()
 
-        super(VideoFileVision, self).process(working_memories, sequential_time_memories, work_status, key)
+        super(VideoFileVision, self).process(work_status, key)
         display_frame = self.source_frame.copy()
         cv2.rectangle(display_frame, (self.current_block[self.START_X], self.current_block[self.START_Y]),
                       (self.current_block[self.START_X] + self.current_block[self.WIDTH],

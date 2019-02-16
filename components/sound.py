@@ -52,6 +52,7 @@ class Sound(object):
 
     def __init__(self, bm):
         self.bio_memory = bm
+        self.frequency_map = None
         try:
             self.memory_indexes = np.load(self.MEMORY_INDEX_FILE)
         except IOError:
@@ -104,73 +105,34 @@ class Sound(object):
         np.save(self.MEMORY_INDEX_FILE, self.memory_indexes)
         np.save(self.USED_KERNEL_FILE, self.used_kernel_rank)
 
-    def process(self, working_memories, sequential_time_memories, work_status):
+    def process(self, work_status):
         start = time.time()
-        frequency_map = self.get_frequency_map()
-        if frequency_map is None:
+        self.frequency_map = self.get_frequency_map()
+        if self.frequency_map is None:
             return
 
-        new_slice_memory = None
-        slice_feature_memories = [mem for mem in working_memories if
-                                  constants.MEMORY_DURATION in mem and
-                                  mem[constants.MEMORY_DURATION] is constants.SLICE_MEMORY and
-                                  mem[constants.STATUS] is constants.MATCHING and
-                                  constants.PHYSICAL_MEMORY_TYPE in mem and
-                                  mem[constants.PHYSICAL_MEMORY_TYPE] is constants.SOUND_FEATURE]
-        logger.debug('len of slice_feature_memories is {0}'.format(len(slice_feature_memories)))
-        logger.debug('slice_feature_memories is {0}'.format(slice_feature_memories))
-        matched_feature_memories = self.match_features(frequency_map, slice_feature_memories, working_memories,
-                                                       sequential_time_memories)
-        new_feature_memory = self.search_feature_memory(frequency_map)
-        if len(matched_feature_memories) > 0:
-            matched_feature_memories_ids = [x[constants.MID] for x in matched_feature_memories]
-            if new_feature_memory is not None and \
-                    new_feature_memory[constants.MID] not in matched_feature_memories_ids:
-                matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, matched_feature_memories,
-                                                                     constants.SOUND_FEATURE)
-        elif new_feature_memory is not None:
-            new_slice_memories = self.bio_memory.get_live_sub_memories(new_feature_memory, constants.PARENT_MEM)
-            new_matched_feature_memories = self.match_features(frequency_map, new_slice_memories, working_memories,
-                                                               sequential_time_memories)
-            new_matched_feature_memories_ids = [x[constants.MID] for x in new_matched_feature_memories]
-            if new_feature_memory[constants.MID] not in new_matched_feature_memories_ids:
-                new_matched_feature_memories.append(new_feature_memory)
-            new_slice_memory = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY,
-                                                                     new_matched_feature_memories,
-                                                                     constants.SOUND_FEATURE)
-        self.bio_memory.add_new_slice_memory(new_slice_memory, sequential_time_memories, working_memories)
-
-        # if not work_status[constants.BUSY][constants.SHORT_DURATION]:
-        #     smm = aware(frequency_map)
-        #     if smm is not None:
-        #         sequential_time_memories[constants.SLICE_MEMORY].append(smm)
+        self.match_features()
+        new_feature_memory = self.search_feature_memory()
+        self.bio_memory.enrich_feature_memories(constants.SOUND_FEATURE, new_feature_memory)
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
         logger.debug('process used time:{0}'.format(time.time() - start))
 
-    def match_features(self, frequency_map, slice_memories, working_memories, sequential_time_memories):
-        distinct_feature_memories = []
-        slice_memory_children = {}
-        self.bio_memory.search_sub_memories(slice_memories, distinct_feature_memories, slice_memory_children)
-        for fmm in distinct_feature_memories:
-            self.match_feature(frequency_map, fmm)
-        matched_feature_memories = self.bio_memory.verify_slice_memory_match_result(slice_memories,
-                                                                                    slice_memory_children,
-                                                                                    working_memories,
-                                                                                    sequential_time_memories)
-        logger.info('reproduce feature memories {0}'.format(matched_feature_memories))
-        return matched_feature_memories
+    def match_features(self):
+        physical_memories = self.bio_memory.prepare_matching_memories(constants.SOUND_FEATURE)
+        for bm in physical_memories:
+            self.match_feature(bm)
+        self.bio_memory.verify_matching_memories()
 
-    def match_feature(self, full_frequency_map, fmm):
+    def match_feature(self, fmm):
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
         # data_range = fmm[RANGE]
         # frequency_map = full_frequency_map[data_range[0]:data_range[1], :]
         # data = filter_feature(frequency_map, kernel, feature)
         fmm.update({constants.STATUS: constants.MATCHING})
-        feature_data = self.filter_feature(full_frequency_map, kernel, np.array(feature))
+        feature_data = self.filter_feature(self.frequency_map, kernel, np.array(feature))
         if feature_data is None:
             return False  # not similar
         if feature_data[constants.SIMILAR]:
@@ -233,7 +195,7 @@ class Sound(object):
         self.used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, self.used_kernel_rank)
 
     # try to search more detail
-    def search_feature_memory(self, full_frequency_map):
+    def search_feature_memory(self):
         logger.debug('search_feature_memory')
         kernel = self.get_kernel()
         # range_width = get_range()
@@ -243,7 +205,7 @@ class Sound(object):
         # new_range = expend_max(range_energies, [max_index, max_index], range_width)
         # frequency_map = full_frequency_map[new_range[0]:new_range[1], :]
         # data = filter_feature(frequency_map, kernel)
-        data = self.filter_feature(full_frequency_map, kernel)
+        data = self.filter_feature(self.frequency_map, kernel)
         if data is None:
             return None
         logger.debug('feature data is {0}'.format(data))
@@ -285,7 +247,7 @@ class Sound(object):
         data = self.filter_feature(frequency_map, kernel)
         if range_data['v'] > self.REGION_VARIANCE_THRESHOLD:
             fmm = self.bio_memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
-            smm = self.bio_memory.add_collection_memory(constants.SLICE_MEMORY, [fmm], constants.SOUND_FEATURE)
+            smm = self.bio_memory.add_virtual_memory(constants.SLICE_MEMORY, [fmm], constants.SOUND_FEATURE)
             return smm
         else:
             return None

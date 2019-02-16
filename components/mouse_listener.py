@@ -23,4 +23,4 @@ class MouseListener(object):
 
     def on_click(self, x, y, button, pressed):
         if button is mouse.Button.left and pressed:
-            self.button = constants.MOUSE_LEFT
+            self.button = constants.LEFT_CLICK

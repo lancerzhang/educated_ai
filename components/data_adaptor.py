@@ -138,7 +138,7 @@ class DataAdaptor:
         uid = str(uuid.uuid4())
         uid = uid.replace('-', '')
         content.update(
-            {constants.MID: uid, constants.STRENGTH: 100, constants.RECALL: 1,
+            {constants.MID: uid, constants.STRENGTH: 100, constants.RECALL_COUNT: 1,
              constants.LAST_RECALL_TIME: int(time.time())})
         record = self.db.insert(content)
         return uid
@@ -163,12 +163,12 @@ class DataAdaptor:
         record = self.db.get_vision_zoom_memory(zoom_type, zoom_direction)
         return record
 
-    def get_action_mouse_memory(self, click_type):
-        record = self.db.get_action_mouse_memory(click_type)
+    def get_mouse_click_memory(self, click_type):
+        record = self.db.get_mouse_click_memory(click_type)
         return record
 
-    def get_child_memory(self, child_mem):
-        record = self.db.get_child_memory(child_mem)
+    def get_by_child_ids(self, child_mem):
+        record = self.db.get_by_child_ids(child_mem)
         return record
 
     def get_eden_memories(self):
