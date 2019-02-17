@@ -83,16 +83,18 @@ class BioMemory(object):
         # start = time.time()
         pending_memories = [mem for mem in self.working_memories if mem[constants.STATUS] is constants.MATCHING]
         logger.debug('len of pending_memories is {0}'.format(len(pending_memories)))
-        for pmem in pending_memories:
-            logger.debug('parent memory is {0}'.format(pmem))
-            live_children = self.get_live_sub_memories(pmem, constants.CHILD_MEM)
-            if pmem[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY:
-                logger.debug('constants.INSTANT_MEMORY live_children is {0}'.format(live_children))
-                self.new_working_memories(self.working_memories, live_children)
-            elif pmem[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY or pmem[
-                constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY:
-                logger.debug('live_children is {0}'.format(live_children))
-                self.new_working_memories(self.working_memories, live_children, 1)
+        for bm in pending_memories:
+            logger.debug('parent memory is {0}'.format(bm))
+            if constants.VIRTUAL_MEMORY_TYPE in bm:
+                if bm[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY:
+                    live_children = self.get_live_child_memories(bm)
+                    logger.debug('constants.INSTANT_MEMORY live_children is {0}'.format(live_children))
+                    self.new_working_memories(self.working_memories, live_children)
+                elif bm[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY or \
+                        bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY:
+                    live_children = self.get_live_child_memories(bm)
+                    logger.debug('live_children is {0}'.format(live_children))
+                    self.new_working_memories(self.working_memories, live_children, 1)
         # print 'prepare_expectation used time	' + str(time.time() - start)
 
     def check_expectations(self):
@@ -490,7 +492,7 @@ class BioMemory(object):
         child_memories = {}
         slice_memories = self.get_working_memories(bm_type)
         for bm in slice_memories:
-            live_children = self.get_live_sub_memories(bm, constants.CHILD_MEM, physical_memories)
+            live_children = self.get_live_child_memories(bm, physical_memories)
             child_memories.update({bm[constants.MID]: live_children})
         self.matching_memories = slice_memories
         self.matching_child_memories = child_memories
@@ -517,7 +519,7 @@ class BioMemory(object):
         if len(physical_memories) > 0:
             logger.debug('reproduce physical memories {0}'.format(physical_memories))
 
-    def enrich_feature_memories(self, bm_type, fbm=None):
+    def enrich_feature_memories(self, bm_type, fbm):
         matched_ids = [x[constants.MID] for x in self.matched_memories]
         if fbm is not None and fbm[constants.MID] not in matched_ids:
             if constants.PHYSICAL_MEMORY_TYPE not in fbm:
@@ -549,30 +551,32 @@ class BioMemory(object):
                 memories.append(mem)
         return memories
 
-    def get_live_sub_memories(self, bm, field, existing_memories=None, limit=0, offset=0):
-        memory_ids = bm[field]
+    # bm should be a virtual memory, have children
+    def get_live_child_memories(self, bm, all_child_bm=None, limit=0, offset=0):
+        child_bm_ids = bm[constants.CHILD_MEM]
         forgot_ids = []
-        memories = []
+        child_bm = []
         count = 0
         total = limit
         if total == 0:
-            total = len(memory_ids)
+            total = len(child_bm_ids)
         for i in range(offset, total):
-            sub_id = memory_ids[i]
+            sub_id = child_bm_ids[i]
             sub_bm = None
-            if existing_memories is not None:
-                for bm in existing_memories:
-                    if bm[constants.MID] == sub_id:
-                        sub_bm = bm
-                        memories.append(sub_bm)
+            if all_child_bm is not None:
+                for ebm in all_child_bm:
+                    if ebm[constants.MID] == sub_id:
+                        # found in all_child_bm
+                        sub_bm = ebm
+                        child_bm.append(sub_bm)
                         break
             if sub_bm is None:
                 sub_bm = self.data_adaptor.get_memory(sub_id)
                 if sub_bm is not None:
                     sub_bm.update({constants.STATUS: constants.MATCHING})
-                    memories.append(sub_bm)
-                    if existing_memories is not None:
-                        existing_memories.append(sub_bm)
+                    child_bm.append(sub_bm)
+                    if all_child_bm is not None:
+                        all_child_bm.append(sub_bm)
                 else:
                     forgot_ids.append(sub_id)
                     logger.debug('forgot something')
@@ -580,12 +584,8 @@ class BioMemory(object):
             if count >= total:
                 break
         if len(forgot_ids) > 0:
-            self.reduce_list_field(constants.CHILD_MEM, memory_ids, forgot_ids, bm[constants.MID])
-        if field is constants.CHILD_MEM and len(memories) == 0:
+            self.reduce_list_field(constants.CHILD_MEM, child_bm_ids, forgot_ids, bm[constants.MID])
+        if len(child_bm) == 0:
+            # virtual memory should have children
             self.data_adaptor.remove_memory(bm[constants.MID])
-        return memories
-
-    def search_sub_memories(self, memories, distinct_sub_memory_list, sub_memory_dict):
-        for smm in memories:
-            live_children = self.get_live_sub_memories(smm, constants.CHILD_MEM, distinct_sub_memory_list)
-            sub_memory_dict.update({smm[constants.MID]: live_children})
+        return child_bm

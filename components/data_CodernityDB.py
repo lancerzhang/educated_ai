@@ -292,7 +292,8 @@ class DataCodernityDB:
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
-                                  constants.DEGREES: degrees, constants.SPEED: speed, constants.MOVE_DURATION: duration},
+                                  constants.DEGREES: degrees, constants.SPEED: speed,
+                                  constants.MOVE_DURATION: duration},
                                  with_doc=True)
             doc = record.get('doc')
         except RecordNotFound:

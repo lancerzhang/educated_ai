@@ -36,13 +36,13 @@ def print_used_data():
     print 'used degrees is {0}'.format(np.load('../data/vud.npy'))
 
 
-# print count_memories()
-field = constants.RECALL
+print count_memories()
+# field = constants.RECALL_COUNT
 # field = constants.REWARD
 # memories = list_top_memories(field,50)
 field = constants.PARENT_MEM
-memories = list_top_sub_memories(field, 50)
+memories = list_top_sub_memories(field, 20)
 print [len(x[field]) for x in memories]
-# print data_service.get_memory('6df897947e1d45eb8913bbc0af7ab5b2')
+# print data_service.get_memory('b7189a09a7964c62b10e7cd067d91afd')
 
 # print_used_data()

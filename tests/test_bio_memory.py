@@ -82,28 +82,28 @@ class TestBioMemory(unittest.TestCase):
 
     def get_live_sub_memories_empty(self):
         mem1 = self.data_adaptor.add_memory({constants.CHILD_MEM: []})
-        memories = self.bio_memory.get_live_sub_memories(mem1, constants.CHILD_MEM)
+        memories = self.bio_memory.get_live_child_memories(mem1, constants.CHILD_MEM)
         self.assertEqual(0, len(memories))
 
     def get_live_sub_memories_success(self):
         mem1 = self.data_adaptor.add_memory()
         mem2 = self.data_adaptor.add_memory()
         mem3 = self.data_adaptor.add_memory({constants.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID]]})
-        child_memories1 = self.bio_memory.get_live_sub_memories(mem3, constants.CHILD_MEM)
+        child_memories1 = self.bio_memory.get_live_child_memories(mem3, constants.CHILD_MEM)
         self.assertEqual(2, len(child_memories1))
 
         mem4 = self.data_adaptor.add_memory({constants.CHILD_MEM: [mem1[constants.MID], mem2[constants.MID], 9]})
-        child_memories2 = self.bio_memory.get_live_sub_memories(mem4, constants.CHILD_MEM)
+        child_memories2 = self.bio_memory.get_live_child_memories(mem4, constants.CHILD_MEM)
         self.assertEqual(2, len(child_memories2))
         self.assertEqual(mem2[constants.MID], child_memories2[1][constants.MID])
 
         el5 = self.data_adaptor.add_memory({constants.CHILD_MEM: [mem1[constants.MID], 9, mem2[constants.MID]]})
-        child_memories3 = self.bio_memory.get_live_sub_memories(el5, constants.CHILD_MEM)
+        child_memories3 = self.bio_memory.get_live_child_memories(el5, constants.CHILD_MEM)
         self.assertEqual(2, len(child_memories3))
         self.assertEqual(mem2[constants.MID], child_memories3[1][constants.MID])
 
         el6 = self.data_adaptor.add_memory({constants.CHILD_MEM: [8, 9]})
-        self.bio_memory.get_live_sub_memories(el6, constants.CHILD_MEM)
+        self.bio_memory.get_live_child_memories(el6, constants.CHILD_MEM)
         mem = self.data_adaptor._get_memory(el6[constants.MID])
         self.assertIsNone(mem)
 
