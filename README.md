@@ -32,7 +32,9 @@ $ cat ~/.matplotlib/matplotlibrc
 backend: TkAgg
  ```
 ## Train
-5 minutes, 30 minutes, 12 hours, 1 day, 2 days, 4 days, 7 days, 15 days
+- Best training time: 5 minutes, 30 minutes, 12 hours, 1 day, 2 days, 4 days, 7 days, 15 days.
+- If you want to train using video file, audioread is used for reading audio, it depends on some backend library 
+(e.g. ffmpeg), make sure you install the library.
 ## Other
 if you see many CodernityDB debug log, remove 'print' in below line
 /python27/lib/python2.7/site-packages/CodernityDB/storage.py

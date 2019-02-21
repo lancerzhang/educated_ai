@@ -6,7 +6,8 @@ from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
 from components.mgc import GC
 from components.reward import Reward
-from components.sound import Sound
+from components.sound_microphone import MicrophoneSound
+from components.sound_video_file import VideoFileSound
 from components.status import Status
 from components.vision_screen import ScreenVision
 from components.vision_video_file import VideoFileVision
@@ -19,8 +20,7 @@ import thread
 import time
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
-                    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S')
+                    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
 
 DATA_FOLDER = 'data/CodernityDB/'
 MAIN_CONFIG_FILE = 'data/main.npy'
@@ -85,11 +85,13 @@ def main(argv):
         thread.start_new_thread(mouse_listener.start, ())
         thread.start_new_thread(keyboard_listener.start, ())
         if video_file:
-            vision_controller = VideoFileVision(bm, video_file)
+            video_file_info = {constants.total_frames: 0, constants.current_frame: 0, constants.fps: 0}
+            vision_controller = VideoFileVision(bm, video_file, video_file_info)
+            sound_controller = VideoFileSound(bm, video_file, video_file_info)
         else:
             vision_controller = ScreenVision(bm)
-        sound_controller = Sound(bm)
-        thread.start_new_thread(sound_controller.receive, ())
+            sound_controller = MicrophoneSound(bm)
+            thread.start_new_thread(sound_controller.receive, ())
         action_controller = Action(bm)
         status_controller = Status(bm)
         frames = 0

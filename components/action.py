@@ -4,7 +4,7 @@ import random
 from pynput.mouse import Button, Controller
 
 logger = logging.getLogger('Action')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Action(object):
@@ -14,6 +14,7 @@ class Action(object):
         self.bio_memory = bm
 
     def process(self, work_status, click):
+        logging.debug('process')
         self.reproduce_mouse_clicks()
         if click:
             self.feel_clicks(click)

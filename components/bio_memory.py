@@ -7,7 +7,7 @@ import time
 import util
 
 logger = logging.getLogger('BioMemory')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class BioMemoryException(Exception):
@@ -80,7 +80,7 @@ class BioMemory(object):
         self.new_working_memories(self.working_memories, related_memories)
 
     def prepare_expectation(self):
-        # start = time.time()
+        start = time.time()
         pending_memories = [mem for mem in self.working_memories if mem[constants.STATUS] is constants.MATCHING]
         logger.debug('len of pending_memories is {0}'.format(len(pending_memories)))
         for bm in pending_memories:
@@ -95,7 +95,7 @@ class BioMemory(object):
                     live_children = self.get_live_child_memories(bm)
                     logger.debug('live_children is {0}'.format(live_children))
                     self.new_working_memories(self.working_memories, live_children, 1)
-        # print 'prepare_expectation used time	' + str(time.time() - start)
+        logger.info('prepare_expectation used time	' + str(time.time() - start))
 
     def check_expectations(self):
         # start = time.time()
@@ -131,7 +131,7 @@ class BioMemory(object):
     # instant memories of 4 (COMPOSE_NUMBER) or within DURATION_SHORT will be grouped as a new short memory
     # short memories of 4 (COMPOSE_NUMBER) or within DURATION_LONG will be grouped as a new long memory
     def compose(self):
-        # start = time.time()
+        start = time.time()
         result1 = self.split_seq_time_memories(self.temp_memories[constants.SLICE_MEMORY],
                                                self.DURATION_INSTANT)
         self.temp_memories[constants.SLICE_MEMORY] = result1[self.REST_OF_MEMORIES]
@@ -150,7 +150,7 @@ class BioMemory(object):
         result4 = self.split_seq_time_memories(self.temp_memories[constants.LONG_MEMORY])
         self.temp_memories[constants.LONG_MEMORY] = result4[self.REST_OF_MEMORIES]
         self.add_collection_memories(result4[self.NEW_MEMORIES], constants.LONG_MEMORY)
-        # print 'compose used time	' + str(time.time() - start)
+        logger.info('compose used time	' + str(time.time() - start))
 
     def cleanup_working_memories(self):
         # start = time.time()
@@ -243,6 +243,7 @@ class BioMemory(object):
         return related_memories
 
     def increase_list_field(self, memories, field, new_id):
+        logger.debug('increase_list_field')
         for mem in memories:
             ids = mem[field]
             if new_id not in ids:
@@ -263,6 +264,7 @@ class BioMemory(object):
         self.recall_memory(mem, update_content)
 
     def recall_memory(self, bm, addition=None):
+        logger.debug('recall_memory')
         self.refresh(bm, True, False)
         update_content = {constants.STRENGTH: bm[constants.STRENGTH],
                           constants.RECALL_COUNT: bm[constants.RECALL_COUNT],
@@ -283,6 +285,7 @@ class BioMemory(object):
         self.recall_memory(bm)
 
     def remove_duplicate_memory(self, memories):
+        logger.debug('remove_duplicate_memory')
         new_memories = []
         new_memories_ids = []
         for mem in memories:
@@ -334,6 +337,7 @@ class BioMemory(object):
         return result
 
     def finish_working_memory(self, bm):
+        logger.debug('finish_working_memory')
         bm.update({constants.HAPPEN_TIME: time.time()})
         bm.update({constants.LAST_ACTIVE_TIME: time.time()})
         bm.update({constants.STATUS: constants.MATCHED})
@@ -402,6 +406,7 @@ class BioMemory(object):
             parent_working_memory_ids = grand_parent_memory_ids
 
     def add_memory(self, content):
+        logger.debug('add_memory')
         bm = self.data_adaptor.add_memory(content)
         self.finish_working_memory(bm)
         # below are used for working memory
@@ -445,6 +450,7 @@ class BioMemory(object):
         return self.add_physical_memory(content)
 
     def add_virtual_memory(self, bm_type, child_memories, addition=None, reward=0):
+        logger.debug('add_virtual_memory')
         memories = self.remove_duplicate_memory(child_memories)
         memory_ids = [x[constants.MID] for x in memories]
         existing_bm = self.data_adaptor.get_by_child_ids(memory_ids)
@@ -477,6 +483,7 @@ class BioMemory(object):
                 self.add_virtual_memory(duration_type, child_memories, reward=new_reward)
 
     def add_slice_memory(self, memories, bm_type):
+        logger.debug('add_slice_memoryv')
         ids = [x[constants.MID] for x in memories]
         sbm = self.data_adaptor.get_by_child_ids(ids)
         if sbm is None:
@@ -517,9 +524,10 @@ class BioMemory(object):
                 self.activate_parent_memories(sbm)
         self.matched_memories = physical_memories
         if len(physical_memories) > 0:
-            logger.debug('reproduce physical memories {0}'.format(physical_memories))
+            logger.info('reproduce physical memories {0}'.format(physical_memories))
 
     def enrich_feature_memories(self, bm_type, fbm):
+        logger.debug('enrich_feature_memories')
         matched_ids = [x[constants.MID] for x in self.matched_memories]
         if fbm is not None and fbm[constants.MID] not in matched_ids:
             if constants.PHYSICAL_MEMORY_TYPE not in fbm:

@@ -1,6 +1,9 @@
 import constants
 import logging
 
+logger = logging.getLogger('Reward')
+logger.setLevel(logging.DEBUG)
+
 
 class Reward(object):
 
@@ -12,6 +15,7 @@ class Reward(object):
         self.bio_memory.add_virtual_memory(constants.SLICE_MEMORY, [bm], reward=new_reward)
 
     def process(self, key):
+        logging.debug('process')
         reward = 0
         if key is constants.KEY_ALT:
             reward = 50

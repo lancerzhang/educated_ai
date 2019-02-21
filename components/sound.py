@@ -4,9 +4,7 @@ import copy
 import cv2
 import librosa
 import logging
-import math
 import numpy as np
-import pyaudio
 import random
 import skimage.measure
 import time
@@ -17,17 +15,9 @@ logger.setLevel(logging.INFO)
 
 
 class Sound(object):
-    start_thread = True
-    CHUNK = 1024
-    FORMAT = pyaudio.paInt16
-    CHANNELS = 1
     SAMPLE_RATE = 44100
-    SAMPLE_WIDTH = 2  # 16-bit
-    DEFAULT_PHASE_DURATION = 0.2  # second of buffer
     MAX_FREQUENCY = 8000
-
     phases = collections.deque()  # phases queue
-    MAX_PHASES = 5  # max phases storage
     ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
 
     FREQUENCY_MAP_HEIGHT = 20
@@ -66,49 +56,16 @@ class Sound(object):
         self.sound_kernels = np.load(self.SOUND_KERNEL_FILE)
         self.previous_phase = None
 
-    def receive(self, phase_duration=DEFAULT_PHASE_DURATION):
-        logger.info('start to receive sound data.')
-        try:
-            audio = pyaudio.PyAudio()
-            stream = audio.open(format=self.FORMAT,
-                                channels=self.CHANNELS,
-                                rate=self.SAMPLE_RATE,
-                                input=True,
-                                frames_per_buffer=self.CHUNK)
-            while self.start_thread:
-                frame_count = 0
-                frame_data = []
-                buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
-                buffer_count_of_phase = int(math.ceil(phase_duration / buffer_duration))
-
-                # start to record
-                while True:
-                    audio_buffer = stream.read(self.CHUNK)
-                    if len(audio_buffer) == 0:
-                        break  # reached end of the stream
-                    np_buffer = np.fromstring(audio_buffer, dtype=np.int16)
-                    normal_buffer = util.normalize_audio_data(np_buffer)
-                    frame_data = frame_data + normal_buffer.tolist()
-                    frame_count += 1
-                    if frame_count >= buffer_count_of_phase:
-                        break
-
-                # reach buffer threshold, save it as phase
-                if len(self.phases) > self.MAX_PHASES:
-                    # ignore non-process phase
-                    self.phases.popleft()
-                self.phases.append(frame_data)
-        except:
-            pass
-
     def save_files(self):
         np.save(self.MEMORY_INDEX_FILE, self.memory_indexes)
         np.save(self.USED_KERNEL_FILE, self.used_kernel_rank)
 
     def process(self, work_status):
+        logger.info('process')
         start = time.time()
         self.frequency_map = self.get_frequency_map()
         if self.frequency_map is None:
+            logger.error('no frequency data!')
             return
 
         self.match_features()
@@ -117,7 +74,7 @@ class Sound(object):
 
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-        logger.debug('process used time:{0}'.format(time.time() - start))
+        logger.info('process used time:{0}'.format(time.time() - start))
 
     def match_features(self):
         physical_memories = self.bio_memory.prepare_matching_memories(constants.SOUND_FEATURE)
@@ -270,9 +227,11 @@ class Sound(object):
         return new_range
 
     def get_frequency_map(self):
+        logger.debug('get_frequency_map')
         if len(self.phases) == 0:
             return None
         phase = self.phases.popleft()
+        logger.debug('got frequency map')
         if self.previous_phase is None:
             self.previous_phase = phase
             return

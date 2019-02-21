@@ -11,7 +11,7 @@ import time
 import util
 
 logger = logging.getLogger('Vision')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Vision(object):
@@ -114,6 +114,7 @@ class Vision(object):
         np.save(self.USED_CHANNEL_FILE, self.used_channel_rank)
 
     def process(self, work_status, key):
+        logger.info('process')
         start = time.time()
         if self.current_action[self.STATUS] is self.IN_PROGRESS:
             self.calculate_move_action(self.current_action)
@@ -150,6 +151,7 @@ class Vision(object):
         logger.debug('vision_process_used_time_total:{0}'.format(time.time() - start))
 
     def match_features(self):
+        logger.debug('match_features')
         physical_memories = self.bio_memory.prepare_matching_memories(constants.VISION_FEATURE)
         for bm in physical_memories:
             self.match_feature(bm)
@@ -234,6 +236,7 @@ class Vision(object):
 
     # try to search more detail
     def search_feature_memory(self):
+        logger.debug('search_feature_memory')
         feature_data = self.search_feature(self.current_block)
         if feature_data is None:
             return None
@@ -542,11 +545,15 @@ class Vision(object):
             return None
         self.current_block = new_block
         bm = self.bio_memory.get_vision_zoom_memory(zoom_type, zoom_direction)
+        logger.debug('random_zoom p1')
         if bm is None:
             bm = self.bio_memory.add_vision_focus_zoom_memory(zoom_type, zoom_direction)
+            logger.debug('random_zoom p2')
         else:
             self.bio_memory.recall_physical_memory(bm)
+            logger.debug('random_zoom p3')
         self.bio_memory.add_slice_memory([bm], bm[constants.PHYSICAL_MEMORY_TYPE])
+        logger.debug('random_zoom p4')
 
     def try_zoom_in(self, zoom_direction):
         temp_index = self.roi_index - 1
