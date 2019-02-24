@@ -4,7 +4,7 @@ import util
 import numpy as np
 
 logger = logging.getLogger('status')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 WORKLOAD_DATA = 'duration_data'
 REWARD_DATA = 'reward_data'

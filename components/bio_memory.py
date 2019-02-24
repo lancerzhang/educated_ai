@@ -7,7 +7,7 @@ import time
 import util
 
 logger = logging.getLogger('BioMemory')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class BioMemoryException(Exception):
@@ -406,8 +406,10 @@ class BioMemory(object):
             parent_working_memory_ids = grand_parent_memory_ids
 
     def add_memory(self, content):
-        logger.debug('add_memory')
+        start = time.time()
+        logger.debug('add_memory start')
         bm = self.data_adaptor.add_memory(content)
+        logger.debug('adding memory used {0}'.format(time.time() - start))
         self.finish_working_memory(bm)
         # below are used for working memory
         return bm

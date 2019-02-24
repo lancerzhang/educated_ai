@@ -11,7 +11,7 @@ import time
 import util
 
 logger = logging.getLogger('Vision')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Vision(object):

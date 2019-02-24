@@ -3,7 +3,8 @@ from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
 from CodernityDB.hash_index import HashIndex
 from CodernityDB.tree_index import TreeBasedIndex
 from CodernityDB.database import RecordNotFound
-from CodernityDB.database import DatabaseException
+from CodernityDB.database import RecordDeleted
+from CodernityDB.database import DatabasePathException
 
 
 class ChildMemoryIndex(HashIndex):
@@ -188,7 +189,7 @@ class DataCodernityDB:
         self.db = SuperThreadSafeDatabase(folder)
         try:
             self.db.open()
-        except:
+        except DatabasePathException:
             self.db.create()
             # strange error when use tree index, disable it first
             self.db.add_index(LastRecallIndex(self.db.path, self.INDEX_LAST_RECALL))
@@ -208,9 +209,11 @@ class DataCodernityDB:
     def get_by_id(self, eid):
         try:
             record = self.db.get('id', eid, with_doc=True)
-        except DatabaseException:
-            record = None
-        return record
+            return record
+        except  RecordNotFound:
+            return None
+        except RecordDeleted:
+            return None
 
     def get_all(self):
         records = self.db.all('id', with_doc=True)
@@ -220,28 +223,21 @@ class DataCodernityDB:
     def update(self, content, eid):
         try:
             record = self.db.get('id', eid)
-        except Exception:
-            record = None
-        if record is not None:
             record.update(content)
-            try:
-                updated = self.db.update(record)
-                return updated
-            except Exception as e:
-                # print e
-                return None
+            return self.db.update(record)
+        except  RecordNotFound:
+            return None
+        except RecordDeleted:
+            return None
 
     def remove(self, eid):
         try:
             record = self.db.get('id', eid)
-        except Exception:
-            record = None
-        if record is not None:
-            try:
-                return self.db.delete(record)
-            except Exception as e:
-                # print e
-                return None
+            return self.db.delete(record)
+        except  RecordNotFound:
+            return None
+        except RecordDeleted:
+            return None
 
     def search_by_last_call(self, last_call):
         records = []
@@ -295,10 +291,9 @@ class DataCodernityDB:
                                   constants.DEGREES: degrees, constants.SPEED: speed,
                                   constants.MOVE_DURATION: duration},
                                  with_doc=True)
-            doc = record.get('doc')
+            return record.get('doc')
         except RecordNotFound:
-            doc = None
-        return doc
+            return None
 
     def get_vision_zoom_memory(self, zoom_type, zoom_direction):
         try:
@@ -306,25 +301,25 @@ class DataCodernityDB:
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_ZOOM,
                                   constants.ZOOM_TYPE: zoom_type, constants.ZOOM_DIRECTION: zoom_direction},
                                  with_doc=True)
-            doc = record.get('doc')
+            return record.get('doc')
         except RecordNotFound:
-            doc = None
-        return doc
+            return None
 
     def get_mouse_click_memory(self, click_type):
         try:
             record = self.db.get(self.INDEX_ACTOR_MOUSE,
                                  {constants.PHYSICAL_MEMORY_TYPE: constants.ACTION_MOUSE_CLICK,
                                   constants.CLICK_TYPE: click_type}, with_doc=True)
-            doc = record.get('doc')
+            return record.get('doc')
         except RecordNotFound:
-            doc = None
-        return doc
+            return None
 
     def get_by_child_ids(self, id_list):
         try:
             record = self.db.get(self.INDEX_CHILD_MEMORY, id_list, with_doc=True)
-            doc = record.get('doc')
+            return record.get('doc')
         except RecordNotFound:
-            doc = None
-        return doc
+            return None
+
+    def keep_fit(self):
+        self.db.compact()

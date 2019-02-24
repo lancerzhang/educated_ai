@@ -47,10 +47,10 @@ print count_memories()
 # memories = list_top_sub_memories(field, 20)
 # print [len(x[field]) for x in memories]
 
-print data_service.get_memory('d2b375ed4eef4ae2a8ba5087059c799a')
+# print data_service.get_memory('d2b375ed4eef4ae2a8ba5087059c799a')
 
 # print_used_data()
-
+# data_service.db.db.compact()
 all_memories = data_service.get_all_memories()
 memories = [bm for bm in all_memories if
             constants.PHYSICAL_MEMORY_TYPE in bm and bm[constants.PHYSICAL_MEMORY_TYPE] == constants.SOUND_FEATURE]

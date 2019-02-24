@@ -1,8 +1,10 @@
 import constants
 import numpy as np
+import time
 
 
 class GC:
+    KEEP_FIT_DURATION = 5 * 60
     PPS = constants.process_per_second
     DPS = 1.0 / constants.process_per_second
     cycle_names = [constants.EDEN, constants.YOUNG, constants.OLD]
@@ -15,9 +17,16 @@ class GC:
         self.data = da
         da.full_gc()
         da.cleanup_fields()
+        da.keep_fit()
+        self.last_keep_fit_time = time.time()
 
     # as local database usually is single thread, we need carefully to handle it
     def process(self, duration):
+        if time.time() - self.last_keep_fit_time > self.KEEP_FIT_DURATION:
+            self.data.keep_fit()
+            self.last_keep_fit_time = time.time()
+            return
+
         frame_gc = False
         self.cycle_frames = self.cycle_frames + 1
         for i in range(0, len(self.cycle_names)):

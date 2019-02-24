@@ -202,3 +202,6 @@ class DataAdaptor:
         for mem in records:
             last_recall_time = mem[constants.LAST_RECALL_TIME]
             self.update_memory({constants.LAST_RECALL_TIME: last_recall_time + gap}, mem[constants.MID])
+
+    def keep_fit(self):
+        self.db.keep_fit()

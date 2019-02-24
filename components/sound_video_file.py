@@ -2,9 +2,7 @@ from sound import Sound
 import audioread
 import constants
 import logging
-import math
 import numpy as np
-import pyaudio
 import util
 
 

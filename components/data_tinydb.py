@@ -50,3 +50,6 @@ class DataTinyDB:
 
     def get_by_child_ids(self, child_mem):
         return None
+
+    def keep_fit(self):
+        return
