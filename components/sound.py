@@ -11,7 +11,7 @@ import time
 import util
 
 logger = logging.getLogger('Sound')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Sound(object):
@@ -77,10 +77,10 @@ class Sound(object):
         logger.info('process used time:{0}'.format(time.time() - start))
 
     def match_features(self):
-        physical_memories = self.bio_memory.prepare_matching_memories(constants.SOUND_FEATURE)
+        physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.SOUND_FEATURE)
         for bm in physical_memories:
             self.match_feature(bm)
-        self.bio_memory.verify_matching_memories()
+        self.bio_memory.verify_matching_physical_memories()
 
     def match_feature(self, fmm):
         kernel = fmm[constants.KERNEL]
@@ -107,22 +107,22 @@ class Sound(object):
         feature_data = copy.deepcopy(self.FEATURE_DATA)
         feature_data[constants.KERNEL] = kernel
         data_map = cv2.resize(data, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
-        logger.debug('data map is {0}'.format(np.around(data_map, decimals=2)))
         kernel_arr = util.string_to_feature_matrix(kernel)
         cov = cv2.filter2D(data_map, -1, kernel_arr)
         # down-sampling once use max pool, size is 50% of origin
         new_feature_pool1 = skimage.measure.block_reduce(cov, (self.POOL_BLOCK_SIZE, self.POOL_BLOCK_SIZE), np.max)
-        logger.debug('new_feature_pool1 is {0}'.format(new_feature_pool1))
         # down-sampling again use max pool, size is 25% of origin
         new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1,
                                                          (self.POOL_BLOCK_SIZE, self.POOL_BLOCK_SIZE), np.max)
-        logger.debug('new_feature_pool2 is {0}'.format(new_feature_pool2))
         # reduce not obvious feature
         threshold_feature = np.where(new_feature_pool2 < self.FEATURE_THRESHOLD, 0, new_feature_pool2)
-        logger.debug('threshold_feature is {0}'.format(threshold_feature))
         sum_feature = threshold_feature.sum()
         if sum_feature == 0:
             return None  # no any feature found
+        logger.debug('data map is {0}'.format(np.around(data_map, decimals=2)))
+        logger.debug('new_feature_pool1 is {0}'.format(new_feature_pool1))
+        logger.debug('new_feature_pool2 is {0}'.format(new_feature_pool2))
+        logger.debug('threshold_feature is {0}'.format(threshold_feature))
         standard_feature = util.standardize_feature(threshold_feature)
         new_feature = standard_feature.flatten().astype(int)
         if feature is None:
@@ -166,12 +166,14 @@ class Sound(object):
         if data is None:
             return None
         logger.debug('feature data is {0}'.format(data))
-        mem = self.find_feature_memory(kernel, data[constants.FEATURE])
-        if mem is None:
-            mem = self.bio_memory.add_feature_memory(constants.VISION_FEATURE, kernel, data[constants.FEATURE])
-            self.update_memory_indexes(kernel, mem[constants.MID])
+        bm = self.find_feature_memory(kernel, data[constants.FEATURE])
+        if bm is None:
+            bm = self.bio_memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
+            self.update_memory_indexes(kernel, bm[constants.MID])
+        else:
+            self.bio_memory.recall_physical_memory(bm)
         self.update_kernel_rank(kernel)
-        return mem
+        return bm
 
     # search memory by kernel using index
     def find_feature_memory(self, kernel, feature1):
@@ -231,7 +233,6 @@ class Sound(object):
         if len(self.phases) == 0:
             return None
         phase = self.phases.popleft()
-        logger.debug('got frequency map')
         if self.previous_phase is None:
             self.previous_phase = phase
             return
@@ -245,7 +246,7 @@ class Sound(object):
         frequency_map = librosa.feature.melspectrogram(y=data, sr=self.SAMPLE_RATE, n_mels=map_height,
                                                        hop_length=self.HOP_LENGTH,
                                                        fmax=self.MAX_FREQUENCY)
-        logger.debug('frequency_map is {0}'.format(frequency_map))
+        # logger.debug('frequency_map is {0}'.format(frequency_map))
         self.previous_phase = phase
         return frequency_map
 

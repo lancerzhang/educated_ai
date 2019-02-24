@@ -22,10 +22,10 @@ class Action(object):
             self.explore()
 
     def reproduce_mouse_clicks(self):
-        physical_memories = self.bio_memory.prepare_matching_memories(constants.ACTION_MOUSE_CLICK)
+        physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.ACTION_MOUSE_CLICK)
         for sbm in physical_memories:
             self.reproduce_mouse_click(sbm)
-        self.bio_memory.verify_matching_memories()
+        self.bio_memory.verify_matching_physical_memories()
 
     def reproduce_mouse_click(self, bm):
         click_type = bm[constants.CLICK_TYPE]

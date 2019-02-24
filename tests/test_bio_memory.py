@@ -231,7 +231,7 @@ class TestBioMemory(unittest.TestCase):
             {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.CHILD_MEM: [5, 6, imem1[constants.MID], imem2[constants.MID]]})
         working_memories = [imem1, smem1]
-        self.bio_memory.prepare_expectation(working_memories)
+        self.bio_memory.prepare_matching_virtual_memories(working_memories)
         self.assertEquals(4, len(working_memories))
 
     def test_check_expectation(self):
@@ -262,7 +262,7 @@ class TestBioMemory(unittest.TestCase):
             {constants.VIRTUAL_MEMORY_TYPE: constants.SHORT_MEMORY, constants.STATUS: constants.MATCHING,
              constants.END_TIME: 1})
         working_memories = [mem1, mem2, imem1, imem2, smem1, smem2, smem3, mem3]
-        self.bio_memory.check_expectations(working_memories, sequential_time_memories)
+        self.bio_memory.check_matching_virtual_memories(working_memories, sequential_time_memories)
         self.assertEquals(constants.MATCHED, imem1[constants.STATUS])
         self.assertEquals(constants.MATCHING, imem2[constants.STATUS])
         self.assertEquals(constants.MATCHING, smem1[constants.STATUS])
@@ -318,10 +318,10 @@ class TestBioMemory(unittest.TestCase):
              constants.CHILD_MEM: [fmem1[constants.MID], fmem3[constants.MID]]})
         slice_memories = [smem1, smem2]
         slice_memory_children = {smem1[constants.MID]: [fmem1, fmem2], smem2[constants.MID]: [fmem1, fmem3]}
-        all_matched_feature_memories = self.bio_memory.verify_matching_memories(slice_memories,
-                                                                                slice_memory_children,
-                                                                                working_memories,
-                                                                                sequential_time_memories)
+        all_matched_feature_memories = self.bio_memory.verify_matching_physical_memories(slice_memories,
+                                                                                         slice_memory_children,
+                                                                                         working_memories,
+                                                                                         sequential_time_memories)
         self.assertEquals(2, len(all_matched_feature_memories))
 
     def test_remove_continuous_duplicate_memory(self):

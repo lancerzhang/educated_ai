@@ -111,12 +111,12 @@ def main(argv):
             status_controller.calculate_status(dps, frames)
             work_status = status_controller.status
             bm.associate()
-            bm.prepare_expectation()
+            bm.prepare_matching_virtual_memories()
             vision_controller.process(work_status, key)
             sound_controller.process(work_status)
             action_controller.process(work_status, button)
             reward_controller.process(key)
-            bm.check_expectations()
+            bm.check_matching_virtual_memories()
             bm.compose()
 
             # work end

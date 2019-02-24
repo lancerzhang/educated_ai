@@ -152,22 +152,22 @@ class Vision(object):
 
     def match_features(self):
         logger.debug('match_features')
-        physical_memories = self.bio_memory.prepare_matching_memories(constants.VISION_FEATURE)
+        physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.VISION_FEATURE)
         for bm in physical_memories:
             self.match_feature(bm)
-        self.bio_memory.verify_matching_memories()
+        self.bio_memory.verify_matching_physical_memories()
 
     def reproduce_movements(self):
-        physical_memories = self.bio_memory.prepare_matching_memories(constants.VISION_FOCUS_MOVE)
+        physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.VISION_FOCUS_MOVE)
         for bm in physical_memories:
             self.reproduce_movement(bm)
-        self.bio_memory.verify_matching_memories()
+        self.bio_memory.verify_matching_physical_memories()
 
     def reproduce_zooms(self):
-        physical_memories = self.bio_memory.prepare_matching_memories(constants.VISION_FOCUS_ZOOM)
+        physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.VISION_FOCUS_ZOOM)
         for bm in physical_memories:
             self.reproduce_zoom(bm)
-        self.bio_memory.verify_matching_memories()
+        self.bio_memory.verify_matching_physical_memories()
 
     def match_feature(self, fmm):
         channel = fmm[constants.CHANNEL]
@@ -244,13 +244,15 @@ class Vision(object):
         kernel = feature_data[constants.KERNEL]
         feature = feature_data[constants.FEATURE]
         # self.this_feature_result = get_feature_result(channel, kernel, feature)
-        mem = self.find_feature_memory(channel, kernel, feature)
-        if mem is None:
-            mem = self.bio_memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
-            self.update_memory_indexes(channel, kernel, mem[constants.MID])
+        bm = self.find_feature_memory(channel, kernel, feature)
+        if bm is None:
+            bm = self.bio_memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
+            self.update_memory_indexes(channel, kernel, bm[constants.MID])
+        else:
+            self.bio_memory.recall_physical_memory(bm)
         self.update_kernel_rank(kernel)
         self.update_channel_rank(channel)
-        return mem
+        return bm
 
     # find memory by kernel using index
     def find_feature_memory(self, channel, kernel, feature1):

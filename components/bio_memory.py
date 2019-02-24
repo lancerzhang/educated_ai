@@ -79,7 +79,7 @@ class BioMemory(object):
         logger.debug('len of related_memories is {0}'.format(len(related_memories)))
         self.new_working_memories(self.working_memories, related_memories)
 
-    def prepare_expectation(self):
+    def prepare_matching_virtual_memories(self):
         start = time.time()
         pending_memories = [mem for mem in self.working_memories if mem[constants.STATUS] is constants.MATCHING]
         logger.debug('len of pending_memories is {0}'.format(len(pending_memories)))
@@ -97,34 +97,32 @@ class BioMemory(object):
                     self.new_working_memories(self.working_memories, live_children, 1)
         logger.info('prepare_expectation used time	' + str(time.time() - start))
 
-    def check_expectations(self):
+    def check_matching_virtual_memories(self):
         # start = time.time()
-        pending_instant_memories = [mem for mem in self.working_memories if
-                                    mem[constants.STATUS] is constants.MATCHING and
-                                    constants.VIRTUAL_MEMORY_TYPE in mem and
-                                    mem[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY]
-        self.check_expectation(pending_instant_memories, self.working_memories, self.temp_memories)
+        instant_memories = [mem for mem in self.working_memories if
+                            mem[constants.STATUS] is constants.MATCHING and
+                            constants.VIRTUAL_MEMORY_TYPE in mem and
+                            mem[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY]
+        self.check_matching_virtual_memory(instant_memories)
 
-        pending_short_memories = [mem for mem in self.working_memories if
-                                  mem[constants.STATUS] is constants.MATCHING and
-                                  constants.VIRTUAL_MEMORY_TYPE in mem and
-                                  mem[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY]
-        self.check_expectation(pending_short_memories, self.working_memories, self.temp_memories)
+        short_memories = [mem for mem in self.working_memories if
+                          mem[constants.STATUS] is constants.MATCHING and
+                          constants.VIRTUAL_MEMORY_TYPE in mem and
+                          mem[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY]
+        self.check_matching_virtual_memory(short_memories)
 
-        pending_long_memories = [mem for mem in self.working_memories if
-                                 mem[constants.STATUS] is constants.MATCHING and
-                                 constants.VIRTUAL_MEMORY_TYPE in mem and
-                                 mem[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY]
-        match_count = self.check_expectation(pending_long_memories, self.working_memories,
-                                             self.temp_memories)
+        long_memories = [mem for mem in self.working_memories if
+                         mem[constants.STATUS] is constants.MATCHING and
+                         constants.VIRTUAL_MEMORY_TYPE in mem and
+                         mem[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY]
+        match_count = self.check_matching_virtual_memory(long_memories, )
 
         while match_count > 0:
             # something change on long memory, try to match high level parent long memory
-            pending_long_memories = [mem for mem in self.working_memories if
-                                     mem[constants.STATUS] is constants.MATCHING and
-                                     mem[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY]
-            match_count = self.check_expectation(pending_long_memories, self.working_memories,
-                                                 self.temp_memories)
+            long_memories = [mem for mem in self.working_memories if
+                             mem[constants.STATUS] is constants.MATCHING and
+                             mem[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY]
+            match_count = self.check_matching_virtual_memory(long_memories)
         # print 'check_expectation used time	' + str(time.time() - start)
 
     # slice memories of 4 (COMPOSE_NUMBER) or within DURATION_INSTANT will be grouped as a new instant memory
@@ -375,22 +373,23 @@ class BioMemory(object):
         for mem in memories:
             self.data_adaptor.update_memory({constants.LAST_RECALL_TIME: int(time.time())}, mem[constants.MID])
 
-    def check_expectation(self, pending_memories, working_memories, sequential_time_memories):
+    def check_matching_virtual_memory(self, pending_memories):
         match_count = 0
-        for pmem in pending_memories:
-            if time.time() > pmem[constants.END_TIME]:
-                pmem[constants.STATUS] = constants.EXPIRED
+        for pbm in pending_memories:
+            if time.time() > pbm[constants.END_TIME]:
+                pbm[constants.STATUS] = constants.EXPIRED
                 continue
             all_matched = True
-            child_ids = pmem[constants.CHILD_MEM]
-            for wmem in working_memories:
-                if wmem[constants.MID] in child_ids:
-                    if wmem[constants.STATUS] is not constants.MATCHED:
+            child_ids = pbm[constants.CHILD_MEM]
+            for wbm in self.working_memories:
+                if wbm[constants.MID] in child_ids:
+                    if wbm[constants.STATUS] is not constants.MATCHED:
                         all_matched = False
                         break
             if all_matched:
                 match_count = match_count + 1
-                self.recall_virtual_memory(pmem)
+                self.recall_virtual_memory(pbm)
+                logger.info('reproduce virtual memories {0}'.format(pbm))
         return match_count
 
     def activate_parent_memories(self, bm):
@@ -494,7 +493,7 @@ class BioMemory(object):
         else:
             self.recall_virtual_memory(sbm)
 
-    def prepare_matching_memories(self, bm_type):
+    def prepare_matching_physical_memories(self, bm_type):
         self.matching_memories = []
         self.matching_child_memories = {}
         physical_memories = []
@@ -507,7 +506,7 @@ class BioMemory(object):
         self.matching_child_memories = child_memories
         return physical_memories
 
-    def verify_matching_memories(self):
+    def verify_matching_physical_memories(self):
         self.matched_memories = []
         physical_memories = []
         ids = []
@@ -526,14 +525,12 @@ class BioMemory(object):
                 self.activate_parent_memories(sbm)
         self.matched_memories = physical_memories
         if len(physical_memories) > 0:
-            logger.info('reproduce physical memories {0}'.format(physical_memories))
+            logger.debug('reproduce physical memories {0}'.format(physical_memories))
 
     def enrich_feature_memories(self, bm_type, fbm):
         logger.debug('enrich_feature_memories')
         matched_ids = [x[constants.MID] for x in self.matched_memories]
         if fbm is not None and fbm[constants.MID] not in matched_ids:
-            if constants.PHYSICAL_MEMORY_TYPE not in fbm:
-                raise BioMemoryException('not a physical memory')
             self.matched_memories.append(fbm)
         if len(self.matched_memories) > 0:
             self.add_slice_memory(self.matched_memories, bm_type)
