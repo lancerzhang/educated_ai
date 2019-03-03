@@ -261,7 +261,7 @@ class Vision(object):
             None)
         if element is not None:
             memory_ids = element[constants.MEMORIES]
-            live_memories = self.bio_memory.get_live_memories(memory_ids)
+            live_memories = self.bio_memory.search_live_memories(memory_ids)
             if live_memories is not None:
                 for mem in live_memories:
                     feature2 = mem[constants.FEATURE]

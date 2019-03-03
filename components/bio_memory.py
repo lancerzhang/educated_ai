@@ -28,6 +28,8 @@ class BioMemory(object):
     DURATION_SHORT = 3
     DURATION_LONG = 360
 
+    GREEDY_RATIO = 0.8
+
     #                                                                                                                                                                                  collections
     #                                                                                                                                        long                                   long            ...       long
     #                                                                                 short                                               short       ...       short
@@ -87,12 +89,12 @@ class BioMemory(object):
             logger.debug('parent memory is {0}'.format(bm))
             if constants.VIRTUAL_MEMORY_TYPE in bm:
                 if bm[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY:
-                    live_children = self.get_live_child_memories(bm)
+                    live_children = self.search_live_child_memories(bm)
                     logger.debug('constants.INSTANT_MEMORY live_children is {0}'.format(live_children))
                     self.new_working_memories(self.working_memories, live_children)
                 elif bm[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY or \
                         bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY:
-                    live_children = self.get_live_child_memories(bm)
+                    live_children = self.search_live_child_memories(bm)
                     logger.debug('live_children is {0}'.format(live_children))
                     self.new_working_memories(self.working_memories, live_children, 1)
         logger.info('prepare_expectation used time	' + str(time.time() - start))
@@ -150,11 +152,29 @@ class BioMemory(object):
         self.add_collection_memories(result4[self.NEW_MEMORIES], constants.LONG_MEMORY)
         logger.info('compose used time	' + str(time.time() - start))
 
+    def calculate_working_reward(self, memories):
+        for bm in memories:
+            reward = bm[constants.REWARD]
+            elapse = int(time.time() - bm[constants.LAST_ACTIVE_TIME])
+            ratio = 0
+            # can't always keep in working memory, reduce it's working reward gradually
+            if (100 - elapse) > 0:
+                ratio = 100 - elapse
+            # greedy mode, if satisfied (matched), will forget it soon, try to find another reward
+            if bm[constants.STATUS] is constants.MATCHED:
+                ratio = ratio * self.GREEDY_RATIO
+            elif bm[constants.STATUS] is constants.EXPIRED:
+                ratio = 0
+            working_reward = reward * ratio
+            bm.update({constants.WORKING_REWARD: working_reward})
+
     def cleanup_working_memories(self):
         # start = time.time()
         valid_working_memories = [mem for mem in self.working_memories if
                                   mem[constants.STATUS] is constants.MATCHED or mem[constants.END_TIME] > time.time()]
-        sorted_working_memories = sorted(valid_working_memories, key=lambda x: (x[constants.LAST_ACTIVE_TIME]),
+        self.calculate_working_reward(valid_working_memories)
+        sorted_working_memories = sorted(valid_working_memories,
+                                         key=lambda x: (x[constants.WORKING_REWARD], x[constants.LAST_ACTIVE_TIME]),
                                          reverse=True)
         limited_sorted_working_memories = sorted_working_memories[0:self.THRESHOLD_OF_WORKING_MEMORIES:]
         # print 'frame used time	' + str(time.time() - start)
@@ -339,7 +359,9 @@ class BioMemory(object):
         bm.update({constants.HAPPEN_TIME: time.time()})
         bm.update({constants.LAST_ACTIVE_TIME: time.time()})
         bm.update({constants.STATUS: constants.MATCHED})
-        self.working_memories.append(bm)
+        ids = [bm[constants.MID] for bm in self.working_memories]
+        if bm[constants.MID] not in ids:
+            self.working_memories.append(bm)
 
     def new_working_memory(self, bm):
         exp = {constants.STATUS: constants.MATCHING, constants.START_TIME: time.time(),
@@ -500,7 +522,7 @@ class BioMemory(object):
         child_memories = {}
         slice_memories = self.get_working_memories(bm_type)
         for bm in slice_memories:
-            live_children = self.get_live_child_memories(bm, physical_memories)
+            live_children = self.search_live_child_memories(bm, physical_memories)
             child_memories.update({bm[constants.MID]: live_children})
         self.matching_memories = slice_memories
         self.matching_child_memories = child_memories
@@ -550,7 +572,7 @@ class BioMemory(object):
     def get_mouse_click_memory(self, click_type):
         return self.data_adaptor.get_mouse_click_memory(click_type)
 
-    def get_live_memories(self, memory_ids):
+    def search_live_memories(self, memory_ids):
         memories = []
         for mid in memory_ids:
             mem = self.data_adaptor.get_memory(mid)
@@ -559,7 +581,7 @@ class BioMemory(object):
         return memories
 
     # bm should be a virtual memory, have children
-    def get_live_child_memories(self, bm, all_child_bm=None, limit=0, offset=0):
+    def search_live_child_memories(self, bm, all_child_bm=None, limit=0, offset=0):
         child_bm_ids = bm[constants.CHILD_MEM]
         forgot_ids = []
         child_bm = []

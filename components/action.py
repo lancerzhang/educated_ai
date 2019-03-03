@@ -18,7 +18,7 @@ class Action(object):
         self.reproduce_mouse_clicks()
         if click:
             self.feel_clicks(click)
-        elif not work_status[constants.BUSY][constants.MEDIUM_DURATION] or not work_status[constants.REWARD]:
+        elif not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
             self.explore()
 
     def reproduce_mouse_clicks(self):

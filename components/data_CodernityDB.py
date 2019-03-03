@@ -279,9 +279,14 @@ class DataCodernityDB:
 
     def get_recall(self, recall):
         records = []
-        db_records = self.db.get_many(self.INDEX_RECALL, recall, with_doc=True)
-        for record in db_records:
-            records.append(record.get('doc'))
+        try:
+            db_records = self.db.get_many(self.INDEX_RECALL, recall, with_doc=True)
+            for record in db_records:
+                records.append(record.get('doc'))
+        except RecordNotFound:
+            return records
+        except RecordDeleted:
+            return records
         return records
 
     def get_vision_move_memory(self, degrees, speed, duration):
