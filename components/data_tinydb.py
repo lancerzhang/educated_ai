@@ -33,20 +33,32 @@ class DataTinyDB:
 
     def get_vision_move_memory(self, degrees, speed, duration):
         query = Query()
-        return self.table.search(
+        doc = self.table.search(
             (query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_MOVE) & (
                     query[constants.DEGREES] == degrees) & (
                     query[constants.SPEED] == speed) & (query[constants.MOVE_DURATION] == duration))
+        if len(doc) == 0:
+            return None
+        else:
+            return doc
 
     def get_vision_zoom_memory(self, zoom_type):
         query = Query()
-        return self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_ZOOM) & (
+        doc = self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.VISION_FOCUS_ZOOM) & (
                 query[constants.ZOOM_TYPE] == zoom_type))
+        if len(doc) == 0:
+            return None
+        else:
+            return doc
 
     def get_action_mouse_memory(self, click_type):
         query = Query()
-        return self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.ACTION_MOUSE_CLICK) & (
+        doc = self.table.search((query[constants.PHYSICAL_MEMORY_TYPE] == constants.ACTION_MOUSE_CLICK) & (
                 query[constants.CLICK_TYPE] == click_type))
+        if len(doc) == 0:
+            return None
+        else:
+            return doc
 
     def get_by_child_ids(self, child_mem):
         return None

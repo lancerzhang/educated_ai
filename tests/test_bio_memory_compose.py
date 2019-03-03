@@ -10,7 +10,6 @@ import unittest
 
 
 class TestBioMemory(unittest.TestCase):
-    working_memories = []
     data_adaptor = None
 
     def setUp(self):
@@ -161,548 +160,360 @@ class TestBioMemory(unittest.TestCase):
     def test_compose_slice_number_no_split(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
-        # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID]: mem})
-        seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(1, len(working_memories[constants.SLICE_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.INSTANT_MEMORY]))
+        self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_number_split_1_1(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_number_split_1_0(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 0):
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 0, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(0, len(seq_time_memories[constants.SLICE_MEMORY]))
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(0, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_number_split_1_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 2):
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(2, len(seq_time_memories[constants.SLICE_MEMORY]))
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(2, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_number_split_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(2, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_time_no_split(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.1})
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.1
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SLICE_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.INSTANT_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_time_split_1_1(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.3})
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.3
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_time_split_1_0(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.2})
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.SLICE_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_time_split_1_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.3})
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.3
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(2, len(seq_time_memories[constants.SLICE_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(2, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_slice_time_split_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 3):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 0.2})
-            # working_memories[constants.SLICE_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SLICE_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SLICE_MEMORY].append(mem)
             now = now + 0.2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 3, len(working_memories[constants.SLICE_MEMORY]))
-        # self.assertEqual(2, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SLICE_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SLICE_MEMORY]))
 
     def test_compose_instant_number_no_split(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
-        # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID]: mem})
-        seq_time_memories[constants.INSTANT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(1, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.SHORT_MEMORY]))
+        self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_number_split_1_1(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.INSTANT_MEMORY]))
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_number_split_1_0(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 0):
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 0, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(0, len(seq_time_memories[constants.INSTANT_MEMORY]))
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(0, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_number_split_1_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 2):
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(2, len(seq_time_memories[constants.INSTANT_MEMORY]))
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(2, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_number_split_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(2, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.INSTANT_MEMORY]))
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_time_no_split(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
             now = now + 1
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.INSTANT_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.SHORT_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1,
+                         len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_time_split_1_1(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
             now = now + 3
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.INSTANT_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_time_split_1_0(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
             now = now + 1
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.INSTANT_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1,
+                         len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_time_split_1_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
             now = now + 2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(2, len(seq_time_memories[constants.INSTANT_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(2, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_instant_time_split_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 3):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
-            # working_memories[constants.INSTANT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.INSTANT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.INSTANT_MEMORY].append(mem)
             now = now + 2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 3, len(working_memories[constants.INSTANT_MEMORY]))
-        # self.assertEqual(2, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.INSTANT_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
 
     def test_compose_short_number_no_split(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
-        # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID]: mem})
-        seq_time_memories[constants.SHORT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.LONG_MEMORY]))
+        self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_number_split_1_1(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SHORT_MEMORY]))
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_number_split_1_0(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 0):
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 0, len(working_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(0, len(seq_time_memories[constants.SHORT_MEMORY]))
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(0, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_number_split_1_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 2):
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 2, len(working_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(2, len(seq_time_memories[constants.SHORT_MEMORY]))
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(2, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_number_split_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1, len(working_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(2, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.SHORT_MEMORY]))
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_time_no_split(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
             now = now + 1
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_time_split_1_1(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
             now = now + 3
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_time_split_1_0(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
             now = now + 2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(0, len(working_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_time_split_1_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
             now = now + 3
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(0, len(seq_time_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(0, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_short_time_split_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 3):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
-            # working_memories[constants.SHORT_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.SHORT_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.SHORT_MEMORY].append(mem)
             now = now + 2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 3, len(working_memories[constants.SHORT_MEMORY]))
-        self.assertEqual(3, len(seq_time_memories[constants.SHORT_MEMORY]))
-        # self.assertEqual(1, len(working_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(3, len(self.bio_memory.temp_memories[constants.SHORT_MEMORY]))
 
     def test_compose_long_number_no_split(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
-        # working_memories[constants.LONG_MEMORY].update({mem[constants.ID]: mem})
-        seq_time_memories[constants.LONG_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.LONG_MEMORY]))
+        self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_number_split_1_1(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 1 + 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1 + 1, len(seq_time_memories[constants.LONG_MEMORY]))
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1 + 1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_number_split_1_0(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 0):
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.LONG_MEMORY]))
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_number_split_1_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 2):
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 2 + 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1 + 2, len(seq_time_memories[constants.LONG_MEMORY]))
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1 + 2, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_number_split_2(self):
         mem = self.bio_memory.BASIC_MEMORY.copy()
         mem.update({constants.MID: 1000, constants.HAPPEN_TIME: time.time()})
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + self.bio_memory.COMPOSE_NUMBER + 1):
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + memory.COMPOSE_NUMBER + 1 + 2, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1 + 2, len(seq_time_memories[constants.LONG_MEMORY]))
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
+        self.bio_memory.compose()
+        self.assertEqual(1 + 2, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_time_no_split(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 1})
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
             now = now + 1
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_time_split_1_1(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
             now = now + 3
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_time_split_1_0(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER - 1):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
             now = now + 2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER - 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(seq_time_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(self.bio_memory.COMPOSE_NUMBER - 1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_time_split_1_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 3})
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
             now = now + 3
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(1, len(seq_time_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
     def test_compose_long_time_split_2(self):
         now = time.time()
-        # working_memories = copy.deepcopy(memory.BASIC_MEMORY_GROUP_DICT)
-        seq_time_memories = copy.deepcopy(self.bio_memory.BASIC_MEMORY_GROUP_ARR)
         for num in range(1, 1 + self.bio_memory.COMPOSE_NUMBER + 3):
             mem = self.bio_memory.BASIC_MEMORY.copy()
             mem.update({constants.MID: 1000, constants.HAPPEN_TIME: now + 2})
-            # working_memories[constants.LONG_MEMORY].update({mem[constants.ID] + num: mem})
-            seq_time_memories[constants.LONG_MEMORY].append(mem)
+            self.bio_memory.temp_memories[constants.LONG_MEMORY].append(mem)
             now = now + 2
-        self.bio_memory.compose(self.working_memories, seq_time_memories)
-        # self.assertEqual(memory.COMPOSE_NUMBER + 3 + 1, len(working_memories[constants.LONG_MEMORY]))
-        self.assertEqual(3 + 1, len(seq_time_memories[constants.LONG_MEMORY]))
+        self.bio_memory.compose()
+        self.assertEqual(3 + 1, len(self.bio_memory.temp_memories[constants.LONG_MEMORY]))
 
 
 if __name__ == "__main__":
