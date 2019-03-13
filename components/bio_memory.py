@@ -18,17 +18,14 @@ class BioMemory(object):
     INTERVALS = 'itv'
     NEW_MEMORIES = 'nmm'
     REST_OF_MEMORIES = 'rom'
-    COMPOSE_NUMBER = 4
-
-    # additional data
     CHILD_DAT1 = 'cd1'
-
+    COMPOSE_NUMBER = 4
     DURATION_SLICE = 0.15
     DURATION_INSTANT = 0.5
     DURATION_SHORT = 3
     DURATION_LONG = 360
-
     GREEDY_RATIO = 0.8
+    NOT_FORGET_STEP = 10
 
     #                                                                                                                                                                                  collections
     #                                                                                                                                        long                                   long            ...       long
@@ -39,9 +36,8 @@ class BioMemory(object):
     # sound1      sound2
     # vision1.2
 
-    BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL_COUNT: 0, constants.REWARD: 0,
-                    constants.LAST_RECALL_TIME: 0,
-                    constants.PARENT_MEM: [], constants.CHILD_MEM: []}
+    BASIC_MEMORY = {constants.STRENGTH: 0, constants.RECALL_COUNT: 0, constants.REWARD: 0, constants.PROTECT_TIME: 0,
+                    constants.LAST_RECALL_TIME: 0, constants.PARENT_MEM: [], constants.CHILD_MEM: []}
 
     BASIC_MEMORY_GROUP_ARR = {constants.SLICE_MEMORY: [], constants.SHORT_MEMORY: [], constants.INSTANT_MEMORY: [],
                               constants.LONG_MEMORY: []}
@@ -53,15 +49,12 @@ class BioMemory(object):
     #             3609835, 4203316, 4894372, 5699043, 6636009, 7727020, 8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033, 41225925,
     #             48003823, 55896067, 65085866]
     TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296,
-                326,
-                358, 392, 428, 466, 506, 548, 593, 641, 692, 746,
-                803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367, 1451, 1538, 1628, 1721, 1920, 2100, 2280, 2460, 2640,
-                2880, 3120, 3360, 3600, 4680, 6120, 7920, 10440, 14040, 18720,
-                24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600, 537840, 853200,
-                1326240, 2035800, 3100140,
-                3609835, 4203316, 4894372, 5699043, 6636009, 7727020, 8997403, 10476649, 12199095, 14204727, 16540102,
-                19259434, 22425848, 26112847, 30406022, 35405033, 41225925,
-                48003823, 55896067, 65085866]
+                326, 358, 392, 428, 466, 506, 548, 593, 641, 692, 746, 803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367,
+                1451, 1538, 1628, 1721, 1920, 2100, 2280, 2460, 2640, 2880, 3120, 3360, 3600, 4680, 6120, 7920, 10440,
+                14040, 18720, 24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600,
+                537840, 853200, 1326240, 2035800, 3100140, 3609835, 4203316, 4894372, 5699043, 6636009, 7727020,
+                8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033,
+                41225925, 48003823, 55896067, 65085866]
 
     THRESHOLD_OF_WORKING_MEMORIES = 50
 
@@ -187,37 +180,46 @@ class BioMemory(object):
     # more times recall, harder to forget
     # can not recall frequently in short time
     # check result, if memory.strength = -1, that it's forgot
-    def refresh(self, mem, recall=False, forget=False):
+    def refresh(self, mem, recall=False, is_forget=False):
         is_deleted = False
         now_time = int(time.time())
         time_elapse = now_time - mem[constants.LAST_RECALL_TIME]
         if time_elapse < self.TIME_SEC[0]:
             return is_deleted
         count = 0
-        for num in range(mem[constants.RECALL_COUNT], len(self.TIME_SEC)):
+        recall_count = mem[constants.RECALL_COUNT]
+        for num in range(recall_count, len(self.TIME_SEC)):
             if self.TIME_SEC[num] <= time_elapse:
                 count = count + 1
             else:
                 strength = 100 - count
                 mem[constants.STRENGTH] = strength
+                # if go to next section
                 if count > 0:
                     # random forget memory base on strength
-                    if forget:
+                    if is_forget and time.time() > mem[constants.PROTECT_TIME]:
+                        mem[constants.PROTECT_TIME] = self.calculate_protect_time(recall_count)
                         ran = random.randint(1, 100)
                         if ran > strength:
                             mem[constants.STRENGTH] = -1
                             is_deleted = True
                             break
-                        # if not mem.has_key(constants.FEATURE) and len(mem[constants.CHILD_MEM]) <= 0:
-                        #     mem[STRENGTH] = -1
-                        #     deleted = True
-                        #     break
                     # if this is recall, will update recall count and last recall time
                     if recall:
-                        mem[constants.RECALL_COUNT] = mem[constants.RECALL_COUNT] + 1
+                        # mem[constants.STRENGTH] = 100
+                        mem[constants.RECALL_COUNT] = recall_count + 1
                         mem[constants.LAST_RECALL_TIME] = int(time.time())
                 break
         return is_deleted
+
+    # add protect time to prevent frequent calculation of deletion
+    def calculate_protect_time(self, recall_count):
+        time_seq = np.array(self.TIME_SEC)
+        end_number = recall_count + self.NOT_FORGET_STEP
+        if end_number > len(time_seq):
+            end_number = len(time_seq)
+        sub_arr = time_seq[recall_count:end_number]
+        return time.time() + np.sum(sub_arr)
 
     # summarize all parent memories in a list
     def count_parent_id(self, memories):
