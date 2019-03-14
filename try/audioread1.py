@@ -14,15 +14,18 @@ buf_no = int(duration / buf_time)
 print buf_no
 f = audioread.audio_open('../video/1440.mp4')
 print(f.channels, f.samplerate, f.duration)
-print f.stdout_reader.queue.maxsize
-print f.stdout_reader.queue.qsize()
-while i < 500:
-    print i
-    if not f.stdout_reader.queue.empty():
-        np_buffer = np.fromstring(f.stdout_reader.queue.get(), dtype=np.int16)
+
+# for buf in f:
+bufs = f.read_data()
+while i < buf_no + 100:
+    try:
+        print i
+        np_buffer = np.fromstring(bufs.next(), dtype=np.int16)
         normal_buffer = util.normalize_audio_data(np_buffer)
         frame_data = frame_data + normal_buffer.tolist()
-    i = i + 1
+        i = i + 1
+    except StopIteration:
+        break
 
 # for buf in f:
 #     if i < buf_no:
