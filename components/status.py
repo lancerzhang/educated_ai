@@ -78,9 +78,9 @@ class Status(object):
         max_reward = self.find_max_reward()
         self.status[REWARD_DATA].pop(0)
         self.status[REWARD_DATA].append(max_reward)
-        self.working_memoriess_statistics()
+        self.working_memories_statistics()
 
-    def working_memoriess_statistics(self):
+    def working_memories_statistics(self):
         if logger.getEffectiveLevel() is logging.DEBUG:
             # memory_survive_detail(working_memoriess)
             self.memory_survive_statistics()
@@ -117,7 +117,7 @@ class Status(object):
         logger.debug('memory_survive_statistics is {0}'.format(memory_survive_dict))
 
     def memory_survive_detail(self):
-        for mem in self.bio_memory.working_memoriess:
+        for mem in self.bio_memory.working_memories:
             # exclude expectation, which don't have happen time
             if constants.HAPPEN_TIME in mem:
                 survive_time = mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]

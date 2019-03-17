@@ -361,7 +361,7 @@ class BioMemory(object):
         bm.update({constants.HAPPEN_TIME: time.time()})
         bm.update({constants.LAST_ACTIVE_TIME: time.time()})
         bm.update({constants.STATUS: constants.MATCHED})
-        ids = [bm[constants.MID] for bm in self.working_memories]
+        ids = [x[constants.MID] for x in self.working_memories]
         if bm[constants.MID] not in ids:
             self.working_memories.append(bm)
 
