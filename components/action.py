@@ -13,7 +13,8 @@ class Action(object):
         self.mouse = Controller()
         self.bio_memory = bm
 
-    def process(self, work_status, click):
+    def process(self, status_controller, click):
+        work_status = status_controller.status
         logging.debug('process')
         self.reproduce_mouse_clicks()
         if click:

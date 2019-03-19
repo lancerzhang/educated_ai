@@ -15,6 +15,8 @@ class Status(object):
 
     def __init__(self, bm):
         self.bio_memory = bm
+        self.video_frame = 0
+        self.video_fps = 0
         pps = constants.process_per_second
         all_status = {}
         # if free in short time, find more detail, explore the world

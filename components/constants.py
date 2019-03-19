@@ -70,6 +70,5 @@ KEY_SHIFT = 'shift'
 MOUSE_LEFT = 'mouse_left'
 
 # video file
-total_frames = 'total_frames'
 current_frame = 'current_frame'
 fps = 'fps'

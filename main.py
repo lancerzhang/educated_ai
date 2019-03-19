@@ -84,19 +84,19 @@ def main(argv):
         keyboard_listener = KeyboardListener()
         thread.start_new_thread(mouse_listener.start, ())
         thread.start_new_thread(keyboard_listener.start, ())
+        status_controller = Status(bm)
         if video_file:
-            video_file_info = {constants.total_frames: 0, constants.current_frame: 0, constants.fps: 0}
-            vision_controller = VideoFileVision(bm, video_file, video_file_info)
-            sound_controller = VideoFileSound(bm, video_file, video_file_info)
+            vision_controller = VideoFileVision(bm, video_file, status_controller)
+            sound_controller = VideoFileSound(bm, video_file)
         else:
             vision_controller = ScreenVision(bm)
             sound_controller = MicrophoneSound(bm)
             thread.start_new_thread(sound_controller.receive, ())
         action_controller = Action(bm)
-        status_controller = Status(bm)
         frames = 0
         last_process_time = 0
         logging.info('initialized.')
+        print 'initialized.'
         while 1:
             start = time.time()
             button = mouse_listener.get_button()
@@ -109,12 +109,11 @@ def main(argv):
             frames = frames + 1
 
             status_controller.calculate_status(dps, frames)
-            work_status = status_controller.status
             bm.associate()
             bm.prepare_matching_virtual_memories()
-            vision_controller.process(work_status, key)
-            sound_controller.process(work_status)
-            action_controller.process(work_status, button)
+            vision_controller.process(status_controller, key)
+            sound_controller.process(status_controller)
+            action_controller.process(status_controller, button)
             reward_controller.process(key)
             bm.check_matching_virtual_memories()
             bm.compose()

@@ -60,10 +60,10 @@ class Sound(object):
         np.save(self.MEMORY_INDEX_FILE, self.memory_indexes)
         np.save(self.USED_KERNEL_FILE, self.used_kernel_rank)
 
-    def process(self, work_status):
+    def process(self, status_controller):
         logger.info('process')
         start = time.time()
-        self.frequency_map = self.get_frequency_map()
+        self.frequency_map = self.get_frequency_map(status_controller)
         if self.frequency_map is None:
             logger.error('no frequency data!')
             return
@@ -72,6 +72,7 @@ class Sound(object):
         new_feature_memory = self.search_feature_memory()
         self.bio_memory.enrich_feature_memories(constants.SOUND_FEATURE, new_feature_memory)
 
+        work_status = status_controller.status
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
         logger.info('process used time:{0}'.format(time.time() - start))
@@ -228,7 +229,7 @@ class Sound(object):
             self.previous_energies = this_energies
         return new_range
 
-    def get_frequency_map(self):
+    def get_frequency_map(self, status_controller):
         logger.debug('get_frequency_map')
         if len(self.phases) == 0:
             return None
@@ -243,11 +244,12 @@ class Sound(object):
         else:
             map_height = self.FREQUENCY_MAP_HEIGHT
         # frequency_map = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT)
-        frequency_map = librosa.feature.melspectrogram(y=data, sr=self.SAMPLE_RATE, n_mels=map_height,
-                                                       hop_length=self.HOP_LENGTH,
-                                                       fmax=self.MAX_FREQUENCY)
+        mel_data = librosa.feature.melspectrogram(y=data, sr=self.SAMPLE_RATE, n_mels=map_height,
+                                                  hop_length=self.HOP_LENGTH,
+                                                  fmax=self.MAX_FREQUENCY)
         # logger.debug('frequency_map is {0}'.format(frequency_map))
         self.previous_phase = phase
+        frequency_map = librosa.power_to_db(mel_data, ref=np.max)
         return frequency_map
 
     def get_range(self):

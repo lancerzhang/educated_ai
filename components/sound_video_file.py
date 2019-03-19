@@ -11,9 +11,8 @@ class VideoFileSound(Sound):
     buf_seq = 0
     CHUNK = 2048
 
-    def __init__(self, bm, video_file, video_file_info):
+    def __init__(self, bm, video_file):
         self.file_path = video_file
-        self.video_info = video_file_info
         super(VideoFileSound, self).__init__(bm)
 
     def open_video(self):
@@ -21,11 +20,11 @@ class VideoFileSound(Sound):
         self.audio_buffers = audio.read_data()
         self.buf_seq = 0
 
-    def get_frequency_map(self):
+    def get_frequency_map(self, status_controller):
         logging.info('get_frequency_map')
         frame_data = []
-        frame = self.video_info[constants.current_frame]
-        fps = self.video_info[constants.fps]
+        fps = status_controller.video_fps
+        frame = status_controller.video_frame
         if frame == 1:
             self.open_video()
         video_duration = frame / fps
@@ -39,5 +38,6 @@ class VideoFileSound(Sound):
                 self.buf_seq = self.buf_seq + 1
             except StopIteration:
                 break
-        self.phases.append(frame_data)
-        return super(VideoFileSound, self).get_frequency_map()
+        if len(frame_data) > 0:
+            self.phases.append(frame_data)
+        return super(VideoFileSound, self).get_frequency_map(status_controller)

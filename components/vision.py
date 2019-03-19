@@ -113,7 +113,7 @@ class Vision(object):
         np.save(self.USED_DEGREES_FILE, self.used_degrees_rank)
         np.save(self.USED_CHANNEL_FILE, self.used_channel_rank)
 
-    def process(self, work_status, key):
+    def process(self, status_controller, key):
         logger.info('process')
         start = time.time()
         if self.current_action[self.STATUS] is self.IN_PROGRESS:
@@ -146,6 +146,7 @@ class Vision(object):
 
         self.previous_full_image = this_full_image
 
+        work_status = status_controller.status
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
         logger.debug('vision_process_used_time_total:{0}'.format(time.time() - start))
