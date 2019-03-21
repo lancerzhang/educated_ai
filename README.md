@@ -32,7 +32,8 @@ $ cat ~/.matplotlib/matplotlibrc
 backend: TkAgg
  ```
 ## Train
-- Best training time: 5 minutes, 30 minutes, 12 hours, 1 day, 2 days, 4 days, 7 days, 15 days.
+- To remember something, the best timing is to repeat it in below interval.
+5 minutes, 20 minutes, 1 hour, 2 hours, 4 hours, 12 hours, 3 days, 3 months
 - If you want to train using video file, audioread is used for reading audio, it depends on some backend library 
 (e.g. ffmpeg), make sure you install the library.
 ## Other

@@ -83,12 +83,10 @@ class BioMemory(object):
             if constants.VIRTUAL_MEMORY_TYPE in bm:
                 if bm[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY:
                     live_children = self.search_live_child_memories(bm)
-                    logger.debug('constants.INSTANT_MEMORY live_children is {0}'.format(live_children))
                     self.new_working_memories(self.working_memories, live_children)
                 elif bm[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY or \
                         bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY:
                     live_children = self.search_live_child_memories(bm)
-                    logger.debug('live_children is {0}'.format(live_children))
                     self.new_working_memories(self.working_memories, live_children, 1)
         logger.info('prepare_expectation used time	' + str(time.time() - start))
 
@@ -291,13 +289,11 @@ class BioMemory(object):
                           constants.LAST_RECALL_TIME: bm[constants.LAST_RECALL_TIME]}
         if addition is not None:
             update_content.update(addition)
-            self.data_adaptor.update_memory(update_content, bm[constants.MID])
-        bm.update(update_content)
+        self.data_adaptor.update_memory(update_content, bm[constants.MID])
+        # bm.update(update_content)
         self.finish_working_memory(bm)
 
     def recall_virtual_memory(self, bm):
-        if constants.VIRTUAL_MEMORY_TYPE not in bm:
-            raise BioMemoryException('{0} is not a virtual memory'.format(bm))
         self.recall_memory(bm)
         self.temp_memories[bm[constants.VIRTUAL_MEMORY_TYPE]].append(bm)
 
@@ -392,10 +388,6 @@ class BioMemory(object):
                 self.new_working_memory(nmem)
                 memories.append(nmem)
                 total = total + 1
-
-    def update_last_recall(self, memories):
-        for mem in memories:
-            self.data_adaptor.update_memory({constants.LAST_RECALL_TIME: int(time.time())}, mem[constants.MID])
 
     def check_matching_virtual_memory(self, pending_memories):
         match_count = 0
