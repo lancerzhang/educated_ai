@@ -404,6 +404,15 @@ class TestBioMemory(unittest.TestCase):
         self.bio_memory.refresh(mem)
         self.assertEqual(83, mem[constants.STRENGTH])
 
+    def test_multiple_refresh(self):
+        bm = self.bio_memory.BASIC_MEMORY.copy()
+        bm[constants.STRENGTH] = 100
+        for i in range(0, 100):
+            bm[constants.LAST_RECALL_TIME] = int(time.time()) - 1290
+            self.bio_memory.refresh(bm, True, True)
+            if bm[constants.STRENGTH] == -1:
+                break
+
 
 if __name__ == "__main__":
     unittest.main()
