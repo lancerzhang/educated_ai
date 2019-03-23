@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<html>
+
+<body onload="switchImage()">
+    <script type="text/javascript">
+        var imageIndexBegin = 1;
+        var imageIndexEnd = 6;
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        function switchImage() {
+            randomImagePath = "images/" + randomInt(imageIndexBegin, imageIndexEnd) + ".jpg";
+            imageElement = document.getElementById("fruitImage");
+            imageElement.src = randomImagePath;
+            imageElement.style = "position:absolute; top:" + randomInt(1, 70) + "%; left:" + randomInt(1, 80) + "%";
+        }
+    </script>
+
+    <img id="fruitImage" onclick="switchImage()" />
+
+</body>
+
+</html>

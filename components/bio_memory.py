@@ -88,7 +88,7 @@ class BioMemory(object):
                         bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY:
                     live_children = self.search_live_child_memories(bm)
                     self.new_working_memories(self.working_memories, live_children, 1)
-        logger.info('prepare_expectation used time	' + str(time.time() - start))
+        logger.debug('prepare_expectation used time	' + str(time.time() - start))
 
     def check_matching_virtual_memories(self):
         # start = time.time()
@@ -141,7 +141,7 @@ class BioMemory(object):
         result4 = self.split_seq_time_memories(self.temp_memories[constants.LONG_MEMORY])
         self.temp_memories[constants.LONG_MEMORY] = result4[self.REST_OF_MEMORIES]
         self.add_collection_memories(result4[self.NEW_MEMORIES], constants.LONG_MEMORY)
-        logger.info('compose used time	' + str(time.time() - start))
+        logger.debug('compose used time	' + str(time.time() - start))
 
     def calculate_working_reward(self, memories):
         for bm in memories:
@@ -405,7 +405,7 @@ class BioMemory(object):
             if all_matched:
                 match_count = match_count + 1
                 self.recall_virtual_memory(pbm)
-                logger.info('reproduce virtual memories {0}'.format(pbm))
+                logger.debug('reproduce virtual memories {0}'.format(pbm))
         return match_count
 
     def activate_parent_memories(self, bm):
