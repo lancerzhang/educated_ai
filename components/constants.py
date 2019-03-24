@@ -53,6 +53,8 @@ MEMORIES = 'mms'
 # action
 CLICK_TYPE = 'clt'
 LEFT_CLICK = 'lcl'
+FOCUS_X = 'fcx'
+FOCUS_Y = 'mvy'
 
 # main
 process_per_second = 8  # adjust according to your process unit
@@ -70,5 +72,5 @@ KEY_SHIFT = 'shift'
 MOUSE_LEFT = 'mouse_left'
 
 # video file
-current_frame = 'current_frame'
-fps = 'fps'
+CURRENT_FRAME = 'current_frame'
+FPS = 'fps'

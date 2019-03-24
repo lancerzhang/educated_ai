@@ -27,7 +27,7 @@ class VideoFileVision(Vision):
             ret, self.source_frame = self.cap.read()
             status_controller.video_frame = 1
 
-        super(VideoFileVision, self).process(status_controller, key)
+        focus = super(VideoFileVision, self).process(status_controller, key)
         display_frame = self.source_frame.copy()
         cv2.rectangle(display_frame, (self.current_block[self.START_X], self.current_block[self.START_Y]),
                       (self.current_block[self.START_X] + self.current_block[self.WIDTH],
@@ -36,6 +36,7 @@ class VideoFileVision(Vision):
         cv2.setWindowProperty("frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('frame', display_frame)
         cv2.waitKey(1)
+        return focus
 
     def grab(self, top, left, width, height):
         top = int(top)

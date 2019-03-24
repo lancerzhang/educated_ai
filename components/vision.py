@@ -149,7 +149,11 @@ class Vision(object):
         work_status = status_controller.status
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
+        focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
+        focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
+        focus = {constants.FOCUS_X: focus_x, constants.FOCUS_Y: focus_y}
         logger.debug('vision_process_used_time_total:{0}'.format(time.time() - start))
+        return focus
 
     def match_features(self):
         logger.debug('match_features')

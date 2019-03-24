@@ -13,14 +13,18 @@ class Action(object):
         self.mouse = Controller()
         self.bio_memory = bm
 
-    def process(self, status_controller, click):
+    def process(self, status_controller, click, focus):
         work_status = status_controller.status
         logging.debug('process')
         self.reproduce_mouse_clicks()
+        self.move(focus)
         if click:
             self.feel_clicks(click)
         elif not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
             self.explore()
+
+    def move(self, focus):
+        self.mouse.position = (focus[constants.FOCUS_X], focus[constants.FOCUS_Y])
 
     def reproduce_mouse_clicks(self):
         physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.ACTION_MOUSE_CLICK)
