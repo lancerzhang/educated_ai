@@ -116,6 +116,8 @@ class Vision(object):
     def process(self, status_controller, key):
         logger.info('process')
         start = time.time()
+        old_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
+        old_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
         if self.current_action[self.STATUS] is self.IN_PROGRESS:
             self.calculate_move_action(self.current_action)
 
@@ -149,9 +151,12 @@ class Vision(object):
         work_status = status_controller.status
         if not work_status[constants.BUSY][constants.LONG_DURATION]:
             self.save_files()
-        focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
-        focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
-        focus = {constants.FOCUS_X: focus_x, constants.FOCUS_Y: focus_y}
+        new_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
+        new_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
+        if new_focus_x == old_focus_x and new_focus_y == old_focus_y:
+            focus = None
+        else:
+            focus = {constants.FOCUS_X: new_focus_x, constants.FOCUS_Y: new_focus_y}
         logger.debug('vision_process_used_time_total:{0}'.format(time.time() - start))
         return focus
 

@@ -17,7 +17,8 @@ class Action(object):
         work_status = status_controller.status
         logging.debug('process')
         self.reproduce_mouse_clicks()
-        self.move(focus)
+        if focus:
+            self.move(focus)
         if click:
             self.feel_clicks(click)
         elif not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
