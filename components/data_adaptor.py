@@ -26,11 +26,12 @@ class DataAdaptor:
     # return None if not found
     def get_memory(self, mid, recall=False):
         mem = self._get_memory(mid)
-        if mem is not None:
-            self.bio_memory.refresh(mem, recall, True)
-            if mem[constants.STRENGTH] == -1:
-                self.remove_memory(mem[constants.MID])
-                return None
+        # do not clean memory in individual call, rely on gc
+        # if mem is not None:
+        #     self.bio_memory.refresh(mem, recall, True)
+        #     if mem[constants.STRENGTH] == -1:
+        #         self.remove_memory(mem[constants.MID])
+        #         return None
         return mem
 
     def get_all_memories(self):
@@ -205,3 +206,14 @@ class DataAdaptor:
 
     def keep_fit(self):
         self.db.keep_fit()
+
+    def display_bm_tree(self, mid, tl=''):
+        bm = self.get_memory(mid)
+        if bm is None:
+            print 'None'
+        else:
+            print '{0} vmt:{1},pmt:{2}'.format(tl, bm.get(constants.VIRTUAL_MEMORY_TYPE),
+                                               bm.get(constants.PHYSICAL_MEMORY_TYPE))
+            cms = bm[constants.CHILD_MEM]
+            for m in cms:
+                self.display_bm_tree(m, '---{0}'.format(tl))

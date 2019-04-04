@@ -283,10 +283,11 @@ class BioMemory(object):
 
     def recall_memory(self, bm, addition=None):
         logger.debug('recall_memory')
-        self.refresh(bm, True, False)
+        self.refresh(bm, True, True)
         update_content = {constants.STRENGTH: bm[constants.STRENGTH],
                           constants.RECALL_COUNT: bm[constants.RECALL_COUNT],
-                          constants.LAST_RECALL_TIME: bm[constants.LAST_RECALL_TIME]}
+                          constants.LAST_RECALL_TIME: bm[constants.LAST_RECALL_TIME],
+                          constants.PROTECT_TIME: bm[constants.PROTECT_TIME]}
         if addition is not None:
             update_content.update(addition)
         self.data_adaptor.update_memory(update_content, bm[constants.MID])
@@ -406,6 +407,9 @@ class BioMemory(object):
                 match_count = match_count + 1
                 self.recall_virtual_memory(pbm)
                 logger.debug('reproduce virtual memories {0}'.format(pbm))
+                if pbm[constants.RECALL_COUNT] > 3:
+                    print 'recall memory:{0},count:{1}'.format(pbm[constants.MID], pbm[constants.RECALL_COUNT])
+                    self.data_adaptor.display_bm_tree(pbm[constants.MID])
         return match_count
 
     def activate_parent_memories(self, bm):

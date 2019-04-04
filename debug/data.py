@@ -34,6 +34,9 @@ def list_physical_memories():
             print mem
 
 
+
+
+
 def print_used_data():
     # print 'used vision kernels is {0}'.format(np.load('../data/vuk.npy'))
     # print 'used vision speed is {0}'.format(np.load('../data/vus.npy'))
@@ -51,13 +54,19 @@ value1 = constants.SOUND_FEATURE
 # key1 = None
 # value1 = None
 # field = constants.REWARD
-memories = list_top_memories(field1, key1, value1, 50)
-print [x[field1] for x in memories]
+# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
+# print [x[field1] for x in memories]
+#
+# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
+# print [x[field1] for x in memories]
+#
+# memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 10)
+# print memories
 
 # field = constants.CHILD_MEM
 # memories = list_top_sub_memories(field, 20)
 # print [len(x[field]) for x in memories]
 
-# print data_service.get_memory('68fa26727e314f2d99825be74ae4e5ca')
-
+print data_service.get_memory('ffe7de23616843769f4aa7c814457e0a')
+# data_service.display_bm_tree('2d2ba99853734e208e415635298c7b54')
 # print_used_data()
