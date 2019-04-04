@@ -1,0 +1,34 @@
+<!DOCTYPE HTML>
+<html>
+
+<body onload="loadImage()">
+    <script type="text/javascript">
+        var imageIndexBegin = 1;
+        var imageIndexEnd = 6;
+        var switcher = true;
+        var left_base = 30;
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        function loadImage() {
+            randomImagePath = "images/" + randomInt(imageIndexBegin, imageIndexEnd) + ".jpg";
+            imageElement = document.getElementById("fruitImage");
+            imageElement.src = randomImagePath;
+            imageElement.style = "position:absolute; top:40%; left:" + left_base + "%";
+        }
+        function switchImage() {
+            imageElement = document.getElementById("fruitImage");
+            left_percent = left_base
+            if (switcher) {
+                left_percent = left_base + 30
+            }
+            imageElement.style = "position:absolute; top:40%; left:" + left_percent + "%";
+            switcher = !switcher
+        }
+    </script>
+
+    <img id="fruitImage" onclick="switchImage()" />
+
+</body>
+
+</html>
