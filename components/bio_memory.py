@@ -409,7 +409,7 @@ class BioMemory(object):
                 logger.debug('reproduce virtual memories {0}'.format(pbm))
                 if pbm[constants.RECALL_COUNT] > 3:
                     print 'recall memory:{0},count:{1}'.format(pbm[constants.MID], pbm[constants.RECALL_COUNT])
-                    self.data_adaptor.display_bm_tree(pbm[constants.MID])
+                    self.data_adaptor.display_bm_tree_leaf(pbm[constants.MID])
         return match_count
 
     def activate_parent_memories(self, bm):

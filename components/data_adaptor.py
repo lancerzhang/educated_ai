@@ -207,7 +207,7 @@ class DataAdaptor:
     def keep_fit(self):
         self.db.keep_fit()
 
-    def display_bm_tree(self, mid, tl=''):
+    def display_bm_tree_leaf(self, mid, tl=''):
         bm = self.get_memory(mid)
         if bm is None:
             print 'None'
@@ -216,4 +216,4 @@ class DataAdaptor:
                                                bm.get(constants.PHYSICAL_MEMORY_TYPE))
             cms = bm[constants.CHILD_MEM]
             for m in cms:
-                self.display_bm_tree(m, '---{0}'.format(tl))
+                self.display_bm_tree_leaf(m, '---{0}'.format(tl))

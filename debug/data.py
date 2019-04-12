@@ -67,6 +67,7 @@ value1 = constants.SOUND_FEATURE
 # memories = list_top_sub_memories(field, 20)
 # print [len(x[field]) for x in memories]
 
-print data_service.get_memory('ffe7de23616843769f4aa7c814457e0a')
-# data_service.display_bm_tree('2d2ba99853734e208e415635298c7b54')
+print data_service.get_memory('e99c0a68f109437aaa01a931d0e153f4')
+# print data_service.get_mouse_click_memory(constants.LEFT_CLICK)
+# data_service.display_bm_tree_leaf('e99c0a68f109437aaa01a931d0e153f4')
 # print_used_data()

@@ -40,6 +40,7 @@ class Action(object):
             bm.update({constants.STATUS: constants.MATCHED})
 
     def feel_clicks(self, click):
+        print '*** mouse left click ***'
         logger.debug('feel_clicks')
         bm = self.bio_memory.get_mouse_click_memory(click)
         if bm is None:
