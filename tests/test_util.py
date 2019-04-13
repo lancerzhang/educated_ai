@@ -1,6 +1,7 @@
-import unittest
 from components import util
 import numpy as np
+import os
+import unittest
 
 
 class TestUtil(unittest.TestCase):
@@ -240,6 +241,20 @@ class TestUtil(unittest.TestCase):
         self.assertFalse(util.np_array_all_same(a1))
         a1 = np.array([2, 2])
         self.assertTrue(util.np_array_all_same(a1))
+
+    def test_get_short_id(self):
+        short_id_filename = 'sid.npy'
+        try:
+            os.remove(short_id_filename)
+        except OSError:
+            pass
+        util.SHORT_ID_FILE = short_id_filename
+        long_id1 = 'abc1'
+        self.assertEqual(1, util.get_short_id(long_id1))
+        self.assertEqual(1, util.get_short_id(long_id1))
+        long_id2 = 'abc2'
+        self.assertEqual(2, util.get_short_id(long_id2))
+        self.assertEqual(1, util.get_short_id(long_id1))
 
 
 if __name__ == "__main__":

@@ -408,7 +408,9 @@ class BioMemory(object):
                 self.recall_virtual_memory(pbm)
                 logger.debug('reproduce virtual memories {0}'.format(pbm))
                 if pbm[constants.RECALL_COUNT] > 3:
-                    print 'recall memory:{0},count:{1}'.format(pbm[constants.MID], pbm[constants.RECALL_COUNT])
+                    print 'recall memory:{0}, short id:{1},count:{2}'.format(pbm[constants.MID],
+                                                                             util.get_short_id(pbm[constants.MID]),
+                                                                             pbm[constants.RECALL_COUNT])
                     self.data_adaptor.display_bm_tree_leaf(pbm[constants.MID])
         return match_count
 
