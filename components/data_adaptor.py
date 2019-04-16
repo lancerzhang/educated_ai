@@ -207,13 +207,23 @@ class DataAdaptor:
     def keep_fit(self):
         self.db.keep_fit()
 
-    def display_bm_tree_leaf(self, mid, tl=''):
+    def display_bm_tree_leaf(self, mid, level=0, max_level=3):
+        if level > max_level:
+            print 'hit max level, return'
+            return
         bm = self.get_memory(mid)
+        level_line = ''
+        for i in range(0, level):
+            level_line = '---{0}'.format(level_line)
         if bm is None:
             print 'None'
         else:
-            print '{0} vmt:{1},pmt:{2}'.format(tl, bm.get(constants.VIRTUAL_MEMORY_TYPE),
-                                               bm.get(constants.PHYSICAL_MEMORY_TYPE))
+            leaf_debug = 'l{0}:{1} {2} vmt:{3},pmt:{4}'.format(level, level_line, mid,
+                                                               bm.get(constants.VIRTUAL_MEMORY_TYPE),
+                                                               bm.get(constants.PHYSICAL_MEMORY_TYPE))
+            print leaf_debug
+            logger.info(leaf_debug)
             cms = bm[constants.CHILD_MEM]
-            for m in cms:
-                self.display_bm_tree_leaf(m, '---{0}'.format(tl))
+            clevel = level + 1
+            for cmid in cms:
+                self.display_bm_tree_leaf(cmid, clevel,max_level)

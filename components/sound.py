@@ -30,6 +30,7 @@ class Sound(object):
     MEMORY_INDEX_FILE = 'data/smi.npy'
     SOUND_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
+    MAX_DB = 80.0
 
     ROI_ARR = [3, 5, 9, 13]
     ROI_LEVEL = 1
@@ -103,7 +104,7 @@ class Sound(object):
     def filter_feature(self, raw, kernel, feature=None):
         logger.debug('filter_feature')
         # map to image color range
-        color_data = raw / (self.MAX_FREQUENCY / 256)
+        color_data = raw / (self.MAX_DB / 256)
         data = color_data.astype(np.uint8)
         feature_data = copy.deepcopy(self.FEATURE_DATA)
         feature_data[constants.KERNEL] = kernel
@@ -249,7 +250,10 @@ class Sound(object):
                                                   fmax=self.MAX_FREQUENCY)
         # logger.debug('frequency_map is {0}'.format(frequency_map))
         self.previous_phase = phase
-        frequency_map = librosa.power_to_db(mel_data, ref=np.max)
+        # after this method, data will be -80 to 0 db (max)
+        frequency_map = librosa.power_to_db(mel_data, ref=self.MAX_FREQUENCY)
+        frequency_map = frequency_map + self.MAX_DB
+        frequency_map[frequency_map < 0] = 0
         return frequency_map
 
     def get_range(self):

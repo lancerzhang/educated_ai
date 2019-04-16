@@ -34,14 +34,15 @@ def list_physical_memories():
             print mem
 
 
-
-
-
 def print_used_data():
     # print 'used vision kernels is {0}'.format(np.load('../data/vuk.npy'))
     # print 'used vision speed is {0}'.format(np.load('../data/vus.npy'))
     # print 'used vision degrees is {0}'.format(np.load('../data/vud.npy'))
     print 'used sound kernels is {0}'.format(np.load('../data/suk.npy'))
+
+
+def load_short_id():
+    print np.load('../data/sid.npy')
 
 
 print count_memories()
@@ -55,10 +56,10 @@ value1 = constants.SOUND_FEATURE
 # value1 = None
 # field = constants.REWARD
 # memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
-# print [x[field1] for x in memories]
+# print memories
 #
-# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
-# print [x[field1] for x in memories]
+memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
+print [x[field1] for x in memories]
 #
 # memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 10)
 # print memories
@@ -67,7 +68,8 @@ value1 = constants.SOUND_FEATURE
 # memories = list_top_sub_memories(field, 20)
 # print [len(x[field]) for x in memories]
 
-print data_service.get_memory('e99c0a68f109437aaa01a931d0e153f4')
+# print data_service.get_memory('da605430f6ec4bc99cc53c24825ea44d')
 # print data_service.get_mouse_click_memory(constants.LEFT_CLICK)
-# data_service.display_bm_tree_leaf('e99c0a68f109437aaa01a931d0e153f4')
+# data_service.display_bm_tree_leaf('f99815a369bf4b99af854be4e1c8e390', 0, 15)
 # print_used_data()
+# load_short_id()
