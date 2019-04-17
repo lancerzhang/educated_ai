@@ -226,4 +226,14 @@ class DataAdaptor:
             cms = bm[constants.CHILD_MEM]
             clevel = level + 1
             for cmid in cms:
-                self.display_bm_tree_leaf(cmid, clevel,max_level)
+                self.display_bm_tree_leaf(cmid, clevel, max_level)
+
+    def find_bm_tree_roots(self, mid, roots):
+        bm = self.get_memory(mid)
+        if bm is not None:
+            pms = bm[constants.PARENT_MEM]
+            if bm[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY or constants.SHORT_MEMORY:
+                if bm[constants.MID] not in roots:
+                    roots.append(bm[constants.MID])
+            for pmid in pms:
+                self.find_bm_tree_roots(pmid, roots)

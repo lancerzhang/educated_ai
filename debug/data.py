@@ -56,20 +56,26 @@ value1 = constants.SOUND_FEATURE
 # value1 = None
 # field = constants.REWARD
 # memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
-# print memories
+# print [x[field1] for x in memories]
 #
-memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
+# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
+# print [x[field1] for x in memories]
+#
+memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 50)
 print [x[field1] for x in memories]
-#
-# memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 10)
-# print memories
 
 # field = constants.CHILD_MEM
 # memories = list_top_sub_memories(field, 20)
 # print [len(x[field]) for x in memories]
 
-# print data_service.get_memory('da605430f6ec4bc99cc53c24825ea44d')
+# print data_service.get_memory('b51333e7aabc40d9904b9527dd047fac')
 # print data_service.get_mouse_click_memory(constants.LEFT_CLICK)
-# data_service.display_bm_tree_leaf('f99815a369bf4b99af854be4e1c8e390', 0, 15)
+# data_service.display_bm_tree_leaf('e48804af41664ae79b123f42bf8aa413', 0, 15)
+roots=[]
+# data_service.find_bm_tree_roots('b51333e7aabc40d9904b9527dd047fac',roots)
+print roots
 # print_used_data()
 # load_short_id()
+# memoris=['b51333e7aabc40d9904b9527dd047fac', 'e2640996f41946c2aa7230a9a3ba5c60', '469f64505da743e581890c1f2062b420', 'f013049055ec4cd6b0c8f7affe3e96e5', '168620e5cbdf4e6caf563b034e5de0f8', 'b35503c3ebd94f7883b860c7c12c96b9', 'a376b516fbf04ca28a87301168e3649e', 'd6aadc78e04f47b3b1b95b905c94c319', '673da552aac94fc5bc62e1bf8ff4978e', '1c10110c27a44a9d88547a79364687af', '2f962a923fc345bab8ae86976c7358f8', '86ee8d51479d41968de5e3c457961a24', 'e48804af41664ae79b123f42bf8aa413']
+# for m in memoris:
+#     print data_service.get_memory(m)
