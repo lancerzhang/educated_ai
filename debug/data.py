@@ -1,8 +1,11 @@
 from components import constants
-import numpy as np
+from components import util
 from components.data_adaptor import DataAdaptor
 from components.data_CodernityDB import DataCodernityDB
+import numpy as np
 
+short_id_filename = '../data/sid.npy'
+DataAdaptor.SHORT_ID_FILE = short_id_filename
 data_service = DataAdaptor(DataCodernityDB(folder='../data/CodernityDB/'))
 
 
@@ -55,22 +58,24 @@ value1 = constants.SOUND_FEATURE
 # key1 = None
 # value1 = None
 # field = constants.REWARD
-# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
-# print [x[field1] for x in memories]
-#
-# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
-# print [x[field1] for x in memories]
-#
+memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
+print [x[field1] for x in memories]
+# #
+memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
+# print memories
+print [x[field1] for x in memories]
+# #
 memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 50)
+# print memories
 print [x[field1] for x in memories]
 
 # field = constants.CHILD_MEM
 # memories = list_top_sub_memories(field, 20)
 # print [len(x[field]) for x in memories]
 
-# print data_service.get_memory('b51333e7aabc40d9904b9527dd047fac')
 # print data_service.get_mouse_click_memory(constants.LEFT_CLICK)
-# data_service.display_bm_tree_leaf('e48804af41664ae79b123f42bf8aa413', 0, 15)
+# print data_service.get_memory('22197af12f3344fca23dd17844617912')
+# data_service.display_bm_tree_leaf('7efd1bda06364a28a265f4efb2d00ddd', 0, 5)
 roots=[]
 # data_service.find_bm_tree_roots('b51333e7aabc40d9904b9527dd047fac',roots)
 print roots

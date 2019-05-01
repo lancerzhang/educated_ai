@@ -4,6 +4,7 @@ import copy
 import cv2
 import librosa
 import logging
+import math
 import numpy as np
 import random
 import skimage.measure
@@ -19,6 +20,7 @@ class Sound(object):
     MAX_FREQUENCY = 8000
     phases = collections.deque()  # phases queue
     ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
+    DEFAULT_PHASE_DURATION = 0.2  # second of buffer
 
     FREQUENCY_MAP_HEIGHT = 20
     HOP_LENGTH = 512
@@ -44,6 +46,8 @@ class Sound(object):
     def __init__(self, bm):
         self.bio_memory = bm
         self.frequency_map = None
+        buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
+        self.buffer_count_of_phase = int(math.ceil(self.DEFAULT_PHASE_DURATION / buffer_duration))
         try:
             self.memory_indexes = np.load(self.MEMORY_INDEX_FILE)
         except IOError:

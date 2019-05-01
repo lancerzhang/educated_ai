@@ -5,6 +5,9 @@ import numpy as np
 import pyaudio
 import util
 
+logger = logging.getLogger('MicrophoneSound')
+logger.setLevel(logging.DEBUG)
+
 
 class MicrophoneSound(Sound):
     start_thread = True
@@ -12,12 +15,11 @@ class MicrophoneSound(Sound):
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     MAX_PHASES = 5  # max phases storage
-    DEFAULT_PHASE_DURATION = 0.2  # second of buffer
 
     def __init__(self, bm):
         super(MicrophoneSound, self).__init__(bm)
 
-    def receive(self, phase_duration=DEFAULT_PHASE_DURATION):
+    def receive(self):
         logging.info('start to receive sound data.')
         try:
             audio = pyaudio.PyAudio()
@@ -29,9 +31,6 @@ class MicrophoneSound(Sound):
             while self.start_thread:
                 frame_count = 0
                 frame_data = []
-                buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
-                buffer_count_of_phase = int(math.ceil(phase_duration / buffer_duration))
-
                 # start to record
                 while True:
                     audio_buffer = stream.read(self.CHUNK)
@@ -41,12 +40,13 @@ class MicrophoneSound(Sound):
                     normal_buffer = util.normalize_audio_data(np_buffer)
                     frame_data = frame_data + normal_buffer.tolist()
                     frame_count += 1
-                    if frame_count >= buffer_count_of_phase:
+                    if frame_count >= self.buffer_count_of_phase:
                         break
 
                 # reach buffer threshold, save it as phase
                 if len(self.phases) > self.MAX_PHASES:
                     # ignore non-process phase
+                    logger.debug('discard a phase')
                     self.phases.popleft()
                 self.phases.append(frame_data)
         except IOError:

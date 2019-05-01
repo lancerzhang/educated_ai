@@ -1,6 +1,7 @@
 from bio_memory import BioMemory
 import constants
 import logging
+import numpy as np
 import time
 import util
 import uuid
@@ -12,11 +13,16 @@ logger.setLevel(logging.INFO)
 class DataAdaptor:
     start_thread = True
     seq = 0
+    SHORT_ID_FILE = 'data/sid.npy'
 
     def __init__(self, db):
         self.db = db
         bm = BioMemory(self)
         self.bio_memory = bm
+        try:
+            self.short_id_nd_list = np.load(self.SHORT_ID_FILE)
+        except IOError:
+            self.short_id_nd_list = np.array({})
 
     # return None if not found
     # do not use directly, we usually need to refresh it before getting it
@@ -207,8 +213,8 @@ class DataAdaptor:
     def keep_fit(self):
         self.db.keep_fit()
 
-    def display_bm_tree_leaf(self, mid, level=0, max_level=3):
-        if level > max_level:
+    def display_bm_tree_leaf(self, mid, level=0, max_level=2):
+        if level >= max_level:
             print 'hit max level, return'
             return
         bm = self.get_memory(mid)
@@ -218,9 +224,9 @@ class DataAdaptor:
         if bm is None:
             print 'None'
         else:
-            leaf_debug = 'l{0}:{1} {2} vmt:{3},pmt:{4}'.format(level, level_line, mid,
-                                                               bm.get(constants.VIRTUAL_MEMORY_TYPE),
-                                                               bm.get(constants.PHYSICAL_MEMORY_TYPE))
+            leaf_debug = 'l{0}:{1} id:{2},sid:{3},vmt:{4},pmt:{5},count:{6}'. \
+                format(level, level_line, mid, self.get_short_id(mid), bm.get(constants.VIRTUAL_MEMORY_TYPE),
+                       bm.get(constants.PHYSICAL_MEMORY_TYPE), bm.get(constants.RECALL_COUNT))
             print leaf_debug
             logger.info(leaf_debug)
             cms = bm[constants.CHILD_MEM]
@@ -237,3 +243,12 @@ class DataAdaptor:
                     roots.append(bm[constants.MID])
             for pmid in pms:
                 self.find_bm_tree_roots(pmid, roots)
+
+    def get_short_id(self, long_id):
+        short_id_list = self.short_id_nd_list.tolist()
+        short_id = short_id_list.get(long_id)
+        if short_id is None:
+            short_id = len(short_id_list) + 1
+            short_id_list.update({long_id: short_id})
+            np.save(self.SHORT_ID_FILE, short_id_list)
+        return short_id

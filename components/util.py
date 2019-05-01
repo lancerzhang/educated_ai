@@ -1,15 +1,7 @@
-import time, numpy, cv2, random, constants
+import time, numpy, cv2, random
 import numpy as np
 
 USED_COUNT = 'uct'
-
-SHORT_ID_FILE = 'data/sid.npy'
-
-short_id_nd_list = None
-try:
-    short_id_nd_list = np.load(SHORT_ID_FILE)
-except IOError:
-    short_id_nd_list = np.array({})
 
 
 def time_diff(start):
@@ -239,13 +231,3 @@ def find_2d_index(indexes, width):
     y = indexes / width
     x = indexes % width
     return x, y
-
-
-def get_short_id(long_id):
-    short_id_list = short_id_nd_list.tolist()
-    short_id = short_id_list.get(long_id)
-    if short_id is None:
-        short_id = len(short_id_list) + 1
-        short_id_list.update({long_id: short_id})
-        np.save(SHORT_ID_FILE, short_id_list)
-    return short_id
