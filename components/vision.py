@@ -77,7 +77,7 @@ class Vision(object):
         width = self.ROI_ARR[self.roi_index]
         half_width = width / 2
         self.current_block = {self.START_X: center_x - half_width, self.START_Y: center_y - half_width,
-                              self.WIDTH: width, self.HEIGHT: width}
+                              self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
 
         try:
             self.memory_indexes = np.load(self.MEMORY_INDEX_FILE)
@@ -568,7 +568,7 @@ class Vision(object):
         logger.debug('random_zoom p4')
 
     def try_zoom_in(self, zoom_direction):
-        temp_index = self.roi_index - 1
+        temp_index = self.current_block[self.ROI_INDEX_NAME] - 1
         if temp_index < 0:
             return None
         new_block = copy.deepcopy(self.current_block)
@@ -585,7 +585,7 @@ class Vision(object):
         return new_block
 
     def try_zoom_out(self, zoom_direction):
-        temp_index = self.roi_index + 1
+        temp_index = self.current_block[self.ROI_INDEX_NAME] + 1
         if temp_index > (len(self.ROI_ARR) - 1):
             return None
         new_block = copy.deepcopy(self.current_block)
@@ -779,7 +779,6 @@ class Vision(object):
             new_block = self.try_zoom_in(zoom_direction)
         if new_block is None:
             return None
-        self.roi_index = new_block[self.ROI_INDEX_NAME]
         self.current_block = new_block
         bm.update({constants.STATUS: constants.MATCHED})
 
