@@ -118,7 +118,7 @@ class Vision(object):
         start = time.time()
         old_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
         old_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
-        if self.current_action[self.STATUS] is self.IN_PROGRESS:
+        if self.current_action[self.STATUS] == self.IN_PROGRESS:
             self.calculate_move_action(self.current_action)
 
         self.match_features()
@@ -819,7 +819,7 @@ class Vision(object):
 
     def get_focus_state(self, block):
         list1 = [block[self.START_X], block[self.START_Y], block[self.WIDTH], block[self.HEIGHT]]
-        return ','.join(str(e) for e in list1)
+        return util.list_to_str(list1)
 
 
 def get_channel_img(bgr, channel):
@@ -835,5 +835,5 @@ def get_channel_img(bgr, channel):
 
 
 def get_feature_result(channel, kernel, feature_data):
-    feature_data_str = ''.join(str(e) for e in feature_data)
+    feature_data_str = util.list_to_str(feature_data)
     return channel + kernel + feature_data_str

@@ -17,9 +17,9 @@ class Reward(object):
     def process(self, key):
         logging.debug('process')
         reward = 0
-        if key is constants.KEY_ALT:
+        if key == constants.KEY_ALT:
             reward = 50
-        elif key is constants.KEY_CTRL:
+        elif key == constants.KEY_CTRL:
             reward = 100
         if reward > 0:
             self.add_reward_memory(reward)

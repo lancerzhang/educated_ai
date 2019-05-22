@@ -68,7 +68,7 @@ class BioMemory(object):
 
     def associate(self):
         # start = time.time()
-        matched_memories = [mem for mem in self.working_memories if mem[constants.STATUS] is constants.MATCHED]
+        matched_memories = [mem for mem in self.working_memories if mem[constants.STATUS] == constants.MATCHED]
         logger.debug('len of matched_memories is {0}'.format(len(matched_memories)))
         related_memories = self.find_update_max_related_memories(matched_memories)
         logger.debug('len of related_memories is {0}'.format(len(related_memories)))
@@ -76,16 +76,16 @@ class BioMemory(object):
 
     def prepare_matching_virtual_memories(self):
         start = time.time()
-        pending_memories = [mem for mem in self.working_memories if mem[constants.STATUS] is constants.MATCHING]
+        pending_memories = [mem for mem in self.working_memories if mem[constants.STATUS] == constants.MATCHING]
         logger.debug('len of pending_memories is {0}'.format(len(pending_memories)))
         for bm in pending_memories:
             logger.debug('parent memory is {0}'.format(bm))
             if constants.VIRTUAL_MEMORY_TYPE in bm:
-                if bm[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY:
+                if bm[constants.VIRTUAL_MEMORY_TYPE] == constants.INSTANT_MEMORY:
                     live_children = self.search_live_child_memories(bm)
                     self.new_working_memories(self.working_memories, live_children)
-                elif bm[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY or \
-                        bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY:
+                elif bm[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY or \
+                        bm[constants.VIRTUAL_MEMORY_TYPE] == constants.SHORT_MEMORY:
                     live_children = self.search_live_child_memories(bm)
                     self.new_working_memories(self.working_memories, live_children, 1)
         logger.debug('prepare_expectation used time	' + str(time.time() - start))
@@ -93,28 +93,28 @@ class BioMemory(object):
     def check_matching_virtual_memories(self):
         # start = time.time()
         instant_memories = [mem for mem in self.working_memories if
-                            mem[constants.STATUS] is constants.MATCHING and
+                            mem[constants.STATUS] == constants.MATCHING and
                             constants.VIRTUAL_MEMORY_TYPE in mem and
-                            mem[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY]
+                            mem[constants.VIRTUAL_MEMORY_TYPE] == constants.INSTANT_MEMORY]
         self.check_matching_virtual_memory(instant_memories)
 
         short_memories = [mem for mem in self.working_memories if
-                          mem[constants.STATUS] is constants.MATCHING and
+                          mem[constants.STATUS] == constants.MATCHING and
                           constants.VIRTUAL_MEMORY_TYPE in mem and
-                          mem[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY]
+                          mem[constants.VIRTUAL_MEMORY_TYPE] == constants.SHORT_MEMORY]
         self.check_matching_virtual_memory(short_memories)
 
         long_memories = [mem for mem in self.working_memories if
-                         mem[constants.STATUS] is constants.MATCHING and
+                         mem[constants.STATUS] == constants.MATCHING and
                          constants.VIRTUAL_MEMORY_TYPE in mem and
-                         mem[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY]
+                         mem[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY]
         match_count = self.check_matching_virtual_memory(long_memories, )
 
         while match_count > 0:
             # something change on long memory, try to match high level parent long memory
             long_memories = [mem for mem in self.working_memories if
-                             mem[constants.STATUS] is constants.MATCHING and
-                             mem[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY]
+                             mem[constants.STATUS] == constants.MATCHING and
+                             mem[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY]
             match_count = self.check_matching_virtual_memory(long_memories)
         # print 'check_expectation used time	' + str(time.time() - start)
 
@@ -152,9 +152,9 @@ class BioMemory(object):
             if (100 - elapse) > 0:
                 ratio = 100 - elapse
             # greedy mode, if satisfied (matched), will forget it soon, try to find another reward
-            if bm[constants.STATUS] is constants.MATCHED:
+            if bm[constants.STATUS] == constants.MATCHED:
                 ratio = ratio * self.GREEDY_RATIO
-            elif bm[constants.STATUS] is constants.EXPIRED:
+            elif bm[constants.STATUS] == constants.EXPIRED:
                 ratio = 0
             working_reward = reward * ratio
             bm.update({constants.WORKING_REWARD: working_reward})
@@ -162,7 +162,7 @@ class BioMemory(object):
     def cleanup_working_memories(self):
         # start = time.time()
         valid_working_memories = [mem for mem in self.working_memories if
-                                  mem[constants.STATUS] is constants.MATCHED or mem[constants.END_TIME] > time.time()]
+                                  mem[constants.STATUS] == constants.MATCHED or mem[constants.END_TIME] > time.time()]
         self.calculate_working_reward(valid_working_memories)
         sorted_working_memories = sorted(valid_working_memories,
                                          key=lambda x: (x[constants.WORKING_REWARD], x[constants.LAST_ACTIVE_TIME]),
@@ -365,13 +365,13 @@ class BioMemory(object):
     def new_working_memory(self, bm):
         exp = {constants.STATUS: constants.MATCHING, constants.START_TIME: time.time(),
                constants.LAST_ACTIVE_TIME: time.time()}
-        if bm[constants.VIRTUAL_MEMORY_TYPE] is constants.INSTANT_MEMORY:
+        if bm[constants.VIRTUAL_MEMORY_TYPE] == constants.INSTANT_MEMORY:
             exp.update({constants.END_TIME: time.time() + self.DURATION_INSTANT})
-        elif bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SHORT_MEMORY:
+        elif bm[constants.VIRTUAL_MEMORY_TYPE] == constants.SHORT_MEMORY:
             exp.update({constants.END_TIME: time.time() + self.DURATION_SHORT})
-        elif bm[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY:
+        elif bm[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY:
             exp.update({constants.END_TIME: time.time() + self.DURATION_LONG})
-        elif bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SLICE_MEMORY:
+        elif bm[constants.VIRTUAL_MEMORY_TYPE] == constants.SLICE_MEMORY:
             exp.update({constants.END_TIME: time.time() + self.DURATION_SLICE})
         bm.update(exp)
 
@@ -400,7 +400,7 @@ class BioMemory(object):
             child_ids = pbm[constants.CHILD_MEM]
             for wbm in self.working_memories:
                 if wbm[constants.MID] in child_ids:
-                    if wbm[constants.STATUS] is not constants.MATCHED:
+                    if wbm[constants.STATUS] != constants.MATCHED:
                         all_matched = False
                         break
             if all_matched:
@@ -423,7 +423,7 @@ class BioMemory(object):
             grand_parent_memory_ids = []
             for memory_id in parent_working_memory_ids:
                 for mem in self.working_memories:
-                    if mem[constants.MID] is memory_id:
+                    if mem[constants.MID] == memory_id:
                         mem.update({constants.LAST_ACTIVE_TIME: time.time()})
                         grand_parent_memory_ids.append(mem[constants.PARENT_MEM])
             parent_working_memory_ids = grand_parent_memory_ids
@@ -538,7 +538,7 @@ class BioMemory(object):
             sbm_all_matched = True
             live_children = self.matching_child_memories.get(sbm[constants.MID])
             for feature_memory in live_children:
-                if feature_memory[constants.STATUS] is constants.MATCHED:
+                if feature_memory[constants.STATUS] == constants.MATCHED:
                     if feature_memory[constants.MID] not in ids:
                         physical_memories.append(feature_memory)
                         ids.append(feature_memory[constants.MID])
@@ -561,9 +561,9 @@ class BioMemory(object):
 
     def get_working_memories(self, bm_type):
         return [bm for bm in self.working_memories if constants.VIRTUAL_MEMORY_TYPE in bm and
-                bm[constants.VIRTUAL_MEMORY_TYPE] is constants.SLICE_MEMORY and
-                bm[constants.STATUS] is constants.MATCHING and
-                constants.PHYSICAL_MEMORY_TYPE in bm and bm[constants.PHYSICAL_MEMORY_TYPE] is bm_type]
+                bm[constants.VIRTUAL_MEMORY_TYPE] == constants.SLICE_MEMORY and
+                bm[constants.STATUS] == constants.MATCHING and
+                constants.PHYSICAL_MEMORY_TYPE in bm and bm[constants.PHYSICAL_MEMORY_TYPE] == bm_type]
 
     def get_vision_move_memory(self, degrees, speed, duration):
         return self.data_adaptor.get_vision_move_memory(degrees, speed, duration)

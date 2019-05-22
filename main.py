@@ -1,7 +1,7 @@
 from components.action import Action
 from components.bio_memory import BioMemory
 from components.data_adaptor import DataAdaptor
-from components.data_CodernityDB import DataCodernityDB
+from components.data_sqlite3 import DataSqlite3
 from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
 from components.mgc import GC
@@ -22,7 +22,6 @@ import time
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
 
-DATA_FOLDER = 'data/CodernityDB/'
 MAIN_CONFIG_FILE = 'data/main.npy'
 sound = None
 vision = None
@@ -72,7 +71,7 @@ def main(argv):
     try:
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
-        da = DataAdaptor(DataCodernityDB(folder=DATA_FOLDER))
+        da = DataAdaptor(DataSqlite3())
         bm = BioMemory(da)
         if is_hibernate and is_hibernate == 'yes':
             configs = load_main_conf()

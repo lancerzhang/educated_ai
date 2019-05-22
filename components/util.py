@@ -61,7 +61,7 @@ def list_equal(list1, list2):
 
 def list_to_sorted_string(list1):
     sorted_list = [x for x in sorted(list1)]
-    return ''.join(sorted_list)
+    return list_to_str(sorted_list)
 
 
 def delete_empty_surround(arr):
@@ -217,7 +217,7 @@ def update_rank_list(key_key, key_value, rank_list):
 
 def matrix_to_string(matrix):
     arr = matrix.flatten()
-    matrix_str = ','.join(str(e) for e in arr)
+    matrix_str = list_to_str(arr)
     return matrix_str
 
 
@@ -231,3 +231,11 @@ def find_2d_index(indexes, width):
     y = indexes / width
     x = indexes % width
     return x, y
+
+
+def list_to_str(list1):
+    return ','.join(str(x) for x in list1)
+
+
+def str_to_int_list(str1):
+    return [int(x) for x in str1.split(",")]

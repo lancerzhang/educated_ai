@@ -67,11 +67,11 @@ class DataAdaptor:
     def cleanup_field(self, field, clean_type):
         start = time.time()
         logger.info('start to cleanup_fields {0} memory'.format(clean_type))
-        if clean_type is constants.EDEN:
+        if clean_type == constants.EDEN:
             records = self.db.get_eden_memories()
-        elif clean_type is constants.YOUNG:
+        elif clean_type == constants.YOUNG:
             records = self.db.get_young_memories()
-        elif clean_type is constants.OLD:
+        elif clean_type == constants.OLD:
             records = self.db.get_old_memories()
         else:
             records = self.db.get_all()
@@ -98,11 +98,11 @@ class DataAdaptor:
     def gc(self, gc_type):
         start = time.time()
         logger.info('start to gc {0} memory'.format(gc_type))
-        if gc_type is constants.EDEN:
+        if gc_type == constants.EDEN:
             records = self.db.get_eden_memories()
-        elif gc_type is constants.YOUNG:
+        elif gc_type == constants.YOUNG:
             records = self.db.get_young_memories()
-        elif gc_type is constants.OLD:
+        elif gc_type == constants.OLD:
             records = self.db.get_old_memories()
         else:
             records = self.db.get_all()
@@ -116,7 +116,7 @@ class DataAdaptor:
             cleaned = len(records) - len(lives)
         logger.info('memories were deleted:{0}'.format(cleaned))
         logger.info('{0} gc used time {1}'.format(gc_type, time.time() - start))
-        if gc_type is constants.YOUNG or gc_type is constants.OLD:
+        if gc_type == constants.YOUNG or gc_type == constants.OLD:
             self.cleanup_field(constants.PARENT_MEM, gc_type)
         return cleaned
 
@@ -238,7 +238,7 @@ class DataAdaptor:
         bm = self.get_memory(mid)
         if bm is not None:
             pms = bm[constants.PARENT_MEM]
-            if bm[constants.VIRTUAL_MEMORY_TYPE] is constants.LONG_MEMORY or constants.SHORT_MEMORY:
+            if bm[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY or bm[constants.VIRTUAL_MEMORY_TYPE] == constants.SHORT_MEMORY:
                 if bm[constants.MID] not in roots:
                     roots.append(bm[constants.MID])
             for pmid in pms:

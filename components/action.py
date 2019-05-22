@@ -35,7 +35,7 @@ class Action(object):
 
     def reproduce_mouse_click(self, bm):
         click_type = bm[constants.CLICK_TYPE]
-        if click_type is constants.LEFT_CLICK:
+        if click_type == constants.LEFT_CLICK:
             self.left_click()
             bm.update({constants.STATUS: constants.MATCHED})
 
