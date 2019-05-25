@@ -1,12 +1,12 @@
 from components import constants
 from components import util
 from components.data_adaptor import DataAdaptor
-from components.data_CodernityDB import DataCodernityDB
+from components.data_sqlite3 import DataSqlite3
 import numpy as np
 
 short_id_filename = '../data/sid.npy'
 DataAdaptor.SHORT_ID_FILE = short_id_filename
-data_service = DataAdaptor(DataCodernityDB(folder='../data/CodernityDB/'))
+data_service = DataAdaptor(DataSqlite3('../data/bm.db'))
 
 
 def count_memories():
@@ -78,7 +78,7 @@ print [x[field1] for x in memories]
 # data_service.display_bm_tree_leaf('7efd1bda06364a28a265f4efb2d00ddd', 0, 5)
 roots=[]
 # data_service.find_bm_tree_roots('b51333e7aabc40d9904b9527dd047fac',roots)
-print roots
+# print roots
 # print_used_data()
 # load_short_id()
 # memoris=['b51333e7aabc40d9904b9527dd047fac', 'e2640996f41946c2aa7230a9a3ba5c60', '469f64505da743e581890c1f2062b420', 'f013049055ec4cd6b0c8f7affe3e96e5', '168620e5cbdf4e6caf563b034e5de0f8', 'b35503c3ebd94f7883b860c7c12c96b9', 'a376b516fbf04ca28a87301168e3649e', 'd6aadc78e04f47b3b1b95b905c94c319', '673da552aac94fc5bc62e1bf8ff4978e', '1c10110c27a44a9d88547a79364687af', '2f962a923fc345bab8ae86976c7358f8', '86ee8d51479d41968de5e3c457961a24', 'e48804af41664ae79b123f42bf8aa413']

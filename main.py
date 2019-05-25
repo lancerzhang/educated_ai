@@ -71,7 +71,7 @@ def main(argv):
     try:
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
-        da = DataAdaptor(DataSqlite3())
+        da = DataAdaptor(DataSqlite3('data/bm.db'))
         bm = BioMemory(da)
         if is_hibernate and is_hibernate == 'yes':
             configs = load_main_conf()

@@ -49,8 +49,8 @@ class DataSqlite3:
                         constants.ZOOM_DIRECTION)
         self.con.execute(sql_table)
 
-    def __init__(self):
-        self.con = sqlite3.connect('data/bm.db')
+    def __init__(self,path):
+        self.con = sqlite3.connect(path)
         self.con.row_factory = dict_factory
         self.cur = self.con.cursor()
         self.create_tables()
