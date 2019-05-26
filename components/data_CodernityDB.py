@@ -326,5 +326,5 @@ class DataCodernityDB:
         except RecordNotFound:
             return None
 
-    def keep_fit(self):
+    def persist(self):
         self.db.compact()

@@ -4,7 +4,7 @@ import time
 
 
 class GC:
-    KEEP_FIT_DURATION = 5 * 60
+    KEEP_FIT_DURATION = 30
     PPS = constants.process_per_second
     DPS = 1.0 / constants.process_per_second
     cycle_names = [constants.EDEN, constants.YOUNG, constants.OLD]

@@ -2,6 +2,7 @@ from components.action import Action
 from components.bio_memory import BioMemory
 from components.data_adaptor import DataAdaptor
 from components.data_sqlite3 import DataSqlite3
+from components.data_CodernityDB import DataCodernityDB
 from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
 from components.mgc import GC
@@ -71,7 +72,8 @@ def main(argv):
     try:
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
-        da = DataAdaptor(DataSqlite3('data/bm.db'))
+        da = DataAdaptor(DataSqlite3('data/dump.sql'))
+        # da = DataAdaptor(DataCodernityDB('data/CodernityDB/'))
         bm = BioMemory(da)
         if is_hibernate and is_hibernate == 'yes':
             configs = load_main_conf()

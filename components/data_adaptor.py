@@ -27,7 +27,10 @@ class DataAdaptor:
     # return None if not found
     # do not use directly, we usually need to refresh it before getting it
     def _get_memory(self, mid):
-        return self.db.get_by_id(mid)
+        start = time.time()
+        record = self.db.get_by_id(mid)
+        logger.debug('get record used {0}'.format(time.time() - start))
+        return record
 
     # return None if not found
     def get_memory(self, mid, recall=False):
@@ -47,7 +50,9 @@ class DataAdaptor:
         return self.db.update(content, mid)
 
     def remove_memory(self, mid):
+        start = time.time()
         self.db.remove(mid)
+        logger.debug('delete record used {0}'.format(time.time() - start))
 
     def refresh_memories(self, memories, recall=False):
         live_memories = []
@@ -121,7 +126,8 @@ class DataAdaptor:
         return cleaned
 
     def full_gc(self):
-        return self.gc('full')
+        self.gc('full')
+        # self.db.persist()
 
     def partial_gc(self):
         self.seq = self.seq + 1
@@ -147,7 +153,9 @@ class DataAdaptor:
         content.update(
             {constants.MID: uid, constants.STRENGTH: 100, constants.RECALL_COUNT: 1,
              constants.LAST_RECALL_TIME: int(time.time())})
-        record = self.db.insert(content)
+        start = time.time()
+        self.db.insert(content)
+        logger.debug('insert record used {0}'.format(time.time() - start))
         return uid
 
     # it return new created record id, normally not use it
@@ -211,7 +219,7 @@ class DataAdaptor:
             self.update_memory({constants.LAST_RECALL_TIME: last_recall_time + gap}, mem[constants.MID])
 
     def keep_fit(self):
-        self.db.keep_fit()
+        self.db.persist()
 
     def display_bm_tree_leaf(self, mid, level=0, max_level=2):
         if level >= max_level:
@@ -238,7 +246,8 @@ class DataAdaptor:
         bm = self.get_memory(mid)
         if bm is not None:
             pms = bm[constants.PARENT_MEM]
-            if bm[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY or bm[constants.VIRTUAL_MEMORY_TYPE] == constants.SHORT_MEMORY:
+            if bm[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY or \
+                    bm[constants.VIRTUAL_MEMORY_TYPE] == constants.SHORT_MEMORY:
                 if bm[constants.MID] not in roots:
                     roots.append(bm[constants.MID])
             for pmid in pms:

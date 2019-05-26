@@ -1,10 +1,14 @@
 import constants
+import logging
+import os
 import sqlite3
 import util
 
 
 class DataSqlite3:
+    con = None
     TABLE_NAME = 'bm'
+    DUMP_FILE = ''
 
     def create_tables(self):
         sql_table = '''create table if not exists %s (
@@ -48,31 +52,37 @@ class DataSqlite3:
                         constants.ZOOM_TYPE,
                         constants.ZOOM_DIRECTION)
         self.con.execute(sql_table)
+        self.con.commit()
 
-    def __init__(self,path):
-        self.con = sqlite3.connect(path)
+    def __init__(self, path):
+        self.DUMP_FILE = path
+        if os.path.exists(path):
+            self.import_from_script(path)
+        else:
+            self.con = sqlite3.connect(':memory:')
+            self.create_tables()
         self.con.row_factory = dict_factory
-        self.cur = self.con.cursor()
-        self.create_tables()
 
     def insert(self, bm):
         columns = ', '.join(bm.keys())
         placeholders = ':' + ', :'.join(bm.keys())
         query = 'INSERT INTO %s (%s) VALUES (%s)' % (self.TABLE_NAME, columns, placeholders)
         prepare_data(bm)
-        self.cur.execute(query, bm)
+        c = self.con.cursor()
+        c.execute(query, bm)
         self.con.commit()
 
     def get_by_id(self, eid):
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_NAME, constants.MID)
-        self.cur.execute(query, (eid,))
-        return self.cur.fetchone()
+        c = self.con.cursor()
+        c.execute(query, (eid,))
+        return c.fetchone()
 
     def get_all(self):
         query = 'SELECT * FROM %s ' % self.TABLE_NAME
-        self.cur.execute(query)
-        records = self.cur.fetchall()
-        return records
+        c = self.con.cursor()
+        c.execute(query)
+        return c.fetchall()
 
     def update(self, content, mid):
         params = [key + "=:" + key for key in content]
@@ -80,60 +90,81 @@ class DataSqlite3:
         query = 'UPDATE {0} SET {1} WHERE {2}=:{2}'.format(self.TABLE_NAME, updates, constants.MID)
         prepare_data(content)
         content.update({constants.MID: mid})
-        self.cur.execute(query, content)
+        c = self.con.cursor()
+        c.execute(query, content)
         self.con.commit()
 
     def remove(self, eid):
         query = 'DELETE FROM %s WHERE %s=?' % (self.TABLE_NAME, constants.MID)
-        self.cur.execute(query, (eid,))
+        c = self.con.cursor()
+        c.execute(query, (eid,))
         self.con.commit()
 
     def search_by_last_call(self, last_call):
         query = 'SELECT * FROM %s WHERE %s<? ' % (self.TABLE_NAME, constants.LAST_RECALL_TIME)
-        self.cur.execute(query, (last_call,))
-        return self.cur.fetchall()
+        c = self.con.cursor()
+        c.execute(query, (last_call,))
+        return c.fetchall()
 
     def get_eden_memories(self):
         query = 'SELECT * FROM %s WHERE %s<? ' % (self.TABLE_NAME, constants.RECALL_COUNT)
-        self.cur.execute(query, (2,))
-        return self.cur.fetchall()
+        c = self.con.cursor()
+        c.execute(query, (2,))
+        return c.fetchall()
 
     def get_young_memories(self):
         query = 'SELECT * FROM {0} WHERE {1}>=? AND {1}<? '.format(self.TABLE_NAME, constants.RECALL_COUNT)
-        self.cur.execute(query, (2, 20))
-        return self.cur.fetchall()
+        c = self.con.cursor()
+        c.execute(query, (2, 20))
+        return c.fetchall()
 
     def get_old_memories(self):
         query = 'SELECT * FROM %s WHERE %s>=?  ' % (self.TABLE_NAME, constants.RECALL_COUNT)
-        self.cur.execute(query, (20,))
-        return self.cur.fetchall()
+        c = self.con.cursor()
+        c.execute(query, (20,))
+        return c.fetchall()
 
     def get_vision_move_memory(self, degrees, speed, duration):
         query = 'SELECT * FROM %s WHERE %s=? AND %s=? AND %s=? AND %s=?' % (
             self.TABLE_NAME, constants.PHYSICAL_MEMORY_TYPE, constants.DEGREES, constants.SPEED,
             constants.MOVE_DURATION)
-        self.cur.execute(query, (constants.VISION_FOCUS_MOVE, degrees, speed, duration))
-        return self.cur.fetchone()
+        c = self.con.cursor()
+        c.execute(query, (constants.VISION_FOCUS_MOVE, degrees, speed, duration))
+        return c.fetchone()
 
     def get_vision_zoom_memory(self, zoom_type, zoom_direction):
         query = 'SELECT * FROM %s WHERE %s=? AND %s=? AND %s=?' % (
             self.TABLE_NAME, constants.PHYSICAL_MEMORY_TYPE, constants.ZOOM_TYPE, constants.ZOOM_DIRECTION)
-        self.cur.execute(query, (constants.VISION_FOCUS_ZOOM, zoom_type, zoom_direction))
-        return self.cur.fetchone()
+        c = self.con.cursor()
+        c.execute(query, (constants.VISION_FOCUS_ZOOM, zoom_type, zoom_direction))
+        return c.fetchone()
 
     def get_mouse_click_memory(self, click_type):
         query = 'SELECT * FROM %s WHERE %s=? AND %s=?' % (
             self.TABLE_NAME, constants.PHYSICAL_MEMORY_TYPE, constants.CLICK_TYPE)
-        self.cur.execute(query, (constants.ACTION_MOUSE_CLICK, click_type))
-        return self.cur.fetchone()
+        c = self.con.cursor()
+        c.execute(query, (constants.ACTION_MOUSE_CLICK, click_type))
+        return c.fetchone()
 
     def get_by_child_ids(self, child_mem):
         query = 'SELECT * FROM %s WHERE %s=? ' % (self.TABLE_NAME, constants.CHILD_MEM)
-        self.cur.execute(query, (util.list_to_sorted_string(child_mem),))
-        return self.cur.fetchone()
+        c = self.con.cursor().execute(query, (util.list_to_sorted_string(child_mem),))
+        return c.fetchone()
 
-    def keep_fit(self):
-        return
+    def persist(self):
+        self.con.row_factory = None
+        with open(self.DUMP_FILE, 'w') as f:
+            for line in self.con.iterdump():
+                f.write('%s\n' % line)
+        self.con.row_factory = dict_factory
+        logging.info('persisted database')
+
+    def import_from_script(self, path):
+        qry = open(path, 'r').read()
+        self.con = sqlite3.connect(':memory:')
+        c = self.con.cursor()
+        c.executescript(qry)
+        self.con.commit()
 
 
 def prepare_data(d):
