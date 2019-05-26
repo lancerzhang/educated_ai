@@ -6,7 +6,7 @@ import numpy as np
 
 short_id_filename = '../data/sid.npy'
 DataAdaptor.SHORT_ID_FILE = short_id_filename
-data_service = DataAdaptor(DataSqlite3('../data/bm.db'))
+data_service = DataAdaptor(DataSqlite3('../data/dump.sql'))
 
 
 def count_memories():

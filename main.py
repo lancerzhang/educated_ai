@@ -2,7 +2,7 @@ from components.action import Action
 from components.bio_memory import BioMemory
 from components.data_adaptor import DataAdaptor
 from components.data_sqlite3 import DataSqlite3
-from components.data_CodernityDB import DataCodernityDB
+# from components.data_CodernityDB import DataCodernityDB
 from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
 from components.mgc import GC
@@ -103,6 +103,7 @@ def main(argv):
             button = mouse_listener.get_button()
             key = keyboard_listener.get_key()
             if key is constants.KEY_SHIFT:
+                da.keep_fit()
                 save_for_exit()
                 break
 
