@@ -151,6 +151,18 @@ class DataSqlite3:
         c = self.con.cursor().execute(query, (util.list_to_sorted_string(child_mem),))
         return c.fetchone()
 
+    def get_vision_feature_memories(self, channel, kernel):
+        query = 'SELECT * FROM %s WHERE %s=? AND %s=? AND %s=?' % (
+            self.TABLE_NAME, constants.PHYSICAL_MEMORY_TYPE, constants.CHANNEL, constants.KERNEL)
+        c = self.con.cursor().execute(query, (constants.VISION_FEATURE, channel, kernel))
+        return c.fetchall()
+
+    def get_sound_feature_memories(self, kernel):
+        query = 'SELECT * FROM %s WHERE %s=? AND %s=? ' % (
+            self.TABLE_NAME, constants.PHYSICAL_MEMORY_TYPE, constants.KERNEL)
+        c = self.con.cursor().execute(query, (constants.SOUND_FEATURE, kernel))
+        return c.fetchall()
+
     def persist(self):
         self.con.row_factory = None
         with open(self.DUMP_FILE, 'w') as f:

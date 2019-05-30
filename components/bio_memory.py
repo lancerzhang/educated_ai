@@ -574,6 +574,12 @@ class BioMemory(object):
     def get_mouse_click_memory(self, click_type):
         return self.data_adaptor.get_mouse_click_memory(click_type)
 
+    def get_vision_feature_memories(self, channel, kernel):
+        return self.data_adaptor.get_vision_feature_memories(channel, kernel)
+
+    def get_sound_feature_memories(self, kernel):
+        return self.data_adaptor.get_sound_feature_memories(kernel)
+
     def search_live_memories(self, memory_ids):
         memories = []
         for mid in memory_ids:

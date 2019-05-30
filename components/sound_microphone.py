@@ -6,7 +6,7 @@ import pyaudio
 import util
 
 logger = logging.getLogger('MicrophoneSound')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class MicrophoneSound(Sound):

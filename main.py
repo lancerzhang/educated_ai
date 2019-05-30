@@ -2,7 +2,6 @@ from components.action import Action
 from components.bio_memory import BioMemory
 from components.data_adaptor import DataAdaptor
 from components.data_sqlite3 import DataSqlite3
-# from components.data_CodernityDB import DataCodernityDB
 from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
 from components.mgc import GC
@@ -12,7 +11,7 @@ from components.sound_video_file import VideoFileSound
 from components.status import Status
 from components.vision_screen import ScreenVision
 from components.vision_video_file import VideoFileVision
-from components import constants, util, status
+from components import constants, util
 import getopt
 import logging
 import numpy as np
@@ -44,11 +43,11 @@ def save_main_config():
 def save_for_exit():
     save_main_config()
     logging.info('saved and exiting...')
+    if vision:
+        vision.save_files()
     if sound:
         sound.save_files()
         sound.start_thread = False
-    if vision:
-        vision.save_files()
 
 
 def main(argv):

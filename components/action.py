@@ -4,7 +4,7 @@ import random
 from pynput.mouse import Button, Controller
 
 logger = logging.getLogger('Action')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Action(object):

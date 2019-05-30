@@ -2,7 +2,7 @@ import constants
 import logging
 
 logger = logging.getLogger('Reward')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Reward(object):

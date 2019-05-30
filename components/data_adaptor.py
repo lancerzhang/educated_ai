@@ -1,6 +1,7 @@
 from bio_memory import BioMemory
 import constants
 import logging
+import os
 import numpy as np
 import time
 import util
@@ -19,6 +20,8 @@ class DataAdaptor:
         self.db = db
         bm = BioMemory(self)
         self.bio_memory = bm
+        if not os.path.exists('data'):
+            os.makedirs('data')
         try:
             self.short_id_nd_list = np.load(self.SHORT_ID_FILE)
         except IOError:
@@ -180,6 +183,14 @@ class DataAdaptor:
 
     def get_mouse_click_memory(self, click_type):
         record = self.db.get_mouse_click_memory(click_type)
+        return record
+
+    def get_vision_feature_memories(self, kernel, channel):
+        record = self.db.get_vision_feature_memories(kernel, channel)
+        return record
+
+    def get_sound_feature_memories(self, kernel):
+        record = self.db.get_sound_feature_memories(kernel)
         return record
 
     def get_by_child_ids(self, child_mem):

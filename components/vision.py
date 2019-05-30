@@ -60,7 +60,6 @@ class Vision(object):
     USED_DEGREES_FILE = 'data/vud.npy'
     USED_KERNEL_FILE = 'data/vuk.npy'
     USED_CHANNEL_FILE = 'data/vuc.npy'
-    MEMORY_INDEX_FILE = 'data/vmi.npy'
     VISION_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
     previous_full_image = None
@@ -78,11 +77,6 @@ class Vision(object):
         half_width = width / 2
         self.current_block = {self.START_X: center_x - half_width, self.START_Y: center_y - half_width,
                               self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
-
-        try:
-            self.memory_indexes = np.load(self.MEMORY_INDEX_FILE)
-        except IOError:
-            self.memory_indexes = np.array([])
 
         try:
             self.used_kernel_rank = np.load(self.USED_KERNEL_FILE)
@@ -107,11 +101,12 @@ class Vision(object):
             self.used_channel_rank = np.array([])
 
     def save_files(self):
-        np.save(self.MEMORY_INDEX_FILE, self.memory_indexes)
+        logger.debug('before save_files')
         np.save(self.USED_KERNEL_FILE, self.used_kernel_rank[0:100])
         np.save(self.USED_SPEED_FILE, self.used_speed_rank)
         np.save(self.USED_DEGREES_FILE, self.used_degrees_rank)
         np.save(self.USED_CHANNEL_FILE, self.used_channel_rank)
+        logger.debug('after save_files')
 
     def process(self, status_controller, key):
         logger.info('process')
@@ -123,6 +118,7 @@ class Vision(object):
 
         self.match_features()
         new_feature_memory = self.search_feature_memory()
+        logger.debug('after search_feature_memory')
         self.bio_memory.enrich_feature_memories(constants.VISION_FEATURE, new_feature_memory)
 
         # when she's mature, below is the major way of focus move/zoom.
@@ -141,16 +137,20 @@ class Vision(object):
                 is_aware = self.aware(this_full_image)
                 if not is_aware:
                     if self.focus_status is self.PROCESS_STATUS_DIGGING:
+                        logger.debug('before dig')
                         self.dig()
+                        logger.debug('after dig')
                     elif self.focus_status is self.PROCESS_STATUS_EXPLORING:
                         # if environment not change, random do some change.
+                        logger.debug('before explore')
                         self.explore()
+                        logger.debug('after explore')
 
         self.previous_full_image = this_full_image
 
         work_status = status_controller.status
-        if not work_status[constants.BUSY][constants.LONG_DURATION]:
-            self.save_files()
+        # if not work_status[constants.BUSY][constants.LONG_DURATION]:
+        #     self.save_files()
         new_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
         new_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
         if new_focus_x == old_focus_x and new_focus_y == old_focus_y:
@@ -254,10 +254,12 @@ class Vision(object):
         kernel = feature_data[constants.KERNEL]
         feature = feature_data[constants.FEATURE]
         # self.this_feature_result = get_feature_result(channel, kernel, feature)
+
+        logger.debug('before find_feature_memory')
         bm = self.find_feature_memory(channel, kernel, feature)
+        logger.debug('after find_feature_memory')
         if bm is None:
             bm = self.bio_memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
-            self.update_memory_indexes(channel, kernel, bm[constants.MID])
         else:
             self.bio_memory.recall_physical_memory(bm)
         self.update_kernel_rank(kernel)
@@ -266,31 +268,17 @@ class Vision(object):
 
     # find memory by kernel using index
     def find_feature_memory(self, channel, kernel, feature1):
-        element = next(
-            (x for x in self.memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
-            None)
-        if element is not None:
-            memory_ids = element[constants.MEMORIES]
-            live_memories = self.bio_memory.search_live_memories(memory_ids)
-            if live_memories is not None:
-                for mem in live_memories:
-                    feature2 = mem[constants.FEATURE]
-                    difference = util.np_array_diff(feature1, np.array(feature2))
-                    if difference < self.FEATURE_SIMILARITY_THRESHOLD:
-                        return mem
+        logger.debug('before get_vision_feature_memories')
+        feature_memories = self.bio_memory.get_vision_feature_memories(channel, kernel)
+        logger.debug('after get_vision_feature_memories')
+        for mem in feature_memories:
+            feature2 = mem[constants.FEATURE]
+            difference = util.np_array_diff(feature1, np.array(feature2))
+            if difference < self.FEATURE_SIMILARITY_THRESHOLD:
+                logger.debug('found feature memory end')
+                return mem
+        logger.debug('feature memory end')
         return None
-
-    def update_memory_indexes(self, channel, kernel, mid):
-        element = next(
-            (x for x in self.memory_indexes if x[constants.KERNEL] == kernel and x[constants.CHANNEL] == channel),
-            None)
-        if element is None:
-            new_kernel = {constants.CHANNEL: channel, constants.KERNEL: kernel, constants.MEMORIES: [mid]}
-            self.memory_indexes = np.append(self.memory_indexes, new_kernel)
-        else:
-            memory_ids = element[constants.MEMORIES]
-            if mid not in memory_ids:
-                memory_ids.append(mid)
 
     def aware(self, image):
         logger.debug('aware')
@@ -434,11 +422,17 @@ class Vision(object):
         return random.randint(1, self.MAX_DURATION) / 10.0
 
     def search_feature(self, block):
+        logger.debug('block {0}'.format(block))
         channel = self.get_channel()
+        logger.debug('before get_region')
         img = self.get_region(block)
+        logger.debug('after get_region')
         kernel = self.get_kernel()
+        logger.debug('before get_channel_img')
         channel_img = get_channel_img(img, channel)
+        logger.debug('after get_channel_img')
         feature_data = self.filter_feature(channel_img, kernel)
+        logger.debug('after filter_feature')
         if feature_data:
             feature_data[constants.CHANNEL] = channel
         return feature_data

@@ -1,5 +1,5 @@
 from vision import Vision
-import constants
+import mss
 import cv2
 import logging
 
@@ -32,8 +32,16 @@ class VideoFileVision(Vision):
         cv2.rectangle(display_frame, (self.current_block[self.START_X], self.current_block[self.START_Y]),
                       (self.current_block[self.START_X] + self.current_block[self.WIDTH],
                        self.current_block[self.START_Y] + self.current_block[self.HEIGHT]), (0, 255, 0), 1)
-        cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
-        cv2.setWindowProperty("frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+        sct = mss.mss()
+        monitor = sct.monitors[1]
+        monitor_width = monitor['width']
+        if monitor_width == self.SCREEN_WIDTH:
+            cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
+            cv2.setWindowProperty("frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        else:
+            cv2.namedWindow("frame", cv2.WND_PROP_AUTOSIZE)
+            cv2.setWindowProperty("frame", cv2.WND_PROP_AUTOSIZE, cv2.WND_PROP_AUTOSIZE)
         cv2.imshow('frame', display_frame)
         cv2.waitKey(1)
         return focus
