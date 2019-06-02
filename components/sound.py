@@ -28,7 +28,6 @@ class Sound(object):
     FEATURE_THRESHOLD = 10
     FEATURE_SIMILARITY_THRESHOLD = 0.2
     POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
-    USED_KERNEL_FILE = 'data/suk.npy'
     SOUND_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
     MAX_DB = 80.0
@@ -47,19 +46,8 @@ class Sound(object):
         self.frequency_map = None
         buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
         self.buffer_count_of_phase = int(math.ceil(self.DEFAULT_PHASE_DURATION / buffer_duration))
-
-        try:
-            self.used_kernel_rank = np.load(self.USED_KERNEL_FILE)
-        except IOError:
-            self.used_kernel_rank = np.array([])
-
         self.sound_kernels = np.load(self.SOUND_KERNEL_FILE)
         self.previous_phase = None
-
-    def save_files(self):
-        logger.debug('before save_files')
-        np.save(self.USED_KERNEL_FILE, self.used_kernel_rank)
-        logger.debug('after save_files')
 
     def process(self, status_controller):
         logger.info('process')
@@ -72,10 +60,6 @@ class Sound(object):
         self.match_features()
         new_feature_memory = self.search_feature_memory()
         self.bio_memory.enrich_feature_memories(constants.SOUND_FEATURE, new_feature_memory)
-
-        work_status = status_controller.status
-        if not work_status[constants.BUSY][constants.LONG_DURATION]:
-            self.save_files()
         logger.info('process used time:{0}'.format(time.time() - start))
 
     def match_features(self):
@@ -141,7 +125,12 @@ class Sound(object):
 
     # get a frequent use kernel or a random kernel by certain possibility
     def get_kernel(self):
-        used_kernel = util.get_high_rank(self.used_kernel_rank)
+        used_kernel = None
+        ri = random.randint(0, 9) - 1
+        # Give a chane to choose kernel for library
+        if ri >= 0:
+            used_kernel = self.bio_memory.data_adaptor.get_top_sound_used_kernel(ri)
+
         if used_kernel is None:
             shape = self.sound_kernels.shape
             index = random.randint(0, shape[0] - 1)
@@ -151,7 +140,7 @@ class Sound(object):
             return used_kernel[constants.KERNEL]
 
     def update_kernel_rank(self, kernel):
-        self.used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, self.used_kernel_rank)
+        self.bio_memory.data_adaptor.put_sound_used_kernel(kernel)
 
     # try to search more detail
     def search_feature_memory(self):
@@ -178,9 +167,9 @@ class Sound(object):
 
     # search memory by kernel using index
     def find_feature_memory(self, kernel, feature1):
-        logger.debug('before get_vision_feature_memories')
+        logger.debug('before get_sound_feature_memories')
         feature_memories = self.bio_memory.get_sound_feature_memories(kernel)
-        logger.debug('after get_vision_feature_memories')
+        logger.debug('after get_sound_feature_memories')
         for mem in feature_memories:
             feature2 = mem[constants.FEATURE]
             difference = util.np_array_diff(feature1, np.array(feature2))

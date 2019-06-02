@@ -43,10 +43,7 @@ def save_main_config():
 def save_for_exit():
     save_main_config()
     logging.info('saved and exiting...')
-    if vision:
-        vision.save_files()
     if sound:
-        sound.save_files()
         sound.start_thread = False
 
 
@@ -72,7 +69,6 @@ def main(argv):
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
         da = DataAdaptor(DataSqlite3('data/dump.sql'))
-        # da = DataAdaptor(DataCodernityDB('data/CodernityDB/'))
         bm = BioMemory(da)
         if is_hibernate and is_hibernate == 'yes':
             configs = load_main_conf()

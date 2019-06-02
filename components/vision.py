@@ -56,10 +56,6 @@ class Vision(object):
     MOVE_LEFT = 18
     MOVE_RIGHT = 0
     LAST_MOVE_TIME = 'lmt'
-    USED_SPEED_FILE = 'data/vus.npy'
-    USED_DEGREES_FILE = 'data/vud.npy'
-    USED_KERNEL_FILE = 'data/vuk.npy'
-    USED_CHANNEL_FILE = 'data/vuc.npy'
     VISION_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
     previous_full_image = None
@@ -78,35 +74,7 @@ class Vision(object):
         self.current_block = {self.START_X: center_x - half_width, self.START_Y: center_y - half_width,
                               self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
 
-        try:
-            self.used_kernel_rank = np.load(self.USED_KERNEL_FILE)
-        except IOError:
-            self.used_kernel_rank = np.array([])
-
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
-
-        try:
-            self.used_speed_rank = np.load(self.USED_SPEED_FILE)
-        except IOError:
-            self.used_speed_rank = np.array([])
-
-        try:
-            self.used_degrees_rank = np.load(self.USED_DEGREES_FILE)
-        except IOError:
-            self.used_degrees_rank = np.array([])
-
-        try:
-            self.used_channel_rank = np.load(self.USED_CHANNEL_FILE)
-        except IOError:
-            self.used_channel_rank = np.array([])
-
-    def save_files(self):
-        logger.debug('before save_files')
-        np.save(self.USED_KERNEL_FILE, self.used_kernel_rank[0:100])
-        np.save(self.USED_SPEED_FILE, self.used_speed_rank)
-        np.save(self.USED_DEGREES_FILE, self.used_degrees_rank)
-        np.save(self.USED_CHANNEL_FILE, self.used_channel_rank)
-        logger.debug('after save_files')
 
     def process(self, status_controller, key):
         logger.info('process')
@@ -148,9 +116,6 @@ class Vision(object):
 
         self.previous_full_image = this_full_image
 
-        work_status = status_controller.status
-        # if not work_status[constants.BUSY][constants.LONG_DURATION]:
-        #     self.save_files()
         new_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
         new_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
         if new_focus_x == old_focus_x and new_focus_y == old_focus_y:
@@ -232,7 +197,11 @@ class Vision(object):
 
     # get a frequent use kernel or a random kernel by certain possibility
     def get_kernel(self):
-        used_kernel = util.get_high_rank(self.used_kernel_rank)
+        used_kernel = None
+        ri = random.randint(0, 9) - 1
+        if ri >= 0:
+            used_kernel = self.bio_memory.data_adaptor.get_top_vision_used_kernel(ri)
+
         if used_kernel is None:
             shape = self.vision_kernels.shape
             index = random.randint(0, shape[0] - 1)
@@ -242,7 +211,7 @@ class Vision(object):
             return used_kernel[constants.KERNEL]
 
     def update_kernel_rank(self, kernel):
-        self.used_kernel_rank = util.update_rank_list(constants.KERNEL, kernel, self.used_kernel_rank)
+        self.bio_memory.data_adaptor.put_vision_used_kernel(kernel)
 
     # try to search more detail
     def search_feature_memory(self):
@@ -381,32 +350,44 @@ class Vision(object):
             return new_block
 
     def update_degrees_rank(self, degrees):
-        self.used_degrees_rank = util.update_rank_list(constants.DEGREES, degrees, self.used_degrees_rank)
+        self.bio_memory.data_adaptor.put_used_degrees(degrees)
 
     def get_degrees(self):
-        used_degrees = util.get_high_rank(self.used_degrees_rank)
+        used_degrees = None
+        ri = random.randint(0, 9) - 1
+        if ri >= 0:
+            used_degrees = self.bio_memory.data_adaptor.get_top_used_degrees(ri)
+
         if used_degrees is None:
             degrees = random.randint(1, self.MAX_DEGREES)
             return degrees
         else:
-            return used_degrees[constants.DEGREES]
+            return int(used_degrees[constants.DEGREES])
 
     def update_speed_rank(self, speed):
-        self.used_speed_rank = util.update_rank_list(constants.SPEED, speed, self.used_speed_rank)
+        self.bio_memory.data_adaptor.put_used_speed(speed)
 
     def get_speed(self):
-        used_speed = util.get_high_rank(self.used_speed_rank)
+        used_speed = None
+        ri = random.randint(0, 9) - 1
+        if ri >= 0:
+            used_speed = self.bio_memory.data_adaptor.get_top_used_speed(ri)
+
         if used_speed is None:
             speed = random.randint(1, self.MAX_SPEED)
             return speed
         else:
-            return used_speed[constants.SPEED]
+            return int(used_speed[constants.SPEED])
 
     def update_channel_rank(self, channel):
-        self.used_channel_rank = util.update_rank_list(constants.CHANNEL, channel, self.used_channel_rank)
+        self.bio_memory.data_adaptor.put_used_channel(channel)
 
     def get_channel(self):
-        used_channel = util.get_high_rank(self.used_channel_rank)
+        used_channel = None
+        ri = random.randint(0, 9) - 1
+        if ri >= 0:
+            used_channel = self.bio_memory.data_adaptor.get_top_used_channel(ri)
+
         if used_channel is None:
             ri = random.randint(1, 3)
             channel = 'y'

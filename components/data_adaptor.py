@@ -193,6 +193,61 @@ class DataAdaptor:
         record = self.db.get_sound_feature_memories(kernel)
         return record
 
+    def get_top_vision_used_kernel(self, offset):
+        record = self.db.get_top_vision_used_kernel(offset)
+        return record
+
+    def put_vision_used_kernel(self, kernel):
+        record = self.db.get_vision_used_kernel(kernel)
+        if record is None:
+            self.db.insert_vision_used_kernel(kernel)
+        else:
+            self.db.update_vision_used_kernel(kernel, record[constants.COUNT] + 1)
+
+    def get_top_sound_used_kernel(self, offset):
+        record = self.db.get_top_sound_used_kernel(offset)
+        return record
+
+    def put_sound_used_kernel(self, kernel):
+        record = self.db.get_sound_used_kernel(kernel)
+        if record is None:
+            self.db.insert_sound_used_kernel(kernel)
+        else:
+            self.db.update_sound_used_kernel(kernel, record[constants.COUNT] + 1)
+
+    def get_top_used_speed(self, offset):
+        record = self.db.get_top_used_speed(offset)
+        return record
+
+    def put_used_speed(self, speed):
+        record = self.db.get_used_speed(speed)
+        if record is None:
+            self.db.insert_used_speed(speed)
+        else:
+            self.db.update_used_speed(speed, record[constants.COUNT] + 1)
+
+    def get_top_used_degrees(self, offset):
+        record = self.db.get_top_used_degrees(offset)
+        return record
+
+    def put_used_degrees(self, degrees):
+        record = self.db.get_used_degrees(degrees)
+        if record is None:
+            self.db.insert_used_degrees(degrees)
+        else:
+            self.db.update_used_degrees(degrees, record[constants.COUNT] + 1)
+
+    def get_top_used_channel(self, offset):
+        record = self.db.get_top_used_channel(offset)
+        return record
+
+    def put_used_channel(self, channel):
+        record = self.db.get_used_channel(channel)
+        if record is None:
+            self.db.insert_used_channel(channel)
+        else:
+            self.db.update_used_channel(channel, record[constants.COUNT] + 1)
+
     def get_by_child_ids(self, child_mem):
         record = self.db.get_by_child_ids(child_mem)
         return record
@@ -231,6 +286,8 @@ class DataAdaptor:
 
     def keep_fit(self):
         self.db.persist()
+        self.db.clean_vision_used_kernel()
+        self.db.clean_sound_used_kernel()
 
     def display_bm_tree_leaf(self, mid, level=0, max_level=2):
         if level >= max_level:

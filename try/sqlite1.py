@@ -44,6 +44,10 @@ def init_db_trans(path):
     ids = [(x,) for x in range(NUM)]
     c.executemany("INSERT INTO person VALUES (?,'apple','apple@test.com')", ids)
     conn.commit()
+    c.execute('SELECT * FROM person ORDER BY id DESC LIMIT 1 OFFSET 0')
+    one = c.fetchone()
+    print one
+    print one[0]
     conn.close()
     time3 = time.time()
     print 'insert records used {0}'.format(time3 - time2)

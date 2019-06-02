@@ -49,6 +49,7 @@ END_TIME = 'edt'
 LAST_ACTIVE_TIME = 'lat'
 HAPPEN_TIME = 'hpt'
 MEMORIES = 'mms'
+COUNT = 'count'
 
 # action
 CLICK_TYPE = 'clt'
