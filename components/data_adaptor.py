@@ -50,23 +50,33 @@ class DataAdaptor:
         return self.db.get_all()
 
     def update_memory(self, content, mid):
-        return self.db.update(content, mid)
+        return self.db.update_memory(content, mid)
 
-    def remove_memory(self, mid):
+    def delete_memory(self, mid):
         start = time.time()
-        self.db.remove(mid)
-        logger.debug('delete record used {0}'.format(time.time() - start))
+        self.db.delete_memory(mid)
+        logger.debug('delete_memory used {0}'.format(time.time() - start))
+
+    def delete_memories(self, mids):
+        start = time.time()
+        self.db.delete_memories(mids)
+        logger.debug('delete_memories used {0}'.format(time.time() - start))
 
     def refresh_memories(self, memories, recall=False):
+        start = time.time()
         live_memories = []
         if memories is None or len(memories) == 0:
             return None
+        to_deleted_memories = []
         for mem in memories:
             self.bio_memory.refresh(mem, recall, True)
             if mem[constants.STRENGTH] == -1:
-                self.remove_memory(mem[constants.MID])
+                to_deleted_memories.append(mem[constants.MID])
             else:
                 live_memories.append(mem)
+        if len(to_deleted_memories) > 0:
+            self.db.delete_memories(to_deleted_memories)
+        logger.debug('refresh_memories used {0}'.format(time.time() - start))
         return live_memories
 
     def cleanup_fields(self):
@@ -83,6 +93,7 @@ class DataAdaptor:
             records = self.db.get_old_memories()
         else:
             records = self.db.get_all()
+        to_update_memories = []
         for mem in records:
             original_list = mem[field]
             # fine unique value from list
@@ -94,7 +105,9 @@ class DataAdaptor:
                     new_list.append(element)
             if len(new_list) != len(original_list):
                 logger.debug('clean up from {0} to {1}'.format(len(original_list), len(new_list)))
-                self.update_memory({field: new_list}, mem[constants.MID])
+                to_update_memories.append({field: new_list, constants.MID: mem[constants.MID]})
+        if len(to_update_memories) > 0:
+            self.db.update_memories(to_update_memories)
         logger.info('cleanup_fields used time {0}'.format(time.time() - start))
 
     # def schedule_housekeep(self):
@@ -280,9 +293,13 @@ class DataAdaptor:
         logger.info('start to synchronize memories')
         gap = time.time() - system_last_active_time
         records = self.db.get_all()
+        to_update_memories = []
         for mem in records:
             last_recall_time = mem[constants.LAST_RECALL_TIME]
-            self.update_memory({constants.LAST_RECALL_TIME: last_recall_time + gap}, mem[constants.MID])
+            to_update_memories.append(
+                {constants.MID: mem[constants.MID], constants.LAST_RECALL_TIME: last_recall_time + gap})
+        if len(to_update_memories) > 0:
+            self.db.update_memories(to_update_memories)
 
     def keep_fit(self):
         self.db.persist()

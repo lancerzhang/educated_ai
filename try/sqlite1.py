@@ -15,6 +15,10 @@ if os.path.exists(SQL_FILE):
     os.remove(SQL_FILE)
 
 
+def list_many(list1):
+    return [(x,) for x in list1]
+
+
 def init_db(path):
     time1 = time.time()
     conn = sqlite3.connect(path)
@@ -37,7 +41,7 @@ def init_db_trans(path):
     conn = sqlite3.connect(path)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS person
-                 (id integer, name text, email text)''')
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, name text, email text)''')
     conn.commit()
     time2 = time.time()
     print 'init db used {0}'.format(time2 - time1)
@@ -48,6 +52,15 @@ def init_db_trans(path):
     one = c.fetchone()
     print one
     print one[0]
+    c.execute("DELETE FROM person WHERE id=?", (one[0],))
+    conn.commit()
+    c.execute("INSERT INTO person (name, email) VALUES ('orange','orange@test.com')")
+    conn.commit()
+    c.execute('SELECT * FROM person ORDER BY id DESC LIMIT 3')
+    one = c.fetchall()
+    print one
+    c.executemany("DELETE FROM person WHERE id=?", list_many([1, 2, 3]))
+    conn.commit()
     conn.close()
     time3 = time.time()
     print 'insert records used {0}'.format(time3 - time2)

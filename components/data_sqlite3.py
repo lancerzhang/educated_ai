@@ -105,7 +105,7 @@ class DataSqlite3:
         c.execute(query)
         return c.fetchall()
 
-    def update(self, content, mid):
+    def update_memory(self, content, mid):
         params = [key + "=:" + key for key in content]
         updates = ', '.join(params)
         query = 'UPDATE {0} SET {1} WHERE {2}=:{2}'.format(self.TABLE_BM, updates, constants.MID)
@@ -115,10 +115,26 @@ class DataSqlite3:
         c.execute(query, content)
         self.con.commit()
 
-    def remove(self, eid):
+    def update_memories(self, contents):
+        params = [key + "=:" + key for key in contents[0]]
+        updates = ', '.join(params)
+        query = 'UPDATE {0} SET {1} WHERE {2}=:{2}'.format(self.TABLE_BM, updates, constants.MID)
+        for content in contents:
+            prepare_data(content)
+        c = self.con.cursor()
+        c.executemany(query, contents)
+        self.con.commit()
+
+    def delete_memory(self, eid):
         query = 'DELETE FROM %s WHERE %s=?' % (self.TABLE_BM, constants.MID)
         c = self.con.cursor()
         c.execute(query, (eid,))
+        self.con.commit()
+
+    def delete_memories(self, eids):
+        query = 'DELETE FROM %s WHERE %s=?' % (self.TABLE_BM, constants.MID)
+        c = self.con.cursor()
+        c.executemany(query, list_many(eids))
         self.con.commit()
 
     def search_by_last_call(self, last_call):
@@ -350,6 +366,10 @@ class DataSqlite3:
         c = self.con.cursor()
         c.executescript(qry)
         self.con.commit()
+
+
+def list_many(list1):
+    return [(x,) for x in list1]
 
 
 def prepare_data(d):

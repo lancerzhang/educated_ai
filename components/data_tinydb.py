@@ -21,10 +21,10 @@ class DataTinyDB:
     def get_all(self):
         return self.table.all()
 
-    def update(self, content, eid):
-        self.table.update(content, Query()[constants.MID] == eid)
+    def update_memory(self, content, eid):
+        self.table.update_memory(content, Query()[constants.MID] == eid)
 
-    def remove(self, eid):
+    def delete_memory(self, eid):
         self.table.remove(Query()[constants.MID] == eid)
 
     def search_by_last_call(self, last_call):

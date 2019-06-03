@@ -271,7 +271,7 @@ class BioMemory(object):
     def reduce_list_field(self, field, sub_ids, forgot_ids, mid):
         new_sub = util.list_comprehension_new(sub_ids, forgot_ids)
         if field == constants.CHILD_MEM and len(new_sub) == 0:
-            self.data_adaptor.remove_memory(mid)
+            self.data_adaptor.delete_memory(mid)
         else:
             self.data_adaptor.update_memory({field: new_sub}, mid)
 
@@ -624,5 +624,5 @@ class BioMemory(object):
             self.reduce_list_field(constants.CHILD_MEM, child_bm_ids, forgot_ids, bm[constants.MID])
         if len(child_bm) == 0:
             # virtual memory should have children
-            self.data_adaptor.remove_memory(bm[constants.MID])
+            self.data_adaptor.delete_memory(bm[constants.MID])
         return child_bm

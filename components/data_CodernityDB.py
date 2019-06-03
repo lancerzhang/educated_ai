@@ -220,7 +220,7 @@ class DataCodernityDB:
         results = [x for x in records]
         return results
 
-    def update(self, content, eid):
+    def update_memory(self, content, eid):
         try:
             record = self.db.get('id', eid)
             record.update(content)
@@ -230,7 +230,7 @@ class DataCodernityDB:
         except RecordDeleted:
             return None
 
-    def remove(self, eid):
+    def delete_memory(self, eid):
         try:
             record = self.db.get('id', eid)
             return self.db.delete(record)

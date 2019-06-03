@@ -58,7 +58,7 @@ FOCUS_X = 'fcx'
 FOCUS_Y = 'mvy'
 
 # main
-process_per_second = 8  # adjust according to your process unit
+process_per_second = 10  # adjust according to your process unit
 LAST_SYSTEM_TIME = 'lst'
 
 # gc
