@@ -29,7 +29,8 @@ def init_db(path):
     time2 = time.time()
     print 'init db used {0}'.format(time2 - time1)
     for _ in range(NUM):
-        c.execute("INSERT INTO person VALUES (1,'apple','apple@test.com')")
+        cur = c.execute("INSERT INTO person VALUES (1,'apple','apple@test.com')")
+        # print cur.lastrowid
         conn.commit()
     conn.close()
     time3 = time.time()

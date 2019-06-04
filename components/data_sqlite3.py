@@ -14,6 +14,7 @@ class DataSqlite3:
     TABLE_USED_SPEED = 'spd'
     TABLE_USED_DEGREES = 'dgr'
     TABLE_USED_CHANNEL = 'cnl'
+    TABLE_SHORT_ID = 'sid'
 
     def create_tables(self):
         sql_table = '''create table if not exists %s (
@@ -72,6 +73,9 @@ class DataSqlite3:
         self.con.execute(
             'create table if not exists %s (%s text primary key, %s integer)' % (
                 self.TABLE_USED_CHANNEL, constants.CHANNEL, constants.COUNT))
+        self.con.execute(
+            'create table if not exists %s (id INTEGER PRIMARY KEY AUTOINCREMENT, %s text)' % (
+                self.TABLE_SHORT_ID, constants.MID))
         self.con.commit()
 
     def __init__(self, path):
@@ -91,11 +95,11 @@ class DataSqlite3:
         c.execute(query, bm)
         self.con.commit()
 
-    def get_by_id(self, eid):
+    def get_by_id(self, mid):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_BM, constants.MID)
         c = self.con.cursor()
-        c.execute(query, (eid,))
+        c.execute(query, (mid,))
         return c.fetchone()
 
     def get_all(self):
@@ -351,6 +355,22 @@ class DataSqlite3:
         c = self.con.cursor()
         c.execute(query, (count, channel))
         self.con.commit()
+
+    def get_short_id(self, mid):
+        self.con.row_factory = sqlite3.Row
+        query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_SHORT_ID, constants.MID)
+        c = self.con.cursor()
+        c.execute(query, (mid,))
+        record = c.fetchone()
+        if record is None:
+            query2 = 'INSERT INTO %s (%s) VALUES (?)' % (self.TABLE_SHORT_ID, constants.MID)
+            c = self.con.cursor()
+            c.execute(query2, (mid,))
+            sid = c.lastrowid
+            self.con.commit()
+        else:
+            sid = record['id']
+        return sid
 
     def persist(self):
         # need to reset row factory, otherwise there is strange error

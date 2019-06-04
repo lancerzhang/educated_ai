@@ -14,7 +14,6 @@ logger.setLevel(logging.INFO)
 class DataAdaptor:
     start_thread = True
     seq = 0
-    SHORT_ID_FILE = 'data/sid.npy'
 
     def __init__(self, db):
         self.db = db
@@ -22,10 +21,6 @@ class DataAdaptor:
         self.bio_memory = bm
         if not os.path.exists('data'):
             os.makedirs('data')
-        try:
-            self.short_id_nd_list = np.load(self.SHORT_ID_FILE)
-        except IOError:
-            self.short_id_nd_list = np.array({})
 
     # return None if not found
     # do not use directly, we usually need to refresh it before getting it
@@ -93,6 +88,8 @@ class DataAdaptor:
             records = self.db.get_old_memories()
         else:
             records = self.db.get_all()
+        time2 = time.time()
+        logger.debug('get {0} memories used time {1}'.format(len(records), (time2 - start)))
         to_update_memories = []
         for mem in records:
             original_list = mem[field]
@@ -106,9 +103,12 @@ class DataAdaptor:
             if len(new_list) != len(original_list):
                 logger.debug('clean up from {0} to {1}'.format(len(original_list), len(new_list)))
                 to_update_memories.append({field: new_list, constants.MID: mem[constants.MID]})
+        time3 = time.time()
+        logger.debug('find_updates used time {0}'.format(time3 - time2))
         if len(to_update_memories) > 0:
             self.db.update_memories(to_update_memories)
-        logger.info('cleanup_fields used time {0}'.format(time.time() - start))
+        logger.debug('update_memories used time {0}'.format(time.time() - time3))
+        logger.info('cleanup_field used time {0}'.format(time.time() - start))
 
     # def schedule_housekeep(self):
     #     self.seq = self.seq + 1
@@ -339,10 +339,4 @@ class DataAdaptor:
                 self.find_bm_tree_roots(pmid, roots)
 
     def get_short_id(self, long_id):
-        short_id_list = self.short_id_nd_list.tolist()
-        short_id = short_id_list.get(long_id)
-        if short_id is None:
-            short_id = len(short_id_list) + 1
-            short_id_list.update({long_id: short_id})
-            np.save(self.SHORT_ID_FILE, short_id_list)
-        return short_id
+        return self.db.get_short_id(long_id)
