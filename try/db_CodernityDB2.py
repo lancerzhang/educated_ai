@@ -30,13 +30,13 @@ def main():
         db.add_index(x_ind)
     new_record=db.insert(dict(x=1000))
     record1 = db.get('x', 1001, with_doc=True).get('doc')
-    print record1
+    print(record1)
     # record1.update({'x': 1001})
     # db.update(record1)
     db.delete(record1)
     # db.compact()
     record1 = db.get('x', 1001, with_doc=True)
-    print record1
+    print(record1)
 
 
 if __name__ == '__main__':

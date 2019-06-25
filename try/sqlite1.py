@@ -5,7 +5,7 @@ DB_BAK = 'bak.db'
 SQL_FILE = 'dump.sql'
 NUM = 30000
 
-print '%s records' % NUM
+print('%s records' % NUM)
 
 if os.path.exists(DB_FILE):
     os.remove(DB_FILE)
@@ -27,14 +27,14 @@ def init_db(path):
                  (id integer, name text, email text)''')
     conn.commit()
     time2 = time.time()
-    print 'init db used {0}'.format(time2 - time1)
+    print('init db used {0}'.format(time2 - time1))
     for _ in range(NUM):
         cur = c.execute("INSERT INTO person VALUES (1,'apple','apple@test.com')")
         # print cur.lastrowid
         conn.commit()
     conn.close()
     time3 = time.time()
-    print 'insert records used {0}'.format(time3 - time2)
+    print('insert records used {0}'.format(time3 - time2))
 
 
 def init_db_trans(path):
@@ -45,26 +45,26 @@ def init_db_trans(path):
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, name text, email text)''')
     conn.commit()
     time2 = time.time()
-    print 'init db used {0}'.format(time2 - time1)
+    print('init db used {0}'.format(time2 - time1))
     ids = [(x,) for x in range(NUM)]
     c.executemany("INSERT INTO person VALUES (?,'apple','apple@test.com')", ids)
     conn.commit()
     c.execute('SELECT * FROM person ORDER BY id DESC LIMIT 1 OFFSET 0')
     one = c.fetchone()
-    print one
-    print one[0]
+    print(one)
+    print(one[0])
     c.execute("DELETE FROM person WHERE id=?", (one[0],))
     conn.commit()
     c.execute("INSERT INTO person (name, email) VALUES ('orange','orange@test.com')")
     conn.commit()
     c.execute('SELECT * FROM person ORDER BY id DESC LIMIT 3')
     one = c.fetchall()
-    print one
+    print(one)
     c.executemany("DELETE FROM person WHERE id=?", list_many([1, 2, 3]))
     conn.commit()
     conn.close()
     time3 = time.time()
-    print 'insert records used {0}'.format(time3 - time2)
+    print('insert records used {0}'.format(time3 - time2))
 
 
 def dump_db():
@@ -77,7 +77,7 @@ def dump_db():
             f.write('%s\n' % line)
     con.close()
     time3 = time.time()
-    print 'write dump used {0}'.format(time3 - time1)
+    print('write dump used {0}'.format(time3 - time1))
 
 
 def dump_memory_db():
@@ -93,7 +93,7 @@ def dump_memory_db():
             f.write('%s\n' % line)
     conn.close()
     time3 = time.time()
-    print 'write dump from memory used {0}'.format(time3 - time1)
+    print('write dump from memory used {0}'.format(time3 - time1))
 
 
 def import_db_to_memory():
@@ -106,7 +106,7 @@ def import_db_to_memory():
     c.close()
     conn.close()
     end = time.time()
-    print 'import db to memory used {0}'.format(end - start)
+    print('import db to memory used {0}'.format(end - start))
 
 
 # In performance test, running time of this equals to created a file db, and then bulk insert them.
@@ -125,7 +125,7 @@ def attach_db_to_memory():
     c.close()
     conn.close()
     end = time.time()
-    print 'attach db used {0}'.format(end - start)
+    print('attach db used {0}'.format(end - start))
 
 
 # init_db(DB_FILE)

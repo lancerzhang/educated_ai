@@ -138,15 +138,15 @@ class TestBioMemory(unittest.TestCase):
         memories = [mem5, mem6]
         tobe_remove_list_ids = []
         related_memories = self.bio_memory.find_max_related_memories(memories, tobe_remove_list_ids)
-        self.assertEquals(2, len(related_memories))
-        self.assertEquals(2, len(tobe_remove_list_ids))
+        self.assertEqual(2, len(related_memories))
+        self.assertEqual(2, len(tobe_remove_list_ids))
         mem7 = self.data_adaptor.add_memory(
             {constants.PARENT_MEM: [mem2[constants.MID], mem3[constants.MID], mem4[constants.MID]]})
         memories.append(mem7)
         tobe_remove_list_ids2 = []
         related_memories2 = self.bio_memory.find_max_related_memories(memories, tobe_remove_list_ids2, 1)
-        self.assertEquals(1, len(related_memories2))
-        self.assertEquals(mem2[constants.MID], related_memories2[0][constants.MID])
+        self.assertEqual(1, len(related_memories2))
+        self.assertEqual(mem2[constants.MID], related_memories2[0][constants.MID])
 
     def test_remove_dead_memories(self):
         child_mem = ['a1', 'b2', 'c3']
@@ -155,7 +155,7 @@ class TestBioMemory(unittest.TestCase):
         self.bio_memory.reduce_list_field(constants.CHILD_MEM, child_mem, forget_ids, mem1[constants.MID])
         mem1b = self.data_adaptor._get_memory(mem1[constants.MID])
         forget_ids2 = ['a1', 'b2']
-        self.assertEquals(forget_ids2, mem1b[constants.CHILD_MEM])
+        self.assertEqual(forget_ids2, mem1b[constants.CHILD_MEM])
         self.bio_memory.reduce_list_field(constants.CHILD_MEM, mem1b[constants.CHILD_MEM], forget_ids2,
                                           mem1[constants.MID])
         mem1c = self.data_adaptor._get_memory(mem1[constants.MID])
@@ -167,24 +167,24 @@ class TestBioMemory(unittest.TestCase):
         memories = [mem1, mem2]
         self.bio_memory.working_memories = memories
         self.bio_memory.add_collection_memories([memories], constants.SLICE_MEMORY)
-        self.assertEquals(2, self.bio_memory.temp_memories[constants.SLICE_MEMORY][0][constants.REWARD])
+        self.assertEqual(2, self.bio_memory.temp_memories[constants.SLICE_MEMORY][0][constants.REWARD])
 
     def test_append_working_memories(self):
         mem1 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY})
         working_memories = []
         new_memories = [mem1]
         self.bio_memory.new_working_memories(working_memories, new_memories)
-        self.assertEquals(1, len(working_memories))
+        self.assertEqual(1, len(working_memories))
         self.assertGreater(working_memories[0][constants.START_TIME], 0)
         self.assertGreater(working_memories[0][constants.END_TIME], 0)
         self.assertGreater(working_memories[0][constants.LAST_RECALL_TIME], 0)
         self.bio_memory.new_working_memories(working_memories, new_memories)
-        self.assertEquals(1, len(working_memories))
+        self.assertEqual(1, len(working_memories))
         mem2 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY})
         mem3 = self.data_adaptor.add_memory({constants.VIRTUAL_MEMORY_TYPE: constants.INSTANT_MEMORY})
         new_memories2 = [mem2, mem3]
         self.bio_memory.new_working_memories(working_memories, new_memories2, 1)
-        self.assertEquals(2, len(working_memories))
+        self.assertEqual(2, len(working_memories))
 
     def test_associate_slice_empty(self):
         mem0 = self.data_adaptor.add_memory({constants.STATUS: constants.MATCHING, constants.END_TIME: 1})
@@ -220,7 +220,7 @@ class TestBioMemory(unittest.TestCase):
         wm = [imem1, smem1]
         self.bio_memory.working_memories = wm
         self.bio_memory.prepare_matching_virtual_memories()
-        self.assertEquals(4, len(self.bio_memory.working_memories))
+        self.assertEqual(4, len(self.bio_memory.working_memories))
 
     def test_check_matching_virtual_memories(self):
         new_time = time.time() + 10000
@@ -251,17 +251,17 @@ class TestBioMemory(unittest.TestCase):
         wm = [mem1, mem2, mem3, imem1, imem2, smem1, smem2, smem3]
         self.bio_memory.working_memories = wm
         self.bio_memory.check_matching_virtual_memories()
-        self.assertEquals(constants.MATCHED, imem1[constants.STATUS])
-        self.assertEquals(constants.MATCHING, imem2[constants.STATUS])
-        self.assertEquals(constants.MATCHING, smem1[constants.STATUS])
-        self.assertEquals(constants.EXPIRED, smem3[constants.STATUS])
-        self.assertEquals(1, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
+        self.assertEqual(constants.MATCHED, imem1[constants.STATUS])
+        self.assertEqual(constants.MATCHING, imem2[constants.STATUS])
+        self.assertEqual(constants.MATCHING, smem1[constants.STATUS])
+        self.assertEqual(constants.EXPIRED, smem3[constants.STATUS])
+        self.assertEqual(1, len(self.bio_memory.temp_memories[constants.INSTANT_MEMORY]))
         matched_memories = [mem for mem in wm if mem[constants.STATUS] is constants.MATCHED]
-        self.assertEquals(4, len(matched_memories))
+        self.assertEqual(4, len(matched_memories))
         matching_memories = [mem for mem in wm if mem[constants.STATUS] is constants.MATCHING]
-        self.assertEquals(3, len(matching_memories))
+        self.assertEqual(3, len(matching_memories))
         expired_memories = [mem for mem in wm if mem[constants.STATUS] is constants.EXPIRED]
-        self.assertEquals(1, len(expired_memories))
+        self.assertEqual(1, len(expired_memories))
 
     def test_cleanup_working_memories(self):
         new_time = time.time() + 10000
@@ -286,14 +286,14 @@ class TestBioMemory(unittest.TestCase):
         memories = [mem1, mem2, mem3, mem4]
         self.bio_memory.working_memories = memories
         self.bio_memory.cleanup_working_memories()
-        self.assertEquals(2, len(self.bio_memory.working_memories))
-        self.assertEquals(constants.INSTANT_MEMORY, self.bio_memory.working_memories[0][constants.VIRTUAL_MEMORY_TYPE])
-        self.assertEquals(constants.LONG_MEMORY, self.bio_memory.working_memories[1][constants.VIRTUAL_MEMORY_TYPE])
+        self.assertEqual(2, len(self.bio_memory.working_memories))
+        self.assertEqual(constants.INSTANT_MEMORY, self.bio_memory.working_memories[0][constants.VIRTUAL_MEMORY_TYPE])
+        self.assertEqual(constants.LONG_MEMORY, self.bio_memory.working_memories[1][constants.VIRTUAL_MEMORY_TYPE])
         self.bio_memory.THRESHOLD_OF_WORKING_MEMORIES = 4
         memories2 = [mem1, mem2, mem3, mem4]
         self.bio_memory.working_memories = memories2
         self.bio_memory.cleanup_working_memories()
-        self.assertEquals(3, len(self.bio_memory.working_memories))
+        self.assertEqual(3, len(self.bio_memory.working_memories))
 
     def test_verify_matching_physical_memories(self):
         fmem1 = self.data_adaptor.add_memory({constants.STATUS: constants.MATCHED})
@@ -310,7 +310,7 @@ class TestBioMemory(unittest.TestCase):
         self.bio_memory.matching_memories = slice_memories
         self.bio_memory.matching_child_memories = slice_memory_children
         self.bio_memory.verify_matching_physical_memories()
-        self.assertEquals(2, len(self.bio_memory.matched_memories))
+        self.assertEqual(2, len(self.bio_memory.matched_memories))
 
     def test_remove_continuous_duplicate_memory(self):
         mem1 = self.data_adaptor.add_memory()

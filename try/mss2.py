@@ -51,5 +51,5 @@ def screen_record_efficient():
     return fps
 
 
-print("PIL:", screen_record())
-print("MSS:", screen_record_efficient())
+print(("PIL:", screen_record()))
+print(("MSS:", screen_record_efficient()))

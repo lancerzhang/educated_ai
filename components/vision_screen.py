@@ -1,4 +1,4 @@
-from vision import Vision
+from .vision import Vision
 import logging
 import mss
 import numpy as np

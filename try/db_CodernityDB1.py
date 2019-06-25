@@ -25,18 +25,18 @@ def main():
     x_ind = WithXIndex(db.path, 'x')
     db.add_index(x_ind)
 
-    for x in xrange(10000):
+    for x in range(10000):
         db.insert(dict(x=x))
 
-    for y in xrange(10000):
+    for y in range(10000):
         db.insert(dict(y=y))
 
-    print db.get('x', 10, with_doc=True)
+    print(db.get('x', 10, with_doc=True))
 
     start = time.time()
     for x in range(0, 500):
         db.get('x', 10, with_doc=True)
-    print time.time() - start
+    print(time.time() - start)
 
 
 if __name__ == '__main__':

@@ -12,9 +12,9 @@ times = 100
 try:
     while times > 0:
         times = times - 1
-        print times
+        print(times)
         filter = np.random.choice([-1, 0, 1], (3, 3))
-        print filter
+        print(filter)
         cov = cv2.filter2D(img, -1, filter)
         cv2.imshow('image', cov)
         cv2.waitKey(1000)

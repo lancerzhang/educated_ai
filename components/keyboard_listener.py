@@ -1,5 +1,5 @@
 from pynput import keyboard
-import constants
+from . import constants
 import logging
 
 logger = logging.getLogger('InputListener')

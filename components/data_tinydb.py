@@ -1,4 +1,4 @@
-import constants
+from . import constants
 from tinydb import Query
 
 

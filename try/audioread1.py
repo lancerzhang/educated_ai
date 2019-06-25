@@ -11,16 +11,16 @@ duration = 17
 buf_size = 2048
 buf_time = float(buf_size) / RATE
 buf_no = int(duration / buf_time)
-print buf_no
+print(buf_no)
 f = audioread.audio_open('../video/1440.mp4')
-print(f.channels, f.samplerate, f.duration)
+print((f.channels, f.samplerate, f.duration))
 
 # for buf in f:
 bufs = f.read_data()
 while i < buf_no + 100:
     try:
-        print i
-        np_buffer = np.fromstring(bufs.next(), dtype=np.int16)
+        print(i)
+        np_buffer = np.fromstring(next(bufs), dtype=np.int16)
         normal_buffer = util.normalize_audio_data(np_buffer)
         frame_data = frame_data + normal_buffer.tolist()
         i = i + 1

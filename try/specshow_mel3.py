@@ -28,7 +28,7 @@ for row in idata:
         energy_feature_array = row * feature_array
         idata[i] = energy_feature_array
         # print i, ' ', energy_feature_array
-        print i
+        print(i)
     i = i + 1
 
 data = idata.transpose()

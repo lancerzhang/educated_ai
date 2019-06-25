@@ -38,7 +38,7 @@ def main():
     #     print i
     multi_records = db.get_many('lrc',  end=100, with_doc=True)
     for curr in multi_records:
-        print curr
+        print(curr)
 
 
 if __name__ == '__main__':

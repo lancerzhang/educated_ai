@@ -1,10 +1,10 @@
-import constants
+from . import constants
 import copy
 import logging
 import numpy as np
 import random
 import time
-import util
+from . import util
 
 logger = logging.getLogger('BioMemory')
 logger.setLevel(logging.INFO)
@@ -411,7 +411,7 @@ class BioMemory(object):
                     reproduce_log = 'recall memory:{0}, short id:{1},count:{2}'. \
                         format(pbm[constants.MID], self.data_adaptor.get_short_id(pbm[constants.MID]),
                                pbm[constants.RECALL_COUNT])
-                    print reproduce_log
+                    print(reproduce_log)
                     logger.info(reproduce_log)
                     self.data_adaptor.display_bm_tree_leaf(pbm[constants.MID])
         return match_count

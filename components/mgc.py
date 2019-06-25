@@ -1,4 +1,4 @@
-import constants
+from . import constants
 import numpy as np
 import time
 

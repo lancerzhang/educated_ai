@@ -28,7 +28,7 @@ try:
                         input=True,
                         frames_per_buffer=CHUNK)
     while True:
-        print 'start to listen'
+        print('start to listen')
         frame_count = 0
         frame_data = []
         seconds_per_buffer = float(CHUNK) / SAMPLE_RATE
@@ -66,7 +66,7 @@ try:
         mel_data = librosa.feature.melspectrogram(y=y, sr=SAMPLE_RATE, n_mels=128, fmax=8000)
         average_data = np.average(mel_data, axis=1)
         mel_energy = util.rms(average_data)
-        print 'mel_energy ', mel_energy
+        print('mel_energy ', mel_energy)
         plt.figure(figsize=(4, 4))
         librosa.display.specshow(librosa.power_to_db(mel_data, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
         plt.colorbar(format='%+2.0f dB')

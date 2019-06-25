@@ -42,7 +42,7 @@ wf.close()
 y, sr = librosa.load(WAVE_OUTPUT_FILENAME,sr=None)
 start=time.time()
 S = np.abs(librosa.stft(y))
-print 'stft used(ms):', (time.time()-start)*1000
+print('stft used(ms):', (time.time()-start)*1000)
 plt.figure(figsize=(10, 4))
 librosa.display.specshow(S, y_axis='hz', fmax=1000, x_axis='time')
 plt.colorbar()

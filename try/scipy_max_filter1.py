@@ -7,4 +7,4 @@ arr = [[3, 4, 5, 2, 3],
 
 out = arr * (arr == ndimage.maximum_filter(arr, footprint=np.ones((3, 3))))
 
-print out
+print(out)

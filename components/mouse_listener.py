@@ -1,5 +1,5 @@
 from pynput import mouse
-import constants
+from . import constants
 import logging
 
 logger = logging.getLogger('MouseListener')

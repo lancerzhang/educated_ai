@@ -41,9 +41,9 @@ wf.close()
 y, sr = librosa.load(WAVE_OUTPUT_FILENAME, sr=None)
 start = time.time()
 mfccs = librosa.feature.mfcc(y, sr=44100, n_mfcc=40)
-print 'mfcc used(ms):', (time.time()-start)*1000
+print('mfcc used(ms):', (time.time()-start)*1000)
 # mfccs = librosa.feature.mfcc(y, sr=44100)
-print mfccs
+print(mfccs)
 plt.figure(figsize=(10, 4))
 dsp.specshow(mfccs, x_axis='time')
 plt.colorbar()

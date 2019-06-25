@@ -1,4 +1,4 @@
-from vision import Vision
+from .vision import Vision
 import mss
 import cv2
 import logging

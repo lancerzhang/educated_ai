@@ -30,7 +30,7 @@ class TestVision(unittest.TestCase):
         kernel1 = '0,0,0,0,1,0,0,0,0'
         feature_data1 = self.vision.filter_feature(data, kernel1)
         self.assertIsNotNone(feature_data1)
-        self.assertEquals(3, len(feature_data1))
+        self.assertEqual(3, len(feature_data1))
 
     def test_filter_feature(self):
         img1_1 = cv2.imread('p1-1.jpg', 0)
@@ -83,7 +83,7 @@ class TestVision(unittest.TestCase):
         self.vision.update_memory_indexes('y', kernel2, 'id2')
         element = next((x for x in memory_indexes if x[constants.KERNEL] == kernel2 and x[constants.CHANNEL] == 'y'),
                        None)
-        self.assertEquals(2, len(element[constants.MEMORIES]))
+        self.assertEqual(2, len(element[constants.MEMORIES]))
 
     def test_search_memory(self):
         img1_1 = cv2.imread('p1-1.jpg', 0)
@@ -209,7 +209,7 @@ class TestVision(unittest.TestCase):
                                      self.vision.HEIGHT: focus_width}
         start = time.time()
         block = self.vision.find_most_variable_block_division(img2, 0, 0, width, height, focus_width, focus_width)
-        print 'test_find_most_variable_block_division used time:{0}'.format(time.time() - start)
+        print('test_find_most_variable_block_division used time:{0}'.format(time.time() - start))
         self.assertEqual(423, block[self.vision.START_X])
         self.assertEqual(212, block[self.vision.START_Y])
 

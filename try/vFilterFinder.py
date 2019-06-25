@@ -30,9 +30,9 @@ for p1 in range(0, 3):
                                         # fa = np.array_str(filter.flatten())
                                         filters.append(filter)
 
-print '#useful filters:', len(filters)
+print('#useful filters:', len(filters))
 time2 = time.clock()
-print 'use:', (time2 - time1)
+print('use:', (time2 - time1))
 
 idx = 0
 nFilters = np.array(filters)

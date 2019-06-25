@@ -99,11 +99,11 @@ def main():
 
     record = db.insert({'lrc': 1478892851.771, 'rwd': 0, 'cmy': [],  'pmy': [], 'mid': '773701af1bb745d4a21be7defbfc53f2', 'rcl': 1, 'str': 100, '_id': '773701af1bb745d4a21be7defbfc53f2'})
     record1 = db.get('id', record['_id'])
-    print record1
+    print(record1)
     record1.update({'lrc': 1478892851.771})
     db.update(record1)
     record2 = db.get('id', record['_id'])
-    print record2
+    print(record2)
     # for x in xrange(100):
     #     db.insert(dict(x=x, y=x + 100, z=x + 200, name='name' + str(x), city='city'))
 

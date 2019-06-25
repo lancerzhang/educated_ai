@@ -5,7 +5,7 @@ import numpy as np
 
 na = None
 for i in range(1, 70):
-    print i
+    print(i)
     fn = '../spec/{0}.npy'.format(i)
     nd = np.load(fn)
     if na is None:

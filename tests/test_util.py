@@ -117,7 +117,7 @@ class TestUtil(unittest.TestCase):
         result = [[1, 2, 0],
                   [3, 4, 0],
                   [0, 0, 0]]
-        self.assertEquals(result, standard.tolist())
+        self.assertEqual(result, standard.tolist())
 
     def test_standardize_feature2(self):
         matrix = np.array([[0, 0, 0],
@@ -127,7 +127,7 @@ class TestUtil(unittest.TestCase):
         result = [[4, 0, 0],
                   [0, 0, 0],
                   [0, 0, 0]]
-        self.assertEquals(result, standard.tolist())
+        self.assertEqual(result, standard.tolist())
 
     def test_standardize_feature3(self):
         matrix = np.array([[0, 1, 2],
@@ -137,7 +137,7 @@ class TestUtil(unittest.TestCase):
         result = [[1, 2, 0],
                   [0, 0, 0],
                   [3, 4, 0]]
-        self.assertEquals(result, standard.tolist())
+        self.assertEqual(result, standard.tolist())
 
     def test_standardize_feature3(self):
         matrix = np.array([[0, 1, 2],
@@ -147,17 +147,17 @@ class TestUtil(unittest.TestCase):
         result = [[1, 2, 0],
                   [3, 4, 0],
                   [0, 0, 0]]
-        self.assertEquals(result, standard.tolist())
+        self.assertEqual(result, standard.tolist())
 
     def test_update_rank_list(self):
         SPEED = 'spd'
         rank_list = np.array(
             [{SPEED: 1, util.USED_COUNT: 1}, {SPEED: 2, util.USED_COUNT: 2}, {SPEED: 3, util.USED_COUNT: 3}])
         rank_list = util.update_rank_list(SPEED, 3, rank_list)
-        self.assertEquals(3, len(rank_list))
-        self.assertEquals(4, rank_list[0][util.USED_COUNT])
+        self.assertEqual(3, len(rank_list))
+        self.assertEqual(4, rank_list[0][util.USED_COUNT])
         rank_list = util.update_rank_list(SPEED, 4, rank_list)
-        self.assertEquals(4, len(rank_list))
+        self.assertEqual(4, len(rank_list))
         rank_list2 = np.array([])
         kernel0 = '1, -1, 1,-1, -1, 0, 1, 0, 1'
         rank_list2 = util.update_rank_list('knl', kernel0, rank_list2)
@@ -165,7 +165,7 @@ class TestUtil(unittest.TestCase):
         rank_list2 = util.update_rank_list('knl', kernel1, rank_list2)
         kernel2 = '-1, -1, 1,-1, -1, 0, 1, 0, 1'
         rank_list2 = util.update_rank_list('knl', kernel2, rank_list2)
-        self.assertEquals(2, rank_list2[0][util.USED_COUNT])
+        self.assertEqual(2, rank_list2[0][util.USED_COUNT])
 
     def test_get_high_rank(self):
         SPEED = 'spd'
@@ -177,7 +177,7 @@ class TestUtil(unittest.TestCase):
         rank_list = util.update_rank_list(SPEED, 3, rank_list)
         sp2 = util.get_high_rank(rank_list)
         # sometimes it will fail
-        print "Don't be panic, this case has 10% chance of failure!"
+        print("Don't be panic, this case has 10% chance of failure!")
         self.assertGreater(sp2[util.USED_COUNT], 0)
 
     def test_matrix_to_string(self):

@@ -1,11 +1,11 @@
-import thread, time
+import _thread, time
 from components import sound
 import librosa
 import matplotlib.pyplot as plt
 import librosa.display as dsp
 import numpy as np
 
-thread.start_new_thread(sound.receive, ())
+_thread.start_new_thread(sound.receive, ())
 
 try:
     while 1:
@@ -17,7 +17,7 @@ except KeyboardInterrupt:
     sound.start_thread = False
     print("quiting...")
 
-print 'got phase ',len(sound.phases)
+print('got phase ',len(sound.phases))
 data = np.concatenate(sound.phases)
 mel_data = librosa.feature.melspectrogram(y=data, sr=44100, n_mels=128, fmax=8000)
 plt.figure(figsize=(6, 4))

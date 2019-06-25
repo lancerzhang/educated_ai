@@ -13,10 +13,10 @@ table.insert({'strength': 99, 'type': 'move_vision', 'recall': 1, 'reward': 1, '
 table.insert({'strength': 99, 'type': 'speak', 'recall': 1, 'reward': 1, 'lastRecall': 20180106, 'word': 'yes'})
 
 Memory = Query()
-print table.search(Memory.strength == 100)
-print table.search(Memory.strength == 100 and Memory.type == 'vision')
+print(table.search(Memory.strength == 100))
+print(table.search(Memory.strength == 100 and Memory.type == 'vision'))
 docs = table.search(Memory.strength == 100 and Memory.type == 'vision')
-print docId1, ' ', docId2
-print docs[0].doc_id
+print(docId1, ' ', docId2)
+print(docs[0].doc_id)
 doc = table.get(Memory.strength == 100 and Memory.type == 'vision')
-print doc.doc_id
+print(doc.doc_id)

@@ -16,7 +16,7 @@ import getopt
 import logging
 import numpy as np
 import sys
-import thread
+import _thread
 import time
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
@@ -54,11 +54,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "hi:v:", ["hibernate=", "video="])
     except getopt.GetoptError:
-        print '-i <hibernate> -v <video>'
+        print('-i <hibernate> -v <video>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print '-i <hibernate> -v <video>'
+            print('-i <hibernate> -v <video>')
             sys.exit()
         elif opt in ("-i", "--hibernate"):
             is_hibernate = arg
@@ -78,8 +78,8 @@ def main(argv):
         reward_controller = Reward(bm)
         mouse_listener = MouseListener()
         keyboard_listener = KeyboardListener()
-        thread.start_new_thread(mouse_listener.start, ())
-        thread.start_new_thread(keyboard_listener.start, ())
+        _thread.start_new_thread(mouse_listener.start, ())
+        _thread.start_new_thread(keyboard_listener.start, ())
         status_controller = Status(bm)
         if video_file:
             vision_controller = VideoFileVision(bm, video_file, status_controller)
@@ -87,12 +87,12 @@ def main(argv):
         else:
             vision_controller = ScreenVision(bm)
             sound_controller = MicrophoneSound(bm)
-            thread.start_new_thread(sound_controller.receive, ())
+            _thread.start_new_thread(sound_controller.receive, ())
         action_controller = Action(bm)
         frames = 0
         last_process_time = 0
         logging.info('initialized.')
-        print 'initialized.'
+        print('initialized.')
         while 1:
             start = time.time()
             button = mouse_listener.get_button()
@@ -122,7 +122,6 @@ def main(argv):
 
             process_duration = util.time_diff(start)
             gc.process(process_duration)
-
             all_duration = util.time_diff(start)
             logging.info('frame used time {0} '.format(all_duration))
 

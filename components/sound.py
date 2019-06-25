@@ -1,5 +1,5 @@
 import collections
-import constants
+from . import constants
 import copy
 import cv2
 import librosa
@@ -9,7 +9,7 @@ import numpy as np
 import random
 import skimage.measure
 import time
-import util
+from . import util
 
 logger = logging.getLogger('Sound')
 logger.setLevel(logging.INFO)
@@ -117,7 +117,7 @@ class Sound(object):
             difference = util.np_array_diff(new_feature, feature)
             if difference < self.FEATURE_SIMILARITY_THRESHOLD:
                 feature_data[constants.SIMILAR] = True
-                avg_feature = (feature + new_feature) / 2
+                avg_feature = (feature + new_feature) // 2
                 feature_data[constants.FEATURE] = avg_feature
             else:
                 feature_data[constants.FEATURE] = new_feature
@@ -200,7 +200,7 @@ class Sound(object):
         else:
             previous_range_energies = get_range_energy(self.previous_energies, range_width)
             this_range_energy = get_range_energy(this_energies, range_width)
-            diff_arr = abs(previous_range_energies - this_range_energy) / this_range_energy
+            diff_arr = abs(previous_range_energies - this_range_energy) // this_range_energy
             max_index = np.argmax(diff_arr)
             max_var = diff_arr(max_index)
             new_range.update({self.RANGE: [max_index, max_index + range_width]})
@@ -217,7 +217,7 @@ class Sound(object):
             self.previous_phase = phase
             return
         data = np.append(self.previous_phase, phase)
-        map_width = (len(data) / self.HOP_LENGTH) + 1
+        map_width = (len(data) // self.HOP_LENGTH) + 1
         if map_width >= self.FEATURE_INPUT_SIZE:
             map_height = map_width
         else:

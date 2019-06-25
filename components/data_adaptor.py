@@ -1,10 +1,10 @@
-from bio_memory import BioMemory
-import constants
+from .bio_memory import BioMemory
+from . import constants
 import logging
 import os
 import numpy as np
 import time
-import util
+from . import util
 import uuid
 
 logger = logging.getLogger('DataAdaptor')
@@ -308,19 +308,19 @@ class DataAdaptor:
 
     def display_bm_tree_leaf(self, mid, level=0, max_level=2):
         if level >= max_level:
-            print 'hit max level, return'
+            print('hit max level, return')
             return
         bm = self.get_memory(mid)
         level_line = ''
         for i in range(0, level):
             level_line = '---{0}'.format(level_line)
         if bm is None:
-            print 'None'
+            print('None')
         else:
             leaf_debug = 'l{0}:{1} id:{2},sid:{3},vmt:{4},pmt:{5},count:{6}'. \
                 format(level, level_line, mid, self.get_short_id(mid), bm.get(constants.VIRTUAL_MEMORY_TYPE),
                        bm.get(constants.PHYSICAL_MEMORY_TYPE), bm.get(constants.RECALL_COUNT))
-            print leaf_debug
+            print(leaf_debug)
             logger.info(leaf_debug)
             cms = bm[constants.CHILD_MEM]
             clevel = level + 1

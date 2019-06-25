@@ -1,12 +1,13 @@
-import constants
+from . import constants
 import logging
 import os
 import sqlite3
-import util
+from . import util
 
 
 class DataSqlite3:
     con = None
+    CONN_STR = ':memory:'
     DUMP_FILE = ''
     TABLE_BM = 'bm'
     TABLE_VISION_USED_KERNEL = 'vuk'
@@ -83,12 +84,12 @@ class DataSqlite3:
         if os.path.exists(path):
             self.import_from_script(path)
         else:
-            self.con = sqlite3.connect(':memory:')
+            self.con = sqlite3.connect(self.CONN_STR)
             self.create_tables()
 
     def insert(self, bm):
-        columns = ', '.join(bm.keys())
-        placeholders = ':' + ', :'.join(bm.keys())
+        columns = ', '.join(list(bm.keys()))
+        placeholders = ':' + ', :'.join(list(bm.keys()))
         query = 'INSERT INTO %s (%s) VALUES (%s)' % (self.TABLE_BM, columns, placeholders)
         prepare_data(bm)
         c = self.con.cursor()
@@ -382,7 +383,7 @@ class DataSqlite3:
 
     def import_from_script(self, path):
         qry = open(path, 'r').read()
-        self.con = sqlite3.connect(':memory:')
+        self.con = sqlite3.connect(self.CONN_STR)
         c = self.con.cursor()
         c.executescript(qry)
         self.con.commit()

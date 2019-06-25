@@ -1,9 +1,9 @@
-from sound import Sound
+from .sound import Sound
 import audioread
 import math
 import logging
 import numpy as np
-import util
+from . import util
 
 
 class VideoFileSound(Sound):
@@ -38,7 +38,7 @@ class VideoFileSound(Sound):
         max_buf = int(video_duration / buffer_duration)
         while self.buf_seq <= max_buf:
             try:
-                np_buffer = np.fromstring(self.audio_buffers.next(), dtype=np.int16)
+                np_buffer = np.fromstring(next(self.audio_buffers), dtype=np.int16)
                 normal_buffer = util.normalize_audio_data(np_buffer)
                 self.frame_data = self.frame_data + normal_buffer.tolist()
                 self.buf_seq += 1

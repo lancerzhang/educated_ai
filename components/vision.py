@@ -1,5 +1,5 @@
 from pynput.mouse import Controller
-import constants
+from . import constants
 import copy
 import cv2
 import logging
@@ -8,7 +8,7 @@ import numpy as np
 import random
 import skimage.measure
 import time
-import util
+from . import util
 
 logger = logging.getLogger('Vision')
 logger.setLevel(logging.INFO)
@@ -67,10 +67,10 @@ class Vision(object):
     def __init__(self, bm):
         self.mouse = Controller()
         self.bio_memory = bm
-        center_x = self.SCREEN_WIDTH / 2
-        center_y = self.SCREEN_HEIGHT / 2
+        center_x = self.SCREEN_WIDTH // 2
+        center_y = self.SCREEN_HEIGHT // 2
         width = self.ROI_ARR[self.roi_index]
-        half_width = width / 2
+        half_width = width // 2
         self.current_block = {self.START_X: center_x - half_width, self.START_Y: center_y - half_width,
                               self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
 
@@ -79,8 +79,8 @@ class Vision(object):
     def process(self, status_controller, key):
         logger.info('process')
         start = time.time()
-        old_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
-        old_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
+        old_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] // 2
+        old_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] // 2
         if self.current_action[self.STATUS] == self.IN_PROGRESS:
             self.calculate_move_action(self.current_action)
 
@@ -116,8 +116,8 @@ class Vision(object):
 
         self.previous_full_image = this_full_image
 
-        new_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] / 2
-        new_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] / 2
+        new_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] // 2
+        new_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] // 2
         if new_focus_x == old_focus_x and new_focus_y == old_focus_y:
             focus = None
         else:
@@ -189,7 +189,7 @@ class Vision(object):
             difference = util.np_array_diff(new_feature, feature)
             if difference < self.FEATURE_SIMILARITY_THRESHOLD:
                 feature_data[constants.SIMILAR] = True
-                avg_feature = (feature + new_feature) / 2
+                avg_feature = (feature + new_feature) // 2
                 feature_data[constants.FEATURE] = avg_feature
             else:
                 feature_data[constants.FEATURE] = new_feature
@@ -273,8 +273,8 @@ class Vision(object):
             return None
         else:
             # logger.debug('compare channel img {0}'.format((self.previous_full_image == this_full_image).all()))
-            blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
-            blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
+            blocks_x = self.SCREEN_WIDTH // self.current_block[self.WIDTH]
+            blocks_y = self.SCREEN_HEIGHT // self.current_block[self.HEIGHT]
             block_width = self.current_block[self.WIDTH]
             block_height = self.current_block[self.HEIGHT]
             # this_cells_histogram = self.calculate_cells_histogram(this_full_image)
@@ -312,14 +312,14 @@ class Vision(object):
         # start = time.time()
         new_block = {}
         if self.previous_full_image is None:
-            self.previous_histogram1 = self.calculate_blocks_histogram(this_full_image, 2, 2, width / 2, height / 2)
+            self.previous_histogram1 = self.calculate_blocks_histogram(this_full_image, 2, 2, width // 2, height // 2)
             return None
         this_valid_region = this_full_image[start_y:start_y + height, start_x:start_x + width]
         previous_valid_region = self.previous_full_image[start_y:start_y + height, start_x:start_x + width]
         blocks_x = 2
         blocks_y = 2
-        block_width = width / blocks_x
-        block_height = height / blocks_y
+        block_width = width // blocks_x
+        block_height = height // blocks_y
         this_block_histogram = self.calculate_blocks_histogram(this_valid_region, blocks_x, blocks_y, block_width,
                                                                block_height)
         if width == self.SCREEN_WIDTH:
@@ -344,8 +344,8 @@ class Vision(object):
         new_block.update({'v': max_var})
         # print 'find_most_variable_block_division used time:{0}'.format(time.time() - start)
         if width > focus_width:
-            return self.find_most_variable_block_division(this_full_image, valid_start_x, valid_start_y, width / 2,
-                                                          height / 2, focus_width, focus_height)
+            return self.find_most_variable_block_division(this_full_image, valid_start_x, valid_start_y, width // 2,
+                                                          height // 2, focus_width, focus_height)
         else:
             return new_block
 
@@ -676,8 +676,8 @@ class Vision(object):
         height = self.ROI_ARR[0]
         # b, g, r = cv2.split(full_image)
         gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
-        cells_x = self.SCREEN_WIDTH / width
-        cells_y = self.SCREEN_HEIGHT / height
+        cells_x = self.SCREEN_WIDTH // width
+        cells_y = self.SCREEN_HEIGHT // height
         for j in range(0, cells_y):
             for i in range(0, cells_x):
                 # ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
@@ -693,9 +693,9 @@ class Vision(object):
     # deprecated, low performance
     def sum_blocks_histogram(self, cells_histogram):
         blocks_histogram = []
-        times = self.current_block[self.WIDTH] / self.ROI_ARR[0]
-        blocks_x = self.SCREEN_WIDTH / self.current_block[self.WIDTH]
-        blocks_y = self.SCREEN_HEIGHT / self.current_block[self.HEIGHT]
+        times = self.current_block[self.WIDTH] // self.ROI_ARR[0]
+        blocks_x = self.SCREEN_WIDTH // self.current_block[self.WIDTH]
+        blocks_y = self.SCREEN_HEIGHT // self.current_block[self.HEIGHT]
         for j in range(0, blocks_y):
             for i in range(0, blocks_x):
                 hist = None
@@ -765,8 +765,8 @@ class Vision(object):
         new_block = {}
         mouse_x = int(self.mouse.position[0])
         mouse_y = int(self.mouse.position[1])
-        new_start_x = mouse_x - self.current_block[self.WIDTH] / 2
-        new_start_y = mouse_y - self.current_block[self.HEIGHT] / 2
+        new_start_x = mouse_x - self.current_block[self.WIDTH] // 2
+        new_start_y = mouse_y - self.current_block[self.HEIGHT] // 2
         new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
         new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
         logger.debug('current block is {0}'.format(self.current_block))

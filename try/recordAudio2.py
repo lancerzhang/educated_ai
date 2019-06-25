@@ -26,7 +26,7 @@ try:
                         input=True,
                         frames_per_buffer=CHUNK)
     while True:
-        print 'start to listen'
+        print('start to listen')
         frame_count = 0
         frame_data = []
         seconds_per_buffer = float(CHUNK) / SAMPLE_RATE

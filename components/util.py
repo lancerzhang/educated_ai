@@ -1,5 +1,6 @@
 import time, numpy, cv2, random
 import numpy as np
+from functools import reduce
 
 USED_COUNT = 'uct'
 
@@ -145,7 +146,7 @@ def image_hash(im, size):
     gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
     data = gray.flatten().tolist()
     avg_value = reduce(lambda x, y: x + y, data) / (size * size)
-    return reduce(lambda x, (y, z): x | (z << y), enumerate(map(lambda i: 0 if i < avg_value else 1, data)), 0)
+    return reduce(lambda x, a: x | (a[1] << a[0]), enumerate([0 if i < avg_value else 1 for i in data]), 0)
 
 
 def list_avg(arr):
@@ -191,7 +192,7 @@ def np_array_all_same(list1):
 
 def np_array_group_by_count(list1):
     unique, counts = numpy.unique(list1, return_counts=True)
-    return dict(zip(unique, counts))
+    return dict(list(zip(unique, counts)))
 
 
 def get_high_rank(rank_list):

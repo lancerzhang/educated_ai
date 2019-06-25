@@ -18,9 +18,9 @@ for p1 in range(1,3):
                                     arr2= util.delete_empty_surround(filter)
                                     arr1=arr2.flatten()
                                     str=np.array_str(arr1)
-                                    if not dict.has_key(str):
+                                    if str not in dict:
                                         dict.update({str:0})
                                         filters.append(arr2)
-                                        print arr2
+                                        print(arr2)
 
-print len(filters)
+print(len(filters))

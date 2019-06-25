@@ -34,21 +34,21 @@ def list_physical_memories():
     all_memories = data_service.get_all_memories()
     for mem in all_memories:
         if constants.PHYSICAL_MEMORY_TYPE in mem:
-            print mem
+            print(mem)
 
 
 def print_used_data():
     # print 'used vision kernels is {0}'.format(np.load('../data/vuk.npy'))
     # print 'used vision speed is {0}'.format(np.load('../data/vus.npy'))
     # print 'used vision degrees is {0}'.format(np.load('../data/vud.npy'))
-    print 'used sound kernels is {0}'.format(np.load('../data/suk.npy'))
+    print('used sound kernels is {0}'.format(np.load('../data/suk.npy')))
 
 
 def load_short_id():
-    print np.load('../data/sid.npy')
+    print(np.load('../data/sid.npy'))
 
 
-print count_memories()
+print(count_memories())
 
 field1 = constants.RECALL_COUNT
 key1 = constants.PHYSICAL_MEMORY_TYPE
@@ -59,15 +59,15 @@ value1 = constants.SOUND_FEATURE
 # value1 = None
 # field = constants.REWARD
 memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
-print [x[field1] for x in memories]
+print([x[field1] for x in memories])
 # #
 memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
 # print memories
-print [x[field1] for x in memories]
+print([x[field1] for x in memories])
 # #
 memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 50)
 # print memories
-print [x[field1] for x in memories]
+print([x[field1] for x in memories])
 
 # field = constants.CHILD_MEM
 # memories = list_top_sub_memories(field, 20)
