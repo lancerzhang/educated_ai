@@ -6,12 +6,12 @@ import numpy as np
 logger = logging.getLogger('status')
 logger.setLevel(logging.INFO)
 
-WORKLOAD_DATA = 'duration_data'
-REWARD_DATA = 'reward_data'
-SATISFIED_REWARD = 45
-
 
 class Status(object):
+    WORKLOAD_DATA = 'duration_data'
+    REWARD_DATA = 'reward_data'
+    AVG = 'average'
+    SATISFIED_REWARD = 45
 
     def __init__(self, bm):
         self.bio_memory = bm
@@ -28,29 +28,32 @@ class Status(object):
         # satisfied reward in 5 seconds
         rewards = [0] * 2 * pps
         all_status.update(
-            {WORKLOAD_DATA: {constants.SHORT_DURATION: short_duration, constants.MEDIUM_DURATION: middle_duration,
-                             constants.LONG_DURATION: long_duration}})
+            {self.WORKLOAD_DATA: {constants.SHORT_DURATION: short_duration, constants.MEDIUM_DURATION: middle_duration,
+                                  constants.LONG_DURATION: long_duration}})
         all_status.update({constants.BUSY: {constants.SHORT_DURATION: False, constants.MEDIUM_DURATION: False,
                                             constants.LONG_DURATION: False}})
-        all_status.update({REWARD_DATA: rewards})
+        all_status.update(
+            {self.AVG: {constants.SHORT_DURATION: 0.1, constants.MEDIUM_DURATION: 0.1, constants.LONG_DURATION: 0.1}})
+        all_status.update({self.REWARD_DATA: rewards})
         all_status.update({constants.REWARD: False})
         self.status = all_status
 
     def calculate_workload(self, dps, frames, flag):
-        avg_workload = util.list_avg(self.status[WORKLOAD_DATA][flag])
-        # logger.debug(' {0} status list is {1}'.format(flag, status[WORKLOAD_DATA][flag]))
+        avg_workload = util.list_avg(self.status[self.WORKLOAD_DATA][flag])
+        self.status[self.AVG][flag] = avg_workload
+        # logger.debug(' {0} status list is {1}'.format(flag, status[self.WORKLOAD_DATA][flag]))
         # logger.debug('{0} avg_workload is {1}'.format(flag, avg_workload))
-        if frames > len(self.status[WORKLOAD_DATA][flag]) and avg_workload > dps:
+        if frames > len(self.status[self.WORKLOAD_DATA][flag]) and avg_workload > dps:
             self.status[constants.BUSY].update({flag: True})
             # logger.debug('{0} status is busy.'.format(flag))
         else:
             self.status[constants.BUSY].update({flag: False})
 
     def calculate_reward(self, frames):
-        if frames > len(self.status[REWARD_DATA]):
-            max_reward = np.max(np.array(self.status[REWARD_DATA]))
+        if frames > len(self.status[self.REWARD_DATA]):
+            max_reward = np.max(np.array(self.status[self.REWARD_DATA]))
             logger.debug('max reward is {0} '.format(max_reward))
-            if max_reward > SATISFIED_REWARD:
+            if max_reward > self.SATISFIED_REWARD:
                 self.status[constants.REWARD] = True
                 logging.debug('reward is true.')
             else:
@@ -71,15 +74,15 @@ class Status(object):
         return max_reward
 
     def update_status(self, processing_time):
-        self.status[WORKLOAD_DATA][constants.SHORT_DURATION].pop(0)
-        self.status[WORKLOAD_DATA][constants.SHORT_DURATION].append(processing_time)
-        self.status[WORKLOAD_DATA][constants.MEDIUM_DURATION].pop(0)
-        self.status[WORKLOAD_DATA][constants.MEDIUM_DURATION].append(processing_time)
-        self.status[WORKLOAD_DATA][constants.LONG_DURATION].pop(0)
-        self.status[WORKLOAD_DATA][constants.LONG_DURATION].append(processing_time)
+        self.status[self.WORKLOAD_DATA][constants.SHORT_DURATION].pop(0)
+        self.status[self.WORKLOAD_DATA][constants.SHORT_DURATION].append(processing_time)
+        self.status[self.WORKLOAD_DATA][constants.MEDIUM_DURATION].pop(0)
+        self.status[self.WORKLOAD_DATA][constants.MEDIUM_DURATION].append(processing_time)
+        self.status[self.WORKLOAD_DATA][constants.LONG_DURATION].pop(0)
+        self.status[self.WORKLOAD_DATA][constants.LONG_DURATION].append(processing_time)
         max_reward = self.find_max_reward()
-        self.status[REWARD_DATA].pop(0)
-        self.status[REWARD_DATA].append(max_reward)
+        self.status[self.REWARD_DATA].pop(0)
+        self.status[self.REWARD_DATA].append(max_reward)
         self.working_memories_statistics()
 
     def working_memories_statistics(self):

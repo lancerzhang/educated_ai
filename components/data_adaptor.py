@@ -47,51 +47,43 @@ class DataAdaptor:
     def update_memory(self, content, mid):
         return self.db.update_memory(content, mid)
 
+    def update_memories(self, contents):
+        logger.debug('update_memories')
+        if len(contents) == 0:
+            return
+        self.db.update_memories(contents)
+
     def delete_memory(self, mid):
         start = time.time()
         self.db.delete_memory(mid)
         logger.debug('delete_memory used {0}'.format(time.time() - start))
 
     def delete_memories(self, mids):
+        logger.debug('delete_memories')
+        if not mids:
+            return
+        if len(mids) == 0:
+            return
         start = time.time()
         self.db.delete_memories(mids)
         logger.debug('delete_memories used {0}'.format(time.time() - start))
 
-    def refresh_memories(self, memories, recall=False):
+    def search_invalid_memories(self, memories):
         start = time.time()
-        live_memories = []
         if memories is None or len(memories) == 0:
             return None
-        to_deleted_memories = []
+        to_be_deleted_memories = []
         for mem in memories:
-            self.bio_memory.refresh(mem, recall, True)
+            self.bio_memory.refresh(mem, False, True)
             if mem[constants.STRENGTH] == -1:
-                to_deleted_memories.append(mem[constants.MID])
-            else:
-                live_memories.append(mem)
-        if len(to_deleted_memories) > 0:
-            self.db.delete_memories(to_deleted_memories)
+                to_be_deleted_memories.append(mem[constants.MID])
         logger.debug('refresh_memories used {0}'.format(time.time() - start))
-        return live_memories
+        return to_be_deleted_memories
 
-    def cleanup_fields(self):
-        self.cleanup_field(constants.PARENT_MEM, 'full')
-
-    def cleanup_field(self, field, clean_type):
+    def search_invalid_fields(self, memories, field):
         start = time.time()
-        logger.info('start to cleanup_fields {0} memory'.format(clean_type))
-        if clean_type == constants.EDEN:
-            records = self.db.get_eden_memories()
-        elif clean_type == constants.YOUNG:
-            records = self.db.get_young_memories()
-        elif clean_type == constants.OLD:
-            records = self.db.get_old_memories()
-        else:
-            records = self.db.get_all()
-        time2 = time.time()
-        logger.debug('get {0} memories used time {1}'.format(len(records), (time2 - start)))
-        to_update_memories = []
-        for mem in records:
+        to_be_update_memories = []
+        for mem in memories:
             original_list = mem[field]
             # fine unique value from list
             distinct_list = [x for x in set(original_list)]
@@ -101,66 +93,9 @@ class DataAdaptor:
                 if sub_mem is not None:
                     new_list.append(element)
             if len(new_list) != len(original_list):
-                logger.debug('clean up from {0} to {1}'.format(len(original_list), len(new_list)))
-                to_update_memories.append({field: new_list, constants.MID: mem[constants.MID]})
-        time3 = time.time()
-        logger.debug('find_updates used time {0}'.format(time3 - time2))
-        if len(to_update_memories) > 0:
-            self.db.update_memories(to_update_memories)
-        logger.debug('update_memories used time {0}'.format(time.time() - time3))
-        logger.info('cleanup_field used time {0}'.format(time.time() - start))
-
-    # def schedule_housekeep(self):
-    #     self.seq = self.seq + 1
-    #     while self.start_thread:
-    #         self.full_housekeep()
-    #         time.sleep(30)
-
-    def gc(self, gc_type):
-        start = time.time()
-        logger.info('start to gc {0} memory'.format(gc_type))
-        if gc_type == constants.EDEN:
-            records = self.db.get_eden_memories()
-        elif gc_type == constants.YOUNG:
-            records = self.db.get_young_memories()
-        elif gc_type == constants.OLD:
-            records = self.db.get_old_memories()
-        else:
-            records = self.db.get_all()
-        logger.info('memories to be refresh:{0}'.format(len(records)))
-        lives = self.refresh_memories(records)
-        if records is None:
-            cleaned = 0
-        elif lives is None:
-            cleaned = len(records)
-        else:
-            cleaned = len(records) - len(lives)
-        logger.info('memories were deleted:{0}'.format(cleaned))
-        logger.info('{0} gc used time {1}'.format(gc_type, time.time() - start))
-        if gc_type == constants.YOUNG or gc_type == constants.OLD:
-            self.cleanup_field(constants.PARENT_MEM, gc_type)
-        return cleaned
-
-    def full_gc(self):
-        self.gc('full')
-        # self.db.persist()
-
-    def partial_gc(self):
-        self.seq = self.seq + 1
-        start = time.time()
-        logger.debug('start to partial housekeep memory')
-        records = self.db.search_housekeep(self.seq % 100)
-        logger.debug('memories to be refresh:{0}'.format(len(records)))
-        lives = self.refresh_memories(records)
-        if records is None:
-            cleaned = 0
-        elif lives is None:
-            cleaned = len(records)
-        else:
-            cleaned = len(records) - len(lives)
-        logger.debug('memories were deleted:{0}'.format(cleaned))
-        logger.debug('partial_housekeep used time:{0}'.format(time.time() - start))
-        return cleaned
+                to_be_update_memories.append({field: new_list, constants.MID: mem[constants.MID]})
+        logger.debug('search_outdated_memory_by_field used {0}'.format(time.time() - start))
+        return to_be_update_memories
 
     # private method
     def _add_record(self, content):
@@ -277,6 +212,10 @@ class DataAdaptor:
         record = self.db.get_old_memories()
         return record
 
+    def get_memories_by_id_mod(self, mod):
+        records = self.db.get_memories_by_id_mod(mod)
+        return records
+
     def find_duplication(self, field):
         memories = self.get_all_memories()
         count = 0
@@ -301,10 +240,17 @@ class DataAdaptor:
         if len(to_update_memories) > 0:
             self.db.update_memories(to_update_memories)
 
-    def keep_fit(self):
-        self.db.persist()
+    def clean_vision_used_kernel(self):
         self.db.clean_vision_used_kernel()
+
+    def clean_sound_used_kernel(self):
         self.db.clean_sound_used_kernel()
+
+    def clean_short_id(self):
+        self.db.clean_short_id()
+
+    def persist(self):
+        self.db.persist()
 
     def display_bm_tree_leaf(self, mid, level=0, max_level=2):
         if level >= max_level:
@@ -318,7 +264,7 @@ class DataAdaptor:
             print('None')
         else:
             leaf_debug = 'l{0}:{1} id:{2},sid:{3},vmt:{4},pmt:{5},count:{6}'. \
-                format(level, level_line, mid, self.get_short_id(mid), bm.get(constants.VIRTUAL_MEMORY_TYPE),
+                format(level, level_line, mid, bm.get(constants.ID), bm.get(constants.VIRTUAL_MEMORY_TYPE),
                        bm.get(constants.PHYSICAL_MEMORY_TYPE), bm.get(constants.RECALL_COUNT))
             print(leaf_debug)
             logger.info(leaf_debug)
@@ -337,6 +283,3 @@ class DataAdaptor:
                     roots.append(bm[constants.MID])
             for pmid in pms:
                 self.find_bm_tree_roots(pmid, roots)
-
-    def get_short_id(self, long_id):
-        return self.db.get_short_id(long_id)

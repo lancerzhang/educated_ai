@@ -1,51 +1,102 @@
 from . import constants
-import numpy as np
+from .data_adaptor import DataAdaptor
+from .data_sqlite3 import DataSqlite3
+from enum import Enum
+import copy
+import logging
 import time
+
+logger = logging.getLogger('mgc')
+logger.setLevel(logging.INFO)
+
+
+class Job:
+    job_type = None
+    job_serial = 0
+    job_content = None
+
+    def __init__(self, job_type, job_serial):
+        self.job_type = job_type
+        self.job_serial = job_serial
+
+
+class JobType(Enum):
+    UPDATE_PM = 0
+    UPDATE_CM = 1
+    DELETE_BM = 2
+    DELETE_VISION = 3
+    DELETE_SOUND = 4
+    DELETE_ID = 5
+    PERSIST = 6
 
 
 class GC:
-    KEEP_FIT_DURATION = 30
-    PPS = constants.process_per_second
-    DPS = 1.0 / constants.process_per_second
-    cycle_names = [constants.EDEN, constants.YOUNG, constants.OLD]
-    cycle_frames = np.array([0, 0, 0])
-    cycle_gc = [False, False, False]
-    cycle_threshold1 = [PPS * 5, PPS * 60 * 9, PPS * 60 * 19]
-    cycle_threshold2 = [PPS * 8, PPS * 60 * 10, PPS * 60 * 21]
+    running = True
+    INTERVAL = 1
+    jobs = []
+    current_index = 0
+    current_job = None
 
-    def __init__(self, da):
-        self.data = da
-        da.full_gc()
-        da.cleanup_fields()
-        da.keep_fit()
-        self.last_keep_fit_time = time.time()
+    def init_jobs(self):
+        for i in range(10):
+            self.jobs.append(Job(JobType.UPDATE_PM, i))
+        for i in range(10):
+            self.jobs.append(Job(JobType.UPDATE_CM, i))
+        for i in range(10):
+            self.jobs.append(Job(JobType.DELETE_BM, i))
+        self.jobs.append(Job(JobType.DELETE_VISION, 0))
+        self.jobs.append(Job(JobType.DELETE_SOUND, 0))
+        self.jobs.append(Job(JobType.DELETE_ID, 0))
+        self.jobs.append(Job(JobType.PERSIST, 0))
 
-    # as local database usually is single thread, we need carefully to handle it
-    def process(self, duration):
-        if time.time() - self.last_keep_fit_time > self.KEEP_FIT_DURATION:
-            self.data.keep_fit()
-            self.last_keep_fit_time = time.time()
+    def __init__(self):
+        self.data = DataAdaptor(DataSqlite3('data/dump.sql', init=False))
+        self.init_jobs()
+
+    def prepare(self):
+        while self.running:
+            time.sleep(self.INTERVAL)
+            job = copy.copy(self.jobs[self.current_index])
+            logger.debug('prepare job is %s, %s }' % (job.job_type, job.job_serial))
+            if job.job_type == JobType.UPDATE_PM:
+                selected_memories = self.data.get_memories_by_id_mod(job.job_serial)
+                # logger.debug('selected_memories is %s' % selected_memories)
+                job_content = self.data.search_invalid_fields(selected_memories, constants.PARENT_MEM)
+                # logger.debug('job_content is %s' % job_content)
+                job.job_content = job_content
+            elif job.job_type == JobType.UPDATE_CM:
+                selected_memories = self.data.get_memories_by_id_mod(job.job_serial)
+                # logger.debug('selected_memories is %s' % selected_memories)
+                job_content = self.data.search_invalid_fields(selected_memories, constants.CHILD_MEM)
+                # logger.debug('job_content is %s' % job_content)
+                job.job_content = job_content
+            elif job.job_type == JobType.DELETE_BM:
+                selected_memories = self.data.get_memories_by_id_mod(job.job_serial)
+                # logger.debug('selected_memories is %s' % selected_memories)
+                job_content = self.data.search_invalid_memories(selected_memories)
+                # logger.debug('job_content is %s' % job_content)
+                job.job_content = job_content
+
+            self.current_job = job
+            self.current_index += 1
+            if self.current_index == len(self.jobs):
+                self.current_index = 0
+
+    def execute(self):
+        if not self.current_job:
             return
-
-        frame_gc = False
-        self.cycle_frames = self.cycle_frames + 1
-        for i in range(0, len(self.cycle_names)):
-            if not frame_gc and not self.cycle_gc[i]:
-                if self.cycle_frames[i] < self.cycle_threshold1[i]:
-                    if duration < self.DPS * 0.3:
-                        self.data.gc(self.cycle_names[i])
-                        self.cycle_gc[i] = True
-                        frame_gc = True
-                elif self.cycle_frames[i] < self.cycle_threshold2[i]:
-                    if duration < self.DPS:
-                        self.data.gc(self.cycle_names[i])
-                        self.cycle_gc[i] = True
-                        frame_gc = True
-                else:
-                    self.data.gc(self.cycle_names[i])
-                    self.cycle_gc[i] = True
-                    frame_gc = True
-        for j in range(0, len(self.cycle_frames)):
-            if self.cycle_frames[j] >= self.cycle_threshold2[j]:
-                self.cycle_frames[j] = 0
-                self.cycle_gc[j] = False
+        job = self.current_job
+        self.current_job = None
+        logger.debug('execute job is %s, %s, %s' % (job.job_type, job.job_serial, job.job_content))
+        if job.job_type == JobType.DELETE_BM:
+            self.data.delete_memories(job.job_content)
+        elif job.job_type in [JobType.UPDATE_PM, JobType.UPDATE_CM]:
+            self.data.update_memories(job.job_content)
+        elif job.job_type == JobType.DELETE_SOUND:
+            self.data.clean_sound_used_kernel()
+        elif job.job_type == JobType.DELETE_VISION:
+            self.data.clean_vision_used_kernel()
+        elif job.job_type == JobType.DELETE_ID:
+            self.data.clean_short_id()
+        elif job.job_type == JobType.PERSIST:
+            self.data.persist()

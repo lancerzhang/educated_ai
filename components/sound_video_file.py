@@ -1,6 +1,5 @@
 from .sound import Sound
 import audioread
-import math
 import logging
 import numpy as np
 from . import util

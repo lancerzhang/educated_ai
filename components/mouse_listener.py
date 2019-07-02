@@ -7,12 +7,13 @@ logger.setLevel(logging.INFO)
 
 
 class MouseListener(object):
+    running = True
     button = ''
 
     def __init__(self):
         return
 
-    def start(self):
+    def run(self):
         with mouse.Listener(on_click=self.on_click) as listener:
             listener.join()
 

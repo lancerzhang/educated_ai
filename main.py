@@ -16,15 +16,13 @@ import getopt
 import logging
 import numpy as np
 import sys
-import _thread
+import threading
 import time
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
-                    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
+                    format='%(asctime)s %(thread)d %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
 
 MAIN_CONFIG_FILE = 'data/main.npy'
-sound = None
-vision = None
 
 
 def load_main_conf():
@@ -40,11 +38,13 @@ def save_main_config():
     np.save(MAIN_CONFIG_FILE, np.array([config]))
 
 
-def save_for_exit():
+def save_for_exit(mgc, sound):
     save_main_config()
     logging.info('saved and exiting...')
-    if sound:
-        sound.start_thread = False
+    if mgc:
+        mgc.running = False
+    if sound is MicrophoneSound:
+        sound.running = False
 
 
 def main(argv):
@@ -74,12 +74,18 @@ def main(argv):
             configs = load_main_conf()
             if configs:
                 da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
-        gc = GC(da)
+        mgc = GC()
+        # use separate thread to prepare gc
+        threading.Thread(target=mgc.prepare).start()
         reward_controller = Reward(bm)
         mouse_listener = MouseListener()
         keyboard_listener = KeyboardListener()
-        _thread.start_new_thread(mouse_listener.start, ())
-        _thread.start_new_thread(keyboard_listener.start, ())
+        mouse_thread = threading.Thread(target=mouse_listener.run)
+        mouse_thread.daemon = True
+        mouse_thread.start()
+        keyboard_thread = threading.Thread(target=keyboard_listener.run)
+        keyboard_thread.daemon = True
+        keyboard_thread.start()
         status_controller = Status(bm)
         if video_file:
             vision_controller = VideoFileVision(bm, video_file, status_controller)
@@ -87,7 +93,8 @@ def main(argv):
         else:
             vision_controller = ScreenVision(bm)
             sound_controller = MicrophoneSound(bm)
-            _thread.start_new_thread(sound_controller.receive, ())
+            threading.Thread(target=sound_controller.receive).start()
+            # _thread.start_new_thread(sound_controller.receive, ())
         action_controller = Action(bm)
         frames = 0
         last_process_time = 0
@@ -98,8 +105,8 @@ def main(argv):
             button = mouse_listener.get_button()
             key = keyboard_listener.get_key()
             if key is constants.KEY_SHIFT:
-                da.keep_fit()
-                save_for_exit()
+                # da.persist()
+                save_for_exit(mgc, sound_controller)
                 break
 
             logging.debug('frame is {0} '.format(frames))
@@ -121,7 +128,8 @@ def main(argv):
             bm.cleanup_working_memories()
 
             process_duration = util.time_diff(start)
-            gc.process(process_duration)
+            # because sqlite3 multi-thread are difficult to handle concurrent issue
+            mgc.execute()
             all_duration = util.time_diff(start)
             logging.info('frame used time {0} '.format(all_duration))
 

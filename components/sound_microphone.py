@@ -1,6 +1,5 @@
 from .sound import Sound
 import logging
-import math
 import numpy as np
 import pyaudio
 from . import util
@@ -10,7 +9,7 @@ logger.setLevel(logging.INFO)
 
 
 class MicrophoneSound(Sound):
-    start_thread = True
+    running = True
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
@@ -28,7 +27,7 @@ class MicrophoneSound(Sound):
                                 rate=self.SAMPLE_RATE,
                                 input=True,
                                 frames_per_buffer=self.CHUNK)
-            while self.start_thread:
+            while self.running:
                 frame_count = 0
                 frame_data = []
                 # start to record

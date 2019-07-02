@@ -7,12 +7,13 @@ logger.setLevel(logging.INFO)
 
 
 class KeyboardListener(object):
+    running = True
     key = ''
 
     def __init__(self):
         return
 
-    def start(self):
+    def run(self):
         with keyboard.Listener(on_release=self.on_release) as listener:
             listener.join()
 
