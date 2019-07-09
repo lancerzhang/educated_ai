@@ -27,7 +27,8 @@ class JobType(Enum):
     DELETE_VISION = 3
     DELETE_SOUND = 4
     DELETE_ID = 5
-    PERSIST = 6
+    DELETE_VIRTUAL = 6  # TODO, delete virtual memory without children
+    PERSIST = 7
 
 
 class GC:
@@ -83,6 +84,7 @@ class GC:
                 self.current_index = 0
 
     def execute(self):
+        start = time.time()
         if not self.current_job:
             return
         job = self.current_job
@@ -100,3 +102,4 @@ class GC:
             self.data.clean_short_id()
         elif job.job_type == JobType.PERSIST:
             self.data.persist()
+        logger.debug('mgc_execute:{0}'.format(time.time() - start))

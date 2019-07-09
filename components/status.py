@@ -2,6 +2,7 @@ from . import constants
 import logging
 from . import util
 import numpy as np
+import time
 
 logger = logging.getLogger('status')
 logger.setLevel(logging.INFO)
@@ -74,6 +75,7 @@ class Status(object):
         return max_reward
 
     def update_status(self, processing_time):
+        start = time.time()
         self.status[self.WORKLOAD_DATA][constants.SHORT_DURATION].pop(0)
         self.status[self.WORKLOAD_DATA][constants.SHORT_DURATION].append(processing_time)
         self.status[self.WORKLOAD_DATA][constants.MEDIUM_DURATION].pop(0)
@@ -84,6 +86,7 @@ class Status(object):
         self.status[self.REWARD_DATA].pop(0)
         self.status[self.REWARD_DATA].append(max_reward)
         self.working_memories_statistics()
+        logger.info('update_status:{0}'.format(time.time() - start))
 
     def working_memories_statistics(self):
         if logger.getEffectiveLevel() is logging.DEBUG:

@@ -15,8 +15,8 @@ logger.setLevel(logging.INFO)
 
 
 class Vision(object):
-    SCREEN_WIDTH = 0
-    SCREEN_HEIGHT = 0
+    FRAME_WIDTH = 0
+    FRAME_HEIGHT = 0
     ROI_ARR = [12, 36, 72, 144, 288]
     roi_index = 2
     ROI_INDEX_NAME = 'ROI_INDEX'
@@ -67,8 +67,8 @@ class Vision(object):
     def __init__(self, bm):
         self.mouse = Controller()
         self.bio_memory = bm
-        center_x = self.SCREEN_WIDTH // 2
-        center_y = self.SCREEN_HEIGHT // 2
+        center_x = self.FRAME_WIDTH // 2
+        center_y = self.FRAME_HEIGHT // 2
         width = self.ROI_ARR[self.roi_index]
         half_width = width // 2
         self.current_block = {self.START_X: center_x - half_width, self.START_Y: center_y - half_width,
@@ -88,13 +88,16 @@ class Vision(object):
         new_feature_memory = self.search_feature_memory()
         logger.debug('after search_feature_memory')
         self.bio_memory.enrich_feature_memories(constants.VISION_FEATURE, new_feature_memory)
+        logger.debug('after enrich_feature_memories')
 
         # when she's mature, below is the major way of focus move/zoom.
         self.reproduce_movements()
+        logger.debug('after reproduce_movements')
         self.reproduce_zooms()
+        logger.debug('after reproduce_zooms')
 
         # when she's not mature, need to guide her.
-        this_full_image = self.grab(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        this_full_image = self.grab(0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT)
         self.calculate_vision_focus_state()
         if self.current_action[self.STATUS] is not self.IN_PROGRESS:
             if key is constants.KEY_ALT or key is constants.KEY_CTRL:
@@ -145,6 +148,7 @@ class Vision(object):
         self.bio_memory.verify_matching_physical_memories()
 
     def match_feature(self, fmm):
+        start = time.time()
         channel = fmm[constants.CHANNEL]
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
@@ -160,6 +164,7 @@ class Vision(object):
             self.update_channel_rank(channel)
             self.update_kernel_rank(kernel)
             # self.this_feature_result = get_feature_result(channel, kernel, feature_data[constants.FEATURE])
+        logger.debug('match_feature:{0}'.format(time.time() - start))
         return feature_data[constants.SIMILAR]
 
     # match the experience vision sense
@@ -253,7 +258,7 @@ class Vision(object):
         logger.debug('aware')
         start = time.time()
         duration = self.get_duration()
-        block = self.find_most_variable_block_division(image, 0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT,
+        block = self.find_most_variable_block_division(image, 0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT,
                                                        self.current_block[self.WIDTH], self.current_block[self.HEIGHT])
         logger.debug('variable block is {0}'.format(block))
         logger.debug('current block is {0}'.format(self.current_block))
@@ -273,8 +278,8 @@ class Vision(object):
             return None
         else:
             # logger.debug('compare channel img {0}'.format((self.previous_full_image == this_full_image).all()))
-            blocks_x = self.SCREEN_WIDTH // self.current_block[self.WIDTH]
-            blocks_y = self.SCREEN_HEIGHT // self.current_block[self.HEIGHT]
+            blocks_x = self.FRAME_WIDTH // self.current_block[self.WIDTH]
+            blocks_y = self.FRAME_HEIGHT // self.current_block[self.HEIGHT]
             block_width = self.current_block[self.WIDTH]
             block_height = self.current_block[self.HEIGHT]
             # this_cells_histogram = self.calculate_cells_histogram(this_full_image)
@@ -322,7 +327,7 @@ class Vision(object):
         block_height = height // blocks_y
         this_block_histogram = self.calculate_blocks_histogram(this_valid_region, blocks_x, blocks_y, block_width,
                                                                block_height)
-        if width == self.SCREEN_WIDTH:
+        if width == self.FRAME_WIDTH:
             # use cache to speed up
             previous_block_histogram = self.previous_histogram1
             self.previous_histogram1 = this_block_histogram
@@ -583,9 +588,9 @@ class Vision(object):
             return False
         if block[self.START_Y] < 0:
             return False
-        if block[self.START_X] + block[self.WIDTH] > self.SCREEN_WIDTH:
+        if block[self.START_X] + block[self.WIDTH] > self.FRAME_WIDTH:
             return False
-        if block[self.START_Y] + block[self.HEIGHT] > self.SCREEN_HEIGHT:
+        if block[self.START_Y] + block[self.HEIGHT] > self.FRAME_HEIGHT:
             return False
         return True
 
@@ -616,16 +621,16 @@ class Vision(object):
         actual_start_x = new_start_x
         if new_start_x < 0:
             actual_start_x = 0
-        if new_start_x + self.current_block[self.WIDTH] > self.SCREEN_WIDTH:
-            actual_start_x = self.SCREEN_WIDTH - self.current_block[self.WIDTH]
+        if new_start_x + self.current_block[self.WIDTH] > self.FRAME_WIDTH:
+            actual_start_x = self.FRAME_WIDTH - self.current_block[self.WIDTH]
         return int(round(actual_start_x))
 
     def restrict_edge_start_y(self, new_start_y):
         actual_start_y = new_start_y
         if new_start_y < 0:
             actual_start_y = 0
-        if new_start_y + self.current_block[self.HEIGHT] > self.SCREEN_HEIGHT:
-            actual_start_y = self.SCREEN_HEIGHT - self.current_block[self.HEIGHT]
+        if new_start_y + self.current_block[self.HEIGHT] > self.FRAME_HEIGHT:
+            actual_start_y = self.FRAME_HEIGHT - self.current_block[self.HEIGHT]
         return int(round(actual_start_y))
 
     def calculate_degrees(self, new_block):
@@ -676,8 +681,8 @@ class Vision(object):
         height = self.ROI_ARR[0]
         # b, g, r = cv2.split(full_image)
         gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
-        cells_x = self.SCREEN_WIDTH // width
-        cells_y = self.SCREEN_HEIGHT // height
+        cells_x = self.FRAME_WIDTH // width
+        cells_y = self.FRAME_HEIGHT // height
         for j in range(0, cells_y):
             for i in range(0, cells_x):
                 # ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
@@ -694,8 +699,8 @@ class Vision(object):
     def sum_blocks_histogram(self, cells_histogram):
         blocks_histogram = []
         times = self.current_block[self.WIDTH] // self.ROI_ARR[0]
-        blocks_x = self.SCREEN_WIDTH // self.current_block[self.WIDTH]
-        blocks_y = self.SCREEN_HEIGHT // self.current_block[self.HEIGHT]
+        blocks_x = self.FRAME_WIDTH // self.current_block[self.WIDTH]
+        blocks_y = self.FRAME_HEIGHT // self.current_block[self.HEIGHT]
         for j in range(0, blocks_y):
             for i in range(0, blocks_x):
                 hist = None

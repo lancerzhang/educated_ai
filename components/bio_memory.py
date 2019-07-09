@@ -70,7 +70,7 @@ class BioMemory(object):
         # start = time.time()
         matched_memories = [mem for mem in self.working_memories if mem[constants.STATUS] == constants.MATCHED]
         logger.debug('len of matched_memories is {0}'.format(len(matched_memories)))
-        related_memories = self.find_update_max_related_memories(matched_memories)
+        related_memories = self.find_max_related_memories(matched_memories)
         logger.debug('len of related_memories is {0}'.format(len(related_memories)))
         self.new_working_memories(self.working_memories, related_memories)
 
@@ -91,7 +91,7 @@ class BioMemory(object):
         logger.debug('prepare_expectation used time	' + str(time.time() - start))
 
     def check_matching_virtual_memories(self):
-        # start = time.time()
+        start = time.time()
         instant_memories = [mem for mem in self.working_memories if
                             mem[constants.STATUS] == constants.MATCHING and
                             constants.VIRTUAL_MEMORY_TYPE in mem and
@@ -116,7 +116,7 @@ class BioMemory(object):
                              mem[constants.STATUS] == constants.MATCHING and
                              mem[constants.VIRTUAL_MEMORY_TYPE] == constants.LONG_MEMORY]
             match_count = self.check_matching_virtual_memory(long_memories)
-        # print 'check_expectation used time	' + str(time.time() - start)
+        logger.debug('check_matching_virtual_memories:{0}'.format(time.time() - start))
 
     # slice memories of 4 (COMPOSE_NUMBER) or within DURATION_INSTANT will be grouped as a new instant memory
     # instant memories of 4 (COMPOSE_NUMBER) or within DURATION_SHORT will be grouped as a new short memory
@@ -141,7 +141,7 @@ class BioMemory(object):
         result4 = self.split_seq_time_memories(self.temp_memories[constants.LONG_MEMORY])
         self.temp_memories[constants.LONG_MEMORY] = result4[self.REST_OF_MEMORIES]
         self.add_collection_memories(result4[self.NEW_MEMORIES], constants.LONG_MEMORY)
-        logger.debug('compose used time	' + str(time.time() - start))
+        logger.debug('compose used time:{0}' + str(time.time() - start))
 
     def calculate_working_reward(self, memories):
         for bm in memories:
@@ -160,7 +160,7 @@ class BioMemory(object):
             bm.update({constants.WORKING_REWARD: working_reward})
 
     def cleanup_working_memories(self):
-        # start = time.time()
+        start = time.time()
         valid_working_memories = [mem for mem in self.working_memories if
                                   mem[constants.STATUS] == constants.MATCHED or mem[constants.END_TIME] > time.time()]
         self.calculate_working_reward(valid_working_memories)
@@ -168,11 +168,11 @@ class BioMemory(object):
                                          key=lambda x: (x[constants.WORKING_REWARD], x[constants.LAST_ACTIVE_TIME]),
                                          reverse=True)
         limited_sorted_working_memories = sorted_working_memories[0:self.THRESHOLD_OF_WORKING_MEMORIES:]
-        # print 'frame used time	' + str(time.time() - start)
         for mem in limited_sorted_working_memories:
             # as they survive, update last active time
             mem.update({constants.LAST_ACTIVE_TIME: time.time()})
         self.working_memories = limited_sorted_working_memories
+        logger.debug('cleanup_working_memories:'.format(time.time() - start))
 
     # longer time elapsed, easier to forget
     # more times recall, harder to forget
@@ -232,8 +232,7 @@ class BioMemory(object):
         # print 'count_parent_id used time	' + str(time.time() - start)
         return parent_count
 
-    def find_max_related_memories(self, memories, tobe_remove_list_ids, limit=4):
-        # start = time.time()
+    def find_max_related_memories(self, memories, limit=4):
         related_memories = []
         parent_counts = self.count_parent_id(memories)
         count = 0
@@ -242,22 +241,8 @@ class BioMemory(object):
             if mem:
                 related_memories.append(mem)
                 count = count + 1
-            else:
-                tobe_remove_list_ids.append(key)
             if count >= limit:
                 break
-        # print 'find_max_related_memories used time	' + str(time.time() - start)
-        return related_memories
-
-    def find_update_max_related_memories(self, memories, limit=4):
-        # start = time.time()
-        tobe_remove_list_ids = []
-        related_memories = self.find_max_related_memories(memories, tobe_remove_list_ids, limit)
-        if len(tobe_remove_list_ids) > 0:
-            for mem in memories:
-                self.reduce_list_field(constants.PARENT_MEM, mem[constants.PARENT_MEM], tobe_remove_list_ids,
-                                       mem[constants.MID])
-        # print 'find_update_max_related_memories used time	' + str(time.time() - start)
         return related_memories
 
     def increase_list_field(self, memories, field, new_id):
@@ -475,6 +460,7 @@ class BioMemory(object):
 
     def add_virtual_memory(self, bm_type, child_memories, addition=None, reward=0):
         logger.debug('add_virtual_memory')
+        start = time.time()
         memories = self.remove_duplicate_memory(child_memories)
         memory_ids = [x[constants.MID] for x in memories]
         existing_bm = self.data_adaptor.get_by_child_ids(memory_ids)
@@ -489,6 +475,7 @@ class BioMemory(object):
             self.recall_memory(existing_bm, {constants.REWARD: reward})
             bm = existing_bm
         self.temp_memories[bm_type].append(bm)
+        logger.debug('add_virtual_memory:{0}'.format(time.time() - start))
         return bm
 
     # children is list of group memories [[m1, m2], [m3, m4]]
@@ -517,6 +504,7 @@ class BioMemory(object):
             self.recall_virtual_memory(sbm)
 
     def prepare_matching_physical_memories(self, bm_type):
+        start = time.time()
         self.matching_memories = []
         self.matching_child_memories = {}
         physical_memories = []
@@ -527,9 +515,11 @@ class BioMemory(object):
             child_memories.update({bm[constants.MID]: live_children})
         self.matching_memories = slice_memories
         self.matching_child_memories = child_memories
+        logger.info('prepare_matching_physical_memories:{0}'.format(time.time() - start))
         return physical_memories
 
     def verify_matching_physical_memories(self):
+        start = time.time()
         self.matched_memories = []
         physical_memories = []
         ids = []
@@ -547,6 +537,7 @@ class BioMemory(object):
                 self.recall_virtual_memory(sbm)
                 self.activate_parent_memories(sbm)
         self.matched_memories = physical_memories
+        logger.info('verify_matching_physical_memories:{0}'.format(time.time() - start))
         if len(physical_memories) > 0:
             logger.debug('reproduce physical memories {0}'.format(physical_memories))
 
@@ -579,18 +570,10 @@ class BioMemory(object):
     def get_sound_feature_memories(self, kernel):
         return self.data_adaptor.get_sound_feature_memories(kernel)
 
-    def search_live_memories(self, memory_ids):
-        memories = []
-        for mid in memory_ids:
-            mem = self.data_adaptor.get_memory(mid)
-            if mem is not None:
-                memories.append(mem)
-        return memories
-
     # bm should be a virtual memory, have children
     def search_live_child_memories(self, bm, all_child_bm=None, limit=0, offset=0):
+        start = time.time()
         child_bm_ids = bm[constants.CHILD_MEM]
-        forgot_ids = []
         child_bm = []
         count = 0
         total = limit
@@ -613,15 +596,8 @@ class BioMemory(object):
                     child_bm.append(sub_bm)
                     if all_child_bm is not None:
                         all_child_bm.append(sub_bm)
-                else:
-                    forgot_ids.append(sub_id)
-                    logger.debug('forgot something')
             count = count + 1
             if count >= total:
                 break
-        if len(forgot_ids) > 0:
-            self.reduce_list_field(constants.CHILD_MEM, child_bm_ids, forgot_ids, bm[constants.MID])
-        if len(child_bm) == 0:
-            # virtual memory should have children
-            self.data_adaptor.delete_memory(bm[constants.MID])
+        logger.info('search_live_child_memories:{0}'.format(time.time() - start))
         return child_bm

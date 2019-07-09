@@ -60,7 +60,7 @@ class Sound(object):
         self.match_features()
         new_feature_memory = self.search_feature_memory()
         self.bio_memory.enrich_feature_memories(constants.SOUND_FEATURE, new_feature_memory)
-        logger.info('process used time:{0}'.format(time.time() - start))
+        logger.info('sound process used time:{0}'.format(time.time() - start))
 
     def match_features(self):
         physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.SOUND_FEATURE)

@@ -20,7 +20,7 @@ import threading
 import time
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
-                    format='%(asctime)s %(thread)d %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
+                    format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
 
 MAIN_CONFIG_FILE = 'data/main.npy'
 
@@ -101,6 +101,7 @@ def main(argv):
         logging.info('initialized.')
         print('initialized.')
         while 1:
+            logging.info('frame started.')
             start = time.time()
             button = mouse_listener.get_button()
             key = keyboard_listener.get_key()

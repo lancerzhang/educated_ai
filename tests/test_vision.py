@@ -121,8 +121,8 @@ class TestVision(unittest.TestCase):
         self.assertEqual(18, degrees6)
 
     def test_calculate_action(self):
-        self.vision.SCREEN_WIDTH = 1920
-        self.vision.SCREEN_HEIGHT = 1080
+        self.vision.FRAME_WIDTH = 1920
+        self.vision.FRAME_HEIGHT = 1080
         action = self.vision.current_action.copy()
         action[self.vision.LAST_MOVE_TIME] = time.time() - 0.2
         action[constants.DEGREES] = 3
@@ -142,8 +142,8 @@ class TestVision(unittest.TestCase):
         self.assertEqual(self.vision.COMPLETED, action[self.vision.STATUS])
 
     def test_calculate_action_degrees(self):
-        self.vision.SCREEN_WIDTH = 1920
-        self.vision.SCREEN_HEIGHT = 1080
+        self.vision.FRAME_WIDTH = 1920
+        self.vision.FRAME_HEIGHT = 1080
         current_x = 100
         current_y = 100
         self.vision.current_block = {self.vision.START_X: current_x, self.vision.START_Y: current_y,
@@ -175,8 +175,8 @@ class TestVision(unittest.TestCase):
     def test_calculate_block_histogram(self):
         img0 = cv2.imread('rgb1.jpg', 0)
         height, width = img0.shape
-        self.vision.SCREEN_WIDTH = width
-        self.vision.SCREEN_HEIGHT = height
+        self.vision.FRAME_WIDTH = width
+        self.vision.FRAME_HEIGHT = height
         img1 = cv2.imread('rgb1.jpg', 1)
         hist1 = self.vision.calculate_blocks_histogram(img1, 2, 2, width / 2, height / 2)
         self.assertEqual(4, len(hist1))
@@ -184,8 +184,8 @@ class TestVision(unittest.TestCase):
     def test_find_most_variable_block(self):
         img0 = cv2.imread('rgb1.jpg', 0)
         height, width = img0.shape
-        self.vision.SCREEN_WIDTH = width
-        self.vision.SCREEN_HEIGHT = height
+        self.vision.FRAME_WIDTH = width
+        self.vision.FRAME_HEIGHT = height
         img1 = cv2.imread('rgb1.jpg', 1)
         self.vision.previous_full_image = img1
         self.vision.current_block = {self.vision.START_X: 0, self.vision.START_Y: 0, self.vision.WIDTH: 8,
@@ -198,8 +198,8 @@ class TestVision(unittest.TestCase):
     def test_find_most_variable_block_division(self):
         img0 = cv2.imread('1920a.jpg', 0)
         height, width = img0.shape
-        self.vision.SCREEN_WIDTH = width
-        self.vision.SCREEN_HEIGHT = height
+        self.vision.FRAME_WIDTH = width
+        self.vision.FRAME_HEIGHT = height
         img1 = cv2.imread('1920a.jpg', 1)
         img2 = cv2.imread('1920b.jpg', 1)
         self.vision.previous_full_image = img1
@@ -216,8 +216,8 @@ class TestVision(unittest.TestCase):
     def test_sum_block_histogram(self):
         cells_histogram = np.array([[1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4], [1], [2], [3], [4]])
         self.vision.ROI_ARR[0] = 1
-        self.vision.SCREEN_WIDTH = 4
-        self.vision.SCREEN_HEIGHT = 4
+        self.vision.FRAME_WIDTH = 4
+        self.vision.FRAME_HEIGHT = 4
         self.vision.current_block = {self.vision.WIDTH: 2, self.vision.HEIGHT: 2}
         blocks_histogram = self.vision.sum_blocks_histogram(cells_histogram)
         self.assertEqual(6, blocks_histogram[0])
@@ -234,8 +234,8 @@ class TestVision(unittest.TestCase):
         self.assertEqual(0, new_block[Vision.ROI_INDEX_NAME])
 
     def test_try_zoom_out(self):
-        self.vision.SCREEN_WIDTH = 200
-        self.vision.SCREEN_HEIGHT = 200
+        self.vision.FRAME_WIDTH = 200
+        self.vision.FRAME_HEIGHT = 200
         self.vision.current_block = {self.vision.START_X: 100, self.vision.START_Y: 100, self.vision.WIDTH: 50,
                                      self.vision.HEIGHT: 50}
         self.vision.roi_index = 0

@@ -2,7 +2,6 @@ from .bio_memory import BioMemory
 from . import constants
 import logging
 import os
-import numpy as np
 import time
 from . import util
 import uuid
@@ -42,7 +41,10 @@ class DataAdaptor:
         return mem
 
     def get_all_memories(self):
-        return self.db.get_all()
+        start = time.time()
+        records = self.db.get_all()
+        logger.info('get_all_memories: {0}'.format(time.time() - start))
+        return records
 
     def update_memory(self, content, mid):
         return self.db.update_memory(content, mid)
@@ -69,6 +71,7 @@ class DataAdaptor:
         logger.debug('delete_memories used {0}'.format(time.time() - start))
 
     def search_invalid_memories(self, memories):
+        logger.info('search_invalid_memories start')
         start = time.time()
         if memories is None or len(memories) == 0:
             return None
@@ -77,24 +80,21 @@ class DataAdaptor:
             self.bio_memory.refresh(mem, False, True)
             if mem[constants.STRENGTH] == -1:
                 to_be_deleted_memories.append(mem[constants.MID])
-        logger.debug('refresh_memories used {0}'.format(time.time() - start))
+        logger.info('refresh_memories used {0}'.format(time.time() - start))
         return to_be_deleted_memories
 
     def search_invalid_fields(self, memories, field):
+        logger.info('search_invalid_fields start')
         start = time.time()
         to_be_update_memories = []
+        all_memories = self.db.get_all()
+        all_ids = [x[constants.MID] for x in all_memories]
         for mem in memories:
             original_list = mem[field]
-            # fine unique value from list
-            distinct_list = [x for x in set(original_list)]
-            new_list = []
-            for element in distinct_list:
-                sub_mem = self._get_memory(element)
-                if sub_mem is not None:
-                    new_list.append(element)
+            new_list = util.list_common(original_list, all_ids)
             if len(new_list) != len(original_list):
                 to_be_update_memories.append({field: new_list, constants.MID: mem[constants.MID]})
-        logger.debug('search_outdated_memory_by_field used {0}'.format(time.time() - start))
+        logger.info('search_invalid_fields used {0}'.format(time.time() - start))
         return to_be_update_memories
 
     # private method
@@ -105,9 +105,9 @@ class DataAdaptor:
             {constants.MID: uid, constants.STRENGTH: 100, constants.RECALL_COUNT: 1,
              constants.LAST_RECALL_TIME: int(time.time())})
         start = time.time()
-        self.db.insert(content)
+        record = self.db.get_insert(content)
         logger.debug('insert record used {0}'.format(time.time() - start))
-        return uid
+        return record
 
     # it return new created record id, normally not use it
     def _add_memory(self, addition=None):
@@ -117,9 +117,7 @@ class DataAdaptor:
         return self._add_record(new_memory)
 
     def add_memory(self, addition=None):
-        mid = self._add_memory(addition)
-        result = self._get_memory(mid)
-        return result
+        return self._add_memory(addition)
 
     def get_vision_move_memory(self, degrees, speed, duration):
         record = self.db.get_vision_move_memory(degrees, speed, duration)
@@ -215,18 +213,6 @@ class DataAdaptor:
     def get_memories_by_id_mod(self, mod):
         records = self.db.get_memories_by_id_mod(mod)
         return records
-
-    def find_duplication(self, field):
-        memories = self.get_all_memories()
-        count = 0
-        for i in range(0, len(memories) - 1):
-            list1 = memories[i].get(field)
-            for j in range(i + 1, len(memories)):
-                list2 = memories[j].get(field)
-                if len(list1) > 0 and util.list_equal(list1, list2):
-                    count = count + 1
-                    break
-        return count
 
     def synchronize_memory_time(self, system_last_active_time):
         logger.info('start to synchronize memories')

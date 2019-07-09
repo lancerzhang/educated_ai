@@ -5,6 +5,9 @@ import os
 import sqlite3
 import time
 
+logger = logging.getLogger('DataSqlite3')
+logger.setLevel(logging.INFO)
+
 
 class DataSqlite3:
     con = None
@@ -17,8 +20,8 @@ class DataSqlite3:
     TABLE_USED_DEGREES = 'dgr'
     TABLE_USED_CHANNEL = 'cnl'
     TABLE_SHORT_ID = 'sid'
-    SQL_RETRY_INTERVAL = 0.01
-    SQL_RETRY_COUNT = 50
+    SQL_RETRY_INTERVAL = 0.001
+    SQL_RETRY_COUNT = 100
 
     def create_tables(self):
         sql_table = '''create table if not exists %s (
@@ -83,65 +86,109 @@ class DataSqlite3:
                 self.TABLE_SHORT_ID, constants.MID))
         self.con.commit()
 
+    def connect_db(self):
+        self.con = sqlite3.connect(self.CONN_STR, check_same_thread=False, uri=True)
+        self.con.execute("PRAGMA read_uncommitted = true;")
+
     def __init__(self, path, init=True):
         self.DUMP_FILE = path
         if not init:
             logging.info('2nd connection of db')
-            self.con = sqlite3.connect(self.CONN_STR, check_same_thread=False, uri=True)
+            self.connect_db()
             return
 
         if os.path.exists(path):
             self.import_from_script(path)
         else:
             logging.info('init db')
-            self.con = sqlite3.connect(self.CONN_STR, check_same_thread=False, uri=True)
+            self.connect_db()
             self.create_tables()
 
     def execute(self, *args, **kwargs):
+        start = time.time()
         c = self.con.cursor()
-        i = 0
-        while i < self.SQL_RETRY_COUNT:
-            i += 1
-            try:
-                c.execute(*args, **kwargs)
-                self.con.commit()
-                break
-            except sqlite3.OperationalError:
-                time.sleep(self.SQL_RETRY_INTERVAL)
+        c.execute(*args, **kwargs)
+        self.con.commit()
+        logger.debug('DataSqlite3-execute: {0}'.format(time.time() - start))
 
     def executemany(self, *args, **kwargs):
+        start = time.time()
         c = self.con.cursor()
-        i = 0
-        while i < self.SQL_RETRY_COUNT:
-            i += 1
-            try:
-                c.executemany(*args, **kwargs)
-                self.con.commit()
-                break
-            except sqlite3.OperationalError:
-                time.sleep(self.SQL_RETRY_INTERVAL)
+        c.executemany(*args, **kwargs)
+        self.con.commit()
+        logger.info('DataSqlite3-executemany: {0}'.format(time.time() - start))
 
     def fetchone(self, *args, **kwargs):
-        c = self.con.cursor()
-        i = 0
-        while i < self.SQL_RETRY_COUNT:
-            i += 1
-            try:
-                c.execute(*args, **kwargs)
-                return c.fetchone()
-            except sqlite3.OperationalError:
-                time.sleep(self.SQL_RETRY_INTERVAL)
+        start = time.time()
+        cur = self.con.cursor()
+        cur.execute(*args, **kwargs)
+        record = cur.fetchone()
+        logger.debug('DataSqlite3-fetchone: {0}'.format(time.time() - start))
+        return record
 
     def fetchall(self, *args, **kwargs):
-        c = self.con.cursor()
-        i = 0
-        while i < self.SQL_RETRY_COUNT:
-            i += 1
-            try:
-                c.execute(*args, **kwargs)
-                return c.fetchall()
-            except sqlite3.OperationalError:
-                time.sleep(self.SQL_RETRY_INTERVAL)
+        start = time.time()
+        cur = self.con.cursor()
+        cur.execute(*args, **kwargs)
+        records = cur.fetchall()
+        logger.info('DataSqlite3-fetchall: {0}'.format(time.time() - start))
+        return records
+
+    # def execute(self, *args, **kwargs):
+    #     c = self.con.cursor()
+    #     i = 0
+    #     while i < self.SQL_RETRY_COUNT:
+    #         i += 1
+    #         try:
+    #             c.execute(*args, **kwargs)
+    #             self.con.commit()
+    #             c.close()
+    #             break
+    #         except sqlite3.OperationalError:
+    #             logging.info('wait for other thread to finish transaction.')
+    #             time.sleep(self.SQL_RETRY_INTERVAL)
+    #
+    # def executemany(self, *args, **kwargs):
+    #     c = self.con.cursor()
+    #     i = 0
+    #     while i < self.SQL_RETRY_COUNT:
+    #         i += 1
+    #         try:
+    #             c.executemany(*args, **kwargs)
+    #             self.con.commit()
+    #             c.close()
+    #             break
+    #         except sqlite3.OperationalError:
+    #             logging.info('wait for other thread to finish transaction.')
+    #             time.sleep(self.SQL_RETRY_INTERVAL)
+    #
+    # def fetchone(self, *args, **kwargs):
+    #     c = self.con.cursor()
+    #     i = 0
+    #     while i < self.SQL_RETRY_COUNT:
+    #         i += 1
+    #         try:
+    #             c.execute(*args, **kwargs)
+    #             record = c.fetchone()
+    #             c.close()
+    #             return record
+    #         except sqlite3.OperationalError:
+    #             logging.info('wait for other thread to finish transaction.')
+    #             time.sleep(self.SQL_RETRY_INTERVAL)
+    #
+    # def fetchall(self, *args, **kwargs):
+    #     c = self.con.cursor()
+    #     i = 0
+    #     while i < self.SQL_RETRY_COUNT:
+    #         i += 1
+    #         try:
+    #             c.execute(*args, **kwargs)
+    #             records = c.fetchall()
+    #             c.close()
+    #             return records
+    #         except sqlite3.OperationalError:
+    #             logging.info('wait for other thread to finish transaction.')
+    #             time.sleep(self.SQL_RETRY_INTERVAL)
 
     def insert(self, bm):
         columns = ', '.join(list(bm.keys()))
@@ -149,6 +196,10 @@ class DataSqlite3:
         query = 'INSERT INTO %s (%s) VALUES (%s)' % (self.TABLE_BM, columns, placeholders)
         prepare_data(bm)
         self.execute(query, bm)
+
+    def get_insert(self, bm):
+        self.insert(bm)
+        return self.get_by_id(bm[constants.MID])
 
     def get_by_id(self, mid):
         self.con.row_factory = bm_dict_factory
@@ -161,12 +212,14 @@ class DataSqlite3:
         return self.fetchall(query)
 
     def update_memory(self, content, mid):
+        start = time.time()
         params = [key + "=:" + key for key in content]
         updates = ', '.join(params)
         query = 'UPDATE {0} SET {1} WHERE {2}=:{2}'.format(self.TABLE_BM, updates, constants.MID)
         prepare_data(content)
         content.update({constants.MID: mid})
         self.execute(query, content)
+        logger.debug('update_memory:{0}'.format(time.time() - start))
 
     def update_memories(self, contents):
         params = [key + "=:" + key for key in contents[0]]
@@ -368,7 +421,7 @@ class DataSqlite3:
     def import_from_script(self, path):
         logging.info('import_from_script')
         qry = open(path, 'r').read()
-        self.con = sqlite3.connect(self.CONN_STR, check_same_thread=False, uri=True)
+        self.connect_db()
         c = self.con.cursor()
         c.executescript(qry)
         self.con.commit()
