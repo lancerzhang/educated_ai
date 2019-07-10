@@ -132,7 +132,7 @@ def main(argv):
             # because sqlite3 multi-thread are difficult to handle concurrent issue
             mgc.execute()
             all_duration = util.time_diff(start)
-            logging.info('frame used time {0} '.format(all_duration))
+            logging.info('frame took %d ms' % (all_duration * 1000))
 
             # all end, sleep to avoid running too fast
             if all_duration < dps:

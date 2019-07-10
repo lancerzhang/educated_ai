@@ -41,6 +41,7 @@ class Sound(object):
 
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
 
+    @util.timeit
     def __init__(self, bm):
         self.bio_memory = bm
         self.frequency_map = None
@@ -49,8 +50,8 @@ class Sound(object):
         self.sound_kernels = np.load(self.SOUND_KERNEL_FILE)
         self.previous_phase = None
 
+    @util.timeit
     def process(self, status_controller):
-        logger.info('process')
         start = time.time()
         self.frequency_map = self.get_frequency_map(status_controller)
         if self.frequency_map is None:
@@ -62,12 +63,14 @@ class Sound(object):
         self.bio_memory.enrich_feature_memories(constants.SOUND_FEATURE, new_feature_memory)
         logger.info('sound process used time:{0}'.format(time.time() - start))
 
+    @util.timeit
     def match_features(self):
         physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.SOUND_FEATURE)
         for bm in physical_memories:
             self.match_feature(bm)
         self.bio_memory.verify_matching_physical_memories()
 
+    @util.timeit
     def match_feature(self, fmm):
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
@@ -85,8 +88,8 @@ class Sound(object):
         return feature_data[constants.SIMILAR]
 
     # match the experience sound sense
+    @util.timeit
     def filter_feature(self, raw, kernel, feature=None):
-        logger.debug('filter_feature')
         # map to image color range
         color_data = raw / (self.MAX_DB / 256)
         data = color_data.astype(np.uint8)
@@ -105,10 +108,10 @@ class Sound(object):
         sum_feature = threshold_feature.sum()
         if sum_feature == 0:
             return None  # no any feature found
-        logger.debug('data map is {0}'.format(np.around(data_map, decimals=2)))
-        logger.debug('new_feature_pool1 is {0}'.format(new_feature_pool1))
-        logger.debug('new_feature_pool2 is {0}'.format(new_feature_pool2))
-        logger.debug('threshold_feature is {0}'.format(threshold_feature))
+        # logger.debug('data map is {0}'.format(np.around(data_map, decimals=2)))
+        # logger.debug('new_feature_pool1 is {0}'.format(new_feature_pool1))
+        # logger.debug('new_feature_pool2 is {0}'.format(new_feature_pool2))
+        # logger.debug('threshold_feature is {0}'.format(threshold_feature))
         standard_feature = util.standardize_feature(threshold_feature)
         new_feature = standard_feature.flatten().astype(int)
         if feature is None:
@@ -124,6 +127,7 @@ class Sound(object):
         return feature_data
 
     # get a frequent use kernel or a random kernel by certain possibility
+    @util.timeit
     def get_kernel(self):
         used_kernel = None
         ri = random.randint(0, 9) - 1
@@ -139,12 +143,13 @@ class Sound(object):
         else:
             return used_kernel[constants.KERNEL]
 
+    @util.timeit
     def update_kernel_rank(self, kernel):
         self.bio_memory.data_adaptor.put_sound_used_kernel(kernel)
 
     # try to search more detail
+    @util.timeit
     def search_feature_memory(self):
-        logger.debug('search_feature_memory')
         kernel = self.get_kernel()
         # range_width = get_range()
         # energies = get_energy(full_frequency_map)
@@ -156,7 +161,7 @@ class Sound(object):
         data = self.filter_feature(self.frequency_map, kernel)
         if data is None:
             return None
-        logger.debug('feature data is {0}'.format(data))
+        # logger.debug('feature data is {0}'.format(data))
         bm = self.find_feature_memory(kernel, data[constants.FEATURE])
         if bm is None:
             bm = self.bio_memory.add_feature_memory(constants.SOUND_FEATURE, kernel, data[constants.FEATURE])
@@ -166,19 +171,17 @@ class Sound(object):
         return bm
 
     # search memory by kernel using index
+    @util.timeit
     def find_feature_memory(self, kernel, feature1):
-        logger.debug('before get_sound_feature_memories')
         feature_memories = self.bio_memory.get_sound_feature_memories(kernel)
-        logger.debug('after get_sound_feature_memories')
         for mem in feature_memories:
             feature2 = mem[constants.FEATURE]
             difference = util.np_array_diff(feature1, np.array(feature2))
             if difference < self.FEATURE_SIMILARITY_THRESHOLD:
-                logger.debug('found feature memory end')
                 return mem
-        logger.debug('feature memory end')
         return None
 
+    @util.timeit
     def aware(self, full_frequency_map):
         range_data = self.find_most_variable_region(full_frequency_map)
         frequency_map = full_frequency_map[range_data[0]:range_data[1], :]
@@ -191,6 +194,7 @@ class Sound(object):
         else:
             return None
 
+    @util.timeit
     def find_most_variable_region(self, frequency_map):
         range_width = self.get_range()
         new_range = {}
@@ -208,8 +212,8 @@ class Sound(object):
             self.previous_energies = this_energies
         return new_range
 
+    @util.timeit
     def get_frequency_map(self, status_controller):
-        logger.debug('get_frequency_map')
         if len(self.phases) == 0:
             return None
         phase = self.phases.popleft()
@@ -234,10 +238,12 @@ class Sound(object):
         frequency_map[frequency_map < 0] = 0
         return frequency_map
 
+    @util.timeit
     def get_range(self):
         index = random.randint(0, len(self.RANGE_ARR) - 1)
         return self.RANGE_ARR[index]
 
+    @util.timeit
     def expend_max(self, range_energies, temp_range, range_width):
         new_range = []
         if temp_range[0] > 0:
@@ -262,6 +268,7 @@ class Sound(object):
             return new_range
 
 
+@util.timeit
 def get_energy(frequency_map):
     this_energy = []
     for i in range(0, len(frequency_map)):
@@ -271,6 +278,7 @@ def get_energy(frequency_map):
     return this_energy
 
 
+@util.timeit
 def get_range_energy(energy, range_width):
     range_energies = []
     for i in range(0, len(energy) - range_width):

@@ -10,20 +10,22 @@ class VideoFileSound(Sound):
     buf_seq = 0
     CHUNK = 2048
 
+    @util.timeit
     def __init__(self, bm, video_file):
         self.file_path = video_file
         self.frame_data = []
         self.frame_count = 0
         super(VideoFileSound, self).__init__(bm)
 
+    @util.timeit
     def open_video(self):
         audio = audioread.audio_open(self.file_path)
         self.audio_buffers = audio.read_data()
         # numbers of buffers were loaded
         self.buf_seq = 0
 
+    @util.timeit
     def get_frequency_map(self, status_controller):
-        logging.info('get_frequency_map')
         fps = status_controller.video_fps
         # which frame is in current video
         frame = status_controller.video_frame

@@ -1,4 +1,5 @@
 from . import constants
+from . import util
 from .data_adaptor import DataAdaptor
 from .data_sqlite3 import DataSqlite3
 from enum import Enum
@@ -38,6 +39,7 @@ class GC:
     current_index = 0
     current_job = None
 
+    @util.timeit
     def init_jobs(self):
         for i in range(10):
             self.jobs.append(Job(JobType.UPDATE_PM, i))
@@ -50,46 +52,37 @@ class GC:
         self.jobs.append(Job(JobType.DELETE_ID, 0))
         self.jobs.append(Job(JobType.PERSIST, 0))
 
+    @util.timeit
     def __init__(self):
         self.data = DataAdaptor(DataSqlite3('data/dump.sql', init=False))
         self.init_jobs()
 
+    @util.timeit
     def prepare(self):
         while self.running:
             time.sleep(self.INTERVAL)
             job = copy.copy(self.jobs[self.current_index])
-            logger.debug('prepare job is %s, %s }' % (job.job_type, job.job_serial))
             if job.job_type == JobType.UPDATE_PM:
                 selected_memories = self.data.get_memories_by_id_mod(job.job_serial)
-                # logger.debug('selected_memories is %s' % selected_memories)
-                job_content = self.data.search_invalid_fields(selected_memories, constants.PARENT_MEM)
-                # logger.debug('job_content is %s' % job_content)
-                job.job_content = job_content
+                job.job_content = self.data.search_invalid_fields(selected_memories, constants.PARENT_MEM)
             elif job.job_type == JobType.UPDATE_CM:
                 selected_memories = self.data.get_memories_by_id_mod(job.job_serial)
-                # logger.debug('selected_memories is %s' % selected_memories)
-                job_content = self.data.search_invalid_fields(selected_memories, constants.CHILD_MEM)
-                # logger.debug('job_content is %s' % job_content)
-                job.job_content = job_content
+                job.job_content = self.data.search_invalid_fields(selected_memories, constants.CHILD_MEM)
             elif job.job_type == JobType.DELETE_BM:
                 selected_memories = self.data.get_memories_by_id_mod(job.job_serial)
-                # logger.debug('selected_memories is %s' % selected_memories)
-                job_content = self.data.search_invalid_memories(selected_memories)
-                # logger.debug('job_content is %s' % job_content)
-                job.job_content = job_content
+                job.job_content = self.data.search_invalid_memories(selected_memories)
 
             self.current_job = job
             self.current_index += 1
             if self.current_index == len(self.jobs):
                 self.current_index = 0
 
+    @util.timeit
     def execute(self):
-        start = time.time()
         if not self.current_job:
             return
         job = self.current_job
         self.current_job = None
-        logger.debug('execute job is %s, %s, %s' % (job.job_type, job.job_serial, job.job_content))
         if job.job_type == JobType.DELETE_BM:
             self.data.delete_memories(job.job_content)
         elif job.job_type in [JobType.UPDATE_PM, JobType.UPDATE_CM]:
@@ -102,4 +95,3 @@ class GC:
             self.data.clean_short_id()
         elif job.job_type == JobType.PERSIST:
             self.data.persist()
-        logger.debug('mgc_execute:{0}'.format(time.time() - start))

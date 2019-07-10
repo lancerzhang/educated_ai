@@ -1,35 +1,55 @@
 import time, numpy, cv2, random
+import logging
 import numpy as np
 from functools import reduce
 
 USED_COUNT = 'uct'
 
 
+def timeit(f):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = f(*args, **kw)
+        te = time.time()
+        tms = int((te - ts) * 1000)
+        if tms > 0:
+            logging.info('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
+        return result
+
+    return timed
+
+
+@timeit
 def time_diff(start):
     return time.time() - start
 
 
+@timeit
 def between(val, m, n):
     return m <= val <= n
 
 
 # TODO, need to consider other audio format
 # normalize audio data
+@timeit
 def normalize_audio_data(raw):
     return raw / 32768.0  # assume 16 bit
 
 
 # calculate energy
+@timeit
 def rms(x):
     return numpy.sqrt(x.dot(x) / x.size)
 
 
 # return common elements in 2 lists
+@timeit
 def list_common(list1, list2):
     return list(set(list1).intersection(list2))
 
 
 # count each element in a list, return a dict, key is the element in list, value is count
+@timeit
 def list_element_count(list1):
     # start = time.time()
     # print list1
@@ -39,16 +59,19 @@ def list_element_count(list1):
 
 
 # list a - b, return new list
+@timeit
 def list_comprehension_new(list1, list2):
     return [x for x in list1 if x not in list2]
 
 
+@timeit
 def list_comprehension_existing(list1, list2):
     tobe_remove = list_common(list1, list2)
     for el1 in tobe_remove:
         list1.remove(el1)
 
 
+@timeit
 def list_equal(list1, list2):
     if len(list1) == len(list2):
         diff = list_comprehension_new(list1, list2)
@@ -60,11 +83,13 @@ def list_equal(list1, list2):
         return False
 
 
+@timeit
 def list_to_sorted_string(list1):
     sorted_list = [x for x in sorted(list1)]
     return list_to_str(sorted_list)
 
 
+@timeit
 def delete_empty_surround(arr):
     shape = arr.shape
     for col_num in range(shape[1] - 1, 0, -1):
@@ -99,15 +124,18 @@ def delete_empty_surround(arr):
     return arr
 
 
+@timeit
 def sort_color(rgb):
     return str(rgb[0] / 86) + str(rgb[1] / 86) + str(rgb[2] / 86)
 
 
+@timeit
 def point_color_category(img):
     reg_point = cv2.resize(img, (1, 1))
     return sort_color(reg_point[0, 0])
 
 
+@timeit
 def color_hist(rgb, bins):
     num = 256 / bins + 1
     r = rgb[:, :, 0].flatten()
@@ -119,6 +147,7 @@ def color_hist(rgb, bins):
     return np.concatenate((bc1, bc2, bc3))
 
 
+@timeit
 def color_hist_similarity(img1, img2, resize=32, bins=3):
     img1 = cv2.resize(img1, (resize, resize))
     img2 = cv2.resize(img2, (resize, resize))
@@ -133,6 +162,7 @@ def color_hist_similarity(img1, img2, resize=32, bins=3):
     return sum(data) / len(g)
 
 
+@timeit
 def hamming(h1, h2):
     h, d = 0, h1 ^ h2
     while d:
@@ -141,6 +171,7 @@ def hamming(h1, h2):
     return h
 
 
+@timeit
 def image_hash(im, size):
     resized_image = cv2.resize(im, (size, size))
     gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
@@ -149,10 +180,12 @@ def image_hash(im, size):
     return reduce(lambda x, a: x | (a[1] << a[0]), enumerate([0 if i < avg_value else 1 for i in data]), 0)
 
 
+@timeit
 def list_avg(arr):
     return sum(arr) / len(arr)
 
 
+@timeit
 def standardize_feature(matrix):
     while sum(matrix[0]) == 0:
         matrix = np.roll(matrix, -1, axis=0)
@@ -161,6 +194,7 @@ def standardize_feature(matrix):
     return matrix
 
 
+@timeit
 def np_array_diff(arr1, arr2):
     matrix = [arr1, arr2]
     max_list = np.max(matrix, axis=0)
@@ -172,6 +206,7 @@ def np_array_diff(arr1, arr2):
     return difference
 
 
+@timeit
 def np_matrix_diff(arr1, arr2):
     differences = []
     for i in range(0, len(arr1)):
@@ -181,20 +216,24 @@ def np_matrix_diff(arr1, arr2):
     return differences
 
 
+@timeit
 def np_array_concat(list1, list2):
     return np.concatenate([list1, list2])
 
 
+@timeit
 def np_array_all_same(list1):
     list2 = [list1[0]] * len(list1)
     return (list1 == list2).all()
 
 
+@timeit
 def np_array_group_by_count(list1):
     unique, counts = numpy.unique(list1, return_counts=True)
     return dict(list(zip(unique, counts)))
 
 
+@timeit
 def get_high_rank(rank_list):
     ri = random.randint(0, 9)
     if len(rank_list) == 0 or ri == 0:
@@ -206,6 +245,7 @@ def get_high_rank(rank_list):
             return rank_list[0]
 
 
+@timeit
 def update_rank_list(key_key, key_value, rank_list):
     element = next((x for x in rank_list if x[key_key] == key_value), None)
     if element is None:
@@ -216,27 +256,32 @@ def update_rank_list(key_key, key_value, rank_list):
     return sorted(rank_list, key=lambda x: (x[USED_COUNT]), reverse=True)
 
 
+@timeit
 def matrix_to_string(matrix):
     arr = matrix.flatten()
     matrix_str = list_to_str(arr)
     return matrix_str
 
 
+@timeit
 def string_to_feature_matrix(str_feature):
     arr = np.fromstring(str_feature, dtype=int, sep=',')
     matrix = np.reshape(arr, (3, 3))
     return matrix
 
 
+@timeit
 def find_2d_index(indexes, width):
     y = indexes / width
     x = indexes % width
     return x, y
 
 
+@timeit
 def list_to_str(list1):
     return ','.join(str(x) for x in list1)
 
 
+@timeit
 def str_to_int_list(str1):
     return [int(x) for x in str1.split(",")]

@@ -64,6 +64,7 @@ class Vision(object):
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
     current_action = {STATUS: COMPLETED}
 
+    @util.timeit
     def __init__(self, bm):
         self.mouse = Controller()
         self.bio_memory = bm
@@ -76,9 +77,8 @@ class Vision(object):
 
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
 
+    @util.timeit
     def process(self, status_controller, key):
-        logger.info('process')
-        start = time.time()
         old_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] // 2
         old_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] // 2
         if self.current_action[self.STATUS] == self.IN_PROGRESS:
@@ -86,15 +86,11 @@ class Vision(object):
 
         self.match_features()
         new_feature_memory = self.search_feature_memory()
-        logger.debug('after search_feature_memory')
         self.bio_memory.enrich_feature_memories(constants.VISION_FEATURE, new_feature_memory)
-        logger.debug('after enrich_feature_memories')
 
         # when she's mature, below is the major way of focus move/zoom.
         self.reproduce_movements()
-        logger.debug('after reproduce_movements')
         self.reproduce_zooms()
-        logger.debug('after reproduce_zooms')
 
         # when she's not mature, need to guide her.
         this_full_image = self.grab(0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT)
@@ -108,14 +104,10 @@ class Vision(object):
                 is_aware = self.aware(this_full_image)
                 if not is_aware:
                     if self.focus_status is self.PROCESS_STATUS_DIGGING:
-                        logger.debug('before dig')
                         self.dig()
-                        logger.debug('after dig')
                     elif self.focus_status is self.PROCESS_STATUS_EXPLORING:
                         # if environment not change, random do some change.
-                        logger.debug('before explore')
                         self.explore()
-                        logger.debug('after explore')
 
         self.previous_full_image = this_full_image
 
@@ -125,30 +117,31 @@ class Vision(object):
             focus = None
         else:
             focus = {constants.FOCUS_X: new_focus_x, constants.FOCUS_Y: new_focus_y}
-        logger.debug('vision_process_used_time_total:{0}'.format(time.time() - start))
         return focus
 
+    @util.timeit
     def match_features(self):
-        logger.debug('match_features')
         physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.VISION_FEATURE)
         for bm in physical_memories:
             self.match_feature(bm)
         self.bio_memory.verify_matching_physical_memories()
 
+    @util.timeit
     def reproduce_movements(self):
         physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.VISION_FOCUS_MOVE)
         for bm in physical_memories:
             self.reproduce_movement(bm)
         self.bio_memory.verify_matching_physical_memories()
 
+    @util.timeit
     def reproduce_zooms(self):
         physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.VISION_FOCUS_ZOOM)
         for bm in physical_memories:
             self.reproduce_zoom(bm)
         self.bio_memory.verify_matching_physical_memories()
 
+    @util.timeit
     def match_feature(self, fmm):
-        start = time.time()
         channel = fmm[constants.CHANNEL]
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
@@ -163,11 +156,10 @@ class Vision(object):
             self.bio_memory.recall_feature_memory(fmm, feature_data[constants.FEATURE])
             self.update_channel_rank(channel)
             self.update_kernel_rank(kernel)
-            # self.this_feature_result = get_feature_result(channel, kernel, feature_data[constants.FEATURE])
-        logger.debug('match_feature:{0}'.format(time.time() - start))
         return feature_data[constants.SIMILAR]
 
     # match the experience vision sense
+    @util.timeit
     def filter_feature(self, data, kernel, feature=None):
         feature_data = copy.deepcopy(self.FEATURE_DATA)
         feature_data[constants.KERNEL] = kernel
@@ -201,6 +193,7 @@ class Vision(object):
         return feature_data
 
     # get a frequent use kernel or a random kernel by certain possibility
+    @util.timeit
     def get_kernel(self):
         used_kernel = None
         ri = random.randint(0, 9) - 1
@@ -215,23 +208,21 @@ class Vision(object):
         else:
             return used_kernel[constants.KERNEL]
 
+    @util.timeit
     def update_kernel_rank(self, kernel):
         self.bio_memory.data_adaptor.put_vision_used_kernel(kernel)
 
     # try to search more detail
+    @util.timeit
     def search_feature_memory(self):
-        logger.debug('search_feature_memory')
         feature_data = self.search_feature(self.current_block)
         if feature_data is None:
             return None
         channel = feature_data[constants.CHANNEL]
         kernel = feature_data[constants.KERNEL]
         feature = feature_data[constants.FEATURE]
-        # self.this_feature_result = get_feature_result(channel, kernel, feature)
 
-        logger.debug('before find_feature_memory')
         bm = self.find_feature_memory(channel, kernel, feature)
-        logger.debug('after find_feature_memory')
         if bm is None:
             bm = self.bio_memory.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
         else:
@@ -241,38 +232,31 @@ class Vision(object):
         return bm
 
     # find memory by kernel using index
+    @util.timeit
     def find_feature_memory(self, channel, kernel, feature1):
-        logger.debug('before get_vision_feature_memories')
         feature_memories = self.bio_memory.get_vision_feature_memories(channel, kernel)
-        logger.debug('after get_vision_feature_memories')
         for mem in feature_memories:
             feature2 = mem[constants.FEATURE]
             difference = util.np_array_diff(feature1, np.array(feature2))
             if difference < self.FEATURE_SIMILARITY_THRESHOLD:
-                logger.debug('found feature memory end')
                 return mem
-        logger.debug('feature memory end')
         return None
 
+    @util.timeit
     def aware(self, image):
-        logger.debug('aware')
-        start = time.time()
         duration = self.get_duration()
         block = self.find_most_variable_block_division(image, 0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT,
                                                        self.current_block[self.WIDTH], self.current_block[self.HEIGHT])
-        logger.debug('variable block is {0}'.format(block))
-        logger.debug('current block is {0}'.format(self.current_block))
         if block is None:
             return None
         if block['v'] < self.REGION_VARIANCE_THRESHOLD:
             return None
-        logger.debug('aware used time:{0}'.format(time.time() - start))
         # move focus to variable region
         self.set_movement_absolute(block, duration)
         return True
 
+    @util.timeit
     def find_most_variable_block(self, this_full_image):
-        start = time.time()
         new_block = {}
         if self.previous_full_image is None:
             return None
@@ -308,10 +292,10 @@ class Vision(object):
             new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
             new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
             new_block.update({'v': max_var})
-        logger.debug('find_most_variable_region used time:{0}'.format(time.time() - start))
         return new_block
 
     # reduce number of histogram call,it's time consuming
+    @util.timeit
     def find_most_variable_block_division(self, this_full_image, start_x, start_y, width, height, focus_width,
                                           focus_height):
         # start = time.time()
@@ -354,9 +338,11 @@ class Vision(object):
         else:
             return new_block
 
+    @util.timeit
     def update_degrees_rank(self, degrees):
         self.bio_memory.data_adaptor.put_used_degrees(degrees)
 
+    @util.timeit
     def get_degrees(self):
         used_degrees = None
         ri = random.randint(0, 9) - 1
@@ -369,9 +355,11 @@ class Vision(object):
         else:
             return int(used_degrees[constants.DEGREES])
 
+    @util.timeit
     def update_speed_rank(self, speed):
         self.bio_memory.data_adaptor.put_used_speed(speed)
 
+    @util.timeit
     def get_speed(self):
         used_speed = None
         ri = random.randint(0, 9) - 1
@@ -384,9 +372,11 @@ class Vision(object):
         else:
             return int(used_speed[constants.SPEED])
 
+    @util.timeit
     def update_channel_rank(self, channel):
         self.bio_memory.data_adaptor.put_used_channel(channel)
 
+    @util.timeit
     def get_channel(self):
         used_channel = None
         ri = random.randint(0, 9) - 1
@@ -404,27 +394,23 @@ class Vision(object):
         else:
             return used_channel[constants.CHANNEL]
 
+    @util.timeit
     def get_duration(self):
         return random.randint(1, self.MAX_DURATION) / 10.0
 
+    @util.timeit
     def search_feature(self, block):
-        logger.debug('block {0}'.format(block))
         channel = self.get_channel()
-        logger.debug('before get_region')
         img = self.get_region(block)
-        logger.debug('after get_region')
         kernel = self.get_kernel()
-        logger.debug('before get_channel_img')
         channel_img = get_channel_img(img, channel)
-        logger.debug('after get_channel_img')
         feature_data = self.filter_feature(channel_img, kernel)
-        logger.debug('after filter_feature')
         if feature_data:
             feature_data[constants.CHANNEL] = channel
         return feature_data
 
+    @util.timeit
     def dig(self):
-        logger.debug('dig')
         ri = random.randint(0, 2)
         if ri == 0:
             self.random_move_aside()
@@ -433,6 +419,7 @@ class Vision(object):
         elif ri == 2:
             self.random_zoom(self.ZOOM_OUT)
 
+    @util.timeit
     def try_move_aside(self, move_direction):
         new_block = copy.deepcopy(self.current_block)
         if move_direction is self.MOVE_UP:
@@ -447,15 +434,13 @@ class Vision(object):
             return None
         return new_block
 
+    @util.timeit
     def random_move_aside(self):
-        logger.debug('random_move_aside')
         move_direction = self.random_direction_straight()
         new_block = self.try_move_aside(move_direction)
         if new_block is None:
             return None
-        logger.debug('new_block is {0}'.format(new_block))
         feature_data = self.search_feature(new_block)
-        logger.debug('feature_data is {0}'.format(feature_data))
         if feature_data is None:
             return None
         self.current_block = new_block
@@ -464,6 +449,7 @@ class Vision(object):
         duration = 0
         self.add_vision_move(degrees, speed, duration)
 
+    @util.timeit
     def add_vision_move(self, degrees, speed, duration):
         bm = self.bio_memory.get_vision_move_memory(degrees, speed, duration)
         if bm is None:
@@ -472,8 +458,8 @@ class Vision(object):
             self.bio_memory.recall_physical_memory(bm)
         self.bio_memory.add_slice_memory([bm], bm[constants.PHYSICAL_MEMORY_TYPE])
 
+    @util.timeit
     def explore(self):
-        logger.debug('explore')
         # large random number to reduce the possibility
         ri = random.randint(0, 40)
         if ri == 0:
@@ -481,8 +467,8 @@ class Vision(object):
         elif ri == 1:
             return self.random_zoom()
 
+    @util.timeit
     def random_move_away(self):
-        logger.debug('random_move_away')
         # random move, explore the world
         degrees = self.get_degrees()
         self.update_degrees_rank(degrees)
@@ -493,6 +479,7 @@ class Vision(object):
         duration = self.get_duration()
         self.set_movement_relative(degrees, speed, duration)
 
+    @util.timeit
     def random_direction_straight(self):
         ri = random.randint(0, 3)
         if ri == 0:
@@ -504,6 +491,7 @@ class Vision(object):
         else:
             return self.MOVE_RIGHT
 
+    @util.timeit
     def random_direction_angle(self):
         ri = random.randint(0, 3)
         if ri == 0:
@@ -515,8 +503,8 @@ class Vision(object):
         else:
             return self.ZOOM_RIGHT_BOTTOM
 
+    @util.timeit
     def random_zoom(self, zoom_type=None):
-        logger.debug('random_zoom')
         if zoom_type is None:
             ri = random.randint(0, 1)
             if ri == 0:
@@ -530,23 +518,18 @@ class Vision(object):
             new_block = self.try_zoom_out(zoom_direction)
         if new_block is None:
             return None
-        logger.debug('new_block is {0}'.format(new_block))
         feature_data = self.search_feature(new_block)
-        logger.debug('feature_data is {0}'.format(feature_data))
         if feature_data is None:
             return None
         self.current_block = new_block
         bm = self.bio_memory.get_vision_zoom_memory(zoom_type, zoom_direction)
-        logger.debug('random_zoom p1')
         if bm is None:
             bm = self.bio_memory.add_vision_focus_zoom_memory(zoom_type, zoom_direction)
-            logger.debug('random_zoom p2')
         else:
             self.bio_memory.recall_physical_memory(bm)
-            logger.debug('random_zoom p3')
         self.bio_memory.add_slice_memory([bm], bm[constants.PHYSICAL_MEMORY_TYPE])
-        logger.debug('random_zoom p4')
 
+    @util.timeit
     def try_zoom_in(self, zoom_direction):
         temp_index = self.current_block[self.ROI_INDEX_NAME] - 1
         if temp_index < 0:
@@ -564,6 +547,7 @@ class Vision(object):
             new_block[self.START_Y] = new_block[self.START_Y] + new_block[self.HEIGHT]
         return new_block
 
+    @util.timeit
     def try_zoom_out(self, zoom_direction):
         temp_index = self.current_block[self.ROI_INDEX_NAME] + 1
         if temp_index > (len(self.ROI_ARR) - 1):
@@ -583,6 +567,7 @@ class Vision(object):
             return None
         return new_block
 
+    @util.timeit
     def verify_block(self, block):
         if block[self.START_X] < 0:
             return False
@@ -594,6 +579,7 @@ class Vision(object):
             return False
         return True
 
+    @util.timeit
     def get_region(self, block):
         roi_image = self.grab(block[self.START_Y], block[self.START_X],
                               block[self.WIDTH], block[self.HEIGHT])
@@ -601,22 +587,22 @@ class Vision(object):
         img = cv2.resize(cv_img, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
         return img
 
+    @util.timeit
     def set_movement_absolute(self, new_block, duration):
-        logger.debug('set_movement_absolute')
         degrees = self.calculate_degrees(new_block)
         length = math.hypot(new_block[self.START_Y] - self.current_block[self.START_Y],
                             new_block[self.START_X] - self.current_block[self.START_X])
         speed = length / duration / constants.ACTUAL_SPEED_TIMES
-        logger.debug('absolute params is {0} {1} {2}'.format(degrees, speed, duration))
         self.set_movement_relative(degrees, speed, duration)
 
+    @util.timeit
     def set_movement_relative(self, degrees, speed, duration):
-        logger.debug('set_movement_relative')
         self.add_vision_move(degrees, speed, duration)
         self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.MOVE_DURATION: duration,
                                constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
                                self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
 
+    @util.timeit
     def restrict_edge_start_x(self, new_start_x):
         actual_start_x = new_start_x
         if new_start_x < 0:
@@ -625,6 +611,7 @@ class Vision(object):
             actual_start_x = self.FRAME_WIDTH - self.current_block[self.WIDTH]
         return int(round(actual_start_x))
 
+    @util.timeit
     def restrict_edge_start_y(self, new_start_y):
         actual_start_y = new_start_y
         if new_start_y < 0:
@@ -633,12 +620,14 @@ class Vision(object):
             actual_start_y = self.FRAME_HEIGHT - self.current_block[self.HEIGHT]
         return int(round(actual_start_y))
 
+    @util.timeit
     def calculate_degrees(self, new_block):
         radians = math.atan2(new_block[self.START_Y] - self.current_block[self.START_Y],
                              new_block[self.START_X] - self.current_block[self.START_X])
         degrees = math.degrees(radians)
         return int(round(degrees / float(constants.ACTUAL_DEGREES_TIMES)))
 
+    @util.timeit
     def try_move_away(self, elapse, degrees, speed):
         # actual degrees is 10 times
         actual_degrees = degrees * constants.ACTUAL_DEGREES_TIMES
@@ -653,8 +642,8 @@ class Vision(object):
             return None
         return new_block
 
+    @util.timeit
     def calculate_move_action(self, action):
-        logger.debug('calculate_move_action')
         elapse = time.time() - action[self.LAST_MOVE_TIME]
         duration = action[constants.MOVE_DURATION]
         degrees = action[constants.DEGREES]
@@ -663,9 +652,7 @@ class Vision(object):
             # if process slow, destination will be quite different
             elapse = duration
             action.update({self.STATUS: self.COMPLETED})
-        logger.debug('elapse is {0}, degrees is {1}, speed is {2}'.format(elapse, degrees, speed))
         new_block = self.try_move_away(elapse, degrees, speed)
-        logger.debug('new block is {0}'.format(new_block))
         if new_block:
             self.current_block = new_block
             action[self.LAST_MOVE_TIME] = time.time()
@@ -674,8 +661,8 @@ class Vision(object):
             action.update({self.STATUS: self.COMPLETED})
 
     # deprecated, low performance
+    @util.timeit
     def calculate_cells_histogram(self, full_image):
-        start = time.time()
         cells_histogram = []
         width = self.ROI_ARR[0]
         height = self.ROI_ARR[0]
@@ -692,10 +679,10 @@ class Vision(object):
                 ret = gray_image[j * height:(j + 1) * height, i * width:(i + 1) * width]
                 hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
                 cells_histogram.append(hist_np)
-        logger.debug('calculate_cells_histogram used time:{0}'.format(time.time() - start))
         return cells_histogram
 
     # deprecated, low performance
+    @util.timeit
     def sum_blocks_histogram(self, cells_histogram):
         blocks_histogram = []
         times = self.current_block[self.WIDTH] // self.ROI_ARR[0]
@@ -715,8 +702,8 @@ class Vision(object):
                 blocks_histogram.append(hist)
         return blocks_histogram
 
+    @util.timeit
     def calculate_blocks_histogram(self, full_image, blocks_x, blocks_y, block_width, block_height):
-        start = time.time()
         blocks_histogram = []
         # b, g, r = cv2.split(full_image)
         gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
@@ -729,9 +716,9 @@ class Vision(object):
                 ret = gray_image[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
                 hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
                 blocks_histogram.append(hist_np)
-        logger.debug('calculate_blocks_histogram used time:{0}'.format(time.time() - start))
         return blocks_histogram
 
+    @util.timeit
     def reproduce_movement(self, bm):
         degrees = bm[constants.DEGREES]
         speed = bm[constants.SPEED]
@@ -750,6 +737,7 @@ class Vision(object):
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
             bm.update({constants.STATUS: constants.MATCHED})
 
+    @util.timeit
     def reproduce_zoom(self, bm):
         zoom_type = bm[constants.ZOOM_TYPE]
         zoom_direction = bm[constants.ZOOM_DIRECTION]
@@ -762,11 +750,12 @@ class Vision(object):
         self.current_block = new_block
         bm.update({constants.STATUS: constants.MATCHED})
 
+    @util.timeit
     def grab(self, top, left, width, height):
         raise NotImplementedError("error message")
 
+    @util.timeit
     def move_focus_to_mouse(self):
-        logger.debug('move_focus_to_mouse')
         new_block = {}
         mouse_x = int(self.mouse.position[0])
         mouse_y = int(self.mouse.position[1])
@@ -774,16 +763,11 @@ class Vision(object):
         new_start_y = mouse_y - self.current_block[self.HEIGHT] // 2
         new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
         new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
-        logger.debug('current block is {0}'.format(self.current_block))
-        logger.debug('new block is {0}'.format(new_block))
         self.set_movement_absolute(new_block, 0.5)
 
+    @util.timeit
     def calculate_vision_focus_state(self):
         this_focus_state = self.get_focus_state(self.current_block)
-        logger.debug('focus_status is {0}'.format(self.focus_status))
-        logger.debug('last_focus_state is {0}'.format(self.last_focus_state))
-        logger.debug('this_focus_state is {0}'.format(this_focus_state))
-        logger.debug('last_focus_state_time is {0}'.format(self.last_focus_state_time))
         if self.last_focus_state != this_focus_state:
             self.last_focus_state_time = time.time()
         self.last_focus_state = this_focus_state
@@ -797,11 +781,13 @@ class Vision(object):
                 self.focus_status is self.PROCESS_STATUS_DIGGING:
             self.focus_status = self.PROCESS_STATUS_EXPLORING
 
+    @util.timeit
     def get_focus_state(self, block):
         list1 = [block[self.START_X], block[self.START_Y], block[self.WIDTH], block[self.HEIGHT]]
         return util.list_to_str(list1)
 
 
+@util.timeit
 def get_channel_img(bgr, channel):
     # start = time.time()
     yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
@@ -814,6 +800,7 @@ def get_channel_img(bgr, channel):
         return v
 
 
+@util.timeit
 def get_feature_result(channel, kernel, feature_data):
     feature_data_str = util.list_to_str(feature_data)
     return channel + kernel + feature_data_str

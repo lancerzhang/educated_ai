@@ -23,6 +23,7 @@ class DataSqlite3:
     SQL_RETRY_INTERVAL = 0.001
     SQL_RETRY_COUNT = 100
 
+    @util.timeit
     def create_tables(self):
         sql_table = '''create table if not exists %s (
                 _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -86,10 +87,12 @@ class DataSqlite3:
                 self.TABLE_SHORT_ID, constants.MID))
         self.con.commit()
 
+    @util.timeit
     def connect_db(self):
         self.con = sqlite3.connect(self.CONN_STR, check_same_thread=False, uri=True)
         self.con.execute("PRAGMA read_uncommitted = true;")
 
+    @util.timeit
     def __init__(self, path, init=True):
         self.DUMP_FILE = path
         if not init:
@@ -104,92 +107,33 @@ class DataSqlite3:
             self.connect_db()
             self.create_tables()
 
+    @util.timeit
     def execute(self, *args, **kwargs):
-        start = time.time()
         c = self.con.cursor()
         c.execute(*args, **kwargs)
         self.con.commit()
-        logger.debug('DataSqlite3-execute: {0}'.format(time.time() - start))
 
+    @util.timeit
     def executemany(self, *args, **kwargs):
-        start = time.time()
         c = self.con.cursor()
         c.executemany(*args, **kwargs)
         self.con.commit()
-        logger.info('DataSqlite3-executemany: {0}'.format(time.time() - start))
 
+    @util.timeit
     def fetchone(self, *args, **kwargs):
-        start = time.time()
         cur = self.con.cursor()
         cur.execute(*args, **kwargs)
         record = cur.fetchone()
-        logger.debug('DataSqlite3-fetchone: {0}'.format(time.time() - start))
         return record
 
+    @util.timeit
     def fetchall(self, *args, **kwargs):
-        start = time.time()
         cur = self.con.cursor()
         cur.execute(*args, **kwargs)
         records = cur.fetchall()
-        logger.info('DataSqlite3-fetchall: {0}'.format(time.time() - start))
         return records
 
-    # def execute(self, *args, **kwargs):
-    #     c = self.con.cursor()
-    #     i = 0
-    #     while i < self.SQL_RETRY_COUNT:
-    #         i += 1
-    #         try:
-    #             c.execute(*args, **kwargs)
-    #             self.con.commit()
-    #             c.close()
-    #             break
-    #         except sqlite3.OperationalError:
-    #             logging.info('wait for other thread to finish transaction.')
-    #             time.sleep(self.SQL_RETRY_INTERVAL)
-    #
-    # def executemany(self, *args, **kwargs):
-    #     c = self.con.cursor()
-    #     i = 0
-    #     while i < self.SQL_RETRY_COUNT:
-    #         i += 1
-    #         try:
-    #             c.executemany(*args, **kwargs)
-    #             self.con.commit()
-    #             c.close()
-    #             break
-    #         except sqlite3.OperationalError:
-    #             logging.info('wait for other thread to finish transaction.')
-    #             time.sleep(self.SQL_RETRY_INTERVAL)
-    #
-    # def fetchone(self, *args, **kwargs):
-    #     c = self.con.cursor()
-    #     i = 0
-    #     while i < self.SQL_RETRY_COUNT:
-    #         i += 1
-    #         try:
-    #             c.execute(*args, **kwargs)
-    #             record = c.fetchone()
-    #             c.close()
-    #             return record
-    #         except sqlite3.OperationalError:
-    #             logging.info('wait for other thread to finish transaction.')
-    #             time.sleep(self.SQL_RETRY_INTERVAL)
-    #
-    # def fetchall(self, *args, **kwargs):
-    #     c = self.con.cursor()
-    #     i = 0
-    #     while i < self.SQL_RETRY_COUNT:
-    #         i += 1
-    #         try:
-    #             c.execute(*args, **kwargs)
-    #             records = c.fetchall()
-    #             c.close()
-    #             return records
-    #         except sqlite3.OperationalError:
-    #             logging.info('wait for other thread to finish transaction.')
-    #             time.sleep(self.SQL_RETRY_INTERVAL)
-
+    @util.timeit
     def insert(self, bm):
         columns = ', '.join(list(bm.keys()))
         placeholders = ':' + ', :'.join(list(bm.keys()))
@@ -197,30 +141,33 @@ class DataSqlite3:
         prepare_data(bm)
         self.execute(query, bm)
 
+    @util.timeit
     def get_insert(self, bm):
         self.insert(bm)
         return self.get_by_id(bm[constants.MID])
 
+    @util.timeit
     def get_by_id(self, mid):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_BM, constants.MID)
         return self.fetchone(query, (mid,))
 
+    @util.timeit
     def get_all(self):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s ' % self.TABLE_BM
         return self.fetchall(query)
 
+    @util.timeit
     def update_memory(self, content, mid):
-        start = time.time()
         params = [key + "=:" + key for key in content]
         updates = ', '.join(params)
         query = 'UPDATE {0} SET {1} WHERE {2}=:{2}'.format(self.TABLE_BM, updates, constants.MID)
         prepare_data(content)
         content.update({constants.MID: mid})
         self.execute(query, content)
-        logger.debug('update_memory:{0}'.format(time.time() - start))
 
+    @util.timeit
     def update_memories(self, contents):
         params = [key + "=:" + key for key in contents[0]]
         updates = ', '.join(params)
@@ -228,46 +175,54 @@ class DataSqlite3:
         for content in contents:
             prepare_data(content)
         self.executemany(query, contents)
-        logging.debug('update_memories %s records.' % len(contents))
 
+    @util.timeit
     def delete_memory(self, eid):
         query = 'DELETE FROM %s WHERE %s=?' % (self.TABLE_BM, constants.MID)
         self.execute(query, (eid,))
 
+    @util.timeit
     def delete_memories(self, eids):
         query = 'DELETE FROM %s WHERE %s=?' % (self.TABLE_BM, constants.MID)
         self.executemany(query, list_many(eids))
         logging.debug('delete_memories %s records.' % len(eids))
 
+    @util.timeit
     def search_by_last_call(self, last_call):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s<? ' % (self.TABLE_BM, constants.LAST_RECALL_TIME)
         return self.fetchall(query, (last_call,))
 
+    @util.timeit
     def search_all(self, query):
         self.con.row_factory = bm_dict_factory
         return self.fetchall(query)
 
+    @util.timeit
     def get_eden_memories(self):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s<? ' % (self.TABLE_BM, constants.RECALL_COUNT)
         return self.fetchall(query, (2,))
 
+    @util.timeit
     def get_young_memories(self):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM {0} WHERE {1}>=? AND {1}<? '.format(self.TABLE_BM, constants.RECALL_COUNT)
         return self.fetchall(query, (2, 20))
 
+    @util.timeit
     def get_old_memories(self):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s>=?  ' % (self.TABLE_BM, constants.RECALL_COUNT)
         return self.fetchall(query, (20,))
 
+    @util.timeit
     def get_memories_by_id_mod(self, mod):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE _id%%10=?  ' % self.TABLE_BM
         return self.fetchall(query, (mod,))
 
+    @util.timeit
     def get_vision_move_memory(self, degrees, speed, duration):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=? AND %s=? AND %s=? AND %s=?' % (
@@ -275,138 +230,167 @@ class DataSqlite3:
             constants.MOVE_DURATION)
         return self.fetchone(query, (constants.VISION_FOCUS_MOVE, degrees, speed, duration))
 
+    @util.timeit
     def get_vision_zoom_memory(self, zoom_type, zoom_direction):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=? AND %s=? AND %s=?' % (
             self.TABLE_BM, constants.PHYSICAL_MEMORY_TYPE, constants.ZOOM_TYPE, constants.ZOOM_DIRECTION)
         return self.fetchone(query, (constants.VISION_FOCUS_ZOOM, zoom_type, zoom_direction))
 
+    @util.timeit
     def get_mouse_click_memory(self, click_type):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=? AND %s=?' % (
             self.TABLE_BM, constants.PHYSICAL_MEMORY_TYPE, constants.CLICK_TYPE)
         return self.fetchone(query, (constants.ACTION_MOUSE_CLICK, click_type))
 
+    @util.timeit
     def get_by_child_ids(self, child_mem):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=? ' % (self.TABLE_BM, constants.CHILD_MEM)
         return self.fetchone(query, (util.list_to_sorted_string(child_mem),))
 
+    @util.timeit
     def get_vision_feature_memories(self, channel, kernel):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=? AND %s=? AND %s=?' % (
             self.TABLE_BM, constants.PHYSICAL_MEMORY_TYPE, constants.CHANNEL, constants.KERNEL)
         return self.fetchall(query, (constants.VISION_FEATURE, channel, kernel))
 
+    @util.timeit
     def get_sound_feature_memories(self, kernel):
         self.con.row_factory = bm_dict_factory
         query = 'SELECT * FROM %s WHERE %s=? AND %s=? ' % (
             self.TABLE_BM, constants.PHYSICAL_MEMORY_TYPE, constants.KERNEL)
         return self.fetchall(query, (constants.SOUND_FEATURE, kernel))
 
+    @util.timeit
     def get_vision_used_kernel(self, kernel):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_VISION_USED_KERNEL, constants.KERNEL)
         return self.fetchone(query, (kernel,))
 
+    @util.timeit
     def get_top_vision_used_kernel(self, offset):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1 OFFSET ?' % (self.TABLE_VISION_USED_KERNEL, constants.COUNT)
         return self.fetchone(query, (offset,))
 
+    @util.timeit
     def insert_vision_used_kernel(self, kernel, count=1):
         query = 'INSERT INTO %s VALUES (?,?)' % self.TABLE_VISION_USED_KERNEL
         self.execute(query, (kernel, count))
 
+    @util.timeit
     def update_vision_used_kernel(self, kernel, count):
         query = 'UPDATE %s SET %s=? WHERE %s=?' % (self.TABLE_VISION_USED_KERNEL, constants.COUNT, constants.KERNEL)
         self.execute(query, (count, kernel))
 
+    @util.timeit
     def clean_vision_used_kernel(self, min_count=3):
         query = 'DELETE FROM %s WHERE %s<?' % (self.TABLE_VISION_USED_KERNEL, constants.COUNT)
         self.execute(query, (min_count,))
 
+    @util.timeit
     def get_sound_used_kernel(self, kernel):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_SOUND_USED_KERNEL, constants.KERNEL)
         return self.fetchone(query, (kernel,))
 
+    @util.timeit
     def get_top_sound_used_kernel(self, offset):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1 OFFSET ?' % (self.TABLE_SOUND_USED_KERNEL, constants.COUNT)
         return self.fetchone(query, (offset,))
 
+    @util.timeit
     def insert_sound_used_kernel(self, kernel, count=1):
         query = 'INSERT INTO %s VALUES (?,?)' % self.TABLE_SOUND_USED_KERNEL
         self.execute(query, (kernel, count))
 
+    @util.timeit
     def update_sound_used_kernel(self, kernel, count):
         query = 'UPDATE %s SET %s=? WHERE %s=?' % (self.TABLE_SOUND_USED_KERNEL, constants.COUNT, constants.KERNEL)
         self.execute(query, (count, kernel))
 
+    @util.timeit
     def clean_sound_used_kernel(self, min_count=3):
         query = 'DELETE FROM %s WHERE %s<?' % (self.TABLE_SOUND_USED_KERNEL, constants.COUNT)
         self.execute(query, (min_count,))
 
+    @util.timeit
     def clean_short_id(self):
         query = 'DELETE FROM {0} WHERE {2} NOT IN (SELECT {2} FROM {1} )'.format(self.TABLE_SHORT_ID, self.TABLE_BM,
                                                                                  constants.MID, )
         self.execute(query)
 
+    @util.timeit
     def get_used_speed(self, speed):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_USED_SPEED, constants.SPEED)
         return self.fetchone(query, (speed,))
 
+    @util.timeit
     def get_top_used_speed(self, offset=0):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1 OFFSET ?' % (self.TABLE_USED_SPEED, constants.COUNT)
         return self.fetchone(query, (offset,))
 
+    @util.timeit
     def insert_used_speed(self, speed, count=1):
         query = 'INSERT INTO %s VALUES (?,?)' % self.TABLE_USED_SPEED
         self.execute(query, (speed, count))
 
+    @util.timeit
     def update_used_speed(self, speed, count):
         query = 'UPDATE %s SET %s=? WHERE %s=?' % (self.TABLE_USED_SPEED, constants.COUNT, constants.SPEED)
         self.execute(query, (count, speed))
 
+    @util.timeit
     def get_used_degrees(self, degrees):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_USED_DEGREES, constants.DEGREES)
         return self.fetchone(query, (degrees,))
 
+    @util.timeit
     def get_top_used_degrees(self, offset=0):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1 OFFSET ?' % (self.TABLE_USED_DEGREES, constants.COUNT)
         return self.fetchone(query, (offset,))
 
+    @util.timeit
     def insert_used_degrees(self, degrees, count=1):
         query = 'INSERT INTO %s VALUES (?,?)' % self.TABLE_USED_DEGREES
         self.execute(query, (degrees, count))
 
+    @util.timeit
     def update_used_degrees(self, degrees, count):
         query = 'UPDATE %s SET %s=? WHERE %s=?' % (self.TABLE_USED_DEGREES, constants.COUNT, constants.DEGREES)
         self.execute(query, (count, degrees))
 
+    @util.timeit
     def get_used_channel(self, channel):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s WHERE %s=?' % (self.TABLE_USED_CHANNEL, constants.CHANNEL)
         return self.fetchone(query, (channel,))
 
+    @util.timeit
     def get_top_used_channel(self, offset=0):
         self.con.row_factory = sqlite3.Row
         query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1 OFFSET ?' % (self.TABLE_USED_CHANNEL, constants.COUNT)
         return self.fetchone(query, (offset,))
 
+    @util.timeit
     def insert_used_channel(self, channel, count=1):
         query = 'INSERT INTO %s VALUES (?,?)' % self.TABLE_USED_CHANNEL
         self.execute(query, (channel, count))
 
+    @util.timeit
     def update_used_channel(self, channel, count):
         query = 'UPDATE %s SET %s=? WHERE %s=?' % (self.TABLE_USED_CHANNEL, constants.COUNT, constants.CHANNEL)
         self.execute(query, (count, channel))
 
+    @util.timeit
     def persist(self):
         # need to reset row factory, otherwise there is strange error
         self.con.row_factory = None
@@ -418,6 +402,7 @@ class DataSqlite3:
         except:
             logging.error('failed to persist database')
 
+    @util.timeit
     def import_from_script(self, path):
         logging.info('import_from_script')
         qry = open(path, 'r').read()
@@ -427,10 +412,12 @@ class DataSqlite3:
         self.con.commit()
 
 
+@util.timeit
 def list_many(list1):
     return [(x,) for x in list1]
 
 
+@util.timeit
 def prepare_data(d):
     if constants.CHILD_MEM in d:
         d.update({constants.CHILD_MEM: util.list_to_sorted_string(d.get(constants.CHILD_MEM))})
@@ -440,6 +427,7 @@ def prepare_data(d):
         d.update({constants.FEATURE: util.list_to_str(d.get(constants.FEATURE))})
 
 
+@util.timeit
 def bm_dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):

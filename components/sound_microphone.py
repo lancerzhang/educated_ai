@@ -15,11 +15,12 @@ class MicrophoneSound(Sound):
     CHANNELS = 1
     MAX_PHASES = 5  # max phases storage
 
+    @util.timeit
     def __init__(self, bm):
         super(MicrophoneSound, self).__init__(bm)
 
+    @util.timeit
     def receive(self):
-        logging.info('start to receive sound data.')
         try:
             audio = pyaudio.PyAudio()
             stream = audio.open(format=self.FORMAT,
@@ -45,7 +46,6 @@ class MicrophoneSound(Sound):
                 # reach buffer threshold, save it as phase
                 if len(self.phases) > self.MAX_PHASES:
                     # ignore non-process phase
-                    logger.debug('discard a phase')
                     self.phases.popleft()
                 self.phases.append(frame_data)
         except IOError:

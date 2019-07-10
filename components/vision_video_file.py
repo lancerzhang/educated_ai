@@ -1,14 +1,13 @@
 from .vision import Vision
+from . import util
 import mss
 import cv2
-import logging
-import time
 
 
 class VideoFileVision(Vision):
 
+    @util.timeit
     def __init__(self, bm, file_path, status_controller):
-        logging.info('start to load video file')
         self.file_path = file_path
         self.cap = cv2.VideoCapture(file_path)
         self.FRAME_WIDTH = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -22,6 +21,7 @@ class VideoFileVision(Vision):
         self.monitor_width = monitor['width']
         super(VideoFileVision, self).__init__(bm)
 
+    @util.timeit
     def process(self, status_controller, key):
         frame = status_controller.video_frame
         status_controller.video_frame = frame + 1
@@ -32,7 +32,6 @@ class VideoFileVision(Vision):
             status_controller.video_frame = 1
 
         focus = super(VideoFileVision, self).process(status_controller, key)
-        time1 = time.time()
         display_frame = self.source_frame.copy()
         cv2.rectangle(display_frame, (self.current_block[self.START_X], self.current_block[self.START_Y]),
                       (self.current_block[self.START_X] + self.current_block[self.WIDTH],
@@ -46,9 +45,9 @@ class VideoFileVision(Vision):
             cv2.setWindowProperty("frame", cv2.WND_PROP_AUTOSIZE, cv2.WND_PROP_AUTOSIZE)
         cv2.imshow('frame', display_frame)
         cv2.waitKey(1)
-        logging.info('VideoFileVision.process:{0}'.format(time.time() - time1))
         return focus
 
+    @util.timeit
     def grab(self, top, left, width, height):
         top = int(top)
         left = int(left)
