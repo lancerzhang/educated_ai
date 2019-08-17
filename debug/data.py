@@ -57,12 +57,12 @@ value1 = constants.SOUND_FEATURE
 # key1 = None
 # value1 = None
 # field = constants.REWARD
-# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
-# print([x[field1] for x in memories])
-# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
-# print([x[field1] for x in memories])
-# memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 50)
-# print([x[field1] for x in memories])
+memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
+print([x[field1] for x in memories])
+memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
+print([x[field1] for x in memories])
+memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 50)
+print([x[field1] for x in memories])
 
 # field = constants.CHILD_MEM
 # memories = list_top_sub_memories(field, 20)
@@ -80,7 +80,3 @@ roots = []
 # for m in memoris:
 #     print data_service.get_memory(m)
 # data_service.db.search_all('select * from bm where mod(_id)=1')
-time1 = time.time()
-data_service.db.clean_short_id()
-time2 = time.time()
-print('used %s' % (time2 - time1))

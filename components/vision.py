@@ -122,8 +122,27 @@ class Vision(object):
     @util.timeit
     def match_features(self):
         physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.VISION_FEATURE)
+        img = self.get_region(self.current_block)
+        y, u, v = get_channel_imgs(img)
+        data_map = None
+        data_map_y = None
+        data_map_u = None
+        data_map_v = None
         for bm in physical_memories:
-            self.match_feature(bm)
+            channel = bm[constants.CHANNEL]
+            if channel == 'y':
+                if data_map_y is None:
+                    data_map_y = self.get_data_map(y)
+                data_map = data_map_y
+            elif channel == 'u':
+                if data_map_u is None:
+                    data_map_u = self.get_data_map(u)
+                data_map = data_map_u
+            elif channel == 'v':
+                if data_map_v is None:
+                    data_map_v = self.get_data_map(v)
+                data_map = data_map_v
+            self.match_feature(data_map, bm)
         self.bio_memory.verify_matching_physical_memories()
 
     @util.timeit
@@ -141,14 +160,12 @@ class Vision(object):
         self.bio_memory.verify_matching_physical_memories()
 
     @util.timeit
-    def match_feature(self, fmm):
+    def match_feature(self, data_map, fmm):
         channel = fmm[constants.CHANNEL]
         kernel = fmm[constants.KERNEL]
         feature = fmm[constants.FEATURE]
-        img = self.get_region(self.current_block)
-        channel_img = get_channel_img(img, channel)
         fmm.update({constants.STATUS: constants.MATCHING})
-        feature_data = self.filter_feature(channel_img, kernel, np.array(feature))
+        feature_data = self.filter_feature(data_map, kernel, np.array(feature))
         if feature_data is None:
             return False  # not similar
         if feature_data[constants.SIMILAR]:
@@ -160,10 +177,9 @@ class Vision(object):
 
     # match the experience vision sense
     @util.timeit
-    def filter_feature(self, data, kernel, feature=None):
+    def filter_feature(self, data_map, kernel, feature=None):
         feature_data = copy.deepcopy(self.FEATURE_DATA)
         feature_data[constants.KERNEL] = kernel
-        data_map = cv2.resize(data, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
         kernel_arr = util.string_to_feature_matrix(kernel)
         cov = cv2.filter2D(data_map, -1, kernel_arr)
         # down-sampling once use max pool, size is 50% of origin
@@ -241,6 +257,10 @@ class Vision(object):
             if difference < self.FEATURE_SIMILARITY_THRESHOLD:
                 return mem
         return None
+
+    @util.timeit
+    def get_data_map(self, channel_img):
+        return cv2.resize(channel_img, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
 
     @util.timeit
     def aware(self, image):
@@ -404,7 +424,8 @@ class Vision(object):
         img = self.get_region(block)
         kernel = self.get_kernel()
         channel_img = get_channel_img(img, channel)
-        feature_data = self.filter_feature(channel_img, kernel)
+        data_map = self.get_data_map(channel_img)
+        feature_data = self.filter_feature(data_map, kernel)
         if feature_data:
             feature_data[constants.CHANNEL] = channel
         return feature_data
@@ -788,10 +809,14 @@ class Vision(object):
 
 
 @util.timeit
-def get_channel_img(bgr, channel):
-    # start = time.time()
+def get_channel_imgs(bgr):
     yuv = cv2.cvtColor(bgr, cv2.COLOR_BGR2YUV)
-    y, u, v = cv2.split(yuv)
+    return cv2.split(yuv)
+
+
+@util.timeit
+def get_channel_img(bgr, channel):
+    y, u, v = get_channel_imgs(bgr)
     if channel == 'y':
         return y
     elif channel == 'u':

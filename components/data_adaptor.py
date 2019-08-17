@@ -64,7 +64,6 @@ class DataAdaptor:
 
     @util.timeit
     def search_invalid_memories(self, memories):
-        start = time.time()
         if memories is None or len(memories) == 0:
             return None
         to_be_deleted_memories = []
