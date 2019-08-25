@@ -1,6 +1,13 @@
 from components.memory import Memory
 from components import constants
+from components import memory
 from components import util
+import logging
+import numpy as np
+import time
+
+logger = logging.getLogger('Brain')
+logger.setLevel(logging.INFO)
 
 
 class Brain:
@@ -9,99 +16,110 @@ class Brain:
         self.active_memories = []
         self.memory_id_sequence = 0
 
+    @util.timeit
     def associate_active_memories(self):
         active_parent = []
-        for mem in self.active_memories:
-            active_parent.append(mem.parent)
+        for m in self.active_memories:
+            active_parent.append(list(m.parent))
         parent_counts = util.list_element_count(active_parent)
-        for memory in sorted(parent_counts, key=parent_counts.get, reverse=True):
-            if memory not in self.active_memories:
-                memory.activate()
-                self.active_memories.append(memory)
+        for m in sorted(parent_counts, key=parent_counts.get, reverse=True):
+            if m not in self.active_memories:
+                m.activate()
+                self.active_memories.append(m)
                 break
 
-    def prepare_active_memories(self):
-        for memory in self.active_memories:
-            memory.activate_tree()
+    @util.timeit
+    def activate_memories(self):
+        for m in self.active_memories:
+            m.activate_tree()
 
+    @util.timeit
     def match_virtual_memories(self):
-        for memory in self.active_memories:
-            if memory.virtual_type == constants.SLICE_MEMORY:
-                memory.match()
-
-        for memory in self.active_memories:
-            if memory.virtual_type == constants.INSTANT_MEMORY:
-                memory.match()
-
-        for memory in self.active_memories:
-            if memory.virtual_type == constants.SHORT_MEMORY:
-                memory.match()
+        for i in range(1, 4):
+            for m in self.active_memories:
+                if m.memory_type == memory.MEMORY_TYPES[i]:
+                    m.match()
 
         match_any = True
         while match_any:
             match_any = False
-            for memory in self.active_memories:
-                if memory.virtual_type == constants.LONG_MEMORY:
-                    if memory.match():
+            for m in self.active_memories:
+                if m.memory_type == memory.MEMORY_TYPES.index(constants.LONG_MEMORY):
+                    if m.match():
                         match_any = True
 
-    def compose_memory(self, virtual_type, active_memories):
-        if len(active_memories) == 0:
+    @util.timeit
+    def compose_memory(self, children, memory_type, feature_type=-1):
+        if len(children) == 0:
             return
-        memories = active_memories
-        if len(active_memories) > 4:
-            memories = active_memories[-4:]
-        memory = Memory(0)
-        memory.virtual_type = virtual_type
-        memory.children = memories
-        memory = self.add_memory(memories)
-        self.active_memories.append(memory)
+        memories = util.list_remove_duplicates(children)
+        if len(memories) > memory.COMPOSE_NUMBER:
+            # only use last 4 memories
+            memories = memories[-memory.COMPOSE_NUMBER:]
+        query = Memory(0)
+        query.memory_type = memory_type
+        query.children = memories
+        m = self.find_one_memory(query)
+        if not m:
+            self.memory_id_sequence += 1
+            m = query
+            m.mid = self.memory_id_sequence
+            m.feature_type = feature_type
+            max_reward = np.max(np.array([x.reward for x in children]))
+            m.reward = max_reward * 0.9
+            self.memories.add(m)
+        m.status = constants.MATCHED
+        m.matched_time = time.time()
+        m.refresh()
+        self.active_memories.append(m)
 
+    @util.timeit
     def compose_active_memories(self):
-        vision_memories = [x for x in self.active_memories if x.physical_type == constants.VISION_FEATURE]
-        self.compose_memory(constants.SLICE_MEMORY, vision_memories)
-        sound_memories = [x for x in self.active_memories if x.physical_type == constants.SOUND_FEATURE]
-        self.compose_memory(constants.SLICE_MEMORY, sound_memories)
-        slice_memories = [x for x in self.active_memories if x.virtual_type == constants.SLICE_MEMORY]
-        self.compose_memory(constants.INSTANT_MEMORY, slice_memories)
-        instant_memories = [x for x in self.active_memories if x.virtual_type == constants.INSTANT_MEMORY]
-        self.compose_memory(constants.SHORT_MEMORY, instant_memories)
-        short_memories = [x for x in self.active_memories if x.virtual_type == constants.SHORT_MEMORY]
-        self.compose_memory(constants.LONG_MEMORY, short_memories)
-        long_memories = [x for x in self.active_memories if x.virtual_type == constants.LONG_MEMORY]
-        self.compose_memory(constants.LONG_MEMORY, long_memories)
+        matched_memories = [x for x in self.active_memories if x.status == constants.MATCHED]
+        now = time.time()
 
+        feature_memory_type_index = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
+        for i in range(0, len(memory.MEMORY_FEATURES)):
+            memories = [x for x in matched_memories if x.memory_type == feature_memory_type_index
+                        and x.feature_type == i
+                        and (now - x.matched_time) < memory.MEMORY_DURATIONS[feature_memory_type_index]]
+            self.compose_memory(memories, feature_memory_type_index, i)
+
+        for j in range(feature_memory_type_index + 1, len(memory.MEMORY_TYPES)):
+            memories = [x for x in matched_memories if
+                        x.memory_type == j and (now - x.matched_time) < memory.MEMORY_DURATIONS[j]]
+            self.compose_memory(memories, j)
+
+    @util.timeit
     def cleanup_active_memories(self):
-        self.memories = set(x for x in self.memories if x.live)
-        new_active_memories = set()
-        for memory in self.active_memories:
-            if memory.live:
-                new_active_memories.add(memory)
+        self.active_memories = [x for x in self.active_memories if x.live]
+        new_active_memories = []
+        for m in self.active_memories:
+            if m.active_end_time < time.time():
+                m.deactivate()
             else:
-                memory.deactivate()
+                new_active_memories.append(m)
         self.active_memories = new_active_memories
 
-    def find_one_memory(self, memory):
-        for x in self.memories:
-            if memory.alike(x):
-                return x
+    @util.timeit
+    def find_one_memory(self, query):
+        for m in self.memories:
+            if query.equals(m):
+                return m
         return None
 
-    def add_memory(self, memory):
-        memory = self.find_one_memory(memory)
-        if not memory:
-            self.memory_id_sequence += 1
-            memory.mid = self.memory_id_sequence
-            self.memories.add(memory)
-        return memory
+    @util.timeit
+    def create_memory(self, m):
+        return
 
     # Use a separate thread to cleanup memories regularly.
+    @util.timeit
     def cleanup_memories(self):
-        for memory in self.memories:
-            memory.refresh()
-        new_memories = set(x for x in self.memories if x.live)
-        self.memories = new_memories
+        for m in self.memories:
+            m.refresh()
+        self.memories = set(x for x in self.memories if x.live)
 
     # Use a separate thread to persist memories to storage regularly.
+    @util.timeit
     def persist_memories(self):
         pass

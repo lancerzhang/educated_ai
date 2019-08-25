@@ -90,6 +90,15 @@ def list_to_sorted_string(list1):
 
 
 @timeit
+def list_remove_duplicates(list1):
+    unique_list = []
+    for elem in list1:
+        if elem not in unique_list:
+            unique_list.append(elem)
+    return unique_list
+
+
+@timeit
 def delete_empty_surround(arr):
     shape = arr.shape
     for col_num in range(shape[1] - 1, 0, -1):
