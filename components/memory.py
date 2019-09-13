@@ -14,6 +14,7 @@ MEMORY_FEATURES = ['vision', 'sound', 'focus_move', 'focus_zoom', 'mouse', 'rewa
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
 NOT_FORGET_STEP = 10
+id_sequence = 0
 
 TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296,
             326, 358, 392, 428, 466, 506, 548, 593, 641, 692, 746, 803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367,
@@ -25,6 +26,7 @@ TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 
 
 
 class Memory:
+    mid = 0
     live = True
     memory_type = -1
     feature_type = -1
@@ -32,6 +34,7 @@ class Memory:
     last_recall_time = 0
     protect_time = 0
     reward = 0
+    desire = 0
     parent = set()
     children = []
 
@@ -41,8 +44,7 @@ class Memory:
     active_start_time = None
     active_end_time = None
 
-    def __init__(self, mid):
-        self.mid = mid
+    def __init__(self):
         self.status = constants.MATCHED
         self.matched_time = time.time()
         self.active_start_time = time.time()
@@ -54,6 +56,11 @@ class Memory:
 
     def __eq__(self, other):
         return other == self.mid
+
+    def create(self):
+        global id_sequence
+        id_sequence += 1
+        self.mid = id_sequence
 
     # add protect time to prevent frequent calculation of deletion
     @util.timeit
@@ -96,7 +103,18 @@ class Memory:
                 break
 
     @util.timeit
+    def update_desire(self):
+        elapse = time.time() - self.matched_time
+        # linear func, weight is 0 at beginning, it's 1 after 4000 seconds
+        a = 0.00025 * elapse
+        weight = a if a < 1 else 1
+        self.desire = self.reward * weight
+        return
+
+    @util.timeit
     def activate(self):
+        if not self.live:
+            return
         if self.status != constants.DORMANT:
             return
 

@@ -14,14 +14,19 @@ class Brain:
     def __init__(self):
         self.memories = set()
         self.active_memories = []
-        self.memory_id_sequence = 0
 
     @util.timeit
     def associate_active_memories(self):
         active_parent = []
+        # collect parent memories
         for m in self.active_memories:
-            active_parent.append(list(m.parent))
+            active_parent += [x for x in m.parent if m.live]
+        # count parent memories
         parent_counts = util.list_element_count(active_parent)
+        # update memory desire
+        for m in parent_counts.keys():
+            m.update_desire()
+        # select top desire
         for m in sorted(parent_counts, key=parent_counts.get, reverse=True):
             if m not in self.active_memories:
                 m.activate()
@@ -56,14 +61,13 @@ class Brain:
         if len(memories) > memory.COMPOSE_NUMBER:
             # only use last 4 memories
             memories = memories[-memory.COMPOSE_NUMBER:]
-        query = Memory(0)
+        query = Memory()
         query.memory_type = memory_type
         query.children = memories
         m = self.find_one_memory(query)
         if not m:
-            self.memory_id_sequence += 1
             m = query
-            m.mid = self.memory_id_sequence
+            m.create()
             m.feature_type = feature_type
             max_reward = np.max(np.array([x.reward for x in children]))
             m.reward = max_reward * 0.9
