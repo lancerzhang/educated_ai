@@ -14,6 +14,7 @@ MEMORY_FEATURES = ['vision', 'sound', 'focus_move', 'focus_zoom', 'mouse', 'rewa
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
 NOT_FORGET_STEP = 10
+BASE_DESIRE = 0.1
 id_sequence = 0
 
 TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296,
@@ -34,7 +35,6 @@ class Memory:
     last_recall_time = 0
     protect_time = 0
     reward = 0
-    desire = 0
     parent = set()
     children = []
 
@@ -103,13 +103,13 @@ class Memory:
                 break
 
     @util.timeit
-    def update_desire(self):
+    def get_desire(self):
         elapse = time.time() - self.matched_time
         # linear func, weight is 0 at beginning, it's 1 after 4000 seconds
-        a = 0.00025 * elapse
-        weight = a if a < 1 else 1
-        self.desire = self.reward * weight
-        return
+        f = 0.00025 * elapse
+        desire = BASE_DESIRE + self.reward * f
+        desire = desire if desire < 1 else 1
+        return desire
 
     @util.timeit
     def activate(self):
@@ -122,26 +122,29 @@ class Memory:
         self.active_start_time = time.time()
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
 
-    @util.timeit
+    # @util.timeit
     def activate_tree(self):
         self.activate()
-        for memory in self.children:
-            if memory.virtual_type in [constants.LONG_MEMORY, constants.SHORT_MEMORY, constants.INSTANT_MEMORY]:
-                if memory.status == constants.MATCHING:
-                    break
-                elif memory.status == constants.DORMANT:
-                    memory.activate_tree()
+        print(f'self mid:{self.mid}')
+        for m in self.children:
+            print(f'child mid:{m.mid}')
+            if m.memory_type in [MEMORY_TYPES.index(constants.LONG_MEMORY),
+                                 MEMORY_TYPES.index(constants.SHORT_MEMORY),
+                                 MEMORY_TYPES.index(constants.INSTANT_MEMORY),
+                                 MEMORY_TYPES.index(constants.SLICE_MEMORY)]:
+                if m.status in [constants.MATCHING, constants.DORMANT]:
+                    m.activate_tree()
                     break
             else:
-                memory.activate_tree()
+                m.activate_tree()
 
     @util.timeit
     def match(self):
         if self.status != constants.MATCHING:
             return False
 
-        for memory in self.children:
-            if memory.status != constants.MATCHED:
+        for m in self.children:
+            if m.status != constants.MATCHED:
                 return False
 
         self.status = constants.MATCHED
@@ -155,9 +158,9 @@ class Memory:
         return
 
     @util.timeit
-    def equals(self, memory):
-        if memory.children:
-            if self.children != memory.children:
+    def equals(self, m):
+        if m.children:
+            if self.children != m.children:
                 return False
         return True
 

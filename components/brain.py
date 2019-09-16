@@ -2,6 +2,7 @@ from components.memory import Memory
 from components import constants
 from components import memory
 from components import util
+import copy
 import logging
 import numpy as np
 import time
@@ -20,14 +21,15 @@ class Brain:
         active_parent = []
         # collect parent memories
         for m in self.active_memories:
-            active_parent += [x for x in m.parent if m.live]
+            active_parent += [x for x in m.parent if x.live]
         # count parent memories
         parent_counts = util.list_element_count(active_parent)
+        parent_weight = {}
         # update memory desire
-        for m in parent_counts.keys():
-            m.update_desire()
+        for m, count in parent_counts.items():
+            parent_weight.update({m: count * m.get_desire()})
         # select top desire
-        for m in sorted(parent_counts, key=parent_counts.get, reverse=True):
+        for m in sorted(parent_weight, key=parent_weight.get, reverse=True):
             if m not in self.active_memories:
                 m.activate()
                 self.active_memories.append(m)
