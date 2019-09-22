@@ -122,7 +122,7 @@ class Memory:
         self.active_start_time = time.time()
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
 
-    # @util.timeit
+    @util.timeit
     def activate_tree(self):
         self.activate()
         print(f'self mid:{self.mid}')
@@ -148,7 +148,7 @@ class Memory:
                 return False
 
         self.status = constants.MATCHED
-        # extend active end time when it;s matched
+        # extend active end time when it's matched
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
         self.recall()
         return True

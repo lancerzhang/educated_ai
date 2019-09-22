@@ -42,9 +42,9 @@ class Brain:
 
     @util.timeit
     def match_virtual_memories(self):
-        for i in range(1, 4):
+        for i in range(1, len(memory.MEMORY_TYPES)-1):
             for m in self.active_memories:
-                if m.memory_type == memory.MEMORY_TYPES[i]:
+                if m.memory_type == i:
                     m.match()
 
         match_any = True

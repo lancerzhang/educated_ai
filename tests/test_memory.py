@@ -5,6 +5,32 @@ import time
 import unittest
 
 
+def build_a_tree(status=constants.DORMANT):
+    memory.id_sequence = 0
+    memories = []
+    for x in range(0, 11):
+        m = Memory()
+        m.create()
+        m.status = status
+        memories.append(m)
+    for i in range(0, 2):
+        memories[i].memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
+    for i in range(2, 4):
+        memories[i].memory_type = memory.MEMORY_TYPES.index(constants.SLICE_MEMORY)
+    for i in range(4, 6):
+        memories[i].memory_type = memory.MEMORY_TYPES.index(constants.INSTANT_MEMORY)
+    for i in range(6, 8):
+        memories[i].memory_type = memory.MEMORY_TYPES.index(constants.SHORT_MEMORY)
+    for i in range(8, 11):
+        memories[i].memory_type = memory.MEMORY_TYPES.index(constants.LONG_MEMORY)
+    memories[2].children = memories[0:2]
+    memories[4].children = memories[2:4]
+    memories[6].children = memories[4:6]
+    memories[8].children = memories[6:8]
+    memories[10].children = memories[8:10]
+    return memories
+
+
 class TestMemory(unittest.TestCase):
 
     def setUp(self):
@@ -22,26 +48,7 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(1, memory1.get_desire())
 
     def test_activate_tree_left_leaf(self):
-        memories = []
-        for x in range(0, 10):
-            m = Memory()
-            m.create()
-            m.status = constants.DORMANT
-            memories.append(m)
-        for i in range(0, 2):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
-        for i in range(2, 4):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.SLICE_MEMORY)
-        for i in range(4, 6):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.INSTANT_MEMORY)
-        for i in range(6, 8):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.SHORT_MEMORY)
-        for i in range(8, 10):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.LONG_MEMORY)
-        memories[2].children = memories[0:2]
-        memories[4].children = memories[2:4]
-        memories[6].children = memories[4:6]
-        memories[8].children = memories[6:8]
+        memories = build_a_tree()
         # 1st validation
         memories[8].activate_tree()
         self.assertEqual(memories[0].status, constants.MATCHING)
@@ -73,28 +80,9 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(memories[5].status, constants.MATCHING)
 
     def test_activate_tree_middle_leaf(self):
-        memories = []
-        for x in range(0, 11):
-            m = Memory()
-            m.create()
-            m.status = constants.DORMANT
-            memories.append(m)
-        for i in range(0, 2):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
-        for i in range(2, 4):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.SLICE_MEMORY)
-        for i in range(4, 6):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.INSTANT_MEMORY)
-        for i in range(6, 8):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.SHORT_MEMORY)
-        for i in range(8, 10):
-            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.LONG_MEMORY)
-        memories[2].children = memories[0:2]
-        memories[4].children = memories[2:4]
-        memories[6].children = memories[4:6]
+        memories = build_a_tree()
         memories[8].status = constants.MATCHING
         memories[9].children = memories[6:8]
-        memories[10].children = memories[8:10]
         # 1st validation
         memories[10].activate_tree()
         self.assertEqual(memories[9].status, constants.DORMANT)
@@ -107,6 +95,23 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(memories[4].status, constants.MATCHING)
         self.assertEqual(memories[6].status, constants.MATCHING)
         self.assertEqual(memories[9].status, constants.MATCHING)
+
+    def test_match(self):
+        memories = []
+        for x in range(0, 4):
+            m = Memory()
+            m.create()
+            m.status = constants.MATCHING
+            memories.append(m)
+        for i in range(0, 2):
+            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
+        for i in range(2, 4):
+            memories[i].memory_type = memory.MEMORY_TYPES.index(constants.SLICE_MEMORY)
+        memories[2].children = memories[0:2]
+        self.assertFalse(memories[2].match())
+        for i in range(0, 2):
+            memories[i].status = constants.MATCHED
+        self.assertTrue(memories[2].match())
 
 
 if __name__ == "__main__":
