@@ -34,7 +34,7 @@ def build_a_tree(status=constants.DORMANT):
 class TestMemory(unittest.TestCase):
 
     def setUp(self):
-        pass
+        memory.id_sequence = 0
 
     def test_get_desire(self):
         # normal case
@@ -112,6 +112,18 @@ class TestMemory(unittest.TestCase):
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
         self.assertTrue(memories[2].match())
+
+    def test_equals(self):
+        memories = build_a_tree()
+        # memory type not equal
+        self.assertFalse(memories[1].equals(memories[2]))
+        # slice memory equals without order
+        self.assertFalse(memories[3].equals(memories[2]))
+        memories[3].children = [memories[1], memories[0]]
+        self.assertTrue(memories[3].equals(memories[2]))
+        # other memory equals with order
+        memories[5].children = [memories[3], memories[2]]
+        self.assertFalse(memories[5].equals(memories[4]))
 
 
 if __name__ == "__main__":

@@ -219,27 +219,42 @@ class TestUtil(unittest.TestCase):
         self.assertEqual(0, tuple[0])
         self.assertEqual(2, tuple[1])
 
-    def test_list_equal(self):
+    def test_list_equal_no_order(self):
         a1 = ['ab', 'cd']
         a2 = ['ab', 'cd']
-        self.assertTrue(util.list_equal(a1, a2))
+        self.assertTrue(util.list_equal_no_order(a1, a2))
         a3 = ['cd', 'ab']
-        self.assertTrue(util.list_equal(a1, a3))
+        self.assertTrue(util.list_equal_no_order(a1, a3))
         a4 = ['aa']
-        self.assertFalse(util.list_equal(a1, a4))
+        self.assertFalse(util.list_equal_no_order(a1, a4))
         a5 = ['ab', 'cd', 'aa']
-        self.assertFalse(util.list_equal(a1, a5))
+        self.assertFalse(util.list_equal_no_order(a1, a5))
         a6 = []
-        self.assertFalse(util.list_equal(a1, a6))
-        self.assertFalse(util.list_equal(a6, a1))
+        self.assertFalse(util.list_equal_no_order(a1, a6))
+        self.assertFalse(util.list_equal_no_order(a6, a1))
         a7 = []
-        self.assertTrue(util.list_equal(a6, a7))
+        self.assertTrue(util.list_equal_no_order(a6, a7))
+        a8 = ['ab', 'cd', 'cd']
+        self.assertFalse(util.list_equal_no_order(a1, a8))
+
+    def test_list_equal_order(self):
+        a1 = ['ab', 'cd']
+        a2 = ['ab', 'cd']
+        self.assertTrue(util.list_equal_order(a1, a2))
+        a3 = ['cd', 'ab']
+        self.assertFalse(util.list_equal_order(a1, a3))
 
     def test_np_array_all_same(self):
         a1 = np.array([1, 2])
         self.assertFalse(util.np_array_all_same(a1))
         a1 = np.array([2, 2])
         self.assertTrue(util.np_array_all_same(a1))
+
+    def test_list_remove_duplicates(self):
+        l1 = [1, 2, 3]
+        self.assertEqual(3, len(util.list_remove_duplicates(l1)))
+        l2 = [1, 2, 3, 2, 1]
+        self.assertEqual(3, len(util.list_remove_duplicates(l2)))
 
 
 if __name__ == "__main__":

@@ -72,15 +72,15 @@ def list_comprehension_existing(list1, list2):
 
 
 @timeit
-def list_equal(list1, list2):
-    if len(list1) == len(list2):
-        diff = list_comprehension_new(list1, list2)
-        if len(diff) > 0:
-            return False
-        else:
-            return True
-    else:
-        return False
+def list_equal_no_order(list1, list2):
+    if len(list1) == len(list2) and set(list1) == set(list2):
+        return True
+    return False
+
+
+@timeit
+def list_equal_order(list1, list2):
+    return list1 == list2
 
 
 @timeit
@@ -146,13 +146,13 @@ def point_color_category(img):
 
 @timeit
 def color_hist(rgb, bins):
-    num = 256 / bins + 1
+    num = 256 // bins + 1
     r = rgb[:, :, 0].flatten()
     g = rgb[:, :, 1].flatten()
     b = rgb[:, :, 2].flatten()
-    bc1 = np.bincount(r / num, minlength=3)
-    bc2 = np.bincount(g / num, minlength=3)
-    bc3 = np.bincount(b / num, minlength=3)
+    bc1 = np.bincount(r // num, minlength=3)
+    bc2 = np.bincount(g // num, minlength=3)
+    bc3 = np.bincount(b // num, minlength=3)
     return np.concatenate((bc1, bc2, bc3))
 
 
@@ -281,7 +281,7 @@ def string_to_feature_matrix(str_feature):
 
 @timeit
 def find_2d_index(indexes, width):
-    y = indexes / width
+    y = indexes // width
     x = indexes % width
     return x, y
 

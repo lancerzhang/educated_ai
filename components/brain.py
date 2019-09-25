@@ -110,7 +110,7 @@ class Brain:
     @util.timeit
     def find_one_memory(self, query):
         for m in self.memories:
-            if query.equals(m):
+            if m.equals(query):
                 return m
         return None
 

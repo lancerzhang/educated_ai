@@ -1,6 +1,7 @@
 from components.memory import Memory
 from components.brain import Brain
 from components import constants
+from components import memory
 from tests import test_memory
 import time
 import unittest
@@ -9,7 +10,7 @@ import unittest
 class TestBrain(unittest.TestCase):
 
     def setUp(self):
-        pass
+        memory.id_sequence = 0
 
     def test_associate_active_memories_normal(self):
         # normal case
@@ -70,6 +71,12 @@ class TestBrain(unittest.TestCase):
             memories[i].status = constants.MATCHED
         brain.match_virtual_memories()
         self.assertEqual(memories[10].status, constants.MATCHED)
+
+    def test_compose_memory(self):
+        brain = Brain()
+        memories = test_memory.build_a_tree(constants.MATCHING)
+        brain.active_memories = memories
+
 
 
 if __name__ == "__main__":

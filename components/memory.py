@@ -158,10 +158,15 @@ class Memory:
         return
 
     @util.timeit
-    def equals(self, m):
-        if m.children:
-            if self.children != m.children:
+    def equals(self, query):
+        if query.memory_type > 0:
+            if self.memory_type != query.memory_type:
                 return False
+        if len(query.children) > 0:
+            if self.memory_type <= 1:
+                return util.list_equal_no_order(self.children, query.children)
+            else:
+                return util.list_equal_order(self.children, query.children)
         return True
 
     def deactivate(self):
