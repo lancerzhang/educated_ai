@@ -2,6 +2,7 @@ from components.memory import Memory
 from components.brain import Brain
 from components import constants
 from components import memory
+from components import util
 from tests import test_memory
 import time
 import unittest
@@ -17,8 +18,7 @@ class TestBrain(unittest.TestCase):
         brain = Brain()
         memories = []
         for x in range(0, 4):
-            m = Memory()
-            m.create()
+            m = memory.create()
             m.parent = set(memories)
             memories.append(m)
         brain.active_memories = memories[1:]
@@ -75,8 +75,85 @@ class TestBrain(unittest.TestCase):
     def test_compose_memory(self):
         brain = Brain()
         memories = test_memory.build_a_tree(constants.MATCHING)
-        brain.active_memories = memories
+        brain.memories = set(memories)
+        # existing memory
+        m1 = brain.compose_memory([memories[0], memories[1]], memory.MEMORY_TYPES.index(constants.SLICE_MEMORY))
+        self.assertEqual(2, len(m1.children))
+        self.assertEqual(3, m1.mid)
+        self.assertEqual(1, len(brain.active_memories))
+        self.assertEqual(constants.MATCHED, m1.status)
+        fm = memory.create()
+        fm.memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
+        fm.reward = 1
+        # compose new memory
+        m2 = brain.compose_memory([memories[0], memories[1], fm], memory.MEMORY_TYPES.index(constants.SLICE_MEMORY),
+                                  memory.MEMORY_FEATURES.index(constants.SOUND_FEATURE))
+        self.assertEqual(3, len(m2.children))
+        self.assertEqual(13, m2.mid)
+        self.assertEqual(0.9, m2.reward)
+        self.assertEqual(constants.MATCHED, m2.status)
+        self.assertEqual(memory.MEMORY_FEATURES.index(constants.SOUND_FEATURE), m2.feature_type)
 
+    def test_compose_active_memories(self):
+        brain = Brain()
+        memories = test_memory.build_a_tree(constants.MATCHED)
+        memories[0].feature_type = memory.MEMORY_FEATURES.index(constants.SOUND_FEATURE)
+        memories[1].feature_type = memory.MEMORY_FEATURES.index(constants.SOUND_FEATURE)
+        memories[1].status = constants.MATCHING
+        brain.active_memories = memories
+        for _ in range(0, 3):
+            m = memory.create()
+            m.status = constants.MATCHED
+            m.memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
+            m.feature_type = memory.MEMORY_FEATURES.index(constants.ACTION_REWARD)
+            brain.active_memories.append(m)
+        brain.active_memories[-1].matched_time = time.time() - 1
+        brain.compose_active_memories()
+        self.assertEqual(20, len(brain.active_memories))
+        new_sound = brain.active_memories[14]
+        self.assertEqual(constants.MATCHED, new_sound.status)
+        self.assertEqual(1, len(new_sound.children))
+        new_vision = brain.active_memories[15]
+        self.assertEqual(2, len(new_vision.children))
+        self.assertEqual(4, len(brain.active_memories[-1].children))
+
+    def test_cleanup_active_memories(self):
+        brain = Brain()
+        memories = test_memory.build_a_tree()
+        for m in memories:
+            m.active_end_time = time.time() + 10
+        brain.active_memories = memories
+        memories[0].live = False
+        brain.cleanup_active_memories()
+        self.assertEqual(10, len(brain.active_memories))
+        memories[1].active_end_time = time.time() - 1
+        brain.cleanup_active_memories()
+        self.assertEqual(9, len(brain.active_memories))
+
+    def test_cleanup_memories(self):
+        brain = Brain()
+        memories = test_memory.build_a_tree()
+        for m in memories:
+            m.last_recall_time = time.time() - 1
+        memories[0].last_recall_time = time.time() - 65000000
+        brain.memories = set(memories)
+        brain.cleanup_memories()
+        self.assertEqual(10, len(brain.memories))
+
+    def test_persist_memories(self):
+        brain = Brain()
+        memories = test_memory.build_a_tree()
+        brain.memories = set(memories)
+        brain.active_memories = memories
+        brain.persist_memories()
+        memory.id_sequence = 0
+        brain2 = Brain()
+        brain2.load_memories()
+        self.assertTrue(isinstance(brain2.memories, set))
+        self.assertEqual(11, len(brain2.memories))
+        m2 = util.get_from_set(brain2.memories, 3)
+        self.assertEqual(2, len(m2.children))
+        self.assertEqual(len(memories), memory.id_sequence)
 
 
 if __name__ == "__main__":

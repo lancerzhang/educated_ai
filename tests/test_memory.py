@@ -9,8 +9,7 @@ def build_a_tree(status=constants.DORMANT):
     memory.id_sequence = 0
     memories = []
     for x in range(0, 11):
-        m = Memory()
-        m.create()
+        m = memory.create()
         m.status = status
         memories.append(m)
     for i in range(0, 2):
@@ -43,7 +42,7 @@ class TestMemory(unittest.TestCase):
         memory1.matched_time = time.time() - 1000
         self.assertEqual(memory.BASE_DESIRE, memory1.get_desire())
         memory1.reward = 1
-        self.assertEqual(memory.BASE_DESIRE + 0.25, memory1.get_desire())
+        self.assertAlmostEqual(memory.BASE_DESIRE + 0.25, memory1.get_desire(), 2)
         memory1.matched_time = time.time() - 4001
         self.assertEqual(1, memory1.get_desire())
 
@@ -99,8 +98,7 @@ class TestMemory(unittest.TestCase):
     def test_match(self):
         memories = []
         for x in range(0, 4):
-            m = Memory()
-            m.create()
+            m = memory.create()
             m.status = constants.MATCHING
             memories.append(m)
         for i in range(0, 2):
@@ -116,14 +114,14 @@ class TestMemory(unittest.TestCase):
     def test_equals(self):
         memories = build_a_tree()
         # memory type not equal
-        self.assertFalse(memories[1].equals(memories[2]))
+        self.assertFalse(memories[1].equal(memories[2]))
         # slice memory equals without order
-        self.assertFalse(memories[3].equals(memories[2]))
+        self.assertFalse(memories[3].equal(memories[2]))
         memories[3].children = [memories[1], memories[0]]
-        self.assertTrue(memories[3].equals(memories[2]))
+        self.assertTrue(memories[3].equal(memories[2]))
         # other memory equals with order
         memories[5].children = [memories[3], memories[2]]
-        self.assertFalse(memories[5].equals(memories[4]))
+        self.assertFalse(memories[5].equal(memories[4]))
 
 
 if __name__ == "__main__":

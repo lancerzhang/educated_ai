@@ -9,13 +9,13 @@ logger.setLevel(logging.INFO)
 class Reward(object):
 
     @util.timeit
-    def __init__(self, bm):
-        self.bio_memory = bm
+    def __init__(self, brain):
+        self.brain = brain
 
     @util.timeit
     def add_reward_memory(self, new_reward):
-        bm = self.bio_memory.add_reward_memory(new_reward)
-        self.bio_memory.add_virtual_memory(constants.SLICE_MEMORY, [bm], reward=new_reward)
+        bm = self.brain.add_reward_memory(new_reward)
+        self.brain.add_virtual_memory(constants.SLICE_MEMORY, [bm], reward=new_reward)
 
     @util.timeit
     def process(self, key):

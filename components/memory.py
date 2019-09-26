@@ -10,7 +10,8 @@ logger.setLevel(logging.INFO)
 MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
-MEMORY_FEATURES = ['vision', 'sound', 'focus_move', 'focus_zoom', 'mouse', 'reward']
+MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.VISION_FOCUS_MOVE,
+                   constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
 NOT_FORGET_STEP = 10
@@ -24,6 +25,12 @@ TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 
             537840, 853200, 1326240, 2035800, 3100140, 3609835, 4203316, 4894372, 5699043, 6636009, 7727020,
             8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033,
             41225925, 48003823, 55896067, 65085866]
+
+
+def create():
+    m = Memory()
+    m.assign_id()
+    return m
 
 
 class Memory:
@@ -44,6 +51,11 @@ class Memory:
     active_start_time = None
     active_end_time = None
 
+
+    kernel = None
+    feature = None
+    channel = None
+
     def __init__(self):
         self.status = constants.MATCHED
         self.matched_time = time.time()
@@ -57,7 +69,7 @@ class Memory:
     def __eq__(self, other):
         return other == self.mid
 
-    def create(self):
+    def assign_id(self):
         global id_sequence
         id_sequence += 1
         self.mid = id_sequence
@@ -125,9 +137,7 @@ class Memory:
     @util.timeit
     def activate_tree(self):
         self.activate()
-        print(f'self mid:{self.mid}')
         for m in self.children:
-            print(f'child mid:{m.mid}')
             if m.memory_type in [MEMORY_TYPES.index(constants.LONG_MEMORY),
                                  MEMORY_TYPES.index(constants.SHORT_MEMORY),
                                  MEMORY_TYPES.index(constants.INSTANT_MEMORY),
@@ -155,10 +165,10 @@ class Memory:
 
     @util.timeit
     def recall(self):
-        return
+        self.refresh(True, False)
 
     @util.timeit
-    def equals(self, query):
+    def equal(self, query):
         if query.memory_type > 0:
             if self.memory_type != query.memory_type:
                 return False

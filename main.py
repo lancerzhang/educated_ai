@@ -1,20 +1,23 @@
 from components.action import Action
-from components.bio_memory import BioMemory
-from components.data_adaptor import DataAdaptor
-from components.data_sqlite3 import DataSqlite3
+from components.brain import Brain
+# from components.bio_memory import BioMemory
+# from components.data_adaptor import DataAdaptor
+# from components.data_sqlite3 import DataSqlite3
 from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
-from components.mgc import GC
+# from components.mgc import GC
 from components.reward import Reward
 from components.sound_microphone import MicrophoneSound
 from components.sound_video_file import VideoFileSound
 from components.status import Status
 from components.vision_screen import ScreenVision
 from components.vision_video_file import VideoFileVision
-from components import constants, util
+from components import constants
+from components import util
 import getopt
 import logging
 import numpy as np
+import schedule
 import sys
 import threading
 import time
@@ -47,6 +50,12 @@ def save_for_exit(mgc, sound):
         sound.running = False
 
 
+def run_pending():
+    while 1:
+        schedule.run_pending()
+        time.sleep(1)
+
+
 def main(argv):
     is_hibernate = None
     video_file = None
@@ -68,16 +77,17 @@ def main(argv):
     try:
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
-        da = DataAdaptor(DataSqlite3('data/dump.sql'))
-        bm = BioMemory(da)
-        if is_hibernate and is_hibernate == 'yes':
-            configs = load_main_conf()
-            if configs:
-                da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
-        mgc = GC()
+        brain = Brain()
+        brain.load_memories()
+        # TODO
+        # if is_hibernate and is_hibernate == 'yes':
+        #     configs = load_main_conf()
+        #     if configs:
+        #         da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
         # use separate thread to prepare gc
-        threading.Thread(target=mgc.prepare).start()
-        reward_controller = Reward(bm)
+        schedule.every(5).seconds.do(brain.house_keep)
+        threading.Thread(target=run_pending).start()
+        reward_controller = Reward(brain)
         mouse_listener = MouseListener()
         keyboard_listener = KeyboardListener()
         mouse_thread = threading.Thread(target=mouse_listener.run)
@@ -86,9 +96,9 @@ def main(argv):
         keyboard_thread = threading.Thread(target=keyboard_listener.run)
         keyboard_thread.daemon = True
         keyboard_thread.start()
-        status_controller = Status(bm)
+        status_controller = Status(brain)
         if video_file:
-            vision_controller = VideoFileVision(bm, video_file, status_controller)
+            vision_controller = VideoFileVision(brain, video_file, status_controller)
             sound_controller = VideoFileSound(bm, video_file)
         else:
             vision_controller = ScreenVision(bm)
@@ -125,12 +135,11 @@ def main(argv):
 
             # work end
             work_duration = util.time_diff(start)
-            status_controller.update_status(work_duration)
+            # status_controller.update_status(work_duration)
             bm.cleanup_working_memories()
 
             process_duration = util.time_diff(start)
-            # because sqlite3 multi-thread are difficult to handle concurrent issue
-            mgc.execute()
+            # mgc.execute()
             all_duration = util.time_diff(start)
             logging.info('frame took %d ms' % (all_duration * 1000))
 

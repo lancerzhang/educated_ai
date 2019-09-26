@@ -294,3 +294,11 @@ def list_to_str(list1):
 @timeit
 def str_to_int_list(str1):
     return [int(x) for x in str1.split(",")]
+
+
+@timeit
+def get_from_set(s, id):
+    for e in s:
+        if id == e:
+            return e
+    return None

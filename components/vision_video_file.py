@@ -7,7 +7,7 @@ import cv2
 class VideoFileVision(Vision):
 
     @util.timeit
-    def __init__(self, bm, file_path, status_controller):
+    def __init__(self, brain, file_path, status_controller):
         self.file_path = file_path
         self.cap = cv2.VideoCapture(file_path)
         self.FRAME_WIDTH = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -19,7 +19,7 @@ class VideoFileVision(Vision):
         sct = mss.mss()
         monitor = sct.monitors[1]
         self.monitor_width = monitor['width']
-        super(VideoFileVision, self).__init__(bm)
+        super(VideoFileVision, self).__init__(brain)
 
     @util.timeit
     def process(self, status_controller, key):

@@ -15,8 +15,8 @@ class Status(object):
     SATISFIED_REWARD = 45
 
     @util.timeit
-    def __init__(self, bm):
-        self.bio_memory = bm
+    def __init__(self, brain):
+        self.brain = brain
         self.video_frame = 0
         self.video_fps = 0
         pps = constants.process_per_second
