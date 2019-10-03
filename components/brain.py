@@ -54,6 +54,18 @@ class Brain:
                     if m.match():
                         match_any = True
 
+    def put_memory(self, query):
+        m = self.find_one_memory(query)
+        if not m:
+            m = query
+            m.assign_id()
+            self.memories.add(m)
+        m.status = constants.MATCHED
+        m.matched_time = time.time()
+        m.recall()
+        self.active_memories.append(m)
+        return m
+
     @util.timeit
     def compose_memory(self, children, memory_type, feature_type=-1, reward=0):
         if len(children) == 0:
@@ -64,22 +76,14 @@ class Brain:
             memories = memories[-memory.COMPOSE_NUMBER:]
         query = Memory()
         query.memory_type = memory_type
+        query.feature_type = feature_type
         query.children = memories
-        m = self.find_one_memory(query)
-        if not m:
-            m = query
-            m.assign_id()
-            m.feature_type = feature_type
-            max_reward = np.max(np.array([x.reward for x in children]))
-            m.reward = max_reward * 0.9
-            self.memories.add(m)
-        m.status = constants.MATCHED
-        m.matched_time = time.time()
-        # set reward directly if it's provided
+        m = self.put_memory(query)
         if reward > 0:
             m.reward = reward
-        m.refresh()
-        self.active_memories.append(m)
+        else:
+            max_reward = np.max(np.array([x.reward for x in children]))
+            m.reward = max_reward * 0.9
         return m
 
     @util.timeit
@@ -153,14 +157,7 @@ class Brain:
             pass
 
     @util.timeit
-    def add_reward_memory(self, reward):
-        m = memory.create()
-        m.memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
-        m.feature_type = memory.MEMORY_TYPES.index(constants.ACTION_REWARD)
-        m.reward = reward
-
-    @util.timeit
-    def add_virtual_memory(self, memory_type_str, child_memories, reward=0):
+    def put_virtual_memory(self, memory_type_str, child_memories, reward=0):
         memory_type = memory.MEMORY_TYPES.index(memory_type_str)
         self.compose_memory(child_memories, memory_type, reward)
 
@@ -171,7 +168,7 @@ class Brain:
                             x.feature_type == feature_type and x.status == constants.MATCHED]
         if fm not in matched_memories:
             matched_memories.append(fm)
-        self.add_virtual_memory(constants.SLICE_MEMORY, matched_memories)
+        self.put_virtual_memory(constants.SLICE_MEMORY, matched_memories)
 
     @util.timeit
     def prepare_matching_physical_memories(self, feature_type_str):
@@ -182,5 +179,50 @@ class Brain:
 
     @util.timeit
     def recall_feature_memory(self, fmm, feature):
-        fmm.feature=feature
+        fmm.feature = feature
         fmm.recall()
+
+    @util.timeit
+    def put_physical_memory(self, query):
+        query.memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
+        return self.put_memory(query)
+
+    @util.timeit
+    def put_vision_feature_memory(self, feature_type, channel, kernel, feature):
+        query = Memory()
+        query.feature_type = feature_type
+        query.channel = channel
+        query.kernel = kernel
+        query.feature = feature
+        return self.put_physical_memory(query)
+
+    @util.timeit
+    def put_mouse_click_memory(self, click_type):
+        query = Memory()
+        query.feature_type = memory.MEMORY_FEATURES.index(constants.ACTION_MOUSE_CLICK)
+        query.click_type = click_type
+        return self.put_physical_memory(query)
+
+    @util.timeit
+    def put_reward_memory(self, reward):
+        query = Memory()
+        query.feature_type = memory.MEMORY_FEATURES.index(constants.ACTION_REWARD)
+        query.reward = reward
+        return self.put_physical_memory(query)
+
+    @util.timeit
+    def put_vision_focus_move_memory(self, degrees, speed, duration):
+        query = Memory()
+        query.feature_type = memory.MEMORY_FEATURES.index(constants.VISION_FOCUS_MOVE)
+        query.degrees = degrees
+        query.speed = speed
+        query.duration = duration
+        return self.put_physical_memory(query)
+
+    @util.timeit
+    def put_vision_focus_zoom_memory(self, zoom_type, zoom_direction):
+        query = Memory()
+        query.feature_type = memory.MEMORY_FEATURES.index(constants.VISION_FOCUS_ZOOM)
+        query.zoom_type = zoom_type
+        query.zoom_direction = zoom_direction
+        return self.put_physical_memory(query)

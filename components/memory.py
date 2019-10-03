@@ -36,8 +36,8 @@ def create():
 class Memory:
     mid = 0
     live = True
-    memory_type = -1
-    feature_type = -1
+    memory_type = None
+    feature_type = None
     recall_count = 1
     last_recall_time = 0
     protect_time = 0
@@ -51,10 +51,15 @@ class Memory:
     active_start_time = None
     active_end_time = None
 
-
     kernel = None
     feature = None
     channel = None
+    click_type = None
+    degrees = None
+    speed = None
+    duration = None
+    zoom_type = None
+    zoom_direction = None
 
     def __init__(self):
         self.status = constants.MATCHED
@@ -169,9 +174,12 @@ class Memory:
 
     @util.timeit
     def equal(self, query):
-        if query.memory_type > 0:
-            if self.memory_type != query.memory_type:
-                return False
+        equal_fields = ['memory_type', 'feature_type', 'channel', 'kernel', 'feature', 'click_type', 'degrees', 'speed',
+                        'duration', 'zoom_type', 'zoom_direction']
+        for field in equal_fields:
+            if getattr(query, field):
+                if getattr(query, field) != getattr(self, field):
+                    return False
         if len(query.children) > 0:
             if self.memory_type <= 1:
                 return util.list_equal_no_order(self.children, query.children)

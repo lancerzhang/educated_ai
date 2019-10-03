@@ -14,8 +14,8 @@ class Reward(object):
 
     @util.timeit
     def add_reward_memory(self, new_reward):
-        bm = self.brain.add_reward_memory(new_reward)
-        self.brain.add_virtual_memory(constants.SLICE_MEMORY, [bm], reward=new_reward)
+        bm = self.brain.put_reward_memory(new_reward)
+        self.brain.put_virtual_memory(constants.SLICE_MEMORY, [bm], reward=new_reward)
 
     @util.timeit
     def process(self, key):
