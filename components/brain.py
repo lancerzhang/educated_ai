@@ -134,20 +134,20 @@ class Brain:
 
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit
-    def persist_memories(self):
+    def save(self):
         config = [memory.id_sequence]
-        np.save('mm', list(self.memories))
+        np.save('memory', list(self.memories))
         np.save('config', config)
 
     @util.timeit
-    def house_keep(self):
+    def clean(self):
         self.cleanup_memories()
-        self.persist_memories()
+        self.save()
 
     @util.timeit
-    def load_memories(self):
+    def load(self):
         try:
-            self.memories = set(np.load('mm.npy', allow_pickle=True))
+            self.memories = set(np.load('memory.npy', allow_pickle=True))
         except:
             pass
         try:

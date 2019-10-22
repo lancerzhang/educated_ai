@@ -78,14 +78,14 @@ def main(argv):
         logging.info('initializing, please wait.')
         dps = 1.0 / constants.process_per_second
         brain = Brain()
-        brain.load_memories()
+        brain.load()
         # TODO
         # if is_hibernate and is_hibernate == 'yes':
         #     configs = load_main_conf()
         #     if configs:
         #         da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
         # use separate thread to prepare gc
-        schedule.every(5).seconds.do(brain.house_keep)
+        schedule.every(5).seconds.do(brain.clean)
         threading.Thread(target=run_pending).start()
         reward_controller = Reward(brain)
         mouse_listener = MouseListener()

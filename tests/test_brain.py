@@ -145,10 +145,10 @@ class TestBrain(unittest.TestCase):
         memories = test_memory.build_a_tree()
         brain.memories = set(memories)
         brain.active_memories = memories
-        brain.persist_memories()
+        brain.save()
         memory.id_sequence = 0
         brain2 = Brain()
-        brain2.load_memories()
+        brain2.load()
         self.assertTrue(isinstance(brain2.memories, set))
         self.assertEqual(11, len(brain2.memories))
         m2 = util.get_from_set(brain2.memories, 3)

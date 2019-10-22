@@ -1,26 +1,44 @@
 from components import util
+import numpy as np
 
 
-class Storage:
+class Favor:
     def __init__(self):
-        self.vuk = SortedList()
-        self.suk = SortedList()
-        self.speed = SortedList()
-        self.degrees = SortedList()
-        self.channel = SortedList()
+        self.vuk = Rank()
+        self.suk = Rank()
+        self.speed = Rank()
+        self.degrees = Rank()
+        self.channel = Rank()
 
     @util.timeit
     def top(self, category, index=0):
-        sorted_list = getattr(self, category)
-        return sorted_list.top(index)
+        rank = getattr(self, category)
+        return rank.top(index)
 
     @util.timeit
     def update(self, category, key):
-        sorted_list = getattr(self, category)
-        sorted_list.update(key)
+        rank = getattr(self, category)
+        rank.update(key)
+
+    @util.timeit
+    def save(self):
+        all = [self.vuk, self.suk, self.speed, self.degrees, self.channel]
+        np.save('storage', list(all))
+
+    @util.timeit
+    def load(self):
+        try:
+            all = np.load('storage.npy', allow_pickle=True)
+            self.vuk = all[0]
+            self.suk = all[1]
+            self.speed = all[2]
+            self.degrees = all[3]
+            self.channel = all[4]
+        except:
+            pass
 
 
-class SortedList:
+class Rank:
     def __init__(self):
         self.items = []
 
