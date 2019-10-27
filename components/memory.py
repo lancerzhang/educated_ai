@@ -33,6 +33,10 @@ def create():
     return m
 
 
+def get_memory_type(memory_type_str):
+    return MEMORY_TYPES.index(memory_type_str)
+
+
 def get_feature_type(feature_type_str):
     return MEMORY_FEATURES.index(feature_type_str)
 
@@ -193,3 +197,9 @@ class Memory:
 
     def deactivate(self):
         self.status = constants.DORMANT
+
+    def set_memory_type(self, memory_type_str):
+        self.memory_type = get_memory_type(memory_type_str)
+
+    def set_feature_type(self, feature_type_str):
+        self.feature_type = get_feature_type(feature_type_str)

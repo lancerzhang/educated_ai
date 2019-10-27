@@ -23,12 +23,12 @@ class Favor:
     @util.timeit
     def save(self):
         all = [self.vuk, self.suk, self.speed, self.degrees, self.channel]
-        np.save('storage', list(all))
+        np.save('favor', list(all))
 
     @util.timeit
     def load(self):
         try:
-            all = np.load('storage.npy', allow_pickle=True)
+            all = np.load('favor.npy', allow_pickle=True)
             self.vuk = all[0]
             self.suk = all[1]
             self.speed = all[2]

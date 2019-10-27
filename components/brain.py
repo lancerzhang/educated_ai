@@ -52,11 +52,12 @@ class Brain:
         while match_any:
             match_any = False
             for m in self.active_memories:
-                if m.memory_type == memory.MEMORY_TYPES.index(constants.LONG_MEMORY):
+                if m.memory_type == memory.get_memory_type(constants.LONG_MEMORY):
                     if m.match():
                         match_any = True
 
-    def add_memory(self, m):
+    @util.timeit
+    def add_memory(self, m: Memory):
         if m.mid == 0:
             m.assign_id()
             self.memories.add(m)
@@ -64,18 +65,16 @@ class Brain:
         m.matched_time = time.time()
         m.recall()
         self.active_memories.append(m)
-        return m
-
-    def put_memory(self, query):
-        m = self.find_memory(query)
-        if m:
-            self.add_memory(m)
-        else:
-            m = self.add_memory(query)
-        return m
 
     @util.timeit
-    def compose_memory(self, children, memory_type, feature_type=-1, reward=0):
+    def put_memory(self, query: Memory):
+        m = self.find_memory(query)
+        if not m:
+            m = query
+        self.add_memory(m)
+
+    @util.timeit
+    def compose_memory(self, children, memory_type_str, feature_type=-1, reward=0):
         if len(children) == 0:
             return
         memories = util.list_remove_duplicates(children)
@@ -83,7 +82,7 @@ class Brain:
             # only use last 4 memories
             memories = memories[-memory.COMPOSE_NUMBER:]
         query = Memory()
-        query.memory_type = memory_type
+        query.set_memory_type(memory_type_str)
         query.feature_type = feature_type
         query.children = memories
         m = self.put_memory(query)
@@ -99,12 +98,12 @@ class Brain:
         matched_memories = [x for x in self.active_memories if x.status == constants.MATCHED]
         now = time.time()
 
-        feature_memory_type_index = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
+        feature_memory_type_index = memory.get_memory_type(constants.FEATURE_MEMORY)
         for i in range(0, len(memory.MEMORY_FEATURES)):
             memories = [x for x in matched_memories if x.memory_type == feature_memory_type_index
                         and x.feature_type == i
                         and (now - x.matched_time) < memory.MEMORY_DURATIONS[feature_memory_type_index]]
-            nm = self.compose_memory(memories, memory.MEMORY_TYPES.index(constants.SLICE_MEMORY), i)
+            nm = self.compose_memory(memories, memory.get_memory_type(constants.SLICE_MEMORY), feature_type=i)
             if nm:
                 matched_memories.append(nm)
 
@@ -127,14 +126,14 @@ class Brain:
         self.active_memories = new_active_memories
 
     @util.timeit
-    def find_memory(self, query):
+    def find_memory(self, query: Memory):
         for m in self.memories:
             if m.equal(query):
                 return m
         return None
 
     @util.timeit
-    def get_memories(self, query):
+    def get_memories(self, query: Memory):
         result = []
         for m in self.memories:
             if m.equal(query):
@@ -175,7 +174,7 @@ class Brain:
     @util.timeit
     def get_feature_memories(self, feature_type_str, kernel):
         query = Memory()
-        query.feature_type = memory.get_feature_type(feature_type_str)
+        query.set_feature_type(feature_type_str)
         query.kernel = kernel
         return self.get_memories(query)
 
@@ -190,28 +189,30 @@ class Brain:
     @util.timeit
     def put_feature_memory(self, feature_type_str, kernel, feature):
         m = self.find_similar_feature_memories(feature_type_str, kernel, feature)
-        if m:
-            m.recall()
-        else:
+        if not m:
             m = Memory()
-            m.feature_type = memory.get_feature_type(feature_type_str)
+            m.set_feature_type(feature_type_str)
             m.kernel = kernel
             m.feature = feature
-            self.add_memory(m)
+        self.put_physical_memory(m)
 
     @util.timeit
-    def put_virtual_memory(self, memory_type_str, child_memories, reward=0):
-        memory_type = memory.MEMORY_TYPES.index(memory_type_str)
-        self.compose_memory(child_memories, memory_type, reward)
+    def put_physical_memory(self, query: Memory):
+        query.set_memory_type(constants.FEATURE_MEMORY)
+        self.put_memory(query)
 
     @util.timeit
-    def enrich_feature_memories(self, feature_type_str, fm):
+    def put_virtual_memory(self, child_memories, memory_type_str, reward=0):
+        self.compose_memory(child_memories, memory_type_str, reward=reward)
+
+    @util.timeit
+    def enrich_feature_memories(self, feature_type_str, fm: Memory):
         feature_type = memory.get_feature_type(feature_type_str)
         matched_memories = [x for x in self.active_memories if
                             x.feature_type == feature_type and x.status == constants.MATCHED]
         if fm not in matched_memories:
             matched_memories.append(fm)
-        self.put_virtual_memory(constants.SLICE_MEMORY, matched_memories)
+        self.put_virtual_memory(matched_memories, constants.SLICE_MEMORY)
 
     @util.timeit
     def get_matching_feature_memories(self, feature_type_str):
@@ -221,31 +222,12 @@ class Brain:
         return feature_memories
 
     @util.timeit
-    def put_physical_memory(self, query):
-        query.memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
-        return self.put_memory(query)
-
-    @util.timeit
     def put_vision_feature_memory(self, feature_type, channel, kernel, feature):
         query = Memory()
         query.feature_type = feature_type
         query.channel = channel
         query.kernel = kernel
         query.feature = feature
-        return self.put_physical_memory(query)
-
-    @util.timeit
-    def put_mouse_click_memory(self, click_type):
-        query = Memory()
-        query.feature_type = memory.MEMORY_FEATURES.index(constants.ACTION_MOUSE_CLICK)
-        query.click_type = click_type
-        return self.put_physical_memory(query)
-
-    @util.timeit
-    def put_reward_memory(self, reward):
-        query = Memory()
-        query.feature_type = memory.MEMORY_FEATURES.index(constants.ACTION_REWARD)
-        query.reward = reward
         return self.put_physical_memory(query)
 
     @util.timeit

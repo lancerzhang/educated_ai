@@ -1,5 +1,7 @@
 from . import constants
 from . import util
+from .brain import Brain
+from .memory import Memory
 import logging
 
 logger = logging.getLogger('Reward')
@@ -9,13 +11,16 @@ logger.setLevel(logging.INFO)
 class Reward(object):
 
     @util.timeit
-    def __init__(self, brain):
+    def __init__(self, brain: Brain):
         self.brain = brain
 
     @util.timeit
-    def add_reward_memory(self, new_reward):
-        bm = self.brain.put_reward_memory(new_reward)
-        self.brain.put_virtual_memory(constants.SLICE_MEMORY, [bm], reward=new_reward)
+    def add_reward_memory(self, reward):
+        m = Memory()
+        m.set_feature_type(constants.ACTION_REWARD)
+        m.reward = reward
+        self.brain.put_physical_memory(m)
+        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY, reward=reward)
 
     @util.timeit
     def process(self, key):

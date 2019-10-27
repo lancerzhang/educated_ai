@@ -11,11 +11,11 @@ class VideoFileSound(Sound):
     CHUNK = 2048
 
     @util.timeit
-    def __init__(self, bm, video_file):
+    def __init__(self, brain, favor, video_file):
         self.file_path = video_file
         self.frame_data = []
         self.frame_count = 0
-        super(VideoFileSound, self).__init__(bm)
+        super(VideoFileSound, self).__init__(brain, favor)
 
     @util.timeit
     def open_video(self):

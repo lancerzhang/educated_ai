@@ -1,5 +1,8 @@
 from . import constants
+from . import memory
 from . import util
+from .brain import Brain
+from .memory import Memory
 import logging
 import random
 from pynput.mouse import Button, Controller
@@ -11,9 +14,9 @@ logger.setLevel(logging.INFO)
 class Action(object):
 
     @util.timeit
-    def __init__(self, bm):
+    def __init__(self, brain: Brain):
+        self.brain = brain
         self.mouse = Controller()
-        self.bio_memory = bm
 
     @util.timeit
     def process(self, status_controller, click, focus):
@@ -32,27 +35,23 @@ class Action(object):
 
     @util.timeit
     def reproduce_mouse_clicks(self):
-        physical_memories = self.bio_memory.prepare_matching_physical_memories(constants.ACTION_MOUSE_CLICK)
-        for sbm in physical_memories:
-            self.reproduce_mouse_click(sbm)
-        self.bio_memory.verify_matching_physical_memories()
+        physical_memories = self.brain.get_matching_feature_memories(constants.ACTION_MOUSE_CLICK)
+        for m in physical_memories:
+            self.reproduce_mouse_click(m)
 
     @util.timeit
-    def reproduce_mouse_click(self, bm):
-        click_type = bm[constants.CLICK_TYPE]
-        if click_type == constants.LEFT_CLICK:
+    def reproduce_mouse_click(self, m: Memory):
+        if m.click_type == constants.LEFT_CLICK:
             self.left_click()
-            bm.update({constants.STATUS: constants.MATCHED})
+            m.status = constants.MATCHED
 
     @util.timeit
     def feel_clicks(self, click):
-        print('*** mouse left click ***')
-        bm = self.bio_memory.get_mouse_click_memory(click)
-        if bm is None:
-            bm = self.bio_memory.add_mouse_click_memory(click)
-        else:
-            self.bio_memory.recall_physical_memory(bm)
-        self.bio_memory.add_slice_memory([bm], bm[constants.PHYSICAL_MEMORY_TYPE])
+        m = Memory()
+        m.set_feature_type(constants.ACTION_MOUSE_CLICK)
+        m.click_type = click
+        self.brain.put_physical_memory(m)
+        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
 
     @util.timeit
     def left_click(self):

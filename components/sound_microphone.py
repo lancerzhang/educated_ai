@@ -16,8 +16,8 @@ class MicrophoneSound(Sound):
     MAX_PHASES = 5  # max phases storage
 
     @util.timeit
-    def __init__(self, bm):
-        super(MicrophoneSound, self).__init__(bm)
+    def __init__(self, brain, favor):
+        super(MicrophoneSound, self).__init__(brain, favor)
 
     @util.timeit
     def receive(self):

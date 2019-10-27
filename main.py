@@ -1,11 +1,8 @@
 from components.action import Action
 from components.brain import Brain
-# from components.bio_memory import BioMemory
-# from components.data_adaptor import DataAdaptor
-# from components.data_sqlite3 import DataSqlite3
+from components.favor import Favor
 from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
-# from components.mgc import GC
 from components.reward import Reward
 from components.sound_microphone import MicrophoneSound
 from components.sound_video_file import VideoFileSound
@@ -79,6 +76,8 @@ def main(argv):
         dps = 1.0 / constants.process_per_second
         brain = Brain()
         brain.load()
+        favor = Favor()
+        favor.load()
         # TODO
         # if is_hibernate and is_hibernate == 'yes':
         #     configs = load_main_conf()
@@ -99,13 +98,13 @@ def main(argv):
         status_controller = Status(brain)
         if video_file:
             vision_controller = VideoFileVision(brain, video_file, status_controller)
-            sound_controller = VideoFileSound(bm, video_file)
+            sound_controller = VideoFileSound(brain, favor, video_file)
         else:
             vision_controller = ScreenVision(bm)
-            sound_controller = MicrophoneSound(bm)
+            sound_controller = MicrophoneSound(brain, favor)
             threading.Thread(target=sound_controller.receive).start()
             # _thread.start_new_thread(sound_controller.receive, ())
-        action_controller = Action(bm)
+        action_controller = Action(brain)
         frames = 0
         last_process_time = 0
         logging.info('initialized.')
@@ -124,19 +123,19 @@ def main(argv):
             frames = frames + 1
 
             status_controller.calculate_status(dps, frames)
-            bm.associate()
-            bm.prepare_matching_virtual_memories()
+            brain.associate()
+            brain.prepare_matching_virtual_memories()
             focus = vision_controller.process(status_controller, key)
             sound_controller.process(status_controller)
             action_controller.process(status_controller, button, focus)
             reward_controller.process(key)
-            bm.check_matching_virtual_memories()
-            bm.compose()
+            brain.check_matching_virtual_memories()
+            brain.compose()
 
             # work end
             work_duration = util.time_diff(start)
             # status_controller.update_status(work_duration)
-            bm.cleanup_working_memories()
+            brain.cleanup_working_memories()
 
             process_duration = util.time_diff(start)
             # mgc.execute()
