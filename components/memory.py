@@ -33,6 +33,10 @@ def create():
     return m
 
 
+def get_feature_type(feature_type_str):
+    return MEMORY_FEATURES.index(feature_type_str)
+
+
 class Memory:
     mid = 0
     live = True

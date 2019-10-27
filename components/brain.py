@@ -9,6 +9,8 @@ import time
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.DEBUG)
 
+FEATURE_SIMILARITY_THRESHOLD = 0.2
+
 
 class Brain:
     def __init__(self):
@@ -54,16 +56,22 @@ class Brain:
                     if m.match():
                         match_any = True
 
-    def put_memory(self, query):
-        m = self.find_one_memory(query)
-        if not m:
-            m = query
+    def add_memory(self, m):
+        if m.mid == 0:
             m.assign_id()
             self.memories.add(m)
         m.status = constants.MATCHED
         m.matched_time = time.time()
         m.recall()
         self.active_memories.append(m)
+        return m
+
+    def put_memory(self, query):
+        m = self.find_memory(query)
+        if m:
+            self.add_memory(m)
+        else:
+            m = self.add_memory(query)
         return m
 
     @util.timeit
@@ -119,11 +127,19 @@ class Brain:
         self.active_memories = new_active_memories
 
     @util.timeit
-    def find_one_memory(self, query):
+    def find_memory(self, query):
         for m in self.memories:
             if m.equal(query):
                 return m
         return None
+
+    @util.timeit
+    def get_memories(self, query):
+        result = []
+        for m in self.memories:
+            if m.equal(query):
+                result.append(m)
+        return result
 
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
@@ -157,13 +173,40 @@ class Brain:
             pass
 
     @util.timeit
+    def get_feature_memories(self, feature_type_str, kernel):
+        query = Memory()
+        query.feature_type = memory.get_feature_type(feature_type_str)
+        query.kernel = kernel
+        return self.get_memories(query)
+
+    @util.timeit
+    def find_similar_feature_memories(self, feature_type_str, kernel, feature):
+        feature_memories = self.get_feature_memories(feature_type_str, kernel)
+        for m in feature_memories:
+            difference = util.np_array_diff(feature, m.feature)
+            if difference < FEATURE_SIMILARITY_THRESHOLD:
+                return m
+
+    @util.timeit
+    def put_feature_memory(self, feature_type_str, kernel, feature):
+        m = self.find_similar_feature_memories(feature_type_str, kernel, feature)
+        if m:
+            m.recall()
+        else:
+            m = Memory()
+            m.feature_type = memory.get_feature_type(feature_type_str)
+            m.kernel = kernel
+            m.feature = feature
+            self.add_memory(m)
+
+    @util.timeit
     def put_virtual_memory(self, memory_type_str, child_memories, reward=0):
         memory_type = memory.MEMORY_TYPES.index(memory_type_str)
         self.compose_memory(child_memories, memory_type, reward)
 
     @util.timeit
     def enrich_feature_memories(self, feature_type_str, fm):
-        feature_type = memory.MEMORY_FEATURES.index(feature_type_str)
+        feature_type = memory.get_feature_type(feature_type_str)
         matched_memories = [x for x in self.active_memories if
                             x.feature_type == feature_type and x.status == constants.MATCHED]
         if fm not in matched_memories:
@@ -171,16 +214,11 @@ class Brain:
         self.put_virtual_memory(constants.SLICE_MEMORY, matched_memories)
 
     @util.timeit
-    def prepare_matching_physical_memories(self, feature_type_str):
-        feature_type = memory.MEMORY_FEATURES.index(feature_type_str)
-        physical_memories = [x for x in self.active_memories if
-                             x.feature_type == feature_type and x.status == constants.MATCHING]
-        return physical_memories
-
-    @util.timeit
-    def recall_feature_memory(self, fmm, feature):
-        fmm.feature = feature
-        fmm.recall()
+    def get_matching_feature_memories(self, feature_type_str):
+        feature_type = memory.get_feature_type(feature_type_str)
+        feature_memories = [x for x in self.active_memories if
+                            x.feature_type == feature_type and x.status == constants.MATCHING]
+        return feature_memories
 
     @util.timeit
     def put_physical_memory(self, query):
