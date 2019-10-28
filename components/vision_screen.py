@@ -7,12 +7,12 @@ import numpy as np
 class ScreenVision(Vision):
 
     @util.timeit
-    def __init__(self, bm):
+    def __init__(self, brain, favor):
         self.sct = mss.mss()
         monitor = self.sct.monitors[1]
         self.SCREEN_WIDTH = monitor['width']
         self.SCREEN_HEIGHT = monitor['height']
-        super(ScreenVision, self).__init__(bm)
+        super(ScreenVision, self).__init__(brain, favor)
 
     @util.timeit
     def grab(self, top, left, width, height):

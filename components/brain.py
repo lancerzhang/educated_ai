@@ -37,7 +37,7 @@ class Brain:
                 break
 
     @util.timeit
-    def activate_memories(self):
+    def activate(self):
         for m in self.active_memories:
             m.activate_tree()
 
@@ -172,29 +172,31 @@ class Brain:
             pass
 
     @util.timeit
-    def get_feature_memories(self, feature_type_str, kernel):
+    def get_feature_memories(self, feature_type_str, kernel, channel):
         query = Memory()
         query.set_feature_type(feature_type_str)
         query.kernel = kernel
+        query.channel = channel
         return self.get_memories(query)
 
     @util.timeit
-    def find_similar_feature_memories(self, feature_type_str, kernel, feature):
-        feature_memories = self.get_feature_memories(feature_type_str, kernel)
+    def find_similar_feature_memories(self, feature_type_str, kernel, feature, channel):
+        feature_memories = self.get_feature_memories(feature_type_str, kernel, channel)
         for m in feature_memories:
             difference = util.np_array_diff(feature, m.feature)
             if difference < FEATURE_SIMILARITY_THRESHOLD:
                 return m
 
     @util.timeit
-    def put_feature_memory(self, feature_type_str, kernel, feature):
-        m = self.find_similar_feature_memories(feature_type_str, kernel, feature)
+    def put_feature_memory(self, feature_type_str, kernel, feature, channel=None):
+        m = self.find_similar_feature_memories(feature_type_str, kernel, feature, channel)
         if not m:
             m = Memory()
+            m.set_memory_type(constants.FEATURE_MEMORY)
             m.set_feature_type(feature_type_str)
             m.kernel = kernel
             m.feature = feature
-        self.put_physical_memory(m)
+        self.add_memory(m)
 
     @util.timeit
     def put_physical_memory(self, query: Memory):
@@ -220,29 +222,3 @@ class Brain:
         feature_memories = [x for x in self.active_memories if
                             x.feature_type == feature_type and x.status == constants.MATCHING]
         return feature_memories
-
-    @util.timeit
-    def put_vision_feature_memory(self, feature_type, channel, kernel, feature):
-        query = Memory()
-        query.feature_type = feature_type
-        query.channel = channel
-        query.kernel = kernel
-        query.feature = feature
-        return self.put_physical_memory(query)
-
-    @util.timeit
-    def put_vision_focus_move_memory(self, degrees, speed, duration):
-        query = Memory()
-        query.feature_type = memory.MEMORY_FEATURES.index(constants.VISION_FOCUS_MOVE)
-        query.degrees = degrees
-        query.speed = speed
-        query.duration = duration
-        return self.put_physical_memory(query)
-
-    @util.timeit
-    def put_vision_focus_zoom_memory(self, zoom_type, zoom_direction):
-        query = Memory()
-        query.feature_type = memory.MEMORY_FEATURES.index(constants.VISION_FOCUS_ZOOM)
-        query.zoom_type = zoom_type
-        query.zoom_direction = zoom_direction
-        return self.put_physical_memory(query)

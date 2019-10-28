@@ -114,7 +114,7 @@ class Sound(object):
         ri = random.randint(0, 9) - 1
         # Give a chane to choose kernel for library
         if ri >= 0:
-            used_kernel = self.favor.top(SOUND_USED_KERNEL)
+            used_kernel = self.favor.top(SOUND_USED_KERNEL, ri)
 
         if used_kernel is None:
             shape = self.sound_kernels.shape
@@ -132,7 +132,7 @@ class Sound(object):
     def search_feature_memory(self):
         kernel = self.get_kernel()
         feature = self.filter_feature(self.get_data_map(), kernel)
-        if feature is None:
+        if not feature.data:
             return
         self.brain.put_feature_memory(constants.SOUND_FEATURE, kernel, feature.data)
         self.update_used_kernel(kernel)

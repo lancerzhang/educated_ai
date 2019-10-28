@@ -7,31 +7,31 @@ import cv2
 class VideoFileVision(Vision):
 
     @util.timeit
-    def __init__(self, brain, file_path, status_controller):
+    def __init__(self, brain, favor, file_path, status):
         self.file_path = file_path
         self.cap = cv2.VideoCapture(file_path)
         self.FRAME_WIDTH = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.FRAME_HEIGHT = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = self.cap.get(cv2.CAP_PROP_FPS)
-        status_controller.video_fps = fps
+        status.video_fps = fps
         self.source_frame = None
         sct = mss.mss()
         monitor = sct.monitors[1]
         self.monitor_width = monitor['width']
-        super(VideoFileVision, self).__init__(brain)
+        super(VideoFileVision, self).__init__(brain, favor)
 
     @util.timeit
-    def process(self, status_controller, key):
-        frame = status_controller.video_frame
-        status_controller.video_frame = frame + 1
+    def process(self, status, key):
+        frame = status.video_frame
+        status.video_frame = frame + 1
         ret, self.source_frame = self.cap.read()
         if self.source_frame is None:
             self.cap = cv2.VideoCapture(self.file_path)
             ret, self.source_frame = self.cap.read()
-            status_controller.video_frame = 1
+            status.video_frame = 1
 
-        focus = super(VideoFileVision, self).process(status_controller, key)
+        focus = super(VideoFileVision, self).process(status, key)
         display_frame = self.source_frame.copy()
         cv2.rectangle(display_frame, (self.current_block[self.START_X], self.current_block[self.START_Y]),
                       (self.current_block[self.START_X] + self.current_block[self.WIDTH],

@@ -74,7 +74,7 @@ class Status(object):
     @util.timeit
     def find_max_reward(self):
         max_reward = 0
-        rewards = [x[constants.REWARD] for x in self.bio_memory.working_memories]
+        rewards = [x[constants.REWARD] for x in self.brain.active_memories]
         if len(rewards) > 0:
             max_reward = np.max(np.array(rewards))
         return max_reward
@@ -104,37 +104,37 @@ class Status(object):
 
     @util.timeit
     def memory_status_statistics(self):
-        status_data = [mem[constants.STATUS] for mem in self.bio_memory.working_memories]
+        status_data = [mem[constants.STATUS] for mem in self.brain.active_memories]
         status_dict = util.np_array_group_by_count(status_data)
 
     @util.timeit
     def memory_reward_statistics(self):
-        reward_data = [mem[constants.REWARD] for mem in self.bio_memory.working_memories]
+        reward_data = [mem[constants.REWARD] for mem in self.brain.active_memories]
         reward_dict = util.np_array_group_by_count(reward_data)
 
     @util.timeit
     def memory_recall_statistics(self):
-        recall_data = [mem[constants.RECALL_COUNT] for mem in self.bio_memory.working_memories]
+        recall_data = [mem[constants.RECALL_COUNT] for mem in self.brain.active_memories]
         recall_dict = util.np_array_group_by_count(recall_data)
 
     @util.timeit
     def memory_duration_statistics(self):
-        memory_duration_data = [mem[constants.VIRTUAL_MEMORY_TYPE] for mem in self.bio_memory.working_memories if
+        memory_duration_data = [mem[constants.VIRTUAL_MEMORY_TYPE] for mem in self.brain.active_memories if
                                 constants.VIRTUAL_MEMORY_TYPE in mem]
         memory_duration_dict = util.np_array_group_by_count(memory_duration_data)
 
     @util.timeit
     def memory_survive_statistics(self):
         memory_survive_data = [int(mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]) for mem in
-                               self.bio_memory.working_memories if constants.HAPPEN_TIME in mem]
+                               self.brain.active_memories if constants.HAPPEN_TIME in mem]
         memory_survive_dict = util.np_array_group_by_count(memory_survive_data)
 
     @util.timeit
     def memory_survive_detail(self):
-        for mem in self.bio_memory.working_memories:
+        for mem in self.brain.active_memories:
             # exclude expectation, which don't have happen time
             if constants.HAPPEN_TIME in mem:
                 survive_time = mem[constants.LAST_ACTIVE_TIME] - mem[constants.HAPPEN_TIME]
                 # if survive_time > 10:
                 #     logger.debug('{0} survive_time is {1}'.format(mem[constants.MID], survive_time))
-                    # logger.debug('survive working memory is {0}'.format(mem))
+                # logger.debug('survive working memory is {0}'.format(mem))

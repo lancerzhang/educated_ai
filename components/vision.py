@@ -1,5 +1,4 @@
 from pynput.mouse import Controller
-from . import constants
 import copy
 import cv2
 import logging
@@ -8,10 +7,20 @@ import numpy as np
 import random
 import skimage.measure
 import time
+from . import constants
 from . import util
+from .brain import Brain
+from .favor import Favor
+from .feature import Feature
+from .memory import Memory
 
 logger = logging.getLogger('Vision')
 logger.setLevel(logging.INFO)
+
+VISION_USED_KERNEL = 'vuk'
+USED_CHANNEL = 'channel'
+USED_DEGREES = 'degrees'
+USED_SPEED = 'speed'
 
 
 class Vision(object):
@@ -65,9 +74,10 @@ class Vision(object):
     current_action = {STATUS: COMPLETED}
 
     @util.timeit
-    def __init__(self, brain):
-        self.mouse = Controller()
+    def __init__(self, brain: Brain, favor: Favor):
         self.brain = brain
+        self.favor = favor
+        self.mouse = Controller()
         center_x = self.FRAME_WIDTH // 2
         center_y = self.FRAME_HEIGHT // 2
         width = self.ROI_ARR[self.roi_index]
@@ -78,7 +88,7 @@ class Vision(object):
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
 
     @util.timeit
-    def process(self, status_controller, key):
+    def process(self, status, key):
         old_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] // 2
         old_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] // 2
         if self.current_action[self.STATUS] == self.IN_PROGRESS:
@@ -121,15 +131,15 @@ class Vision(object):
 
     @util.timeit
     def match_features(self):
-        physical_memories = self.brain.prepare_matching_physical_memories(constants.VISION_FEATURE)
+        feature_memories = self.brain.get_matching_feature_memories(constants.VISION_FEATURE)
         img = self.get_region(self.current_block)
         y, u, v = get_channel_imgs(img)
         data_map = None
         data_map_y = None
         data_map_u = None
         data_map_v = None
-        for mm in physical_memories:
-            channel = mm[constants.CHANNEL]
+        for m in feature_memories:
+            channel = m[constants.CHANNEL]
             if channel == 'y':
                 if data_map_y is None:
                     data_map_y = self.get_data_map(y)
@@ -142,43 +152,33 @@ class Vision(object):
                 if data_map_v is None:
                     data_map_v = self.get_data_map(v)
                 data_map = data_map_v
-            self.match_feature(data_map, mm)
-        self.brain.verify_matching_physical_memories()
+            self.match_feature(data_map, m)
 
     @util.timeit
     def reproduce_movements(self):
-        physical_memories = self.brain.prepare_matching_physical_memories(constants.VISION_FOCUS_MOVE)
-        for bm in physical_memories:
-            self.reproduce_movement(bm)
-        self.brain.verify_matching_physical_memories()
+        feature_memories = self.brain.get_matching_feature_memories(constants.VISION_FOCUS_MOVE)
+        for m in feature_memories:
+            self.reproduce_movement(m)
 
     @util.timeit
     def reproduce_zooms(self):
-        physical_memories = self.brain.prepare_matching_physical_memories(constants.VISION_FOCUS_ZOOM)
-        for bm in physical_memories:
-            self.reproduce_zoom(bm)
-        self.brain.verify_matching_physical_memories()
+        feature_memories = self.brain.get_matching_feature_memories(constants.VISION_FOCUS_ZOOM)
+        for m in feature_memories:
+            self.reproduce_zoom(m)
 
     @util.timeit
-    def match_feature(self, data_map, fmm):
-        channel = fmm.channel
-        kernel = fmm.kernel
-        feature = fmm.feature
-        feature_data = self.filter_feature(data_map, kernel, np.array(feature))
-        if feature_data is None:
-            return False  # not similar
-        if feature_data[constants.SIMILAR]:
-            # recall memory and update feature to average
-            self.brain.recall_feature_memory(fmm, feature_data[constants.FEATURE])
-            self.update_channel_rank(channel)
-            self.update_kernel_rank(kernel)
-        return feature_data[constants.SIMILAR]
+    def match_feature(self, data_map, m: Memory):
+        feature = self.filter_feature(data_map, m.kernel, m.feature)
+        if feature.similar:
+            m.feature = feature.data
+            m.recall()
+            self.update_used_channel(m.channel)
+            self.update_used_kernel(m.kernel)
 
     # match the experience vision sense
     @util.timeit
-    def filter_feature(self, data_map, kernel, feature=None):
-        feature_data = copy.deepcopy(self.FEATURE_DATA)
-        feature_data[constants.KERNEL] = kernel
+    def filter_feature(self, data_map, kernel, data=None):
+        feature = Feature()
         kernel_arr = util.string_to_feature_matrix(kernel)
         cov = cv2.filter2D(data_map, -1, kernel_arr)
         # down-sampling once use max pool, size is 50% of origin
@@ -190,22 +190,22 @@ class Vision(object):
         threshold_feature = np.where(new_feature_pool2 < self.FEATURE_THRESHOLD, 0, new_feature_pool2)
         sum_feature = threshold_feature.sum()
         if sum_feature == 0:
-            return None  # no any feature found
+            return feature  # no any feature found
         if util.np_array_all_same(threshold_feature):
-            return None  # useless feature data
+            return feature  # useless feature data
         standard_feature = util.standardize_feature(threshold_feature)
         new_feature = standard_feature.flatten().astype(int)
-        if feature is None:
-            feature_data[constants.FEATURE] = new_feature
+        if data is None:
+            feature.data = new_feature
         else:
             difference = util.np_array_diff(new_feature, feature)
             if difference < self.FEATURE_SIMILARITY_THRESHOLD:
-                feature_data[constants.SIMILAR] = True
-                avg_feature = (feature + new_feature) // 2
-                feature_data[constants.FEATURE] = avg_feature
+                feature.similar = True
+                avg_feature = (data + new_feature) // 2
+                feature.data = avg_feature
             else:
-                feature_data[constants.FEATURE] = new_feature
-        return feature_data
+                feature.data = new_feature
+        return feature
 
     # get a frequent use kernel or a random kernel by certain possibility
     @util.timeit
@@ -213,7 +213,7 @@ class Vision(object):
         used_kernel = None
         ri = random.randint(0, 9) - 1
         if ri >= 0:
-            used_kernel = self.brain.data_adaptor.get_top_vision_used_kernel(ri)
+            used_kernel = self.favor.top(VISION_USED_KERNEL, ri)
 
         if used_kernel is None:
             shape = self.vision_kernels.shape
@@ -221,41 +221,21 @@ class Vision(object):
             kernel = self.vision_kernels[index]
             return kernel
         else:
-            return used_kernel[constants.KERNEL]
+            return used_kernel.key
 
     @util.timeit
-    def update_kernel_rank(self, kernel):
-        self.brain.data_adaptor.put_vision_used_kernel(kernel)
+    def update_used_kernel(self, kernel):
+        self.favor.update(VISION_USED_KERNEL, kernel)
 
     # try to search more detail
     @util.timeit
     def search_feature_memory(self):
-        feature_data = self.search_feature(self.current_block)
-        if feature_data is None:
-            return None
-        channel = feature_data[constants.CHANNEL]
-        kernel = feature_data[constants.KERNEL]
-        feature = feature_data[constants.FEATURE]
-
-        bm = self.find_feature_memory(channel, kernel, feature)
-        if bm is None:
-            bm = self.brain.add_vision_feature_memory(constants.VISION_FEATURE, channel, kernel, feature)
-        else:
-            self.brain.recall_physical_memory(bm)
-        self.update_kernel_rank(kernel)
-        self.update_channel_rank(channel)
-        return bm
-
-    # find memory by kernel using index
-    @util.timeit
-    def find_feature_memory(self, channel, kernel, feature1):
-        feature_memories = self.brain.get_vision_feature_memories(channel, kernel)
-        for mem in feature_memories:
-            feature2 = mem[constants.FEATURE]
-            difference = util.np_array_diff(feature1, np.array(feature2))
-            if difference < self.FEATURE_SIMILARITY_THRESHOLD:
-                return mem
-        return None
+        feature = self.search_feature(self.current_block)
+        if not feature.data:
+            return
+        self.brain.put_feature_memory(constants.SOUND_FEATURE, feature.kernel, feature.data, channel=feature.channel)
+        self.update_used_kernel(feature.kernel)
+        self.update_used_channel(feature.channel)
 
     @util.timeit
     def get_data_map(self, channel_img):
@@ -359,14 +339,14 @@ class Vision(object):
 
     @util.timeit
     def update_degrees_rank(self, degrees):
-        self.brain.data_adaptor.put_used_degrees(degrees)
+        self.favor.update(USED_DEGREES, degrees)
 
     @util.timeit
     def get_degrees(self):
         used_degrees = None
         ri = random.randint(0, 9) - 1
         if ri >= 0:
-            used_degrees = self.brain.data_adaptor.get_top_used_degrees(ri)
+            used_degrees = self.favor.top(USED_DEGREES, ri)
 
         if used_degrees is None:
             degrees = random.randint(1, self.MAX_DEGREES)
@@ -376,14 +356,14 @@ class Vision(object):
 
     @util.timeit
     def update_speed_rank(self, speed):
-        self.brain.data_adaptor.put_used_speed(speed)
+        self.favor.update(USED_SPEED, speed)
 
     @util.timeit
     def get_speed(self):
         used_speed = None
         ri = random.randint(0, 9) - 1
         if ri >= 0:
-            used_speed = self.brain.data_adaptor.get_top_used_speed(ri)
+            used_speed = self.favor.top(USED_SPEED, ri)
 
         if used_speed is None:
             speed = random.randint(1, self.MAX_SPEED)
@@ -392,15 +372,15 @@ class Vision(object):
             return int(used_speed[constants.SPEED])
 
     @util.timeit
-    def update_channel_rank(self, channel):
-        self.brain.data_adaptor.put_used_channel(channel)
+    def update_used_channel(self, channel):
+        self.favor.update(USED_CHANNEL, channel)
 
     @util.timeit
     def get_channel(self):
         used_channel = None
         ri = random.randint(0, 9) - 1
         if ri >= 0:
-            used_channel = self.brain.data_adaptor.get_top_used_channel(ri)
+            used_channel = self.favor.top(USED_CHANNEL, ri)
 
         if used_channel is None:
             ri = random.randint(1, 3)
@@ -424,10 +404,10 @@ class Vision(object):
         kernel = self.get_kernel()
         channel_img = get_channel_img(img, channel)
         data_map = self.get_data_map(channel_img)
-        feature_data = self.filter_feature(data_map, kernel)
-        if feature_data:
-            feature_data[constants.CHANNEL] = channel
-        return feature_data
+        feature = self.filter_feature(data_map, kernel)
+        feature.kernel = kernel
+        feature.channel = channel
+        return feature
 
     @util.timeit
     def dig(self):
@@ -467,16 +447,17 @@ class Vision(object):
         degrees = move_direction
         speed = -1
         duration = 0
-        self.add_vision_move(degrees, speed, duration)
+        self.put_vision_move_memory(degrees, speed, duration)
 
     @util.timeit
-    def add_vision_move(self, degrees, speed, duration):
-        bm = self.brain.get_vision_move_memory(degrees, speed, duration)
-        if bm is None:
-            bm = self.brain.add_vision_focus_move_memory(degrees, speed, duration)
-        else:
-            self.brain.recall_physical_memory(bm)
-        self.brain.add_slice_memory([bm], bm[constants.PHYSICAL_MEMORY_TYPE])
+    def put_vision_move_memory(self, degrees, speed, duration):
+        m = Memory()
+        m.set_feature_type(constants.VISION_FOCUS_MOVE)
+        m.degrees = degrees
+        m.speed = speed
+        m.duration = duration
+        self.brain.put_physical_memory(m)
+        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
 
     @util.timeit
     def explore(self):
@@ -542,12 +523,16 @@ class Vision(object):
         if feature_data is None:
             return None
         self.current_block = new_block
-        bm = self.brain.get_vision_zoom_memory(zoom_type, zoom_direction)
-        if bm is None:
-            bm = self.brain.add_vision_focus_zoom_memory(zoom_type, zoom_direction)
-        else:
-            self.brain.recall_physical_memory(bm)
-        self.brain.add_slice_memory([bm], bm[constants.PHYSICAL_MEMORY_TYPE])
+        self.put_vision_zoom_memory(zoom_type, zoom_direction)
+
+    @util.timeit
+    def put_vision_zoom_memory(self, zoom_type, zoom_direction):
+        m = Memory()
+        m.set_feature_type(constants.VISION_FOCUS_ZOOM)
+        m.zoom_type = zoom_type
+        m.zoom_direction = zoom_direction
+        self.brain.put_physical_memory(m)
+        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
 
     @util.timeit
     def try_zoom_in(self, zoom_direction):
@@ -617,7 +602,7 @@ class Vision(object):
 
     @util.timeit
     def set_movement_relative(self, degrees, speed, duration):
-        self.add_vision_move(degrees, speed, duration)
+        self.put_vision_move_memory(degrees, speed, duration)
         self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.MOVE_DURATION: duration,
                                constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
                                self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}

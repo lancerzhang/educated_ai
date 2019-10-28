@@ -97,10 +97,10 @@ def main(argv):
         keyboard_thread.start()
         status_controller = Status(brain)
         if video_file:
-            vision_controller = VideoFileVision(brain, video_file, status_controller)
+            vision_controller = VideoFileVision(brain, favor, video_file, status_controller)
             sound_controller = VideoFileSound(brain, favor, video_file)
         else:
-            vision_controller = ScreenVision(bm)
+            vision_controller = ScreenVision(brain, favor)
             sound_controller = MicrophoneSound(brain, favor)
             threading.Thread(target=sound_controller.receive).start()
             # _thread.start_new_thread(sound_controller.receive, ())
