@@ -38,11 +38,9 @@ def save_main_config():
     np.save(MAIN_CONFIG_FILE, np.array([config]))
 
 
-def save_for_exit(mgc, sound):
+def save_for_exit(sound):
     save_main_config()
     logging.info('saved and exiting...')
-    if mgc:
-        mgc.running = False
     if sound is MicrophoneSound:
         sound.running = False
 
@@ -83,10 +81,10 @@ def main(argv):
         #     configs = load_main_conf()
         #     if configs:
         #         da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
-        # use separate thread to prepare gc
-        schedule.every(5).seconds.do(brain.clean)
+        schedule.every(5).seconds.do(brain.save)
+        schedule.every(59).seconds.do(favor.save)
         threading.Thread(target=run_pending).start()
-        reward_controller = Reward(brain)
+        reward = Reward(brain)
         mouse_listener = MouseListener()
         keyboard_listener = KeyboardListener()
         mouse_thread = threading.Thread(target=mouse_listener.run)
@@ -95,16 +93,17 @@ def main(argv):
         keyboard_thread = threading.Thread(target=keyboard_listener.run)
         keyboard_thread.daemon = True
         keyboard_thread.start()
-        status_controller = Status(brain)
+        status = Status(brain)
         if video_file:
-            vision_controller = VideoFileVision(brain, favor, video_file, status_controller)
-            sound_controller = VideoFileSound(brain, favor, video_file)
+            vision = VideoFileVision(brain, favor, video_file, status)
+            sound = VideoFileSound(brain, favor, video_file)
         else:
-            vision_controller = ScreenVision(brain, favor)
-            sound_controller = MicrophoneSound(brain, favor)
-            threading.Thread(target=sound_controller.receive).start()
-            # _thread.start_new_thread(sound_controller.receive, ())
-        action_controller = Action(brain)
+            vision = ScreenVision(brain, favor)
+            sound = MicrophoneSound(brain, favor)
+            sound_thread = threading.Thread(target=sound.receive)
+            sound_thread.daemon = True
+            sound_thread.start()
+        action = Action(brain)
         frames = 0
         last_process_time = 0
         logging.info('initialized.')
@@ -115,30 +114,29 @@ def main(argv):
             button = mouse_listener.get_button()
             key = keyboard_listener.get_key()
             if key is constants.KEY_SHIFT:
-                # da.persist()
-                save_for_exit(mgc, sound_controller)
+                brain.save()
+                favor.save()
+                save_for_exit(sound)
                 break
 
             logging.debug('frame is {0} '.format(frames))
             frames = frames + 1
 
-            status_controller.calculate_status(dps, frames)
+            status.calculate_status(dps, frames)
             brain.associate()
-            brain.prepare_matching_virtual_memories()
-            focus = vision_controller.process(status_controller, key)
-            sound_controller.process(status_controller)
-            action_controller.process(status_controller, button, focus)
-            reward_controller.process(key)
-            brain.check_matching_virtual_memories()
+            brain.activate()
+            focus = vision.process(status, key)
+            sound.process(status)
+            action.process(status, button, focus)
+            reward.process(key)
+            brain.match()
             brain.compose()
 
             # work end
             work_duration = util.time_diff(start)
             # status_controller.update_status(work_duration)
-            brain.cleanup_working_memories()
+            brain.cleanup()
 
-            process_duration = util.time_diff(start)
-            # mgc.execute()
             all_duration = util.time_diff(start)
             logging.info('frame took %d ms' % (all_duration * 1000))
 
@@ -151,6 +149,8 @@ def main(argv):
 
     except KeyboardInterrupt:
         save_for_exit()
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":

@@ -95,8 +95,7 @@ class Vision(object):
             self.calculate_move_action(self.current_action)
 
         self.match_features()
-        new_feature_memory = self.search_feature_memory()
-        self.brain.enrich_feature_memories(constants.VISION_FEATURE, new_feature_memory)
+        self.search_feature_memory()
 
         # when she's mature, below is the major way of focus move/zoom.
         self.reproduce_movements()

@@ -18,7 +18,7 @@ class Brain:
         self.active_memories = []
 
     @util.timeit
-    def associate_active_memories(self):
+    def associate(self):
         active_parent = []
         # collect parent memories
         for m in self.active_memories:
@@ -42,7 +42,7 @@ class Brain:
             m.activate_tree()
 
     @util.timeit
-    def match_virtual_memories(self):
+    def match(self):
         for i in range(1, len(memory.MEMORY_TYPES) - 1):
             for m in self.active_memories:
                 if m.memory_type == i:
@@ -94,7 +94,7 @@ class Brain:
         return m
 
     @util.timeit
-    def compose_active_memories(self):
+    def compose(self):
         matched_memories = [x for x in self.active_memories if x.status == constants.MATCHED]
         now = time.time()
 
@@ -115,7 +115,7 @@ class Brain:
                 matched_memories.append(nm)
 
     @util.timeit
-    def cleanup_active_memories(self):
+    def cleanup(self):
         self.active_memories = [x for x in self.active_memories if x.live]
         new_active_memories = []
         for m in self.active_memories:
@@ -150,14 +150,10 @@ class Brain:
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit
     def save(self):
+        self.cleanup_memories()
         config = [memory.id_sequence]
         np.save('memory', list(self.memories))
         np.save('config', config)
-
-    @util.timeit
-    def clean(self):
-        self.cleanup_memories()
-        self.save()
 
     @util.timeit
     def load(self):

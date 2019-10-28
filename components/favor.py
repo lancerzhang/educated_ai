@@ -22,8 +22,10 @@ class Favor:
 
     @util.timeit
     def save(self):
-        all = [self.vuk, self.suk, self.speed, self.degrees, self.channel]
-        np.save('favor', list(all))
+        self.vuk.items = self.vuk.items[:50]
+        self.suk.items = self.suk.items[:50]
+        favors = [self.vuk, self.suk, self.speed, self.degrees, self.channel]
+        np.save('favor', list(favors))
 
     @util.timeit
     def load(self):
@@ -44,7 +46,9 @@ class Rank:
 
     @util.timeit
     def top(self, index=0):
-        return self.items[index]
+        if index < len(self.items):
+            return self.items[index]
+        return
 
     @util.timeit
     def get(self, key):
