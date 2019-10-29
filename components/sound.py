@@ -17,7 +17,6 @@ from .memory import Memory
 logger = logging.getLogger('Sound')
 logger.setLevel(logging.INFO)
 
-SAMPLE_RATE = 44100
 MAX_FREQUENCY = 8000
 ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
 DEFAULT_PHASE_DURATION = 0.2  # second of buffer
@@ -34,6 +33,7 @@ SOUND_USED_KERNEL = 'suk'
 
 
 class Sound(object):
+    SAMPLE_RATE = 44100
     phases = collections.deque()  # phases queue
 
     @util.timeit
@@ -41,7 +41,7 @@ class Sound(object):
         self.brain = brain
         self.favor = favor
         self.frequency_map = None
-        buffer_duration = float(self.CHUNK) / SAMPLE_RATE
+        buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
         self.buffer_count_of_phase = int(math.ceil(DEFAULT_PHASE_DURATION / buffer_duration))
         self.sound_kernels = np.load(SOUND_KERNEL_FILE)
         self.previous_phase = None
