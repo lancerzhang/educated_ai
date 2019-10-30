@@ -84,8 +84,9 @@ class Vision(object):
         half_width = width // 2
         self.current_block = {self.START_X: center_x - half_width, self.START_Y: center_y - half_width,
                               self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
-
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
+        # fix error of Mac - Process finished with exit code 132 (interrupted by signal 4: SIGILL)
+        cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
 
     @util.timeit
     def process(self, status, key):
@@ -230,7 +231,7 @@ class Vision(object):
     @util.timeit
     def search_feature_memory(self):
         feature = self.search_feature(self.current_block)
-        if not feature.data:
+        if feature.data is None:
             return
         self.brain.put_feature_memory(constants.SOUND_FEATURE, feature.kernel, feature.data, channel=feature.channel)
         self.update_used_kernel(feature.kernel)
@@ -351,7 +352,7 @@ class Vision(object):
             degrees = random.randint(1, self.MAX_DEGREES)
             return degrees
         else:
-            return int(used_degrees[constants.DEGREES])
+            return used_degrees.key
 
     @util.timeit
     def update_speed_rank(self, speed):
@@ -368,7 +369,7 @@ class Vision(object):
             speed = random.randint(1, self.MAX_SPEED)
             return speed
         else:
-            return int(used_speed[constants.SPEED])
+            return used_speed.key
 
     @util.timeit
     def update_used_channel(self, channel):
@@ -390,7 +391,7 @@ class Vision(object):
                 channel = 'v'
             return channel
         else:
-            return used_channel[constants.CHANNEL]
+            return used_channel.key
 
     @util.timeit
     def get_duration(self):
@@ -450,12 +451,12 @@ class Vision(object):
 
     @util.timeit
     def put_vision_move_memory(self, degrees, speed, duration):
-        m = Memory()
-        m.set_feature_type(constants.VISION_FOCUS_MOVE)
-        m.degrees = degrees
-        m.speed = speed
-        m.duration = duration
-        self.brain.put_physical_memory(m)
+        q = Memory()
+        q.set_feature_type(constants.VISION_FOCUS_MOVE)
+        q.degrees = degrees
+        q.speed = speed
+        q.duration = duration
+        m = self.brain.put_physical_memory(q)
         self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
 
     @util.timeit
@@ -526,11 +527,11 @@ class Vision(object):
 
     @util.timeit
     def put_vision_zoom_memory(self, zoom_type, zoom_direction):
-        m = Memory()
-        m.set_feature_type(constants.VISION_FOCUS_ZOOM)
-        m.zoom_type = zoom_type
-        m.zoom_direction = zoom_direction
-        self.brain.put_physical_memory(m)
+        q = Memory()
+        q.set_feature_type(constants.VISION_FOCUS_ZOOM)
+        q.zoom_type = zoom_type
+        q.zoom_direction = zoom_direction
+        m = self.brain.put_physical_memory(q)
         self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
 
     @util.timeit

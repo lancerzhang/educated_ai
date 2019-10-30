@@ -47,10 +47,10 @@ class Action(object):
 
     @util.timeit
     def feel_clicks(self, click):
-        m = Memory()
-        m.set_feature_type(constants.ACTION_MOUSE_CLICK)
-        m.click_type = click
-        self.brain.put_physical_memory(m)
+        q = Memory()
+        q.set_feature_type(constants.ACTION_MOUSE_CLICK)
+        q.click_type = click
+        m = self.brain.put_physical_memory(q)
         self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
 
     @util.timeit

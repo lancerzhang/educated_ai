@@ -61,9 +61,7 @@ class Brain:
         if m.mid == 0:
             m.assign_id()
             self.memories.add(m)
-        m.status = constants.MATCHED
-        m.matched_time = time.time()
-        m.recall()
+        m.matched()
         self.active_memories.append(m)
 
     @util.timeit
@@ -72,9 +70,10 @@ class Brain:
         if not m:
             m = query
         self.add_memory(m)
+        return m
 
     @util.timeit
-    def compose_memory(self, children, memory_type_str, feature_type=-1, reward=0):
+    def compose_memory(self, children, memory_type, feature_type=-1, reward=0):
         if len(children) == 0:
             return
         memories = util.list_remove_duplicates(children)
@@ -82,7 +81,7 @@ class Brain:
             # only use last 4 memories
             memories = memories[-memory.COMPOSE_NUMBER:]
         query = Memory()
-        query.set_memory_type(memory_type_str)
+        query.memory_type = memory_type
         query.feature_type = feature_type
         query.children = memories
         m = self.put_memory(query)
@@ -110,7 +109,10 @@ class Brain:
         for j in range(feature_memory_type_index + 1, len(memory.MEMORY_TYPES)):
             memories = [x for x in matched_memories if
                         x.memory_type == j and (now - x.matched_time) < memory.MEMORY_DURATIONS[j]]
-            nm = self.compose_memory(memories, j + 1)
+            memory_type = j + 1
+            if memory_type >= len(memory.MEMORY_TYPES):
+                memory_type = j
+            nm = self.compose_memory(memories, memory_type)
             if nm:
                 matched_memories.append(nm)
 
@@ -197,11 +199,11 @@ class Brain:
     @util.timeit
     def put_physical_memory(self, query: Memory):
         query.set_memory_type(constants.FEATURE_MEMORY)
-        self.put_memory(query)
+        return self.put_memory(query)
 
     @util.timeit
     def put_virtual_memory(self, child_memories, memory_type_str, reward=0):
-        self.compose_memory(child_memories, memory_type_str, reward=reward)
+        self.compose_memory(child_memories, memory.get_memory_type(memory_type_str), reward=reward)
 
     @util.timeit
     def enrich_feature_memories(self, feature_type_str, fm: Memory):

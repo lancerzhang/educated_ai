@@ -170,11 +170,15 @@ class Memory:
             if m.status != constants.MATCHED:
                 return False
 
+        self.matched()
+        return True
+
+    @util.timeit
+    def matched(self):
         self.status = constants.MATCHED
         # extend active end time when it's matched
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
         self.recall()
-        return True
 
     @util.timeit
     def recall(self):

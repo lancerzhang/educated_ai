@@ -132,7 +132,7 @@ class Sound(object):
     def search_feature_memory(self):
         kernel = self.get_kernel()
         feature = self.filter_feature(self.get_data_map(), kernel)
-        if not feature.data:
+        if feature.data is None:
             return
         self.brain.put_feature_memory(constants.SOUND_FEATURE, kernel, feature.data)
         self.update_used_kernel(kernel)
@@ -152,7 +152,7 @@ class Sound(object):
         else:
             map_height = FREQUENCY_MAP_HEIGHT
         # frequency_map = librosa.feature.mfcc(frame, sr=SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT)
-        mel_data = librosa.feature.melspectrogram(y=data, sr=SAMPLE_RATE, n_mels=map_height,
+        mel_data = librosa.feature.melspectrogram(y=data, sr=self.SAMPLE_RATE, n_mels=map_height,
                                                   hop_length=HOP_LENGTH,
                                                   fmax=MAX_FREQUENCY)
         # logger.debug('frequency_map is {0}'.format(frequency_map))

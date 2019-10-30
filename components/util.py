@@ -4,16 +4,20 @@ import numpy as np
 from functools import reduce
 
 USED_COUNT = 'uct'
+logger = logging.getLogger('util')
+logger.setLevel(logging.INFO)
 
 
 def timeit(f):
     def timed(*args, **kw):
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            logger.debug('enter %s.%s' % (f.__module__, f.__name__))
         ts = time.time()
         result = f(*args, **kw)
         te = time.time()
         tms = int((te - ts) * 1000)
         if tms > 0:
-            logging.info('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
+            logger.info('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
         return result
 
     return timed

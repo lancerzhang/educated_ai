@@ -16,10 +16,10 @@ class Reward(object):
 
     @util.timeit
     def add_reward_memory(self, reward):
-        m = Memory()
-        m.set_feature_type(constants.ACTION_REWARD)
-        m.reward = reward
-        self.brain.put_physical_memory(m)
+        q = Memory()
+        q.set_feature_type(constants.ACTION_REWARD)
+        q.reward = reward
+        m = self.brain.put_physical_memory(q)
         self.brain.put_virtual_memory([m], constants.SLICE_MEMORY, reward=reward)
 
     @util.timeit

@@ -18,6 +18,7 @@ import schedule
 import sys
 import threading
 import time
+import traceback
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
@@ -85,15 +86,8 @@ def main(argv):
         schedule.every(59).seconds.do(favor.save)
         threading.Thread(target=run_pending).start()
         reward = Reward(brain)
-        mouse_listener = MouseListener()
-        keyboard_listener = KeyboardListener()
-        mouse_thread = threading.Thread(target=mouse_listener.run)
-        mouse_thread.daemon = True
-        mouse_thread.start()
-        keyboard_thread = threading.Thread(target=keyboard_listener.run)
-        keyboard_thread.daemon = True
-        keyboard_thread.start()
         status = Status(brain)
+        action = Action(brain)
         if video_file:
             vision = VideoFileVision(brain, favor, video_file, status)
             sound = VideoFileSound(brain, favor, video_file)
@@ -103,7 +97,14 @@ def main(argv):
             sound_thread = threading.Thread(target=sound.receive)
             sound_thread.daemon = True
             sound_thread.start()
-        action = Action(brain)
+        mouse_listener = MouseListener()
+        keyboard_listener = KeyboardListener()
+        mouse_thread = threading.Thread(target=mouse_listener.run)
+        mouse_thread.daemon = True
+        mouse_thread.start()
+        keyboard_thread = threading.Thread(target=keyboard_listener.run)
+        keyboard_thread.daemon = True
+        keyboard_thread.start()
         frames = 0
         last_process_time = 0
         logging.info('initialized.')
@@ -149,8 +150,8 @@ def main(argv):
 
     except KeyboardInterrupt:
         save_for_exit()
-    except Exception as e:
-        print(e)
+    except:
+        logging.error(traceback.format_exc())
 
 
 if __name__ == "__main__":
