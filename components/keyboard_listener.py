@@ -17,6 +17,7 @@ class KeyboardListener(object):
 
     @util.timeit
     def run(self):
+        logging.info('start KeyboardListener thread')
         with keyboard.Listener(on_release=self.on_release) as listener:
             listener.join()
 

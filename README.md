@@ -17,7 +17,7 @@ brew install portaudio
 ```
 - Other required modules (in PyCharm Terminal)
  ``` bash
- pip install -r requirements.txt
+ pip3 install -r requirements.txt
  ```
 - Configure matplotlib
  ``` bash

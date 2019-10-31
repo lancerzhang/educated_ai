@@ -17,6 +17,7 @@ class MouseListener(object):
 
     @util.timeit
     def run(self):
+        logging.info('start MouseListener thread')
         with mouse.Listener(on_click=self.on_click) as listener:
             listener.join()
 

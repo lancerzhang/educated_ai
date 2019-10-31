@@ -25,12 +25,12 @@ class Favor:
         self.vuk.items = self.vuk.items[:50]
         self.suk.items = self.suk.items[:50]
         favors = [self.vuk, self.suk, self.speed, self.degrees, self.channel]
-        np.save('favor', list(favors))
+        np.save('data/favor', list(favors))
 
     @util.timeit
     def load(self):
         try:
-            all = np.load('favor.npy', allow_pickle=True)
+            all = np.load('data/favor.npy', allow_pickle=True)
             self.vuk = all[0]
             self.suk = all[1]
             self.speed = all[2]

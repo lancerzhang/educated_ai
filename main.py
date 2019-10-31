@@ -84,7 +84,9 @@ def main(argv):
         #         da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
         schedule.every(5).seconds.do(brain.save)
         schedule.every(59).seconds.do(favor.save)
-        threading.Thread(target=run_pending).start()
+        schedule_thread = threading.Thread(target=run_pending)
+        schedule_thread.daemon = True
+        schedule_thread.start()
         reward = Reward(brain)
         status = Status(brain)
         action = Action(brain)
@@ -98,10 +100,10 @@ def main(argv):
             sound_thread.daemon = True
             sound_thread.start()
         mouse_listener = MouseListener()
-        keyboard_listener = KeyboardListener()
         mouse_thread = threading.Thread(target=mouse_listener.run)
         mouse_thread.daemon = True
         mouse_thread.start()
+        keyboard_listener = KeyboardListener()
         keyboard_thread = threading.Thread(target=keyboard_listener.run)
         keyboard_thread.daemon = True
         keyboard_thread.start()
@@ -149,7 +151,7 @@ def main(argv):
             last_process_time = all_duration
 
     except KeyboardInterrupt:
-        save_for_exit()
+        save_for_exit(None)
     except:
         logging.error(traceback.format_exc())
 

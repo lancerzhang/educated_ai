@@ -154,17 +154,17 @@ class Brain:
     def save(self):
         self.cleanup_memories()
         config = [memory.id_sequence]
-        np.save('memory', list(self.memories))
-        np.save('config', config)
+        np.save('data/memory', list(self.memories))
+        np.save('data/config', config)
 
     @util.timeit
     def load(self):
         try:
-            self.memories = set(np.load('memory.npy', allow_pickle=True))
+            self.memories = set(np.load('data/memory.npy', allow_pickle=True))
         except:
             pass
         try:
-            config = np.load('config.npy')
+            config = np.load('data/config.npy')
             memory.id_sequence = config[0]
         except:
             pass
