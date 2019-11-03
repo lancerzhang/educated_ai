@@ -233,7 +233,7 @@ class Vision(object):
         feature = self.search_feature(self.current_block)
         if feature.data is None:
             return
-        self.brain.put_feature_memory(constants.SOUND_FEATURE, feature.kernel, feature.data, channel=feature.channel)
+        self.brain.put_feature_memory(constants.VISION_FEATURE, feature.kernel, feature.data, channel=feature.channel)
         self.update_used_kernel(feature.kernel)
         self.update_used_channel(feature.channel)
 
