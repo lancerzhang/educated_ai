@@ -10,6 +10,7 @@ logger = logging.getLogger('Brain')
 logger.setLevel(logging.DEBUG)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
+NUMBER_OF_ACTIVE_MEMORIES = 50
 
 
 class Brain:
@@ -118,14 +119,16 @@ class Brain:
 
     @util.timeit
     def cleanup(self):
-        self.active_memories = [x for x in self.active_memories if x.live]
+        logger.debug(f'active_memories original size is:{len(self.active_memories)} ')
         new_active_memories = []
         for m in self.active_memories:
-            if m.active_end_time < time.time():
-                m.deactivate()
-            else:
-                new_active_memories.append(m)
-        self.active_memories = new_active_memories
+            if m.live:
+                if m.active_end_time < time.time():
+                    m.deactivate()
+                else:
+                    new_active_memories.append(m)
+        self.active_memories = new_active_memories[-NUMBER_OF_ACTIVE_MEMORIES:]
+        logger.debug(f'active_memories new size is:{len(self.active_memories)} ')
 
     @util.timeit
     def find_memory(self, query: Memory):
@@ -145,9 +148,14 @@ class Brain:
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
     def cleanup_memories(self):
-        for m in self.memories:
+        logger.debug(f'memories original size is:{len(self.memories)}')
+        new_memories = set()
+        for m in list(self.memories):
             m.refresh(recall=False, is_forget=True)
-        self.memories = set(x for x in self.memories if x.live)
+            if m.live:
+                new_memories.add(m)
+        self.memories = new_memories
+        logger.debug(f'memories new size is:{len(self.memories)}')
 
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit

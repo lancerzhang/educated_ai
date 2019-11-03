@@ -184,7 +184,7 @@ class Memory:
     def recall(self):
         self.refresh(True, False)
 
-    @util.timeit
+    # @util.timeit
     def equal(self, query):
         equal_fields = ['memory_type', 'feature_type', 'channel', 'kernel', 'feature', 'click_type', 'degrees', 'speed',
                         'duration', 'zoom_type', 'zoom_direction']
