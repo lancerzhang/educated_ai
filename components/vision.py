@@ -219,9 +219,10 @@ class Vision(object):
             shape = self.vision_kernels.shape
             index = random.randint(0, shape[0] - 1)
             kernel = self.vision_kernels[index]
-            return kernel
         else:
-            return used_kernel.key
+            kernel = used_kernel.key
+        logger.debug(f'get_kernel:{kernel}')
+        return kernel
 
     @util.timeit
     def update_used_kernel(self, kernel):

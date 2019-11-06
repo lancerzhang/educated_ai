@@ -79,6 +79,9 @@ class Memory:
     def __hash__(self):
         return int(self.mid)
 
+    def __str__(self):
+        return str(self.__dict__)
+
     def __eq__(self, other):
         return other == self.mid
 
@@ -189,7 +192,7 @@ class Memory:
         equal_fields = ['memory_type', 'feature_type', 'channel', 'kernel', 'feature', 'click_type', 'degrees', 'speed',
                         'duration', 'zoom_type', 'zoom_direction']
         for field in equal_fields:
-            if getattr(query, field):
+            if getattr(query, field) is not None:
                 if getattr(query, field) != getattr(self, field):
                     return False
         if len(query.children) > 0:
