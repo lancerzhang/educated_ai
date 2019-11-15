@@ -1,5 +1,6 @@
 from . import constants
 from components import util
+import copy
 import logging
 import numpy as np
 import random
@@ -39,6 +40,14 @@ def get_memory_type(memory_type_str):
 
 def get_feature_type(feature_type_str):
     return MEMORY_FEATURES.index(feature_type_str)
+
+
+def flatten(memories):
+    new_memories = copy.deepcopy(memories)
+    for m in new_memories:
+        m.parent = set([x.mid for x in m.parent])
+        m.children = [x.mid for x in m.children]
+    return new_memories
 
 
 class Memory:
@@ -105,6 +114,9 @@ class Memory:
     # can not recall frequently in short time
     @util.timeit
     def refresh(self, recall=False, is_forget=False):
+        if not self.validate():
+            self.live = False
+            return
         now_time = time.time()
         time_elapse = now_time - self.last_recall_time
         if time_elapse < TIME_SEC[0]:
@@ -210,3 +222,26 @@ class Memory:
 
     def set_feature_type(self, feature_type_str):
         self.feature_type = get_feature_type(feature_type_str)
+
+    def validate(self):
+        live = True
+        if self.memory_type > 0:
+            if len(self.children) == 0:
+                live = False
+            elif len(self.children) == 1:
+                child = self.children[0]
+                if not child.live:
+                    live = False
+                else:
+                    if len(child.children) == 1:
+                        self.children = child.children
+                        child.children = []
+            else:
+                has_child = False
+                for m in self.children:
+                    if m.live:
+                        has_child = True
+                        break
+                if not has_child:
+                    live = False
+        return live

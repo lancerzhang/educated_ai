@@ -123,6 +123,14 @@ class TestMemory(unittest.TestCase):
         memories[5].children = [memories[3], memories[2]]
         self.assertFalse(memories[5].equal(memories[4]))
 
+    def test_flatten(self):
+        memories = build_a_tree()
+        # memories[0].parent.add(memories[2])
+        # memories[1].parent.add(memories[2])
+        new_memories = memory.flatten(memories)
+        for m in new_memories:
+            print(m)
+
 
 if __name__ == "__main__":
     unittest.main()

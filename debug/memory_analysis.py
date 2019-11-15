@@ -12,6 +12,8 @@ print(len(memories))
 brain = Brain()
 brain.memories = memories
 brain.cleanup_memories()
+brain.cleanup_memories()
+brain.cleanup_memories()
 print(len(brain.memories))
 memories = brain.memories
 
@@ -27,11 +29,32 @@ recall_count = [x.recall_count for x in memories]
 recall_count_counter = collections.Counter(recall_count)
 print(f'recall_count_counter:{recall_count_counter}')
 
-# sounds = [x for x in memories if x.memory_type == 0]
-# for m in sounds:
-#     print(m)
+children = [len(x.children) for x in memories if x.memory_type > 0]
+children_counter = collections.Counter(children)
+print(f'children_counter:{children_counter}')
 
-# for m in memories:
-#     for x in memories:
-#         if x.mid!=m.mid and x.equal(m):
-#             print(f'duplicated:{x.mid} and {m.mid}')
+features = [x for x in memories if x.memory_type == 0 and x.feature_type == 0]
+print(f'len of features is {len(features)}')
+ff = open('features.txt', 'w')
+fs = set()
+for m in features:
+    f = f'{m.kernel}|{m.feature}\n'
+    if f in fs:
+        print(f'duplicated:{f}')
+    fs.add(f)
+    # sf.write(s)
+    ff.write(f'{str(m)}\n')
+print(f'len of set is:{len(fs)}')
+
+# virtual = [x for x in memories if x.memory_type > 0]
+# print(f'len of virtual is {len(virtual)}')
+# vf = open('virtual.txt', 'w')
+# vs = set()
+# for m in virtual:
+#     v = f'{m.children}\n'
+#     if v in vs:
+#         print(f'duplicated:{v}')
+#     vs.add(v)
+#     # sf.write(s)
+#     vf.write(f'{str(m)}\n')
+# print(f'len of set is:{len(vs)}')
