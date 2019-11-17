@@ -6,11 +6,11 @@ from components import memory
 from components.memory import Memory
 from components.brain import Brain
 
-memories = set(np.load('../data/memory.npy', allow_pickle=True))
-print(len(memories))
-
 brain = Brain()
-brain.memories = memories
+brain.memory_file = '../data/memory.npy'
+brain.load()
+memories = brain.memories
+print(len(memories))
 brain.cleanup_memories()
 brain.cleanup_memories()
 brain.cleanup_memories()

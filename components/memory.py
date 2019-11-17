@@ -44,19 +44,33 @@ def get_feature_type(feature_type_str):
 
 @util.timeit
 def flatten(memories):
-    new_memories = copy.deepcopy(memories)
-    for m in new_memories:
-        m.parent = set([x.mid for x in m.parent])
-        m.children = [x.mid for x in m.children]
+    new_memories = set()
+    for m in memories:
+        nm = copy.copy(m)
+        nm.parent = set([x.mid for x in m.parent])
+        nm.children = [x.mid for x in m.children]
+        new_memories.add(nm)
     return new_memories
 
 
 def construct(memories):
-    new_memories = copy.deepcopy(memories)
-    md = dict((x.mid, x) for x in new_memories)
-    for m in new_memories:
-        m.parent = set([md.get(x) for x in m.parent])
-        m.children = [md.get(x) for x in m.children]
+    new_memories = set()
+    md = dict((x.mid, x) for x in memories)
+    for m in memories:
+        nm = copy.copy(m)
+        new_parent = set()
+        for x in m.parent:
+            npr = md.get(x)
+            if npr:
+                new_parent.add(npr)
+        nm.parent = new_parent
+        new_children = []
+        for x in m.children:
+            ncr = md.get(x)
+            if ncr:
+                new_children.append(ncr)
+        nm.children = new_children
+        new_memories.add(nm)
     return new_memories
 
 

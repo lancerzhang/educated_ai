@@ -14,6 +14,8 @@ NUMBER_OF_ACTIVE_MEMORIES = 50
 
 
 class Brain:
+    memory_file = 'data/memory.npy'
+
     def __init__(self):
         self.memories = set()
         self.active_memories = []
@@ -162,13 +164,13 @@ class Brain:
     def save(self):
         self.cleanup_memories()
         config = [memory.id_sequence]
-        np.save('data/memory', list(memory.flatten(self.memories)))
+        np.save(self.memory_file, list(memory.flatten(self.memories)))
         np.save('data/config', config)
 
     @util.timeit
     def load(self):
         try:
-            self.memories = memory.construct(set(np.load('data/memory.npy', allow_pickle=True)))
+            self.memories = memory.construct(set(np.load(self.memory_file, allow_pickle=True)))
         except:
             pass
         try:
