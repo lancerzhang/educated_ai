@@ -162,13 +162,13 @@ class Brain:
     def save(self):
         self.cleanup_memories()
         config = [memory.id_sequence]
-        np.save('data/memory', list(self.memories))
+        np.save('data/memory', list(memory.flatten(self.memories)))
         np.save('data/config', config)
 
     @util.timeit
     def load(self):
         try:
-            self.memories = set(np.load('data/memory.npy', allow_pickle=True))
+            self.memories = memory.construct(set(np.load('data/memory.npy', allow_pickle=True)))
         except:
             pass
         try:

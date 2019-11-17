@@ -42,11 +42,21 @@ def get_feature_type(feature_type_str):
     return MEMORY_FEATURES.index(feature_type_str)
 
 
+@util.timeit
 def flatten(memories):
     new_memories = copy.deepcopy(memories)
     for m in new_memories:
         m.parent = set([x.mid for x in m.parent])
         m.children = [x.mid for x in m.children]
+    return new_memories
+
+
+def construct(memories):
+    new_memories = copy.deepcopy(memories)
+    md = dict((x.mid, x) for x in new_memories)
+    for m in new_memories:
+        m.parent = set([md.get(x) for x in m.parent])
+        m.children = [md.get(x) for x in m.children]
     return new_memories
 
 
@@ -59,8 +69,8 @@ class Memory:
     last_recall_time = 0
     protect_time = 0
     reward = 0
-    parent = set()
-    children = []
+    parent = None
+    children = None
 
     # for active period
     status = None
@@ -84,6 +94,8 @@ class Memory:
         self.active_start_time = time.time()
         self.recall_count = 1
         self.last_recall_time = time.time()
+        self.parent = set()
+        self.children = []
 
     def __hash__(self):
         return int(self.mid)
