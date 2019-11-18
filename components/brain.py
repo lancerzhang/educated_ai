@@ -4,6 +4,7 @@ from components import memory
 from components import util
 import logging
 import numpy as np
+import traceback
 import time
 
 logger = logging.getLogger('Brain')
@@ -162,10 +163,13 @@ class Brain:
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit
     def save(self):
-        self.cleanup_memories()
-        config = [memory.id_sequence]
-        np.save(self.memory_file, list(memory.flatten(self.memories)))
-        np.save('data/config', config)
+        try:
+            self.cleanup_memories()
+            config = [memory.id_sequence]
+            np.save(self.memory_file, list(memory.flatten(self.memories)))
+            np.save('data/config', config)
+        except:
+            logging.error(traceback.format_exc())
 
     @util.timeit
     def load(self):

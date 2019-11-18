@@ -45,7 +45,7 @@ def get_feature_type(feature_type_str):
 @util.timeit
 def flatten(memories):
     new_memories = set()
-    for m in memories:
+    for m in list(memories):
         nm = copy.copy(m)
         nm.parent = set([x.mid for x in m.parent])
         nm.children = [x.mid for x in m.children]
