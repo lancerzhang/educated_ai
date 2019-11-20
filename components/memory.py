@@ -53,24 +53,43 @@ def flatten(memories):
     return new_memories
 
 
-def construct(memories):
-    new_memories = set()
-    md = dict((x.mid, x) for x in memories)
-    for m in memories:
-        nm = copy.copy(m)
+def construct_loop(mset, mdict):
+    changed_set = set()
+    for m in mset:
+        is_parent_changed = False
         new_parent = set()
         for x in m.parent:
-            npr = md.get(x)
-            if npr:
-                new_parent.add(npr)
-        nm.parent = new_parent
+            if isinstance(x, int):
+                npr = mdict.get(x)
+                if npr:
+                    new_parent.add(npr)
+                    is_parent_changed = True
+            else:
+                new_parent.add(x)
+        if is_parent_changed:
+            m.parent = new_parent
+        is_children_changed = False
         new_children = []
         for x in m.children:
-            ncr = md.get(x)
-            if ncr:
-                new_children.append(ncr)
-        nm.children = new_children
-        new_memories.add(nm)
+            if isinstance(x, int):
+                ncd = mdict.get(x)
+                if ncd:
+                    new_children.append(ncd)
+                    is_children_changed = True
+            else:
+                new_children.append(x)
+        if is_children_changed:
+            m.children = new_children
+        if is_parent_changed or is_children_changed:
+            changed_set.add(m)
+    if len(changed_set) > 0:
+        construct_loop(changed_set, mdict)
+
+
+def construct(memories):
+    new_memories = copy.copy(memories)
+    mdict = dict((x.mid, x) for x in memories)
+    construct_loop(new_memories, mdict)
     return new_memories
 
 
