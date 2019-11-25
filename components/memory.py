@@ -59,11 +59,11 @@ def construct_loop(mset, mdict):
         is_parent_changed = False
         new_parent = set()
         for x in m.parent:
-            if isinstance(x, int):
+            if util.is_int(x):
+                is_parent_changed = True
                 npr = mdict.get(x)
                 if npr:
                     new_parent.add(npr)
-                    is_parent_changed = True
             else:
                 new_parent.add(x)
         if is_parent_changed:
@@ -71,11 +71,11 @@ def construct_loop(mset, mdict):
         is_children_changed = False
         new_children = []
         for x in m.children:
-            if isinstance(x, int):
+            if util.is_int(x):
+                is_children_changed = True
                 ncd = mdict.get(x)
                 if ncd:
                     new_children.append(ncd)
-                    is_children_changed = True
             else:
                 new_children.append(x)
         if is_children_changed:

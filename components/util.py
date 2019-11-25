@@ -306,3 +306,10 @@ def get_from_set(s, id):
         if id == e:
             return e
     return None
+
+
+def is_int(i):
+    if isinstance(i, int) or isinstance(i, np.int32) or isinstance(i, np.int64):
+        return True
+    else:
+        return False
