@@ -139,7 +139,7 @@ class Vision(object):
         data_map_u = None
         data_map_v = None
         for m in feature_memories:
-            channel = m[constants.CHANNEL]
+            channel = m.channel
             if channel == 'y':
                 if data_map_y is None:
                     data_map_y = self.get_data_map(y)
@@ -725,10 +725,11 @@ class Vision(object):
         return blocks_histogram
 
     @util.timeit
-    def reproduce_movement(self, bm):
-        degrees = bm[constants.DEGREES]
-        speed = bm[constants.SPEED]
-        duration = bm[constants.MOVE_DURATION]
+    def reproduce_movement(self, m):
+        print(f'reproduce_movement {m}')
+        degrees = m.degrees
+        speed = m.speed
+        duration = m.duration
         if duration == 0:
             new_block = self.try_move_aside(degrees)
             if not new_block:
@@ -741,12 +742,12 @@ class Vision(object):
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed,
                                    constants.MOVE_DURATION: duration,
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
-            bm.update({constants.STATUS: constants.MATCHED})
+            m.update({constants.STATUS: constants.MATCHED})
 
     @util.timeit
-    def reproduce_zoom(self, bm):
-        zoom_type = bm[constants.ZOOM_TYPE]
-        zoom_direction = bm[constants.ZOOM_DIRECTION]
+    def reproduce_zoom(self, m):
+        zoom_type = m.zoom_type
+        zoom_direction = m.zoom_direction
         if zoom_type is self.ZOOM_OUT:
             new_block = self.try_zoom_out(zoom_direction)
         else:
@@ -754,7 +755,7 @@ class Vision(object):
         if new_block is None:
             return None
         self.current_block = new_block
-        bm.update({constants.STATUS: constants.MATCHED})
+        m.status = constants.MATCHED
 
     @util.timeit
     def grab(self, top, left, width, height):

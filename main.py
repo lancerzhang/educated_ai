@@ -133,7 +133,7 @@ def main(argv):
             action.process(status, button, focus)
             reward.process(key)
             brain.match()
-            brain.compose()
+            brain.compose_memories()
 
             # work end
             work_duration = util.time_diff(start)

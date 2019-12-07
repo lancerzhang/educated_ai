@@ -89,6 +89,8 @@ class Brain:
         query.feature_type = feature_type
         query.children = memories
         m = self.put_memory(query)
+        for c in children:
+            c.parent.add(m)
         if reward > 0:
             m.reward = reward
         else:
@@ -97,7 +99,7 @@ class Brain:
         return m
 
     @util.timeit
-    def compose(self):
+    def compose_memories(self):
         matched_memories = [x for x in self.active_memories if x.status == constants.MATCHED]
         now = time.time()
 
@@ -206,6 +208,8 @@ class Brain:
             m = Memory()
             m.set_memory_type(constants.FEATURE_MEMORY)
             m.set_feature_type(feature_type_str)
+            if channel:
+                m.channel = channel
             m.kernel = kernel
             m.feature = feature
         self.add_memory(m)
@@ -232,5 +236,6 @@ class Brain:
     def get_matching_feature_memories(self, feature_type_str):
         feature_type = memory.get_feature_type(feature_type_str)
         feature_memories = [x for x in self.active_memories if
+                            x.memory_type == constants.FEATURE_MEMORY and
                             x.feature_type == feature_type and x.status == constants.MATCHING]
         return feature_memories

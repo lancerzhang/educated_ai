@@ -15,7 +15,7 @@ MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.
                    constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
-NOT_FORGET_STEP = 10
+NOT_FORGET_STEP = 3
 BASE_DESIRE = 0.1
 id_sequence = 0
 

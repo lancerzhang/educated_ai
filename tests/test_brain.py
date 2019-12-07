@@ -108,7 +108,7 @@ class TestBrain(unittest.TestCase):
             m.feature_type = memory.MEMORY_FEATURES.index(constants.ACTION_REWARD)
             brain.active_memories.append(m)
         brain.active_memories[-1].matched_time = time.time() - 1
-        brain.compose()
+        brain.compose_memories()
         self.assertEqual(20, len(brain.active_memories))
         new_sound = brain.active_memories[14]
         self.assertEqual(constants.MATCHED, new_sound.status)
