@@ -7,6 +7,7 @@ train/*.mp4
 data/*
 app.log
 test.py
+test.json
 config.npy
 favor.npy
 memory.npy

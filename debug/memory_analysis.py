@@ -2,7 +2,7 @@ import numpy as np
 import collections
 import json
 import time
-from components import memory
+from components import constants
 from components.memory import Memory
 from components.brain import Brain
 
@@ -10,6 +10,9 @@ brain = Brain()
 brain.memory_file = '../data/memory.npy'
 brain.load()
 memories = brain.memories
+# for m in memories:
+#     if m.feature == constants.VISION_FOCUS_MOVE:
+#         print(str(m))
 print(len(memories))
 brain.cleanup_memories()
 brain.cleanup_memories()
@@ -33,7 +36,7 @@ children = [len(x.children) for x in memories if x.memory_type > 0]
 children_counter = collections.Counter(children)
 print(f'children_counter:{children_counter}')
 
-features = [x for x in memories if x.memory_type == 0 and x.feature_type == 0]
+features = [x for x in memories if x.memory_type == 0 and x.feature_type == 1]
 print(f'len of features is {len(features)}')
 ff = open('features.txt', 'w')
 fs = set()

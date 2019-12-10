@@ -12,6 +12,7 @@ logger.setLevel(logging.DEBUG)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 NUMBER_OF_ACTIVE_MEMORIES = 50
+USE_INDEX = True
 
 
 class Brain:
@@ -19,6 +20,7 @@ class Brain:
 
     def __init__(self):
         self.memories = set()
+        self.memory_indexes = {}
         self.active_memories = []
 
     @util.timeit
@@ -65,6 +67,7 @@ class Brain:
         if m.mid == 0:
             m.assign_id()
             self.memories.add(m)
+            m.create_index(self.memory_indexes)
         m.matched()
         self.active_memories.append(m)
 
@@ -137,6 +140,9 @@ class Brain:
 
     @util.timeit
     def find_memory(self, query: Memory):
+        if USE_INDEX:
+            return self.memory_indexes.get(query.get_index())
+
         for m in self.memories:
             if m.equal(query):
                 return m
@@ -144,6 +150,13 @@ class Brain:
 
     @util.timeit
     def get_memories(self, query: Memory):
+        if USE_INDEX:
+            records = self.memory_indexes.get(query.get_index())
+            if records:
+                return records
+            else:
+                return []
+
         result = []
         for m in self.memories:
             if m.equal(query):
@@ -155,11 +168,14 @@ class Brain:
     def cleanup_memories(self):
         logger.debug(f'memories original size is:{len(self.memories)}')
         new_memories = set()
+        new_memory_indexes = {}
         for m in list(self.memories):
             m.refresh(recall=False, is_forget=True)
             if m.live:
                 new_memories.add(m)
+                m.create_index(new_memory_indexes)
         self.memories = new_memories
+        self.memory_indexes = new_memory_indexes
         logger.debug(f'memories new size is:{len(self.memories)}')
 
     # Use a separate thread to persist memories to storage regularly.
@@ -177,6 +193,8 @@ class Brain:
     def load(self):
         try:
             self.memories = memory.construct(set(np.load(self.memory_file, allow_pickle=True)))
+            for m in self.memories:
+                m.create_index(self.memory_indexes)
         except:
             pass
         try:

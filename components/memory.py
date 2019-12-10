@@ -1,6 +1,7 @@
 from . import constants
 from components import util
 import copy
+import hashlib
 import logging
 import numpy as np
 import random
@@ -290,3 +291,39 @@ class Memory:
                 if not has_child:
                     live = False
         return live
+
+    def create_index_common(self, indexes: dict):
+        raw = f'{self.memory_type}|{self.feature_type}|{self.click_type}|{self.degrees}|{self.speed}|{self.duration}|' \
+              f'{self.zoom_type}|{self.zoom_direction}|'
+        if len(self.children) > 0:
+            mids = [x.mid for x in self.children]
+            if self.memory_type <= 1:
+                # without order
+                raw += f'{sorted(mids)}'
+            else:
+                raw += f'{mids}'
+        index = hashlib.md5(raw.encode('utf-8')).hexdigest()
+        if indexes is not None:
+            indexes.update({index: self})
+        return index
+
+    def create_index_kernel(self, indexes: dict):
+        raw = f'{self.memory_type}|{self.feature_type}|{self.channel}|{self.kernel}'
+        index = hashlib.md5(raw.encode('utf-8')).hexdigest()
+        if indexes is not None:
+            index_objects = indexes.get(index)
+            if index_objects:
+                index_objects.append(self)
+                indexes.update({index: index_objects})
+            else:
+                indexes.update({index: [self]})
+        return index
+
+    def get_index(self):
+        return self.create_index(None)
+
+    def create_index(self, indexes):
+        if self.memory_type == MEMORY_TYPES.index(constants.FEATURE_MEMORY) and self.feature_type < 2:
+            return self.create_index_kernel(indexes)
+        else:
+            return self.create_index_common(indexes)
