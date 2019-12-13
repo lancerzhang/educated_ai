@@ -8,7 +8,7 @@ import traceback
 import time
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 NUMBER_OF_ACTIVE_MEMORIES = 50
@@ -204,16 +204,9 @@ class Brain:
             pass
 
     @util.timeit
-    def get_feature_memories(self, feature_type_str, kernel, channel):
-        query = Memory()
-        query.set_feature_type(feature_type_str)
-        query.kernel = kernel
-        query.channel = channel
-        return self.get_memories(query)
-
-    @util.timeit
-    def find_similar_feature_memories(self, feature_type_str, kernel, feature, channel):
-        feature_memories = self.get_feature_memories(feature_type_str, kernel, channel)
+    def find_similar_feature_memories(self, query: Memory, feature):
+        feature_memories = self.get_memories(query)
+        logger.debug(f'find_similar_feature_memories length {len(feature_memories)}')
         for m in feature_memories:
             difference = util.np_array_diff(feature, m.feature)
             if difference < FEATURE_SIMILARITY_THRESHOLD:
@@ -221,16 +214,17 @@ class Brain:
 
     @util.timeit
     def put_feature_memory(self, feature_type_str, kernel, feature, channel=None):
-        m = self.find_similar_feature_memories(feature_type_str, kernel, feature, channel)
+        query = Memory()
+        query.set_memory_type(constants.FEATURE_MEMORY)
+        query.set_feature_type(feature_type_str)
+        if channel:
+            query.channel = channel
+        query.kernel = kernel
+        m = self.find_similar_feature_memories(query, feature)
+        logger.debug(f'put_feature_memory m is {m}')
         if not m:
-            m = Memory()
-            m.set_memory_type(constants.FEATURE_MEMORY)
-            m.set_feature_type(feature_type_str)
-            if channel:
-                m.channel = channel
-            m.kernel = kernel
-            m.feature = feature
-        self.add_memory(m)
+            query.feature = feature
+            self.add_memory(query)
 
     @util.timeit
     def put_physical_memory(self, query: Memory):

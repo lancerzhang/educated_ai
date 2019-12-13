@@ -56,7 +56,6 @@ class Sound(object):
 
         self.match_features()
         self.search_feature_memory()
-        logger.info('sound process used time:{0}'.format(time.time() - start))
 
     @util.timeit
     def match_features(self):

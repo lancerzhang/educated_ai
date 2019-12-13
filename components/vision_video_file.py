@@ -1,7 +1,9 @@
 from .vision import Vision
 from . import util
-import mss
 import cv2
+import logging
+import mss
+import time
 
 
 class VideoFileVision(Vision):
@@ -44,7 +46,11 @@ class VideoFileVision(Vision):
             cv2.namedWindow("frame", cv2.WND_PROP_AUTOSIZE)
             cv2.setWindowProperty("frame", cv2.WND_PROP_AUTOSIZE, cv2.WND_PROP_AUTOSIZE)
         cv2.imshow('frame', display_frame)
-        cv2.waitKey(1)
+        t1 = time.time()
+        cv2.waitKey(1)  # TODO why it take long time to process after running for a while?
+        t2 = time.time()
+        if t2 - t1 > 0.1:
+            logging.info(f'VideoFileVision.process take long time "{t2 - t1}" for cv2.waitKey(1)')
         return focus
 
     @util.timeit

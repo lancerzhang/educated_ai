@@ -17,26 +17,26 @@ print(len(memories))
 brain.cleanup_memories()
 brain.cleanup_memories()
 brain.cleanup_memories()
-print(len(brain.memories))
 memories = brain.memories
+print(len(memories))
 
 memory_types = [x.memory_type for x in memories]
 memory_types_counter = collections.Counter(memory_types)
-print(f'memory_types_counter:{memory_types_counter}')
+print(f'memory_types_counter:{sorted(memory_types_counter.items())}')
 
 feature_type = [x.feature_type for x in memories]
 feature_type_counter = collections.Counter(feature_type)
-print(f'feature_type_counter:{feature_type_counter}')
+print(f'feature_type_counter:{sorted(feature_type_counter.items())}')
 
 recall_count = [x.recall_count for x in memories]
 recall_count_counter = collections.Counter(recall_count)
-print(f'recall_count_counter:{recall_count_counter}')
+print(f'recall_count_counter:{sorted(recall_count_counter.items())}')
 
 children = [len(x.children) for x in memories if x.memory_type > 0]
 children_counter = collections.Counter(children)
-print(f'children_counter:{children_counter}')
+print(f'children_counter:{sorted(children_counter.items())}')
 
-features = [x for x in memories if x.memory_type == 0 and x.feature_type == 1]
+features = [x for x in memories if x.memory_type == 0 and x.feature_type == 0]
 print(f'len of features is {len(features)}')
 ff = open('features.txt', 'w')
 fs = set()
