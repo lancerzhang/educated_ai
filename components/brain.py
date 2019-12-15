@@ -223,8 +223,9 @@ class Brain:
         m = self.find_similar_feature_memories(query, feature)
         logger.debug(f'put_feature_memory m is {m}')
         if not m:
-            query.feature = feature
-            self.add_memory(query)
+            m = query
+            m.feature = feature
+        self.add_memory(m)
 
     @util.timeit
     def put_physical_memory(self, query: Memory):
