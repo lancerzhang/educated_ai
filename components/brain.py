@@ -2,13 +2,14 @@ from components.memory import Memory
 from components import constants
 from components import memory
 from components import util
+import collections
 import logging
 import numpy as np
 import traceback
 import time
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 NUMBER_OF_ACTIVE_MEMORIES = 50
@@ -178,6 +179,24 @@ class Brain:
         self.memory_indexes = new_memory_indexes
         logger.debug(f'memories new size is:{len(self.memories)}')
 
+    def stat(self):
+        memories = [x for x in self.memories if x.recall_count > 1]
+        memory_types = [x.memory_type for x in memories]
+        memory_types_counter = collections.Counter(memory_types)
+        logger.debug(f'memory_types_counter:{sorted(memory_types_counter.items())}')
+
+        feature_type = [x.feature_type for x in memories]
+        feature_type_counter = collections.Counter(feature_type)
+        logger.debug(f'feature_type_counter:{sorted(feature_type_counter.items())}')
+
+        recall_count = [x.recall_count for x in memories]
+        recall_count_counter = collections.Counter(recall_count)
+        logger.debug(f'recall_count_counter:{sorted(recall_count_counter.items())}')
+
+        children = [len(x.children) for x in memories if x.memory_type > 0]
+        children_counter = collections.Counter(children)
+        logger.debug(f'children_counter:{sorted(children_counter.items())}')
+
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit
     def save(self):
@@ -186,6 +205,7 @@ class Brain:
             config = [memory.id_sequence]
             np.save(self.memory_file, list(memory.flatten(self.memories)))
             np.save('data/config', config)
+            self.stat()
         except:
             logging.error(traceback.format_exc())
 
@@ -206,7 +226,6 @@ class Brain:
     @util.timeit
     def find_similar_feature_memories(self, query: Memory, feature):
         feature_memories = self.get_memories(query)
-        logger.debug(f'find_similar_feature_memories length {len(feature_memories)}')
         for m in feature_memories:
             difference = util.np_array_diff(feature, m.feature)
             if difference < FEATURE_SIMILARITY_THRESHOLD:
@@ -221,7 +240,6 @@ class Brain:
             query.channel = channel
         query.kernel = kernel
         m = self.find_similar_feature_memories(query, feature)
-        logger.debug(f'put_feature_memory m is {m}')
         if not m:
             m = query
             m.feature = feature

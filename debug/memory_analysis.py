@@ -14,10 +14,9 @@ memories = brain.memories
 #     if m.feature == constants.VISION_FOCUS_MOVE:
 #         print(str(m))
 print(len(memories))
-brain.cleanup_memories()
-brain.cleanup_memories()
-brain.cleanup_memories()
-memories = brain.memories
+# brain.cleanup_memories()
+# memories = brain.memories
+memories = [x for x in brain.memories if x.recall_count > 1]
 print(len(memories))
 
 memory_types = [x.memory_type for x in memories]

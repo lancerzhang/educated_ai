@@ -16,7 +16,7 @@ MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.
                    constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
-NOT_FORGET_STEP = 3
+NOT_FORGET_STEP = 5
 BASE_DESIRE = 0.1
 id_sequence = 0
 
@@ -224,14 +224,20 @@ class Memory:
 
     @util.timeit
     def match(self):
+        if self.memory_type > 1:
+            logger.debug(f'matching {self}')
         if self.status != constants.MATCHING:
             return False
 
         for m in self.children:
+            if self.memory_type > 1:
+                logger.debug(f'child status {m.status}')
             if m.status != constants.MATCHED:
                 return False
 
         self.matched()
+        if self.memory_type > 1:
+            logger.debug(f'matched {self}')
         return True
 
     @util.timeit
@@ -278,10 +284,10 @@ class Memory:
                 child = self.children[0]
                 if not child.live:
                     live = False
-                else:
-                    if len(child.children) == 1:
-                        self.children = child.children
-                        child.children = []
+                elif self.memory_type == get_memory_type(constants.LONG_MEMORY) and \
+                        child.memory_type == get_memory_type(constants.LONG_MEMORY) and len(child.children) == 1:
+                    self.children = child.children
+                    child.children = []
             else:
                 has_child = False
                 for m in self.children:
