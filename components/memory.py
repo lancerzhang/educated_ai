@@ -16,7 +16,7 @@ MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.
                    constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
-NOT_FORGET_STEP = 5
+NOT_FORGET_STEP = 10
 BASE_DESIRE = 0.1
 id_sequence = 0
 
@@ -303,7 +303,7 @@ class Memory:
               f'{self.zoom_type}|{self.zoom_direction}|'
         if len(self.children) > 0:
             mids = [x.mid for x in self.children]
-            if self.memory_type <= 1:
+            if self.memory_type <= 2:
                 # without order
                 raw += f'{sorted(mids)}'
             else:
