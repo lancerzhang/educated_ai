@@ -9,7 +9,7 @@ import traceback
 import time
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 NUMBER_OF_ACTIVE_MEMORIES = 50
@@ -44,23 +44,32 @@ class Brain:
                 break
 
     @util.timeit
-    def activate(self):
+    def activate_children(self):
         for m in self.active_memories:
-            m.activate_tree()
+            m.activate_children_tree()
 
     @util.timeit
-    def match(self):
+    def activate_parent(self, m: Memory):
+        for x in m.parent:
+            if x in self.active_memories:
+                x.active_start_time = time.time()
+                self.activate_parent(x)
+
+    @util.timeit
+    def match_memories(self):
         for i in range(1, len(memory.MEMORY_TYPES) - 1):
             for m in self.active_memories:
                 if m.memory_type == i:
-                    m.match()
+                    if m.matched():
+                        self.activate_parent(m)
 
         match_any = True
         while match_any:
             match_any = False
             for m in self.active_memories:
                 if m.memory_type == memory.get_memory_type(constants.LONG_MEMORY):
-                    if m.match():
+                    if m.matched():
+                        self.activate_parent(m)
                         match_any = True
 
     @util.timeit
@@ -132,11 +141,14 @@ class Brain:
         new_active_memories = []
         for m in self.active_memories:
             if m.live:
-                if m.active_end_time < time.time():
-                    m.deactivate()
-                else:
+                if m.status == constants.MATCHED or m.active_end_time > time.time():
                     new_active_memories.append(m)
-        self.active_memories = new_active_memories[-NUMBER_OF_ACTIVE_MEMORIES:]
+                    m.calculate_desire()
+                else:
+                    m.deactivate()
+        sorted_memories = sorted(new_active_memories, key=lambda x: (int(x.desire * 100), x.active_start_time),
+                                 reverse=True)
+        self.active_memories = sorted_memories[0:NUMBER_OF_ACTIVE_MEMORIES]
         logger.debug(f'active_memories new size is:{len(self.active_memories)} ')
 
     @util.timeit
@@ -169,33 +181,37 @@ class Brain:
     def cleanup_memories(self):
         logger.debug(f'memories original size is:{len(self.memories)}')
         new_memories = set()
-        new_memory_indexes = {}
         for m in list(self.memories):
             m.refresh(recall=False, is_forget=True)
             if m.live:
                 new_memories.add(m)
-                m.create_index(new_memory_indexes)
         self.memories = new_memories
-        self.memory_indexes = new_memory_indexes
+        self.reindex()
         logger.debug(f'memories new size is:{len(self.memories)}')
 
-    def stat(self):
-        memories = [x for x in self.memories if x.recall_count > 1]
+    @util.timeit
+    def print_stat(self, label, memories):
         memory_types = [x.memory_type for x in memories]
         memory_types_counter = collections.Counter(memory_types)
-        logger.debug(f'memory_types_counter:{sorted(memory_types_counter.items())}')
+        logger.debug(f'{label} memory_types_counter:{sorted(memory_types_counter.items())}')
 
         feature_type = [x.feature_type for x in memories]
         feature_type_counter = collections.Counter(feature_type)
-        logger.debug(f'feature_type_counter:{sorted(feature_type_counter.items())}')
+        logger.debug(f'{label} feature_type_counter:{sorted(feature_type_counter.items())}')
 
         recall_count = [x.recall_count for x in memories]
         recall_count_counter = collections.Counter(recall_count)
-        logger.debug(f'recall_count_counter:{sorted(recall_count_counter.items())}')
+        logger.debug(f'{label} recall_count_counter:{sorted(recall_count_counter.items())}')
 
         children = [len(x.children) for x in memories if x.memory_type > 0]
         children_counter = collections.Counter(children)
-        logger.debug(f'children_counter:{sorted(children_counter.items())}')
+        logger.debug(f'{label} children_counter:{sorted(children_counter.items())}')
+
+    @util.timeit
+    def stat(self):
+        memories = [x for x in self.memories if x.recall_count > 1]
+        self.print_stat('all', memories)
+        self.print_stat('active', self.active_memories)
 
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit
@@ -205,16 +221,23 @@ class Brain:
             config = [memory.id_sequence]
             np.save(self.memory_file, list(memory.flatten(self.memories)))
             np.save('data/config', config)
-            self.stat()
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                self.stat()
         except:
             logging.error(traceback.format_exc())
+
+    @util.timeit
+    def reindex(self):
+        memory_indexes = {}
+        for m in self.memories:
+            m.create_index(memory_indexes)
+        self.memory_indexes = memory_indexes
 
     @util.timeit
     def load(self):
         try:
             self.memories = memory.construct(set(np.load(self.memory_file, allow_pickle=True)))
-            for m in self.memories:
-                m.create_index(self.memory_indexes)
+            self.reindex()
         except:
             pass
         try:

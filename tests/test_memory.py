@@ -14,14 +14,27 @@ def build_a_tree(status=constants.DORMANT):
         memories.append(m)
     for i in range(0, 2):
         memories[i].set_memory_type(constants.FEATURE_MEMORY)
+        memories[i].set_feature_type(constants.SOUND_FEATURE)
+        memories[i].parent = {memories[2]}
     for i in range(2, 4):
         memories[i].set_memory_type(constants.SLICE_MEMORY)
+        memories[i].feature_type = -1
+        memories[i].parent = {memories[4]}
     for i in range(4, 6):
         memories[i].set_memory_type(constants.INSTANT_MEMORY)
+        memories[i].feature_type = -1
+        memories[i].parent = {memories[6]}
     for i in range(6, 8):
         memories[i].set_memory_type(constants.SHORT_MEMORY)
+        memories[i].feature_type = -1
+        memories[i].parent = {memories[8]}
     for i in range(8, 11):
         memories[i].set_memory_type(constants.LONG_MEMORY)
+        memories[i].feature_type = -1
+    for i in range(8, 10):
+        memories[i].set_memory_type(constants.LONG_MEMORY)
+        memories[i].feature_type = -1
+        memories[i].parent = {memories[10]}
     memories[2].children = memories[0:2]
     memories[4].children = memories[2:4]
     memories[6].children = memories[4:6]
@@ -49,7 +62,7 @@ class TestMemory(unittest.TestCase):
     def test_activate_tree_left_leaf(self):
         memories = build_a_tree()
         # 1st validation
-        memories[8].activate_tree()
+        memories[8].activate_children_tree()
         self.assertEqual(memories[0].status, constants.MATCHING)
         self.assertEqual(memories[1].status, constants.MATCHING)
         self.assertEqual(memories[2].status, constants.MATCHING)
@@ -60,7 +73,7 @@ class TestMemory(unittest.TestCase):
         self.assertNotEqual(memories[7].status, constants.MATCHING)
         self.assertEqual(memories[8].status, constants.MATCHING)
         # 2nd validation, nothing change
-        memories[8].activate_tree()
+        memories[8].activate_children_tree()
         self.assertEqual(memories[0].status, constants.MATCHING)
         self.assertEqual(memories[1].status, constants.MATCHING)
         self.assertEqual(memories[2].status, constants.MATCHING)
@@ -72,10 +85,10 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(memories[8].status, constants.MATCHING)
         # 3rd validation, something matched
         memories[2].status = constants.MATCHED
-        memories[8].activate_tree()
+        memories[8].activate_children_tree()
         self.assertEqual(memories[3].status, constants.MATCHING)
         memories[4].status = constants.MATCHED
-        memories[8].activate_tree()
+        memories[8].activate_children_tree()
         self.assertEqual(memories[5].status, constants.MATCHING)
 
     def test_activate_tree_middle_leaf(self):
@@ -83,11 +96,11 @@ class TestMemory(unittest.TestCase):
         memories[8].status = constants.MATCHING
         memories[9].children = memories[6:8]
         # 1st validation
-        memories[10].activate_tree()
+        memories[10].activate_children_tree()
         self.assertEqual(memories[9].status, constants.DORMANT)
         # match 1st long
         memories[8].status = constants.MATCHED
-        memories[10].activate_tree()
+        memories[10].activate_children_tree()
         self.assertEqual(memories[0].status, constants.MATCHING)
         self.assertEqual(memories[1].status, constants.MATCHING)
         self.assertEqual(memories[2].status, constants.MATCHING)

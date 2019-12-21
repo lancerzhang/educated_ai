@@ -58,7 +58,7 @@ class TestBrain(unittest.TestCase):
         brain.active_memories = memories
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
-        brain.match()
+        brain.match_memories()
         self.assertEqual(memories[2].status, constants.MATCHED)
         # match whole tree
         memories = test_memory.build_a_tree(constants.MATCHING)
@@ -69,13 +69,14 @@ class TestBrain(unittest.TestCase):
         memories[9].status = constants.MATCHED
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
-        brain.match()
+        brain.match_memories()
         self.assertEqual(memories[10].status, constants.MATCHED)
 
     def test_compose_memory(self):
         brain = Brain()
         memories = test_memory.build_a_tree(constants.MATCHING)
         brain.memories = set(memories)
+        brain.reindex()
         # existing memory
         m1 = brain.compose_memory([memories[0], memories[1]], memory.MEMORY_TYPES.index(constants.SLICE_MEMORY))
         self.assertEqual(2, len(m1.children))
@@ -138,7 +139,7 @@ class TestBrain(unittest.TestCase):
         memories[0].last_recall_time = time.time() - 65000000
         brain.memories = set(memories)
         brain.cleanup_memories()
-        self.assertEqual(10, len(brain.memories))
+        self.assertEqual(6, len(brain.memories))
 
     def test_persist_memories(self):
         brain = Brain()
@@ -150,10 +151,22 @@ class TestBrain(unittest.TestCase):
         brain2 = Brain()
         brain2.load()
         self.assertTrue(isinstance(brain2.memories, set))
-        self.assertEqual(11, len(brain2.memories))
+        self.assertEqual(7, len(brain2.memories))
         m2 = util.get_from_set(brain2.memories, 3)
         self.assertEqual(2, len(m2.children))
         self.assertEqual(len(memories), memory.id_sequence)
+
+    def test_activate_parent(self):
+        brain = Brain()
+        memories = test_memory.build_a_tree()
+        brain.memories = set(memories)
+        brain.active_memories = memories
+        brain.activate_parent(memories[0])
+        self.assertTrue(memories[2].active_start_time > 0)
+        self.assertTrue(memories[4].active_start_time > 0)
+        self.assertTrue(memories[6].active_start_time > 0)
+        self.assertTrue(memories[8].active_start_time > 0)
+        self.assertTrue(memories[10].active_start_time > 0)
 
 
 if __name__ == "__main__":

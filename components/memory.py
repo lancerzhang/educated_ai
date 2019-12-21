@@ -16,7 +16,7 @@ MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.
                    constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
-NOT_FORGET_STEP = 10
+NOT_FORGET_STEP = 5
 BASE_DESIRE = 0.1
 id_sequence = 0
 
@@ -103,6 +103,7 @@ class Memory:
     last_recall_time = 0
     protect_time = 0
     reward = 0
+    desire = 0
     parent = None
     children = None
 
@@ -189,13 +190,17 @@ class Memory:
                 break
 
     @util.timeit
-    def get_desire(self):
+    def calculate_desire(self):
         elapse = time.time() - self.matched_time
         # linear func, weight is 0 at beginning, it's 1 after 4000 seconds
         f = 0.00025 * elapse
         desire = BASE_DESIRE + self.reward * f
         desire = desire if desire < 1 else 1
-        return desire
+        self.desire = desire
+
+    def get_desire(self):
+        self.calculate_desire()
+        return self.desire
 
     @util.timeit
     def activate(self):
@@ -209,7 +214,7 @@ class Memory:
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
 
     @util.timeit
-    def activate_tree(self):
+    def activate_children_tree(self):
         self.activate()
         for m in self.children:
             if m.memory_type in [MEMORY_TYPES.index(constants.LONG_MEMORY),
@@ -217,10 +222,10 @@ class Memory:
                                  MEMORY_TYPES.index(constants.INSTANT_MEMORY),
                                  MEMORY_TYPES.index(constants.SLICE_MEMORY)]:
                 if m.status in [constants.MATCHING, constants.DORMANT]:
-                    m.activate_tree()
+                    m.activate_children_tree()
                     break
             else:
-                m.activate_tree()
+                m.activate_children_tree()
 
     @util.timeit
     def match(self):

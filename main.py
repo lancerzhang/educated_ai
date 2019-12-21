@@ -127,12 +127,12 @@ def main(argv):
 
             status.calculate_status(dps, frames)
             brain.associate()
-            brain.activate()
+            brain.activate_children()
             focus = vision.process(status, key)
             sound.process(status)
             action.process(status, button, focus)
             reward.process(key)
-            brain.match()
+            brain.match_memories()
             brain.compose_memories()
 
             # work end
