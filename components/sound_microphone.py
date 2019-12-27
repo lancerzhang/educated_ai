@@ -36,7 +36,7 @@ class MicrophoneSound(Sound):
                     audio_buffer = stream.read(self.CHUNK)
                     if len(audio_buffer) == 0:
                         break  # reached end of the stream
-                    np_buffer = np.fromstring(audio_buffer, dtype=np.int16)
+                    np_buffer = np.frombuffer(audio_buffer, dtype=np.int16)
                     normal_buffer = util.normalize_audio_data(np_buffer)
                     frame_data = frame_data + normal_buffer.tolist()
                     frame_count += 1
