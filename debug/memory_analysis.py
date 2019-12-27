@@ -7,15 +7,15 @@ from components.memory import Memory
 from components.brain import Brain
 
 brain = Brain()
-brain.memory_file = '../data/memory.npy'
+brain.MEMORY_FILE = '../data/memory.npy'
 brain.load()
 memories = brain.memories
 # for m in memories:
 #     if m.feature == constants.VISION_FOCUS_MOVE:
 #         print(str(m))
 print(len(memories))
-# brain.cleanup_memories()
-# memories = brain.memories
+brain.cleanup_memories()
+memories = brain.memories
 memories = [x for x in brain.memories if x.recall_count > 1]
 print(len(memories))
 
@@ -37,16 +37,16 @@ print(f'children_counter:{sorted(children_counter.items())}')
 
 features = [x for x in memories if x.memory_type == 0 and x.feature_type == 0]
 print(f'len of features is {len(features)}')
-ff = open('features.txt', 'w')
-fs = set()
-for m in features:
-    f = f'{m.kernel}|{m.feature}\n'
-    if f in fs:
-        print(f'duplicated:{f}')
-    fs.add(f)
-    # sf.write(s)
-    ff.write(f'{str(m)}\n')
-print(f'len of set is:{len(fs)}')
+# ff = open('features.txt', 'w')
+# fs = set()
+# for m in features:
+#     f = f'{m.kernel}|{m.feature}\n'
+#     if f in fs:
+#         print(f'duplicated:{f}')
+#     fs.add(f)
+#     sf.write(s)
+#     ff.write(f'{str(m)}\n')
+# print(f'len of set is:{len(fs)}')
 
 # virtual = [x for x in memories if x.memory_type > 0]
 # print(f'len of virtual is {len(virtual)}')

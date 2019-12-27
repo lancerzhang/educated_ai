@@ -7,6 +7,8 @@ logger.setLevel(logging.INFO)
 
 
 class Favor:
+    FAVOR_FILE = 'data/favor.npy'
+
     def __init__(self):
         self.vuk = Rank()
         self.suk = Rank()
@@ -34,7 +36,7 @@ class Favor:
     @util.timeit
     def load(self):
         try:
-            all = np.load('data/favor.npy', allow_pickle=True)
+            all = np.load(self.FAVOR_FILE, allow_pickle=True)
             self.vuk = all[0]
             self.suk = all[1]
             self.speed = all[2]
@@ -76,3 +78,6 @@ class Count:
     def __init__(self, key):
         self.key = key
         self.count = 1
+
+    def __str__(self):
+        return str(self.__dict__)

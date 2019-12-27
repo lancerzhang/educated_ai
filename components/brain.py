@@ -9,7 +9,7 @@ import traceback
 import time
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 NUMBER_OF_ACTIVE_MEMORIES = 50
@@ -17,7 +17,7 @@ USE_INDEX = True
 
 
 class Brain:
-    memory_file = 'data/memory.npy'
+    MEMORY_FILE = 'data/memory.npy'
 
     def __init__(self):
         self.memories = set()
@@ -219,7 +219,7 @@ class Brain:
         try:
             self.cleanup_memories()
             config = [memory.id_sequence]
-            np.save(self.memory_file, list(memory.flatten(self.memories)))
+            np.save(self.MEMORY_FILE, list(memory.flatten(self.memories)))
             np.save('data/config', config)
             if logger.getEffectiveLevel() == logging.DEBUG:
                 self.stat()
@@ -236,7 +236,7 @@ class Brain:
     @util.timeit
     def load(self):
         try:
-            self.memories = memory.construct(set(np.load(self.memory_file, allow_pickle=True)))
+            self.memories = memory.construct(set(np.load(self.MEMORY_FILE, allow_pickle=True)))
             self.reindex()
         except:
             pass
