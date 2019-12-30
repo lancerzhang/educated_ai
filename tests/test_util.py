@@ -256,6 +256,14 @@ class TestUtil(unittest.TestCase):
         l2 = [1, 2, 3, 2, 1]
         self.assertEqual(3, len(util.list_remove_duplicates(l2)))
 
+    def test_list_element_count(self):
+        l1 = [1, 2, 2, 3, 3, 3]
+        d1 = util.list_element_count(l1)
+        self.assertEqual(2, d1.get(2))
+        l1 = ['a', 'b', 'b', 'c', 'c', 'c']
+        d1 = util.list_element_count(l1)
+        self.assertEqual(3, d1.get('c'))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,5 @@
 import time, numpy, cv2, random
+import collections
 import logging
 import numpy as np
 from functools import reduce
@@ -57,9 +58,11 @@ def list_common(list1, list2):
 def list_element_count(list1):
     # start = time.time()
     # print list1
-    dict_count = dict((a, list1.count(a)) for a in set(list1))
+    # logger.info(f'list_element_count:{list1}')
+    # dict_count = dict((a, list1.count(a)) for a in set(list1))
+    return collections.Counter(list1)
     # print 'list_element_count used time	' + str(time.time() - start)
-    return dict_count
+    # return dict_count
 
 
 # list a - b, return new list
