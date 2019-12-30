@@ -1,9 +1,14 @@
 from components import constants
-from components import util
+from components import dashboard
 from components.data_adaptor import DataAdaptor
 from components.data_sqlite3 import DataSqlite3
 import numpy as np
+import collections
+import logging
+import sys
 import time
+
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 data_service = DataAdaptor(DataSqlite3('../data/dump.sql'))
 
@@ -47,7 +52,11 @@ def load_short_id():
     print(np.load('../data/sid.npy'))
 
 
+memories = data_service.get_all_memories()
 print(count_memories())
+
+dashboard.MIN_RECALL_COUNT = 1
+dashboard.log(memories, 'ALL')
 
 field1 = constants.RECALL_COUNT
 key1 = constants.PHYSICAL_MEMORY_TYPE
@@ -57,12 +66,12 @@ value1 = constants.SOUND_FEATURE
 # key1 = None
 # value1 = None
 # field = constants.REWARD
-memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
-print([x[field1] for x in memories])
-memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
-print([x[field1] for x in memories])
-memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 50)
-print([x[field1] for x in memories])
+# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.VISION_FEATURE, 50)
+# print([x[field1] for x in memories])
+# memories = list_top_memories(field1, constants.PHYSICAL_MEMORY_TYPE, constants.SOUND_FEATURE, 50)
+# print([x[field1] for x in memories])
+# memories = list_top_memories(field1, constants.VIRTUAL_MEMORY_TYPE, None, 50)
+# print([x[field1] for x in memories])
 
 # field = constants.CHILD_MEM
 # memories = list_top_sub_memories(field, 20)

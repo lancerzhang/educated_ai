@@ -1,10 +1,11 @@
 from . import constants
+from . import dashboard
+from . import util
 import copy
 import logging
 import numpy as np
 import random
 import time
-from . import util
 
 logger = logging.getLogger('BioMemory')
 logger.setLevel(logging.INFO)
@@ -159,6 +160,7 @@ class BioMemory(object):
 
     @util.timeit
     def cleanup_working_memories(self):
+        dashboard.log(self.working_memories, 'working before cleanup')
         valid_working_memories = [mem for mem in self.working_memories if
                                   mem[constants.STATUS] == constants.MATCHED or mem[constants.END_TIME] > time.time()]
         self.calculate_working_reward(valid_working_memories)
@@ -170,6 +172,7 @@ class BioMemory(object):
             # as they survive, update last active time
             mem.update({constants.LAST_ACTIVE_TIME: time.time()})
         self.working_memories = limited_sorted_working_memories
+        dashboard.log(self.working_memories, 'working after cleanup')
 
     # longer time elapsed, easier to forget
     # more times recall, harder to forget
