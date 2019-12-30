@@ -9,7 +9,7 @@ import time
 
 logger = logging.getLogger('Memory')
 logger.setLevel(logging.INFO)
-MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
+MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 60]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
 MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.VISION_FOCUS_MOVE,
@@ -160,10 +160,7 @@ class Memory:
     # more times recall, harder to forget
     # can not recall frequently in short time
     @util.timeit
-    def refresh(self, recall=False, is_forget=False):
-        if not self.validate():
-            self.live = False
-            return
+    def refresh_self(self, recall=False, is_forget=False):
         now_time = time.time()
         time_elapse = now_time - self.last_recall_time
         if time_elapse < TIME_SEC[0]:
@@ -254,9 +251,9 @@ class Memory:
 
     @util.timeit
     def recall(self):
-        self.refresh(True, False)
+        self.refresh_self(True, False)
 
-    # @util.timeit
+    # disable for performance issue @util.timeit
     def equal(self, query):
         equal_fields = ['memory_type', 'feature_type', 'channel', 'kernel', 'feature', 'click_type', 'degrees', 'speed',
                         'duration', 'zoom_type', 'zoom_direction']
@@ -271,24 +268,29 @@ class Memory:
                 return util.list_equal_order(self.children, query.children)
         return True
 
+    @util.timeit
     def deactivate(self):
         self.status = constants.DORMANT
 
+    @util.timeit
     def set_memory_type(self, memory_type_str):
         self.memory_type = get_memory_type(memory_type_str)
 
+    @util.timeit
     def set_feature_type(self, feature_type_str):
         self.feature_type = get_feature_type(feature_type_str)
 
-    def validate(self):
-        live = True
+    @util.timeit
+    def refresh_relative(self):
+        self.children = [x for x in self.children if x.live is True]
+        self.parent = {x for x in self.parent if x.live is True}
         if self.memory_type > 0:
             if len(self.children) == 0:
-                live = False
+                self.live = False
             elif len(self.children) == 1:
                 child = self.children[0]
                 if not child.live:
-                    live = False
+                    self.live = False
                 elif self.memory_type == get_memory_type(constants.LONG_MEMORY) and \
                         child.memory_type == get_memory_type(constants.LONG_MEMORY) and len(child.children) == 1:
                     self.children = child.children
@@ -300,12 +302,12 @@ class Memory:
                         has_child = True
                         break
                 if not has_child:
-                    live = False
-        return live
+                    self.live = False
 
+    @util.timeit
     def create_index_common(self, indexes: dict):
         raw = f'{self.memory_type}|{self.feature_type}|{self.click_type}|{self.degrees}|{self.speed}|{self.duration}|' \
-              f'{self.zoom_type}|{self.zoom_direction}|'
+            f'{self.zoom_type}|{self.zoom_direction}|'
         if len(self.children) > 0:
             mids = [x.mid for x in self.children]
             if self.memory_type <= 2:
@@ -318,6 +320,7 @@ class Memory:
             indexes.update({index: self})
         return index
 
+    @util.timeit
     def create_index_kernel(self, indexes: dict):
         raw = f'{self.memory_type}|{self.feature_type}|{self.channel}|{self.kernel}'
         index = hashlib.md5(raw.encode('utf-8')).hexdigest()
@@ -330,9 +333,11 @@ class Memory:
                 indexes.update({index: [self]})
         return index
 
+    @util.timeit
     def get_index(self):
         return self.create_index(None)
 
+    @util.timeit
     def create_index(self, indexes):
         if self.memory_type == MEMORY_TYPES.index(constants.FEATURE_MEMORY) and self.feature_type < 2:
             return self.create_index_kernel(indexes)

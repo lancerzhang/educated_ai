@@ -13,7 +13,7 @@ logger = logging.getLogger('Brain')
 logger.setLevel(logging.DEBUG)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
-NUMBER_OF_ACTIVE_MEMORIES = 50
+NUMBER_OF_ACTIVE_MEMORIES = 300
 USE_INDEX = True
 
 
@@ -185,7 +185,8 @@ class Brain:
         logger.debug(f'memories original size is:{len(self.memories)}')
         new_memories = set()
         for m in list(self.memories):
-            m.refresh(recall=False, is_forget=True)
+            m.refresh_self(recall=False, is_forget=True)
+            m.refresh_relative()
             if m.live:
                 new_memories.add(m)
         self.memories = new_memories
