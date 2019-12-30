@@ -1,4 +1,10 @@
-
+.idea/
 .DS_Store
 *.pyc
 TinyDB.json
+tests/*.npy
+train/*.mp4
+data/*
+app.log
+test.py
+test.json
