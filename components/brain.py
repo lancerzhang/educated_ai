@@ -1,5 +1,6 @@
 from components.memory import Memory
 from components import constants
+from components import dashboard
 from components import memory
 from components import util
 import collections
@@ -138,6 +139,7 @@ class Brain:
     @util.timeit
     def cleanup(self):
         logger.debug(f'active_memories original size is:{len(self.active_memories)} ')
+        dashboard.log(self.active_memories, 'before CLEANUP')
         new_active_memories = []
         for m in self.active_memories:
             if m.live:
@@ -150,6 +152,7 @@ class Brain:
                                  reverse=True)
         self.active_memories = sorted_memories[0:NUMBER_OF_ACTIVE_MEMORIES]
         logger.debug(f'active_memories new size is:{len(self.active_memories)} ')
+        dashboard.log(self.active_memories, 'after CLEANUP')
 
     @util.timeit
     def find_memory(self, query: Memory):

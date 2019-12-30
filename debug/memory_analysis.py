@@ -2,9 +2,14 @@ import numpy as np
 import collections
 import json
 import time
+import logging
+import sys
 from components import constants
+from components import dashboard
 from components.memory import Memory
 from components.brain import Brain
+
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 brain = Brain()
 brain.MEMORY_FILE = '../data/memory.npy'
@@ -16,27 +21,8 @@ memories = brain.memories
 print(len(memories))
 brain.cleanup_memories()
 memories = brain.memories
-memories = [x for x in brain.memories if x.recall_count > 1]
-print(len(memories))
-
-memory_types = [x.memory_type for x in memories]
-memory_types_counter = collections.Counter(memory_types)
-print(f'memory_types_counter:{sorted(memory_types_counter.items())}')
-
-feature_type = [x.feature_type for x in memories]
-feature_type_counter = collections.Counter(feature_type)
-print(f'feature_type_counter:{sorted(feature_type_counter.items())}')
-
-recall_count = [x.recall_count for x in memories]
-recall_count_counter = collections.Counter(recall_count)
-print(f'recall_count_counter:{sorted(recall_count_counter.items())}')
-
-children = [len(x.children) for x in memories if x.memory_type > 0]
-children_counter = collections.Counter(children)
-print(f'children_counter:{sorted(children_counter.items())}')
-
-features = [x for x in memories if x.memory_type == 0 and x.feature_type == 0]
-print(f'len of features is {len(features)}')
+dashboard.MIN_RECALL_COUNT = 1
+dashboard.log(memories, 'ALL')
 # ff = open('features.txt', 'w')
 # fs = set()
 # for m in features:
