@@ -78,14 +78,6 @@ def main(argv):
         # use separate thread to prepare gc
         threading.Thread(target=mgc.prepare).start()
         reward_controller = Reward(bm)
-        mouse_listener = MouseListener()
-        keyboard_listener = KeyboardListener()
-        mouse_thread = threading.Thread(target=mouse_listener.run)
-        mouse_thread.daemon = True
-        mouse_thread.start()
-        keyboard_thread = threading.Thread(target=keyboard_listener.run)
-        keyboard_thread.daemon = True
-        keyboard_thread.start()
         status_controller = Status(bm)
         if video_file:
             vision_controller = VideoFileVision(bm, video_file, status_controller)
@@ -95,6 +87,14 @@ def main(argv):
             sound_controller = MicrophoneSound(bm)
             threading.Thread(target=sound_controller.receive).start()
             # _thread.start_new_thread(sound_controller.receive, ())
+        mouse_listener = MouseListener()
+        mouse_thread = threading.Thread(target=mouse_listener.run)
+        mouse_thread.daemon = True
+        mouse_thread.start()
+        keyboard_listener = KeyboardListener()
+        keyboard_thread = threading.Thread(target=keyboard_listener.run)
+        keyboard_thread.daemon = True
+        keyboard_thread.start()
         action_controller = Action(bm)
         frames = 0
         last_process_time = 0

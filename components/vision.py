@@ -76,6 +76,8 @@ class Vision(object):
                               self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
 
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
+        # fix error of Mac - Process finished with exit code 132 (interrupted by signal 4: SIGILL)
+        cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
 
     @util.timeit
     def process(self, status_controller, key):
