@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger('dashboard')
 logger.setLevel(logging.DEBUG)
 
-MIN_RECALL_COUNT = 1
+MIN_RECALL_COUNT = 0
 
 
 def log(memories, label):
@@ -14,16 +14,16 @@ def log(memories, label):
 
     memory_types = [x[constants.VIRTUAL_MEMORY_TYPE] for x in memories if constants.VIRTUAL_MEMORY_TYPE in x]
     memory_types_counter = collections.Counter(memory_types)
-    logger.debug(f'{label} VIRTUAL_MEMORY_TYPE counter:{sorted(memory_types_counter.items())}')
+    logger.debug(f'{label} memory_types counter:{sorted(memory_types_counter.items())}')
 
     feature_type = [x[constants.PHYSICAL_MEMORY_TYPE] for x in memories if constants.PHYSICAL_MEMORY_TYPE in x]
     feature_type_counter = collections.Counter(feature_type)
-    logger.debug(f'{label} feature_type_counter:{sorted(feature_type_counter.items())}')
+    logger.debug(f'{label} feature_type counter:{sorted(feature_type_counter.items())}')
 
     recall_count = [x[constants.RECALL_COUNT] for x in memories]
     recall_count_counter = collections.Counter(recall_count)
-    logger.debug(f'{label} recall_count_counter:{sorted(recall_count_counter.items())}')
+    logger.debug(f'{label} recall_count counter:{sorted(recall_count_counter.items())}')
 
-    recall_count = [x[constants.RECALL_COUNT] for x in memories]
-    recall_count_counter = collections.Counter(recall_count)
-    logger.debug(f'{label} recall_count_counter:{sorted(recall_count_counter.items())}')
+    children_len_count = [len(x[constants.CHILD_MEM]) for x in memories]
+    children_len_count_counter = collections.Counter(children_len_count)
+    logger.debug(f'{label} children_len counter:{sorted(children_len_count_counter.items())}')
