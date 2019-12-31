@@ -4,7 +4,7 @@ import logging
 import pandas as pd
 
 logger = logging.getLogger('dashboard')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 MIN_RECALL_COUNT = 0
 
