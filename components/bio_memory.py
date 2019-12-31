@@ -167,11 +167,13 @@ class BioMemory(object):
         sorted_working_memories = sorted(valid_working_memories,
                                          key=lambda x: (x[constants.WORKING_REWARD], x[constants.LAST_ACTIVE_TIME]),
                                          reverse=True)
-        limited_sorted_working_memories = sorted_working_memories[0:self.THRESHOLD_OF_WORKING_MEMORIES:]
+        limited_sorted_working_memories = sorted_working_memories[0:self.THRESHOLD_OF_WORKING_MEMORIES]
+        removed_memories = sorted_working_memories[self.THRESHOLD_OF_WORKING_MEMORIES:]
         for mem in limited_sorted_working_memories:
             # as they survive, update last active time
             mem.update({constants.LAST_ACTIVE_TIME: time.time()})
         self.working_memories = limited_sorted_working_memories
+        dashboard.log(removed_memories, 'removed_memories')
         dashboard.log(self.working_memories, 'working after cleanup')
 
     # longer time elapsed, easier to forget
