@@ -10,7 +10,7 @@ import traceback
 import time
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 NUMBER_OF_ACTIVE_MEMORIES = 300
@@ -138,7 +138,6 @@ class Brain:
 
     @util.timeit
     def cleanup(self):
-        logger.debug(f'active_memories original size is:{len(self.active_memories)} ')
         dashboard.log(self.active_memories, 'before CLEANUP')
         new_active_memories = []
         for m in self.active_memories:
@@ -148,10 +147,12 @@ class Brain:
                     m.calculate_desire()
                 else:
                     m.deactivate()
-        sorted_memories = sorted(new_active_memories, key=lambda x: (int(x.desire * 100), x.active_start_time),
+        sorted_memories = sorted(new_active_memories,
+                                 key=lambda x: (x.recall_count, int(x.desire * 100), x.active_start_time),
                                  reverse=True)
         self.active_memories = sorted_memories[0:NUMBER_OF_ACTIVE_MEMORIES]
-        logger.debug(f'active_memories new size is:{len(self.active_memories)} ')
+        removed_memories = sorted_memories[NUMBER_OF_ACTIVE_MEMORIES:]
+        dashboard.log(removed_memories, 'removed_memories')
         dashboard.log(self.active_memories, 'after CLEANUP')
 
     @util.timeit

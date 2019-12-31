@@ -9,7 +9,7 @@ import time
 
 logger = logging.getLogger('Memory')
 logger.setLevel(logging.INFO)
-MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 60]
+MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
 MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.VISION_FOCUS_MOVE,

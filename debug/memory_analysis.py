@@ -18,7 +18,6 @@ memories = brain.memories
 # for m in memories:
 #     if m.feature == constants.VISION_FOCUS_MOVE:
 #         print(str(m))
-print(len(memories))
 brain.cleanup_memories()
 memories = brain.memories
 dashboard.MIN_RECALL_COUNT = 2
