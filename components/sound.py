@@ -15,7 +15,7 @@ from .feature import Feature
 from .memory import Memory
 
 logger = logging.getLogger('Sound')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 
 MAX_FREQUENCY = 8000
 ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
@@ -51,7 +51,7 @@ class Sound(object):
         start = time.time()
         self.frequency_map = self.get_frequency_map(status_controller)
         if self.frequency_map is None:
-            logger.error('no frequency data!')
+            logger.info('no frequency data!')
             return
 
         self.match_features()

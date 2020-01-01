@@ -138,7 +138,6 @@ class Brain:
 
     @util.timeit
     def cleanup(self):
-        dashboard.log(self.active_memories, 'before CLEANUP')
         new_active_memories = []
         for m in self.active_memories:
             if m.live:
@@ -152,8 +151,8 @@ class Brain:
                                  reverse=True)
         self.active_memories = sorted_memories[0:NUMBER_OF_ACTIVE_MEMORIES]
         removed_memories = sorted_memories[NUMBER_OF_ACTIVE_MEMORIES:]
-        dashboard.log(removed_memories, 'removed_memories')
-        dashboard.log(self.active_memories, 'after CLEANUP')
+        # dashboard.less_log(removed_memories, 'removed_memories')
+        # dashboard.less_log(self.active_memories, 'after CLEANUP')
 
     @util.timeit
     def find_memory(self, query: Memory):
@@ -180,6 +179,10 @@ class Brain:
                 result.append(m)
         return result
 
+    def dashboard_log(self):
+        dashboard.log(self.memories, 'all_memory')
+        dashboard.log(self.active_memories, 'active_memory')
+
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
     def cleanup_memories(self):
@@ -194,30 +197,6 @@ class Brain:
         self.reindex()
         logger.debug(f'memories new size is:{len(self.memories)}')
 
-    @util.timeit
-    def print_stat(self, label, memories):
-        memory_types = [x.memory_type for x in memories]
-        memory_types_counter = collections.Counter(memory_types)
-        logger.debug(f'{label} memory_types_counter:{sorted(memory_types_counter.items())}')
-
-        feature_type = [x.feature_type for x in memories]
-        feature_type_counter = collections.Counter(feature_type)
-        logger.debug(f'{label} feature_type_counter:{sorted(feature_type_counter.items())}')
-
-        recall_count = [x.recall_count for x in memories]
-        recall_count_counter = collections.Counter(recall_count)
-        logger.debug(f'{label} recall_count_counter:{sorted(recall_count_counter.items())}')
-
-        children = [len(x.children) for x in memories if x.memory_type > 0]
-        children_counter = collections.Counter(children)
-        logger.debug(f'{label} children_counter:{sorted(children_counter.items())}')
-
-    @util.timeit
-    def stat(self):
-        memories = [x for x in self.memories if x.recall_count > 1]
-        self.print_stat('all', memories)
-        self.print_stat('active', self.active_memories)
-
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit
     def save(self):
@@ -226,8 +205,6 @@ class Brain:
             config = [memory.id_sequence]
             np.save(self.MEMORY_FILE, list(memory.flatten(self.memories)))
             np.save('data/config', config)
-            if logger.getEffectiveLevel() == logging.DEBUG:
-                self.stat()
         except:
             logging.error(traceback.format_exc())
 

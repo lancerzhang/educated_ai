@@ -20,7 +20,7 @@ import threading
 import time
 import traceback
 
-logging.basicConfig(filename='app.log', level=logging.INFO,
+logging.basicConfig(filename='app.log', level=logging.ERROR,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
 
 MAIN_CONFIG_FILE = 'data/main.npy'
@@ -83,6 +83,7 @@ def main(argv):
         #     if configs:
         #         da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
         schedule.every(5).seconds.do(brain.save)
+        schedule.every(10).seconds.do(brain.dashboard_log)
         schedule.every(59).seconds.do(favor.save)
         schedule_thread = threading.Thread(target=run_pending)
         schedule_thread.daemon = True
