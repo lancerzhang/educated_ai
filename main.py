@@ -15,11 +15,12 @@ from components import constants, util
 import getopt
 import logging
 import numpy as np
+import schedule
 import sys
 import threading
 import time
 
-logging.basicConfig(filename='app.log', level=logging.INFO,
+logging.basicConfig(filename='app.log', level=logging.ERROR,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
 
 MAIN_CONFIG_FILE = 'data/main.npy'
@@ -47,6 +48,12 @@ def save_for_exit(mgc, sound):
         sound.running = False
 
 
+def run_pending():
+    while 1:
+        schedule.run_pending()
+        time.sleep(1)
+
+
 def main(argv):
     is_hibernate = None
     video_file = None
@@ -70,6 +77,10 @@ def main(argv):
         dps = 1.0 / constants.process_per_second
         da = DataAdaptor(DataSqlite3('data/dump.sql'))
         bm = BioMemory(da)
+        schedule.every(10).seconds.do(bm.log_dashboard)
+        schedule_thread = threading.Thread(target=run_pending)
+        schedule_thread.daemon = True
+        schedule_thread.start()
         if is_hibernate and is_hibernate == 'yes':
             configs = load_main_conf()
             if configs:

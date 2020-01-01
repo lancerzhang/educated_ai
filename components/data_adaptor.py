@@ -7,7 +7,7 @@ from . import util
 import uuid
 
 logger = logging.getLogger('DataAdaptor')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 
 
 class DataAdaptor:

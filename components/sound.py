@@ -12,7 +12,7 @@ import time
 from . import util
 
 logger = logging.getLogger('Sound')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 
 
 class Sound(object):
@@ -55,7 +55,7 @@ class Sound(object):
         start = time.time()
         self.frequency_map = self.get_frequency_map(status_controller)
         if self.frequency_map is None:
-            logger.error('no frequency data!')
+            logger.info('no frequency data!')
             return
 
         self.match_features()

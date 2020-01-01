@@ -8,7 +8,7 @@ import random
 import time
 
 logger = logging.getLogger('BioMemory')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 
 
 class BioMemoryException(Exception):
@@ -158,9 +158,12 @@ class BioMemory(object):
             working_reward = reward * ratio
             bm.update({constants.WORKING_REWARD: working_reward})
 
+    def log_dashboard(self):
+        dashboard.log(self.data_adaptor.get_all_memories(), 'all_memories')
+        dashboard.log(self.working_memories, 'working_memories')
+
     @util.timeit
     def cleanup_working_memories(self):
-        dashboard.log(self.working_memories, 'working before cleanup')
         valid_working_memories = [mem for mem in self.working_memories if
                                   mem[constants.STATUS] == constants.MATCHED or mem[constants.END_TIME] > time.time()]
         self.calculate_working_reward(valid_working_memories)
@@ -168,13 +171,10 @@ class BioMemory(object):
                                          key=lambda x: (x[constants.WORKING_REWARD], x[constants.LAST_ACTIVE_TIME]),
                                          reverse=True)
         limited_sorted_working_memories = sorted_working_memories[0:self.THRESHOLD_OF_WORKING_MEMORIES]
-        removed_memories = sorted_working_memories[self.THRESHOLD_OF_WORKING_MEMORIES:]
         for mem in limited_sorted_working_memories:
             # as they survive, update last active time
             mem.update({constants.LAST_ACTIVE_TIME: time.time()})
         self.working_memories = limited_sorted_working_memories
-        dashboard.log(removed_memories, 'removed_memories')
-        dashboard.log(self.working_memories, 'working after cleanup')
 
     # longer time elapsed, easier to forget
     # more times recall, harder to forget
