@@ -1,26 +1,31 @@
 from components import constants
 import collections
 import logging
+import numpy as np
 import pandas as pd
+import time
 
 logger = logging.getLogger('dashboard')
 logger.setLevel(logging.DEBUG)
 
+LOG_TYPE_LIVE_TIME = True
 
-def log(memories, label, reverse=False):
+
+def log(memories, label):
     data = []
     for x in memories:
-        m = [x.memory_type, x.feature_type, x.recall_count]
+        m = [x.memory_type, x.feature_type, x.recall_count, int((time.time() - x.created_time) / 60)]
         data.append(m)
-    field_memory = 'memory'
+    data = np.array(data)
+    field_type = 'type'
     field_feature = 'feature'
     field_recall = 'recall'
-    df = pd.DataFrame(data, columns=[field_memory, field_feature, field_recall])
-    if reverse:
-        t1 = df.pivot_table(columns=field_memory, index=field_recall, aggfunc='count', fill_value=0)
-        # t2 = df.pivot_table(columns=field_feature, index=field_recall, aggfunc='count', fill_value=0)
-    else:
-        t1 = df.pivot_table(columns=field_recall, index=field_memory, aggfunc='count', fill_value=0)
-        # t2 = df.pivot_table(columns=field_recall, index=field_feature, aggfunc='count', fill_value=0)
-    logger.debug(f'{label} {field_memory} count is: {len(memories)}, detail:{t1}')
-    # logger.debug(f'{label} {field_feature} count is: {len(memories)}, detail: {t2}')
+    field_live_time = 'liveTime'
+    df = pd.DataFrame(data, columns=[field_type, field_feature, field_recall, field_live_time])
+    table = df.pivot_table(index=field_recall, columns=field_type, values=field_feature, aggfunc='count',
+                           fill_value=0)
+    logger.debug(f'{label} count is: {len(memories)}, count by  {field_type}:\n{table}')
+    if LOG_TYPE_LIVE_TIME:
+        table = df.pivot_table(index=field_live_time, columns=field_type, values=field_feature, aggfunc='count',
+                               fill_value=0)
+        logger.debug(f'{label} count is: {len(memories)}, count by {field_type}:\n{table}')

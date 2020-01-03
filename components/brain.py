@@ -150,9 +150,6 @@ class Brain:
                                  key=lambda x: (x.recall_count, int(x.desire * 100), x.active_start_time),
                                  reverse=True)
         self.active_memories = sorted_memories[0:NUMBER_OF_ACTIVE_MEMORIES]
-        removed_memories = sorted_memories[NUMBER_OF_ACTIVE_MEMORIES:]
-        # dashboard.less_log(removed_memories, 'removed_memories')
-        # dashboard.less_log(self.active_memories, 'after CLEANUP')
 
     @util.timeit
     def find_memory(self, query: Memory):
@@ -179,7 +176,7 @@ class Brain:
                 result.append(m)
         return result
 
-    def dashboard_log(self):
+    def log_dashboard(self):
         dashboard.log(self.memories, 'all_memory')
         dashboard.log(self.active_memories, 'active_memory')
 

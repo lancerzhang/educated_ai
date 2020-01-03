@@ -100,6 +100,7 @@ class Memory:
     memory_type = None
     feature_type = None
     recall_count = 1
+    created_time = 0
     last_recall_time = 0
     protect_time = 0
     reward = 0
@@ -124,6 +125,7 @@ class Memory:
     zoom_direction = None
 
     def __init__(self):
+        self.created_time = time.time()
         self.status = constants.MATCHED
         self.matched_time = time.time()
         self.active_start_time = time.time()
@@ -307,7 +309,7 @@ class Memory:
     @util.timeit
     def create_index_common(self, indexes: dict):
         raw = f'{self.memory_type}|{self.feature_type}|{self.click_type}|{self.degrees}|{self.speed}|{self.duration}|' \
-            f'{self.zoom_type}|{self.zoom_direction}|'
+              f'{self.zoom_type}|{self.zoom_direction}|'
         if len(self.children) > 0:
             mids = [x.mid for x in self.children]
             if self.memory_type <= 2:

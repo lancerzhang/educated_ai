@@ -83,7 +83,7 @@ def main(argv):
         #     if configs:
         #         da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
         schedule.every(5).seconds.do(brain.save)
-        schedule.every(10).seconds.do(brain.dashboard_log)
+        schedule.every(10).seconds.do(brain.log_dashboard)
         schedule.every(59).seconds.do(favor.save)
         schedule_thread = threading.Thread(target=run_pending)
         schedule_thread.daemon = True

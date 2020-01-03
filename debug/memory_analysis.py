@@ -21,7 +21,7 @@ memories = brain.memories
 brain.cleanup_memories()
 memories = brain.memories
 dashboard.MIN_RECALL_COUNT = 2
-dashboard.log(memories, 'ALL',True)
+dashboard.log(memories, 'all_memories')
 # ff = open('features.txt', 'w')
 # fs = set()
 # for m in features:
