@@ -125,10 +125,10 @@ class TestBrain(unittest.TestCase):
             m.active_end_time = time.time() + 10
         brain.active_memories = memories
         memories[0].live = False
-        brain.cleanup()
+        brain.cleanup_active_memories()
         self.assertEqual(10, len(brain.active_memories))
         memories[1].active_end_time = time.time() - 1
-        brain.cleanup()
+        brain.cleanup_active_memories()
         self.assertEqual(9, len(brain.active_memories))
 
     def test_cleanup_memories(self):

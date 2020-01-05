@@ -9,14 +9,14 @@ import time
 
 logger = logging.getLogger('Memory')
 logger.setLevel(logging.INFO)
-MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
+MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 60]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
 MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.VISION_FOCUS_MOVE,
                    constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
-NOT_FORGET_STEP = 10
+NOT_FORGET_STEP = 5
 BASE_DESIRE = 0.1
 id_sequence = 0
 
@@ -180,7 +180,7 @@ class Memory:
                         ran = random.randint(1, 100)
                         strength = 100 - count
                         if ran > strength:
-                            self.live = False
+                            self.kill()
                             break
                     # if this is recall, will update recall count and last recall time
                     if recall:
@@ -273,6 +273,7 @@ class Memory:
     @util.timeit
     def deactivate(self):
         self.status = constants.DORMANT
+        self.active_end_time = time.time()
 
     @util.timeit
     def set_memory_type(self, memory_type_str):
@@ -288,11 +289,11 @@ class Memory:
         self.parent = {x for x in self.parent if x.live is True}
         if self.memory_type > 0:
             if len(self.children) == 0:
-                self.live = False
+                self.kill()
             elif len(self.children) == 1:
                 child = self.children[0]
                 if not child.live:
-                    self.live = False
+                    self.kill()
                 elif self.memory_type == get_memory_type(constants.LONG_MEMORY) and \
                         child.memory_type == get_memory_type(constants.LONG_MEMORY) and len(child.children) == 1:
                     self.children = child.children
@@ -304,7 +305,7 @@ class Memory:
                         has_child = True
                         break
                 if not has_child:
-                    self.live = False
+                    self.kill()
 
     @util.timeit
     def create_index_common(self, indexes: dict):
@@ -345,3 +346,7 @@ class Memory:
             return self.create_index_kernel(indexes)
         else:
             return self.create_index_common(indexes)
+
+    def kill(self):
+        self.live = False
+        self.active_end_time = 0

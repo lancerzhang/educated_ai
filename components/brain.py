@@ -3,7 +3,6 @@ from components import constants
 from components import dashboard
 from components import memory
 from components import util
-import collections
 import logging
 import numpy as np
 import traceback
@@ -26,11 +25,20 @@ class Brain:
         self.active_memories = []
 
     @util.timeit
-    def associate(self):
+    def get_active_parents(self):
         active_parent = []
-        # collect parent memories
-        for m in self.active_memories:
-            active_parent += [x for x in m.parent if x.live]
+        # collect parent memories from top to down
+        for x in reversed(range(len(memory.MEMORY_TYPES))):
+            if len(active_parent) > 0:
+                return active_parent
+            for m in self.active_memories:
+                if m.memory_type == x:
+                    active_parent += [x for x in m.parent if x.live]
+        return active_parent
+
+    @util.timeit
+    def associate(self):
+        active_parent = self.get_active_parents()
         # count parent memories
         parent_counts = util.list_element_count(active_parent)
         parent_weight = {}
@@ -38,11 +46,12 @@ class Brain:
         for m, count in parent_counts.items():
             parent_weight.update({m: count * m.get_desire()})
         # select top desire
+        active_memory_set = set(self.active_memories)
         for m in sorted(parent_weight, key=parent_weight.get, reverse=True):
-            if m not in self.active_memories:
+            if m not in active_memory_set:
                 m.activate()
                 self.active_memories.append(m)
-                break
+                return
 
     @util.timeit
     def activate_children(self):
@@ -91,17 +100,17 @@ class Brain:
         return m
 
     @util.timeit
-    def compose_memory(self, children, memory_type, feature_type=-1, reward=0):
-        if len(children) == 0:
+    def compose_memory(self, matched_active_memories, memory_type, feature_type=-1, reward=0):
+        if len(matched_active_memories) == 0:
             return
-        memories = util.list_remove_duplicates(children)
-        if len(memories) > memory.COMPOSE_NUMBER:
+        children = util.list_remove_duplicates(matched_active_memories)
+        if len(children) > memory.COMPOSE_NUMBER:
             # only use last 4 memories
-            memories = memories[-memory.COMPOSE_NUMBER:]
+            children = children[-memory.COMPOSE_NUMBER:]
         query = Memory()
         query.memory_type = memory_type
         query.feature_type = feature_type
-        query.children = memories
+        query.children = children
         m = self.put_memory(query)
         for c in children:
             c.parent.add(m)
@@ -137,19 +146,14 @@ class Brain:
                 matched_memories.append(nm)
 
     @util.timeit
-    def cleanup(self):
+    def cleanup_active_memories(self):
         new_active_memories = []
         for m in self.active_memories:
-            if m.live:
-                if m.status == constants.MATCHED or m.active_end_time > time.time():
-                    new_active_memories.append(m)
-                    m.calculate_desire()
-                else:
-                    m.deactivate()
-        sorted_memories = sorted(new_active_memories,
-                                 key=lambda x: (x.recall_count, int(x.desire * 100), x.active_start_time),
-                                 reverse=True)
-        self.active_memories = sorted_memories[0:NUMBER_OF_ACTIVE_MEMORIES]
+            if m.active_end_time > time.time():
+                new_active_memories.append(m)
+            else:
+                m.deactivate()
+        self.active_memories = new_active_memories
 
     @util.timeit
     def find_memory(self, query: Memory):
@@ -215,7 +219,8 @@ class Brain:
     @util.timeit
     def load(self):
         try:
-            self.memories = memory.construct(set(np.load(self.MEMORY_FILE, allow_pickle=True)))
+            raw_data = np.load(self.MEMORY_FILE, allow_pickle=True)
+            self.memories = memory.construct(set(raw_data))
             self.reindex()
         except:
             pass

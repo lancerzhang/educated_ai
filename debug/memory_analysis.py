@@ -16,11 +16,15 @@ brain.MEMORY_FILE = '../data/memory.npy'
 brain.load()
 memories = brain.memories
 # for m in memories:
-#     if m.feature == constants.VISION_FOCUS_MOVE:
-#         print(str(m))
-brain.cleanup_memories()
-memories = brain.memories
-dashboard.MIN_RECALL_COUNT = 2
+#     if len(m.parent) == 171:
+#         print(m)
+#         dashboard.log(m.parent, 'parent')
+#         dashboard.log(m.children, 'children')
+#         f = open('parent.txt', 'w')
+#         for x in m.parent:
+#             f.write(str(x))
+# brain.cleanup_memories()
+# memories = brain.memories
 dashboard.log(memories, 'all_memories')
 # ff = open('features.txt', 'w')
 # fs = set()

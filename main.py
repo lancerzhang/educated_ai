@@ -20,7 +20,7 @@ import threading
 import time
 import traceback
 
-logging.basicConfig(filename='app.log', level=logging.ERROR,
+logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
 
 MAIN_CONFIG_FILE = 'data/main.npy'
@@ -139,7 +139,7 @@ def main(argv):
             # work end
             work_duration = util.time_diff(start)
             # status_controller.update_status(work_duration)
-            brain.cleanup()
+            brain.cleanup_active_memories()
 
             all_duration = util.time_diff(start)
             logging.info('frame took %d ms' % (all_duration * 1000))

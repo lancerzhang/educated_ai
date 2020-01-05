@@ -8,7 +8,7 @@ import time
 logger = logging.getLogger('dashboard')
 logger.setLevel(logging.DEBUG)
 
-LOG_TYPE_LIVE_TIME = True
+LOG_TYPE_LIVE_TIME = False
 
 
 def log(memories, label):
