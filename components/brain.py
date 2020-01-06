@@ -68,7 +68,7 @@ class Brain:
         for i in range(1, len(memory.MEMORY_TYPES) - 1):
             for m in self.active_memories:
                 if m.memory_type == i:
-                    if m.matched():
+                    if m.match():
                         self.activate_parent(m)
 
         match_any = True
@@ -76,7 +76,7 @@ class Brain:
             match_any = False
             for m in self.active_memories:
                 if m.memory_type == memory.get_memory_type(constants.LONG_MEMORY):
-                    if m.matched():
+                    if m.match():
                         self.activate_parent(m)
                         match_any = True
 
