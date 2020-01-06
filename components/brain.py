@@ -11,13 +11,11 @@ import time
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.INFO)
 
-FEATURE_SIMILARITY_THRESHOLD = 0.2
-NUMBER_OF_ACTIVE_MEMORIES = 300
-USE_INDEX = True
-
 
 class Brain:
     MEMORY_FILE = 'data/memory.npy'
+    FEATURE_SIMILARITY_THRESHOLD = 0.2
+    ACTIVE_LONG_MEMORY_LIMIT = 100
 
     def __init__(self):
         self.memories = set()
@@ -32,7 +30,7 @@ class Brain:
             if len(active_parent) > 0:
                 return active_parent
             for m in self.active_memories:
-                if m.memory_type == x:
+                if m.memory_type == x and m.status == constants.MATCHED:
                     active_parent += [x for x in m.parent if x.live]
         return active_parent
 
@@ -62,7 +60,7 @@ class Brain:
     def activate_parent(self, m: Memory):
         for x in m.parent:
             if x in self.active_memories:
-                x.active_start_time = time.time()
+                x.active_end_time = time.time() + memory.MEMORY_DURATIONS[x.memory_type]
                 self.activate_parent(x)
 
     @util.timeit
@@ -148,37 +146,34 @@ class Brain:
     @util.timeit
     def cleanup_active_memories(self):
         new_active_memories = []
+        strength_list = [x.get_strength() for x in self.active_memories if
+                         x.memory_type == memory.MEMORY_TYPES.index(constants.LONG_MEMORY)]
+        threshold = 0
+        if len(strength_list) > self.ACTIVE_LONG_MEMORY_LIMIT:
+            desc_list = sorted(strength_list, reverse=True)
+            threshold = desc_list[self.ACTIVE_LONG_MEMORY_LIMIT]
         for m in self.active_memories:
-            if m.active_end_time > time.time():
-                new_active_memories.append(m)
+            if m.status in [constants.MATCHED, constants.MATCHING] and m.active_end_time > time.time():
+                # use strength instead of get_strength() to avoid different strength value
+                if m.memory_type == memory.MEMORY_TYPES.index(constants.LONG_MEMORY) and m.strength <= threshold:
+                    m.deactivate()
+                else:
+                    new_active_memories.append(m)
             else:
                 m.deactivate()
         self.active_memories = new_active_memories
 
     @util.timeit
     def find_memory(self, query: Memory):
-        if USE_INDEX:
-            return self.memory_indexes.get(query.get_index())
-
-        for m in self.memories:
-            if m.equal(query):
-                return m
-        return None
+        return self.memory_indexes.get(query.get_index())
 
     @util.timeit
     def get_memories(self, query: Memory):
-        if USE_INDEX:
-            records = self.memory_indexes.get(query.get_index())
-            if records:
-                return records
-            else:
-                return []
-
-        result = []
-        for m in self.memories:
-            if m.equal(query):
-                result.append(m)
-        return result
+        records = self.memory_indexes.get(query.get_index())
+        if records:
+            return records
+        else:
+            return []
 
     def log_dashboard(self):
         dashboard.log(self.memories, 'all_memory')
@@ -235,7 +230,7 @@ class Brain:
         feature_memories = self.get_memories(query)
         for m in feature_memories:
             difference = util.np_array_diff(feature, m.feature)
-            if difference < FEATURE_SIMILARITY_THRESHOLD:
+            if difference < self.FEATURE_SIMILARITY_THRESHOLD:
                 return m
 
     @util.timeit

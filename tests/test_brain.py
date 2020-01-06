@@ -19,6 +19,8 @@ class TestBrain(unittest.TestCase):
         memories = []
         for x in range(0, 4):
             m = memory.create()
+            m.set_memory_type(constants.LONG_MEMORY)
+            m.status = constants.MATCHED
             m.parent = set(memories)
             memories.append(m)
         brain.active_memories = memories[1:]
@@ -122,14 +124,17 @@ class TestBrain(unittest.TestCase):
         brain = Brain()
         memories = test_memory.build_a_tree()
         for m in memories:
-            m.active_end_time = time.time() + 10
+            m.activate()
         brain.active_memories = memories
-        memories[0].live = False
+        brain.ACTIVE_LONG_MEMORY_LIMIT = 2
         brain.cleanup_active_memories()
         self.assertEqual(10, len(brain.active_memories))
-        memories[1].active_end_time = time.time() - 1
+        memories[0].kill()
         brain.cleanup_active_memories()
         self.assertEqual(9, len(brain.active_memories))
+        memories[1].active_end_time = time.time() - 1
+        brain.cleanup_active_memories()
+        self.assertEqual(8, len(brain.active_memories))
 
     def test_cleanup_memories(self):
         brain = Brain()
@@ -162,11 +167,11 @@ class TestBrain(unittest.TestCase):
         brain.memories = set(memories)
         brain.active_memories = memories
         brain.activate_parent(memories[0])
-        self.assertTrue(memories[2].active_start_time > 0)
-        self.assertTrue(memories[4].active_start_time > 0)
-        self.assertTrue(memories[6].active_start_time > 0)
-        self.assertTrue(memories[8].active_start_time > 0)
-        self.assertTrue(memories[10].active_start_time > 0)
+        self.assertTrue(memories[2].active_end_time > 0)
+        self.assertTrue(memories[4].active_end_time > 0)
+        self.assertTrue(memories[6].active_end_time > 0)
+        self.assertTrue(memories[8].active_end_time > 0)
+        self.assertTrue(memories[10].active_end_time > 0)
 
 
 if __name__ == "__main__":

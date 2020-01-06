@@ -9,15 +9,16 @@ import time
 
 logger = logging.getLogger('Memory')
 logger.setLevel(logging.INFO)
-MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 60]
+MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
 MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.VISION_FOCUS_MOVE,
                    constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
-NOT_FORGET_STEP = 5
+NOT_FORGET_STEP = 10
 BASE_DESIRE = 0.1
+BASE_STRENGTH = 0.1
 id_sequence = 0
 
 TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296,
@@ -105,13 +106,13 @@ class Memory:
     protect_time = 0
     reward = 0
     desire = 0
+    strength = 0
     parent = None
     children = None
 
     # for active period
     status = None
     matched_time = None
-    active_start_time = None
     active_end_time = None
 
     kernel = None
@@ -128,7 +129,6 @@ class Memory:
         self.created_time = time.time()
         self.status = constants.MATCHED
         self.matched_time = time.time()
-        self.active_start_time = time.time()
         self.recall_count = 1
         self.last_recall_time = time.time()
         self.parent = set()
@@ -202,6 +202,22 @@ class Memory:
         return self.desire
 
     @util.timeit
+    def calculate_strength(self):
+        active_start = self.active_end_time - MEMORY_DURATIONS[self.memory_type]
+        elapse = time.time() - active_start
+        f = 1 - elapse / MEMORY_DURATIONS[-1]
+        if f < 0:
+            f = 0
+        raw = self.recall_count / 100
+        strength = BASE_STRENGTH + raw * f
+        strength = strength if strength < 1 else 1
+        self.strength = strength
+
+    def get_strength(self):
+        self.calculate_strength()
+        return self.strength
+
+    @util.timeit
     def activate(self):
         if not self.live:
             return
@@ -209,7 +225,7 @@ class Memory:
             return
 
         self.status = constants.MATCHING
-        self.active_start_time = time.time()
+        # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
 
     @util.timeit
@@ -247,7 +263,7 @@ class Memory:
     @util.timeit
     def matched(self):
         self.status = constants.MATCHED
-        # extend active end time when it's matched
+        # extend active end time when it's matched, keeping it in active memories for composing
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
         self.recall()
 

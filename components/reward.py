@@ -26,8 +26,8 @@ class Reward(object):
     def process(self, key):
         reward = 0
         if key == constants.KEY_ALT:
-            reward = 50
+            reward = 0.5
         elif key == constants.KEY_CTRL:
-            reward = 100
+            reward = 1
         if reward > 0:
             self.add_reward_memory(reward)

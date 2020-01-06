@@ -256,6 +256,36 @@ class TestMemory(unittest.TestCase):
         h1 = indexes.get(m1.get_index())
         self.assertEqual(2, len(h1))
 
+    def test_calculate_desire(self):
+        m = memory.create()
+        m.matched_time = time.time()
+        m.reward = 1
+        self.assertAlmostEqual(m.get_desire(), memory.BASE_DESIRE, 1)
+        m.reward = 0.5
+        self.assertAlmostEqual(m.get_desire(), memory.BASE_DESIRE, 1)
+        m.reward = 0
+        self.assertAlmostEqual(m.get_desire(), memory.BASE_DESIRE, 1)
+        m.matched_time = time.time() - 1000
+        m.reward = 1
+        self.assertAlmostEqual(m.get_desire(), memory.BASE_DESIRE + 0.25, 1)
+        m.matched_time = time.time() - 5000
+        self.assertEqual(m.get_desire(), 1)
+
+    def test_calculate_strength(self):
+        m = memory.create()
+        m.set_memory_type(constants.LONG_MEMORY)
+        m.active_end_time = time.time() + memory.MEMORY_DURATIONS[m.memory_type]
+        self.assertAlmostEqual(m.get_strength(), memory.BASE_STRENGTH + 0.01, 2)
+        m.active_end_time = time.time()
+        self.assertAlmostEqual(m.get_strength(), memory.BASE_STRENGTH, 2)
+        m.active_end_time = time.time() - 10
+        self.assertAlmostEqual(m.get_strength(), memory.BASE_STRENGTH, 2)
+        m.recall_count = 50
+        m.active_end_time = time.time() + memory.MEMORY_DURATIONS[m.memory_type]
+        self.assertAlmostEqual(m.get_strength(), memory.BASE_STRENGTH + 0.5, 2)
+        m.recall_count = 99
+        self.assertEqual(m.get_strength(), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
