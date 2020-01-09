@@ -8,7 +8,7 @@ import random
 import time
 
 logger = logging.getLogger('Memory')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
@@ -201,10 +201,13 @@ class Memory:
         self.calculate_desire()
         return self.desire
 
+    def get_active_time(self):
+        active_start = self.active_end_time - MEMORY_DURATIONS[self.memory_type]
+        return time.time() - active_start
+
     @util.timeit
     def calculate_strength(self):
-        active_start = self.active_end_time - MEMORY_DURATIONS[self.memory_type]
-        elapse = time.time() - active_start
+        elapse = self.get_active_time()
         f = 1 - elapse / MEMORY_DURATIONS[-1]
         if f < 0:
             f = 0
@@ -224,12 +227,14 @@ class Memory:
         if self.status != constants.DORMANT:
             return
 
+        logger.debug(f'activated_memory {self.simple_str()}')
         self.status = constants.MATCHING
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
 
     @util.timeit
     def activate_children_tree(self):
+        logger.debug(f'activate_children_tree {self.simple_str()}')
         self.activate()
         for m in self.children:
             if m.memory_type in [MEMORY_TYPES.index(constants.LONG_MEMORY),
@@ -244,20 +249,20 @@ class Memory:
 
     @util.timeit
     def match(self):
-        if self.memory_type > 1:
-            logger.debug(f'matching {self}')
+        if self.memory_type > 0:
+            logger.debug(f'matching_memory {self.simple_str()}')
         if self.status != constants.MATCHING:
             return False
 
         for m in self.children:
-            if self.memory_type > 1:
-                logger.debug(f'child status {m.status}')
+            if self.memory_type > 0:
+                logger.debug(f'child_memory {m.simple_str()}')
             if m.status != constants.MATCHED:
                 return False
 
         self.matched()
         if self.memory_type > 1:
-            logger.debug(f'matched {self}')
+            logger.debug(f'matched_memory {self.simple_str()}')
         return True
 
     @util.timeit
@@ -289,7 +294,7 @@ class Memory:
     @util.timeit
     def deactivate(self):
         self.status = constants.DORMANT
-        self.active_end_time = time.time()
+        self.active_end_time = 0
 
     @util.timeit
     def set_memory_type(self, memory_type_str):
@@ -326,7 +331,7 @@ class Memory:
     @util.timeit
     def create_index_common(self, indexes: dict):
         raw = f'{self.memory_type}|{self.feature_type}|{self.click_type}|{self.degrees}|{self.speed}|{self.duration}|' \
-              f'{self.zoom_type}|{self.zoom_direction}|'
+            f'{self.zoom_type}|{self.zoom_direction}|'
         if len(self.children) > 0:
             mids = [x.mid for x in self.children]
             if self.memory_type <= 2:
@@ -366,3 +371,9 @@ class Memory:
     def kill(self):
         self.live = False
         self.active_end_time = 0
+
+    def simple_str(self):
+        parent = {x.mid for x in self.parent}
+        children = [x.mid for x in self.children]
+        return f'[id:{self.mid},type:{self.memory_type},feature:{self.feature_type},recall:{self.recall_count},' \
+            f'reward:{self.reward},parent:{parent},children:{children}]'

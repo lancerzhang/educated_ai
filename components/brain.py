@@ -9,7 +9,7 @@ import traceback
 import time
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Brain:
@@ -49,6 +49,7 @@ class Brain:
             if m not in active_memory_set:
                 m.activate()
                 self.active_memories.append(m)
+                logger.debug(f'associated_memories {m.simple_str()}')
                 return
 
     @util.timeit
@@ -145,6 +146,7 @@ class Brain:
 
     @util.timeit
     def cleanup_active_memories(self):
+        self.log_dashboard()
         new_active_memories = []
         strength_list = [x.get_strength() for x in self.active_memories if
                          x.memory_type == memory.MEMORY_TYPES.index(constants.LONG_MEMORY)]
@@ -176,13 +178,15 @@ class Brain:
             return []
 
     def log_dashboard(self):
-        dashboard.log(self.memories, 'all_memory')
-        dashboard.log(self.active_memories, 'active_memory')
+        try:
+            dashboard.log(self.memories, 'all_memory')
+            dashboard.log(self.active_memories, 'active_memory')
+        except:
+            logging.error(traceback.format_exc())
 
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
     def cleanup_memories(self):
-        logger.debug(f'memories original size is:{len(self.memories)}')
         new_memories = set()
         for m in list(self.memories):
             m.refresh_self(recall=False, is_forget=True)
@@ -191,7 +195,6 @@ class Brain:
                 new_memories.add(m)
         self.memories = new_memories
         self.reindex()
-        logger.debug(f'memories new size is:{len(self.memories)}')
 
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit

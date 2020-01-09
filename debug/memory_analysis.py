@@ -23,8 +23,10 @@ memories = brain.memories
 #         f = open('parent.txt', 'w')
 #         for x in m.parent:
 #             f.write(str(x))
-# brain.cleanup_memories()
-# memories = brain.memories
+brain.cleanup_memories()
+memories = brain.memories
+# for x in memories:
+#     print(x.simple_str())
 dashboard.log(memories, 'all_memories')
 # ff = open('features.txt', 'w')
 # fs = set()
