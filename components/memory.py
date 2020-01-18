@@ -225,8 +225,6 @@ class Memory(NodeMixin):
     def activate(self):
         if not self.live:
             return False
-
-        logger.debug(f'activated_memory {self.simple_str()}')
         self.status = constants.MATCHING
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]

@@ -21,6 +21,8 @@ class Brain:
         self.memories = set()
         self.memory_indexes = {}
         self.active_memories = []
+        self.cache_active_memory_set = set()  # cache for a frame
+        self.temp_memory_set = set()
 
     @util.timeit
     def get_active_parents(self):
@@ -29,13 +31,14 @@ class Brain:
         for x in reversed(range(len(memory.MEMORY_TYPES))):
             if len(active_parent) > 0:
                 return active_parent
-            for m in self.active_memories:
+            for m in self.cache_active_memory_set:
                 if m.memory_type == x and m.status == constants.MATCHED:
                     active_parent += [x for x in m.parent if x.live]
         return active_parent
 
     @util.timeit
     def associate(self):
+        self.cache_active_memory_set = set(self.active_memories)
         active_parent = self.get_active_parents()
         # count parent memories
         parent_counts = util.list_element_count(active_parent)
@@ -44,23 +47,30 @@ class Brain:
         for m, count in parent_counts.items():
             parent_weight.update({m: count * m.get_desire()})
         # select top desire
-        active_memory_set = set(self.active_memories)
         for m in sorted(parent_weight, key=parent_weight.get, reverse=True):
-            if m not in active_memory_set and m.activate():
-                self.active_memories.append(m)
+            if m not in self.cache_active_memory_set:
+                self.activate_memory(m)
                 logger.debug(f'associated_memories {m.simple_str()}')
                 return
 
     @util.timeit
+    def activate_memory(self, m):
+        if m.activate():
+            if m not in self.cache_active_memory_set:
+                self.active_memories.append(m)
+                self.temp_memory_set.add(m)
+
+    @util.timeit
     def activate_children(self):
-        for m in set(self.active_memories):
+        self.temp_memory_set = set()
+        for m in self.cache_active_memory_set:
             self.activate_children_tree(m)
+        self.cache_active_memory_set.union(self.temp_memory_set)
 
     @util.timeit
     def activate_children_tree(self, m: Memory):
         # logger.debug(f'activate_children_tree {self.simple_str()}')
-        if m.activate():
-            self.active_memories.append(m)
+        self.activate_memory(m)
         for x in m.children:
             if x.memory_type > 0:
                 if x.status in [constants.MATCHING, constants.DORMANT]:
@@ -72,14 +82,14 @@ class Brain:
     @util.timeit
     def activate_parent(self, m: Memory):
         for x in m.parent:
-            if x in self.active_memories:
+            if x in self.cache_active_memory_set:
                 x.active_end_time = time.time() + memory.MEMORY_DURATIONS[x.memory_type]
                 self.activate_parent(x)
 
     @util.timeit
     def match_memories(self):
         for i in range(1, len(memory.MEMORY_TYPES) - 1):
-            for m in self.active_memories:
+            for m in self.cache_active_memory_set:
                 if m.memory_type == i:
                     if m.match():
                         self.activate_parent(m)
@@ -87,7 +97,7 @@ class Brain:
         match_any = True
         while match_any:
             match_any = False
-            for m in self.active_memories:
+            for m in self.cache_active_memory_set:
                 if m.memory_type == memory.get_memory_type(constants.LONG_MEMORY):
                     if m.match():
                         self.activate_parent(m)
@@ -160,7 +170,7 @@ class Brain:
 
     @util.timeit
     def cleanup_active_memories(self):
-        self.log_dashboard()
+        # self.log_dashboard()
         new_active_memories = []
         strength_list = [x.get_strength() for x in self.active_memories if
                          x.memory_type == memory.MEMORY_TYPES.index(constants.LONG_MEMORY)]

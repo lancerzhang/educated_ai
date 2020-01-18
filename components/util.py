@@ -6,7 +6,7 @@ from functools import reduce
 
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 
 
 def timeit(f):
