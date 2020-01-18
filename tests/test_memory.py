@@ -59,55 +59,6 @@ class TestMemory(unittest.TestCase):
         memory1.matched_time = time.time() - 4001
         self.assertEqual(1, memory1.get_desire())
 
-    def test_activate_tree_left_leaf(self):
-        memories = build_a_tree()
-        # 1st validation
-        memories[8].activate_children_tree()
-        self.assertEqual(memories[0].status, constants.MATCHING)
-        self.assertEqual(memories[1].status, constants.MATCHING)
-        self.assertEqual(memories[2].status, constants.MATCHING)
-        self.assertNotEqual(memories[3].status, constants.MATCHING)
-        self.assertEqual(memories[4].status, constants.MATCHING)
-        self.assertNotEqual(memories[5].status, constants.MATCHING)
-        self.assertEqual(memories[6].status, constants.MATCHING)
-        self.assertNotEqual(memories[7].status, constants.MATCHING)
-        self.assertEqual(memories[8].status, constants.MATCHING)
-        # 2nd validation, nothing change
-        memories[8].activate_children_tree()
-        self.assertEqual(memories[0].status, constants.MATCHING)
-        self.assertEqual(memories[1].status, constants.MATCHING)
-        self.assertEqual(memories[2].status, constants.MATCHING)
-        self.assertNotEqual(memories[3].status, constants.MATCHING)
-        self.assertEqual(memories[4].status, constants.MATCHING)
-        self.assertNotEqual(memories[5].status, constants.MATCHING)
-        self.assertEqual(memories[6].status, constants.MATCHING)
-        self.assertNotEqual(memories[7].status, constants.MATCHING)
-        self.assertEqual(memories[8].status, constants.MATCHING)
-        # 3rd validation, something matched
-        memories[2].status = constants.MATCHED
-        memories[8].activate_children_tree()
-        self.assertEqual(memories[3].status, constants.MATCHING)
-        memories[4].status = constants.MATCHED
-        memories[8].activate_children_tree()
-        self.assertEqual(memories[5].status, constants.MATCHING)
-
-    def test_activate_tree_middle_leaf(self):
-        memories = build_a_tree()
-        memories[8].status = constants.MATCHING
-        memories[9].children = memories[6:8]
-        # 1st validation
-        memories[10].activate_children_tree()
-        self.assertEqual(memories[9].status, constants.DORMANT)
-        # match 1st long
-        memories[8].status = constants.MATCHED
-        memories[10].activate_children_tree()
-        self.assertEqual(memories[0].status, constants.MATCHING)
-        self.assertEqual(memories[1].status, constants.MATCHING)
-        self.assertEqual(memories[2].status, constants.MATCHING)
-        self.assertEqual(memories[4].status, constants.MATCHING)
-        self.assertEqual(memories[6].status, constants.MATCHING)
-        self.assertEqual(memories[9].status, constants.MATCHING)
-
     def test_match(self):
         memories = []
         for x in range(0, 4):

@@ -46,16 +46,28 @@ class Brain:
         # select top desire
         active_memory_set = set(self.active_memories)
         for m in sorted(parent_weight, key=parent_weight.get, reverse=True):
-            if m not in active_memory_set:
-                m.activate()
+            if m not in active_memory_set and m.activate():
                 self.active_memories.append(m)
                 logger.debug(f'associated_memories {m.simple_str()}')
                 return
 
     @util.timeit
     def activate_children(self):
-        for m in self.active_memories:
-            m.activate_children_tree()
+        for m in set(self.active_memories):
+            self.activate_children_tree(m)
+
+    @util.timeit
+    def activate_children_tree(self, m: Memory):
+        # logger.debug(f'activate_children_tree {self.simple_str()}')
+        if m.activate():
+            self.active_memories.append(m)
+        for x in m.children:
+            if x.memory_type > 0:
+                if x.status in [constants.MATCHING, constants.DORMANT]:
+                    self.activate_children_tree(x)
+                    break
+            else:
+                self.activate_children_tree(x)
 
     @util.timeit
     def activate_parent(self, m: Memory):
@@ -87,6 +99,8 @@ class Brain:
             m.assign_id()
             self.memories.add(m)
             m.create_index(self.memory_indexes)
+            logger.debug(f'added_new_memory {m.simple_str()}')
+            # m.render_tree()
         m.matched()
         self.active_memories.append(m)
 
@@ -180,7 +194,10 @@ class Brain:
     def log_dashboard(self):
         try:
             dashboard.log(self.memories, 'all_memory')
-            dashboard.log(self.active_memories, 'active_memory')
+            dashboard.log(self.active_memories, 'active_memory', False)
+            for i in range(0, 5):
+                logger.debug(
+                    f'all active memories type {i} [{[x.mid for x in self.active_memories if x.memory_type == i]}]')
         except:
             logging.error(traceback.format_exc())
 

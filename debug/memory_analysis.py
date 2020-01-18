@@ -6,6 +6,7 @@ import logging
 import sys
 from components import constants
 from components import dashboard
+from anytree import RenderTree
 from components.memory import Memory
 from components.brain import Brain
 
@@ -23,10 +24,11 @@ memories = brain.memories
 #         f = open('parent.txt', 'w')
 #         for x in m.parent:
 #             f.write(str(x))
-brain.cleanup_memories()
-memories = brain.memories
+# brain.cleanup_memories()
+# memories = brain.memories
 # for x in memories:
-#     print(x.simple_str())
+#     if x.mid==2369:
+#         print(x.live)
 dashboard.log(memories, 'all_memories')
 # ff = open('features.txt', 'w')
 # fs = set()

@@ -1,5 +1,6 @@
 from . import constants
 from components import util
+from anytree import NodeMixin, RenderTree
 import copy
 import hashlib
 import logging
@@ -95,7 +96,7 @@ def construct(memories):
     return new_memories
 
 
-class Memory:
+class Memory(NodeMixin):
     mid = 0
     live = True
     memory_type = None
@@ -223,40 +224,24 @@ class Memory:
     @util.timeit
     def activate(self):
         if not self.live:
-            return
-        if self.status != constants.DORMANT:
-            return
+            return False
 
         logger.debug(f'activated_memory {self.simple_str()}')
         self.status = constants.MATCHING
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
-
-    @util.timeit
-    def activate_children_tree(self):
-        logger.debug(f'activate_children_tree {self.simple_str()}')
-        self.activate()
-        for m in self.children:
-            if m.memory_type in [MEMORY_TYPES.index(constants.LONG_MEMORY),
-                                 MEMORY_TYPES.index(constants.SHORT_MEMORY),
-                                 MEMORY_TYPES.index(constants.INSTANT_MEMORY),
-                                 MEMORY_TYPES.index(constants.SLICE_MEMORY)]:
-                if m.status in [constants.MATCHING, constants.DORMANT]:
-                    m.activate_children_tree()
-                    break
-            else:
-                m.activate_children_tree()
+        return True
 
     @util.timeit
     def match(self):
-        if self.memory_type > 0:
-            logger.debug(f'matching_memory {self.simple_str()}')
+        # if self.memory_type > 0:
+        #     logger.debug(f'matching_memory {self.simple_str()}')
         if self.status != constants.MATCHING:
             return False
 
         for m in self.children:
-            if self.memory_type > 0:
-                logger.debug(f'child_memory {m.simple_str()}')
+            # if self.memory_type > 0:
+            #     logger.debug(f'child_memory {m.simple_str()}')
             if m.status != constants.MATCHED:
                 return False
 
@@ -331,7 +316,7 @@ class Memory:
     @util.timeit
     def create_index_common(self, indexes: dict):
         raw = f'{self.memory_type}|{self.feature_type}|{self.click_type}|{self.degrees}|{self.speed}|{self.duration}|' \
-            f'{self.zoom_type}|{self.zoom_direction}|'
+              f'{self.zoom_type}|{self.zoom_direction}|'
         if len(self.children) > 0:
             mids = [x.mid for x in self.children]
             if self.memory_type <= 2:
@@ -376,4 +361,9 @@ class Memory:
         parent = {x.mid for x in self.parent}
         children = [x.mid for x in self.children]
         return f'[id:{self.mid},type:{self.memory_type},feature:{self.feature_type},recall:{self.recall_count},' \
-            f'reward:{self.reward},parent:{parent},children:{children}]'
+               f'reward:{self.reward},parent:{parent},children:{children}]'
+
+    # def render_tree(self):
+    #     for pre, _, node in RenderTree(self):
+    #         treestr = u"%s%s" % (pre, node.mid)
+    #         logger.debug(treestr.ljust(8), node.memory_type)

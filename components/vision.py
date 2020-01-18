@@ -171,6 +171,7 @@ class Vision(object):
         feature = self.filter_feature(data_map, m.kernel, m.feature)
         if feature.similar:
             m.feature = feature.data
+            logger.debug(f'matched_feature {m.mid}')
             m.recall()
             self.update_used_channel(m.channel)
             self.update_used_kernel(m.kernel)

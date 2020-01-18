@@ -173,6 +173,57 @@ class TestBrain(unittest.TestCase):
         self.assertTrue(memories[8].active_end_time > 0)
         self.assertTrue(memories[10].active_end_time > 0)
 
+    def test_activate_tree_left_leaf(self):
+        memories = test_memory.build_a_tree()
+        brain = Brain()
+        # 1st validation
+        brain.activate_children_tree(memories[8])
+        self.assertEqual(memories[0].status, constants.MATCHING)
+        self.assertEqual(memories[1].status, constants.MATCHING)
+        self.assertEqual(memories[2].status, constants.MATCHING)
+        self.assertNotEqual(memories[3].status, constants.MATCHING)
+        self.assertEqual(memories[4].status, constants.MATCHING)
+        self.assertNotEqual(memories[5].status, constants.MATCHING)
+        self.assertEqual(memories[6].status, constants.MATCHING)
+        self.assertNotEqual(memories[7].status, constants.MATCHING)
+        self.assertEqual(memories[8].status, constants.MATCHING)
+        # 2nd validation, nothing change
+        brain.activate_children_tree(memories[8])
+        self.assertEqual(memories[0].status, constants.MATCHING)
+        self.assertEqual(memories[1].status, constants.MATCHING)
+        self.assertEqual(memories[2].status, constants.MATCHING)
+        self.assertNotEqual(memories[3].status, constants.MATCHING)
+        self.assertEqual(memories[4].status, constants.MATCHING)
+        self.assertNotEqual(memories[5].status, constants.MATCHING)
+        self.assertEqual(memories[6].status, constants.MATCHING)
+        self.assertNotEqual(memories[7].status, constants.MATCHING)
+        self.assertEqual(memories[8].status, constants.MATCHING)
+        # 3rd validation, something matched
+        memories[2].status = constants.MATCHED
+        brain.activate_children_tree(memories[8])
+        self.assertEqual(memories[3].status, constants.MATCHING)
+        memories[4].status = constants.MATCHED
+        brain.activate_children_tree(memories[8])
+        self.assertEqual(memories[5].status, constants.MATCHING)
+
+    def test_activate_tree_middle_leaf(self):
+        brain = Brain()
+        memories = test_memory.build_a_tree()
+        memories[8].status = constants.MATCHING
+        memories[9].children = memories[6:8]
+        # 1st validation
+        brain.activate_children_tree(memories[10])
+        self.assertEqual(memories[9].status, constants.DORMANT)
+        # match 1st long
+        memories[8].status = constants.MATCHED
+        brain.activate_children_tree(memories[10])
+        self.assertEqual(memories[0].status, constants.MATCHING)
+        self.assertEqual(memories[1].status, constants.MATCHING)
+        self.assertEqual(memories[2].status, constants.MATCHING)
+        self.assertEqual(memories[4].status, constants.MATCHING)
+        self.assertEqual(memories[6].status, constants.MATCHING)
+        self.assertEqual(memories[9].status, constants.MATCHING)
+
 
 if __name__ == "__main__":
     unittest.main()
