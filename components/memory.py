@@ -9,7 +9,7 @@ import random
 import time
 
 logger = logging.getLogger('Memory')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
@@ -48,7 +48,7 @@ def get_feature_type(feature_type_str):
 @util.timeit
 def flatten(memories):
     new_memories = set()
-    for m in list(memories):
+    for m in memories.copy():
         nm = copy.copy(m)
         nm.parent = set([x.mid for x in m.parent])
         nm.children = [x.mid for x in m.children]
@@ -96,7 +96,7 @@ def construct(memories):
     return new_memories
 
 
-class Memory(NodeMixin):
+class Memory:
     mid = 0
     live = True
     memory_type = None
@@ -223,9 +223,13 @@ class Memory(NodeMixin):
 
     @util.timeit
     def activate(self):
+        # logger.debug(f'activating {self.simple_str()}')
         if not self.live:
             return False
+        if self.status == constants.MATCHING:
+            return False
         self.status = constants.MATCHING
+        logger.debug(f'activated {self.simple_str()}')
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
         return True
@@ -359,7 +363,7 @@ class Memory(NodeMixin):
         parent = {x.mid for x in self.parent}
         children = [x.mid for x in self.children]
         return f'[id:{self.mid},type:{self.memory_type},feature:{self.feature_type},recall:{self.recall_count},' \
-               f'reward:{self.reward},parent:{parent},children:{children}]'
+               f'reward:{self.reward},live:{self.live},status:{self.status},parent:{parent},children:{children}]'
 
     # def render_tree(self):
     #     for pre, _, node in RenderTree(self):

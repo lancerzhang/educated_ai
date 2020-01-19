@@ -23,21 +23,21 @@ class TestBrain(unittest.TestCase):
             m.status = constants.MATCHED
             m.parent = set(memories)
             memories.append(m)
-        brain.active_memories = memories[1:]
+        brain.active_memories = set(memories[1:])
         brain.associate()
         self.assertEqual(4, len(brain.active_memories))
         # dead case
-        brain.active_memories = memories[1:]
+        brain.active_memories = set(memories[1:])
         memories[0].live = False
         brain.associate()
         self.assertEqual(3, len(brain.active_memories))
         # duplicated case
-        brain.active_memories = memories
+        brain.active_memories = set(memories)
         memories[0].live = True
         brain.associate()
         self.assertEqual(4, len(brain.active_memories))
         # base case
-        brain.active_memories = memories[2:]
+        brain.active_memories = set(memories[2:])
         memories[0].matched_time = time.time()
         memories[1].matched_time = time.time() - 4000
         brain.associate()
@@ -45,7 +45,7 @@ class TestBrain(unittest.TestCase):
         self.assertTrue(memories[0] in brain.active_memories)
         self.assertFalse(memories[1] in brain.active_memories)
         # low desire desire
-        brain.active_memories = memories[2:]
+        brain.active_memories = set(memories[2:])
         memories[0].reward = 1
         memories[1].reward = 1
         brain.associate()
@@ -57,14 +57,14 @@ class TestBrain(unittest.TestCase):
         brain = Brain()
         # match one
         memories = test_memory.build_a_tree(constants.MATCHING)
-        brain.active_memories = memories
+        brain.active_memories = set(memories)
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
         brain.match_memories()
         self.assertEqual(memories[2].status, constants.MATCHED)
         # match whole tree
         memories = test_memory.build_a_tree(constants.MATCHING)
-        brain.active_memories = memories
+        brain.active_memories = set(memories)
         memories[3].status = constants.MATCHED
         memories[5].status = constants.MATCHED
         memories[7].status = constants.MATCHED
@@ -103,22 +103,21 @@ class TestBrain(unittest.TestCase):
         memories[0].feature_type = memory.MEMORY_FEATURES.index(constants.SOUND_FEATURE)
         memories[1].feature_type = memory.MEMORY_FEATURES.index(constants.SOUND_FEATURE)
         memories[1].status = constants.MATCHING
-        brain.active_memories = memories
         for _ in range(0, 3):
             m = memory.create()
             m.status = constants.MATCHED
             m.memory_type = memory.MEMORY_TYPES.index(constants.FEATURE_MEMORY)
-            m.feature_type = memory.MEMORY_FEATURES.index(constants.ACTION_REWARD)
-            brain.active_memories.append(m)
-        brain.active_memories[-1].matched_time = time.time() - 1
+            m.feature_type = memory.MEMORY_FEATURES.index(constants.VISION_FEATURE)
+            memories.append(m)
+        memories[-1].matched_time = time.time() - 1
+        brain.active_memories = set(memories)
+        for m in memories:
+            if m.memory_type == 0:
+                brain.work_memories[m.memory_type][m.feature_type].append(m)
+            else:
+                brain.work_memories[m.memory_type].append(m)
         brain.compose_memories()
         self.assertEqual(20, len(brain.active_memories))
-        new_sound = brain.active_memories[14]
-        self.assertEqual(constants.MATCHED, new_sound.status)
-        self.assertEqual(1, len(new_sound.children))
-        new_vision = brain.active_memories[15]
-        self.assertEqual(2, len(new_vision.children))
-        self.assertEqual(4, len(brain.active_memories[-1].children))
 
     def test_cleanup_active_memories(self):
         brain = Brain()
