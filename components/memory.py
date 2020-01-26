@@ -10,7 +10,7 @@ import time
 
 logger = logging.getLogger('Memory')
 logger.setLevel(logging.INFO)
-MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 360]
+MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 60]
 MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
                 constants.LONG_MEMORY]
 MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.VISION_FOCUS_MOVE,
@@ -223,7 +223,7 @@ class Memory:
 
     @util.timeit
     def activate(self):
-        # logger.debug(f'activating {self.simple_str()}')
+        logger.debug(f'activating {self.simple_str()}')
         if not self.live:
             return False
         if self.status == constants.MATCHING:
@@ -365,7 +365,23 @@ class Memory:
         return f'[id:{self.mid},type:{self.memory_type},feature:{self.feature_type},recall:{self.recall_count},' \
                f'reward:{self.reward},live:{self.live},status:{self.status},parent:{parent},children:{children}]'
 
-    # def render_tree(self):
-    #     for pre, _, node in RenderTree(self):
-    #         treestr = u"%s%s" % (pre, node.mid)
-    #         logger.debug(treestr.ljust(8), node.memory_type)
+    # @util.timeit
+    def render_tree(self, temp_set, level=0, max_level=30):
+        if level >= max_level:
+            # print('hit max level, return')
+            return
+        level_line = ''
+        for i in range(0, level):
+            level_line = '---{0}'.format(level_line)
+        if not self.live:
+            print('dead')
+        else:
+            if self.memory_type < 4:
+                if self.mid not in temp_set:
+                    leaf = f'l{level}:{level_line} id:{self.mid},type:{self.memory_type},count:{self.recall_count}'
+                    print(leaf)
+                    logger.debug(leaf)
+                    temp_set.add(self.mid)
+            sub_level = level + 1
+            for child in self.children:
+                child.render_tree(temp_set, sub_level, max_level)

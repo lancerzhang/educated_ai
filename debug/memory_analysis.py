@@ -26,9 +26,12 @@ memories = brain.memories
 #             f.write(str(x))
 # brain.cleanup_memories()
 # memories = brain.memories
-# for x in memories:
-#     if x.mid==2369:
-#         print(x.live)
+for x in memories:
+    if x.memory_type == 4 and x.recall_count > 1:
+        print(x.simple_str())
+        #     print(x.simple_str())
+        # if x.mid == 20600:
+        x.render_tree(set())
 dashboard.log(memories, 'all_memories')
 # ff = open('features.txt', 'w')
 # fs = set()

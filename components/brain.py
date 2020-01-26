@@ -187,10 +187,10 @@ class Brain:
             if nm:
                 self.work_memories[self.FEATURE_MEMORY_TYPE_INDEX + 1].append(nm)
 
-        for j in range(self.FEATURE_MEMORY_TYPE_INDEX + 1, len(memory.MEMORY_TYPES)):
+        for j in range(self.FEATURE_MEMORY_TYPE_INDEX + 1, len(memory.MEMORY_TYPES) - 1):
             memory_type = j + 1
-            if memory_type >= len(memory.MEMORY_TYPES):
-                memory_type = j
+            # if memory_type >= len(memory.MEMORY_TYPES):
+            #     memory_type = j
             nm = self.compose_memory(self.get_valid_work_memories(j, -1), memory_type)
             if nm:
                 self.work_memories[memory_type].append(nm)
