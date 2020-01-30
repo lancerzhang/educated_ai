@@ -33,37 +33,24 @@ class Brain:
         self.temp_set = set()
 
     @util.timeit
-    def get_active_parents(self):
-        active_parent = []
-        # collect parent memories from top to down
-        for x in reversed(range(len(memory.MEMORY_TYPES))):
-            if len(active_parent) > 0:
-                return active_parent
-            for m in self.active_memories:
-                if m.memory_type == x and m.status == constants.MATCHED:
-                    active_parent += [x for x in m.parent if x.live]
-        return active_parent
-
-    @util.timeit
     def associate(self):
-        active_parent = self.get_active_parents()
-        # count parent memories
-        parent_counts = util.list_element_count(active_parent)
-        parent_weight = {}
-        # update memory desire
-        for m, count in parent_counts.items():
-            parent_weight.update({m: count * m.get_desire()})
-        # select top desire
-        for m in sorted(parent_weight, key=parent_weight.get, reverse=True):
-            if self.activate_memory(m):
-                logger.debug(f'associated_memories {m.simple_str()}')
-                return
+        self.temp_set.clear()
+        for i in range(len(memory.MEMORY_TYPES)):
+            for m in self.active_memories.copy():
+                if m.memory_type == i and m.status == constants.MATCHED:
+                    for p in m.parent:
+                        if p not in self.active_memories:
+                            self.activate_memory(p)
 
     @util.timeit
     def activate_memory(self, m: Memory):
+        if m in self.temp_set:
+            return False
         self.temp_set.add(m)  # record that m have been processed, will skip it in the same frame
         if m.activate():
             self.active_memories.add(m)
+            return True
+        return False
 
     @util.timeit
     def activate_children(self):
@@ -135,7 +122,7 @@ class Brain:
             m.assign_id()
             self.memories.add(m)
             m.create_index(self.memory_indexes)
-            logger.debug(f'added_new_memory {m.simple_str()}')
+            # logger.debug(f'added_new_memory {m.simple_str()}')
             # m.render_tree()
         m.matched()
         self.matched_memory(m)
@@ -232,7 +219,7 @@ class Brain:
     def log_dashboard(self):
         try:
             dashboard.log(self.memories, 'all_memory')
-            dashboard.log(self.active_memories, 'active_memory', with_status=True)
+            dashboard.log(self.active_memories, 'active_memory', with_status=True, need_active=False)
             # for i in range(0, 5):
             #     logger.debug(
             #         f'all active memories type {i} [{[x.mid for x in self.active_memories if x.memory_type == i]}]')
