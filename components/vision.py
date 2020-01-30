@@ -73,6 +73,8 @@ class Vision(object):
     FEATURE_DATA = {constants.KERNEL: [], constants.FEATURE: [], constants.SIMILAR: False}
     current_action = {STATUS: COMPLETED}
 
+    is_show = None
+
     @util.timeit
     def __init__(self, brain: Brain, favor: Favor):
         self.brain = brain
@@ -86,7 +88,9 @@ class Vision(object):
                               self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
         # fix error of Mac - Process finished with exit code 132 (interrupted by signal 4: SIGILL)
-        cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
+        if self.is_show is not 'n':
+            print(f'v is_show {self.is_show}')
+            cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
 
     @util.timeit
     def process(self, status, key):

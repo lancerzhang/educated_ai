@@ -55,20 +55,23 @@ def run_pending():
 def main(argv):
     is_hibernate = None
     video_file = None
+    is_show = None
 
     try:
-        opts, args = getopt.getopt(argv, "hi:v:", ["hibernate=", "video="])
+        opts, args = getopt.getopt(argv, 'hi:v:s:', ['hibernate=', 'video=', 'show='])
     except getopt.GetoptError:
-        print('-i <hibernate> -v <video>')
+        print('error get options, should be -i <hibernate> -v <video> -s <show>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print('-i <hibernate> -v <video>')
+            print('-i <hibernate> -v <video> -s <show>')
             sys.exit()
-        elif opt in ("-i", "--hibernate"):
+        elif opt in ('-i', '--hibernate'):
             is_hibernate = arg
-        elif opt in ("-v", "--video"):
+        elif opt in ('-v', '--video'):
             video_file = arg
+        elif opt in ('-s', '--show'):
+            is_show = arg
 
     try:
         logging.info('initializing, please wait.')
@@ -92,7 +95,7 @@ def main(argv):
         status = Status(brain)
         action = Action(brain)
         if video_file:
-            vision = VideoFileVision(brain, favor, video_file, status)
+            vision = VideoFileVision(brain, favor, video_file, status, is_show)
             sound = VideoFileSound(brain, favor, video_file)
         else:
             vision = ScreenVision(brain, favor)
@@ -131,7 +134,8 @@ def main(argv):
             brain.activate_children()
             focus = vision.process(status, key)
             sound.process(status)
-            action.process(status, button, focus)
+            if is_show is not 'n':
+                action.process(button, focus)
             reward.process(key)
             brain.match_memories()
             brain.compose_memories()
@@ -157,5 +161,5 @@ def main(argv):
         logging.error(traceback.format_exc())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(sys.argv[1:])

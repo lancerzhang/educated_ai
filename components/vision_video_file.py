@@ -9,8 +9,9 @@ import time
 class VideoFileVision(Vision):
 
     @util.timeit
-    def __init__(self, brain, favor, file_path, status):
+    def __init__(self, brain, favor, file_path, status, is_show):
         self.file_path = file_path
+        self.is_show = is_show
         self.cap = cv2.VideoCapture(file_path)
         self.FRAME_WIDTH = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.FRAME_HEIGHT = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -34,6 +35,10 @@ class VideoFileVision(Vision):
             status.video_frame = 1
 
         focus = super(VideoFileVision, self).process(status, key)
+        if self.is_show is 'n':
+            return focus
+
+        print(f'vf is_show {self.is_show}')
         display_frame = self.source_frame.copy()
         cv2.rectangle(display_frame, (self.current_block[self.START_X], self.current_block[self.START_Y]),
                       (self.current_block[self.START_X] + self.current_block[self.WIDTH],
