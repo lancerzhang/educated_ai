@@ -192,8 +192,8 @@ class Memory:
     @util.timeit
     def calculate_desire(self):
         elapse = time.time() - self.matched_time
-        # linear func, weight is 0 at beginning, it's 1 after 4000 seconds
-        f = 0.00025 * elapse
+        # linear func, weight is 0 at beginning, it's 1 after 400 seconds
+        f = 0.0025 * elapse
         desire = BASE_DESIRE + self.reward * f
         desire = desire if desire < 1 else 1
         self.desire = desire
@@ -378,7 +378,8 @@ class Memory:
         else:
             if self.memory_type < 4:
                 if self.mid not in temp_set:
-                    leaf = f'l{level}:{level_line} id:{self.mid},type:{self.memory_type},count:{self.recall_count}'
+                    # leaf = f'L{level}:{level_line} id:{self.mid},type:{self.memory_type},count:{self.recall_count}'
+                    leaf = f'L{level}:{level_line} {self.simple_str()}'
                     print(leaf)
                     logger.debug(leaf)
                     temp_set.add(self.mid)

@@ -19,15 +19,13 @@ class Action(object):
         self.mouse = Controller()
 
     @util.timeit
-    def process(self, status_controller, click, focus):
-        work_status = status_controller.status
+    def process(self, click, focus):
         self.reproduce_mouse_clicks()
         if focus:
             self.move(focus)
         if click:
             self.feel_clicks(click)
-        elif not work_status[constants.BUSY][constants.MEDIUM_DURATION]:
-            self.explore()
+        self.explore()
 
     @util.timeit
     def move(self, focus):
