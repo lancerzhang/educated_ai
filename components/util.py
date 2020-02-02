@@ -3,6 +3,8 @@ import collections
 import logging
 import numpy as np
 from functools import reduce
+from itertools import groupby
+from operator import itemgetter
 
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')
@@ -197,6 +199,14 @@ def list_avg(arr):
 
 
 @timeit
+def group_collection(col, field):
+    if isinstance(col, set):
+        col = list(col)
+    col.sort(key=lambda x: getattr(x, field))
+    return groupby(col, lambda x: getattr(x, field))
+
+
+@timeit
 def standardize_feature(matrix):
     while sum(matrix[0]) == 0:
         matrix = np.roll(matrix, -1, axis=0)
@@ -311,3 +321,7 @@ def is_int(i):
         return True
     else:
         return False
+
+
+def sum_iterator(iter):
+    return sum(1 for _ in iter)

@@ -1,5 +1,9 @@
 from components import util
+from components import memory
+from itertools import groupby
 import numpy as np
+import random
+import time
 import unittest
 
 
@@ -263,6 +267,41 @@ class TestUtil(unittest.TestCase):
         l1 = ['a', 'b', 'b', 'c', 'c', 'c']
         d1 = util.list_element_count(l1)
         self.assertEqual(3, d1.get('c'))
+
+    def test_group_collection(self):
+        m1 = memory.create()
+        m2 = memory.create()
+        m3 = memory.create()
+        m4 = memory.create()
+        m5 = memory.create()
+        m1.memory_type = 0
+        m2.memory_type = 1
+        m3.memory_type = 0
+        m4.memory_type = 2
+        m5.memory_type = 2
+        s1 = {m1, m2, m3, m4, m5}
+        g1 = util.group_collection(s1, 'memory_type')
+        self.assertEqual(3, util.sum_iterator(g1))
+
+    def test_group_collection_perf(self):
+        s1 = set()
+        for i in range(100 * 100):
+            s1.add(random.randint(0, 99))
+        t1 = time.time()
+        l1 = list(s1)
+        l1.sort(key=lambda x: x)
+        g1 = groupby(l1, lambda x: x)
+        t2 = time.time()
+        for i in range(100):
+            temp = []
+            for e in s1:
+                if e == i:
+                    temp.append(e)
+        t3 = time.time()
+        d1 = t2 - t1
+        d2 = t3 - t2
+        print(f'{d1}, {d2}')
+        self.assertTrue(d2 > d1)
 
 
 if __name__ == "__main__":
