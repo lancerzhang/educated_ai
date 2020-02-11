@@ -165,7 +165,7 @@ class TestBrain(unittest.TestCase):
         memories = test_memory.build_a_tree()
         brain.memories = set(memories)
         brain.active_memories = memories
-        brain.activate_parent(memories[0])
+        brain.extend_matching_parent(memories[0])
         self.assertTrue(memories[2].active_end_time > 0)
         self.assertTrue(memories[4].active_end_time > 0)
         self.assertTrue(memories[6].active_end_time > 0)

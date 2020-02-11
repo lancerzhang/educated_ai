@@ -26,7 +26,7 @@ USED_SPEED = 'speed'
 class Vision(object):
     FRAME_WIDTH = 0
     FRAME_HEIGHT = 0
-    ROI_ARR = [12, 36, 72, 144, 288]
+    ROI_ARR = [32, 64, 128, 256]
     roi_index = 2
     ROI_INDEX_NAME = 'ROI_INDEX'
     START_X = 'sx'
@@ -176,7 +176,7 @@ class Vision(object):
         if feature.similar:
             m.feature = feature.data
             logger.debug(f'matched_feature {m.mid}')
-            m.recall()
+            m.matched()
             self.update_used_channel(m.channel)
             self.update_used_kernel(m.kernel)
 
@@ -463,7 +463,7 @@ class Vision(object):
         q.speed = speed
         q.duration = duration
         m = self.brain.put_physical_memory(q)
-        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
+        self.brain.put_slice_memory([m], constants.SLICE_MEMORY,constants.VISION_FOCUS_MOVE)
 
     @util.timeit
     def explore(self):
@@ -538,7 +538,7 @@ class Vision(object):
         q.zoom_type = zoom_type
         q.zoom_direction = zoom_direction
         m = self.brain.put_physical_memory(q)
-        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
+        self.brain.put_slice_memory([m], constants.SLICE_MEMORY,constants.VISION_FOCUS_ZOOM)
 
     @util.timeit
     def try_zoom_in(self, zoom_direction):
@@ -747,7 +747,7 @@ class Vision(object):
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed,
                                    constants.MOVE_DURATION: duration,
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
-            m.update({constants.STATUS: constants.MATCHED})
+            m.status = constants.MATCHED
 
     @util.timeit
     def reproduce_zoom(self, m):

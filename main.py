@@ -120,7 +120,7 @@ def main(argv):
             start = time.time()
             button = mouse_listener.get_button()
             key = keyboard_listener.get_key()
-            if key is constants.KEY_SHIFT:
+            if is_show is not 'n' and key is constants.KEY_SHIFT:
                 brain.save()
                 favor.save()
                 save_for_exit(sound)

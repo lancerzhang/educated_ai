@@ -70,10 +70,10 @@ class TestMemory(unittest.TestCase):
         for i in range(2, 4):
             memories[i].set_memory_type(constants.SLICE_MEMORY)
         memories[2].children = memories[0:2]
-        self.assertFalse(memories[2].match())
+        self.assertFalse(memories[2].match_children())
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
-        self.assertTrue(memories[2].match())
+        self.assertTrue(memories[2].match_children())
 
     def test_equals(self):
         memories = build_a_tree()

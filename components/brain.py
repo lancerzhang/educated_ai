@@ -20,37 +20,46 @@ class Brain:
 
     def __init__(self):
         self.memories = set()
+        self.memory_indexes = {}  # speed up searching memories
         self.work_memories = []
+        self.active_memories = set()
+        self.temp_set = set()  # speed up searching active memories
         work_feature_memories = []
         for i in range(0, len(memory.MEMORY_FEATURES)):
             work_feature_memories.append(deque(maxlen=memory.COMPOSE_NUMBER))
         self.work_memories.append(work_feature_memories)
         for i in range(1, len(memory.MEMORY_TYPES)):
             self.work_memories.append(deque(maxlen=memory.COMPOSE_NUMBER))
-        self.memory_indexes = {}
-        self.active_memories = set()
         self.FEATURE_MEMORY_TYPE_INDEX = memory.get_memory_type(constants.FEATURE_MEMORY)
-        self.temp_set = set()
 
     @util.timeit
+    # find top parents
     def associate(self):
         self.temp_set.clear()
-        for i in range(len(memory.MEMORY_TYPES)):
-            for m in self.active_memories.copy():
-                if m.memory_type == i and m.status == constants.MATCHED:
-                    for p in m.parent:
-                        if p not in self.active_memories:
-                            self.activate_memory(p)
+        for m in self.active_memories:
+            if m.status is constants.MATCHED:
+                self.search_top_parent(m)
+        top_parents = self.temp_set
+        self.temp_set.clear()
+        for m in top_parents:
+            # TODO, need to check desire?
+            self.activate_memory(m)
+
+    @util.timeit
+    def search_top_parent(self, m: Memory):
+        for p in m.parent:
+            if len(p.parent) == 0:
+                self.temp_set.add(p)
+            else:
+                self.search_top_parent(p)
 
     @util.timeit
     def activate_memory(self, m: Memory):
         if m in self.temp_set:
-            return False
+            return
         self.temp_set.add(m)  # record that m have been processed, will skip it in the same frame
         if m.activate():
             self.active_memories.add(m)
-            return True
-        return False
 
     @util.timeit
     def activate_children(self):
@@ -66,55 +75,53 @@ class Brain:
         self.activate_memory(m)
         # logger.debug(f'activate_children_tree {m.simple_str()}')
         for x in m.children:
-            if x.memory_type > 0:
-                if x.status in [constants.MATCHING, constants.DORMANT]:
+            if x.memory_type > memory.get_memory_type(constants.SLICE_MEMORY):
+                if x.status is not constants.MATCHED:
                     self.activate_children_tree(x)
                     # just active 1st non-matched memory
                     return
             else:
-                self.activate_memory(x)
-
-    @util.timeit
-    def activate_parent(self, m: Memory):
-        self.temp_set.clear()
-        self.activate_parent_tree(m)
+                self.activate_children_tree(x)
 
     # @util.timeit
-    def activate_parent_tree(self, m: Memory, depth=400):
+    # extend active time of parent memory which are in active and matching status
+    def extend_matching_parent(self, m: Memory):
         if m in self.temp_set:
             return
-        if depth <= 0:
-            return
         for x in m.parent:
-            if x in self.active_memories:
+            if x in self.active_memories and x.status is constants.MATCHING:
                 x.active_end_time = time.time() + memory.MEMORY_DURATIONS[x.memory_type]
-                self.temp_set.add(x)  # record that x have been processed, will skip it in the same frame
-                self.activate_parent_tree(x, depth - 1)
+            self.temp_set.add(x)  # record that x have been processed, will skip it in the same frame
+            self.extend_matching_parent(x)
+
+    def extend_matched_children(self, m: Memory):
+        if m in self.temp_set:
+            return
+        for x in m.children:
+            if x.status is constants.MATCHED:
+                x.active_end_time = m.active_end_time
 
     @util.timeit
     def match_memories(self):
-        for i in range(1, len(memory.MEMORY_TYPES) - 1):
-            for m in self.active_memories:
-                if m.memory_type == i and m.match():
-                    self.matched_memory(m)
-                    self.activate_parent(m)
-
-        match_any = True
-        while match_any:
-            match_any = False
-            for m in self.active_memories:
-                if m.memory_type == memory.get_memory_type(constants.LONG_MEMORY) and m.match():
-                    self.matched_memory(m)
-                    self.activate_parent(m)
-                    match_any = True
+        self.temp_set.clear()
+        for i in range(0, len(memory.MEMORY_TYPES)):
+            for m in {x for x in self.active_memories if x.memory_type == i}:
+                if (i == 0 and m.status is constants.MATCHED) or (i > 0 and m.match_children()):
+                    self.add_matched_memory(m)
+                    self.extend_matching_parent(m)
+        self.temp_set.clear()
+        for m in [x for x in self.active_memories if x.status is constants.MATCHING]:
+            self.extend_matched_children(m)
 
     @util.timeit
-    def matched_memory(self, m):
+    def add_matched_memory(self, m):
         if m.memory_type == self.FEATURE_MEMORY_TYPE_INDEX:
-            self.work_memories[m.memory_type][m.feature_type].append(m)
+            work_list = self.work_memories[m.memory_type][m.feature_type]
         else:
-            self.work_memories[m.memory_type].append(m)
-        self.active_memories.add(m)
+            work_list = self.work_memories[m.memory_type]
+        if m not in work_list:
+            work_list.append(m)
+            self.active_memories.add(m)
 
     @util.timeit
     def add_memory(self, m: Memory):
@@ -125,7 +132,7 @@ class Brain:
             # logger.debug(f'added_new_memory {m.simple_str()}')
             # m.render_tree()
         m.matched()
-        self.matched_memory(m)
+        self.add_matched_memory(m)
 
     @util.timeit
     def put_memory(self, query: Memory):
@@ -298,8 +305,9 @@ class Brain:
         return self.put_memory(query)
 
     @util.timeit
-    def put_virtual_memory(self, child_memories, memory_type_str, reward=0):
-        self.compose_memory(child_memories, memory.get_memory_type(memory_type_str), reward=reward)
+    def put_slice_memory(self, child_memories, memory_type_str, feature_type_str, reward=0):
+        self.compose_memory(child_memories, memory.get_memory_type(memory_type_str),
+                            feature_type=memory.get_feature_type(feature_type_str), reward=reward)
 
     @util.timeit
     def get_matching_feature_memories(self, feature_type_str):

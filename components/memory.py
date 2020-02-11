@@ -1,6 +1,5 @@
 from . import constants
 from components import util
-from anytree import NodeMixin, RenderTree
 import copy
 import hashlib
 import logging
@@ -112,7 +111,7 @@ class Memory:
     children = None
 
     # for active period
-    status = None
+    status = None  # constants.MATCHED, constants.MATCHING, constants.DORMANT
     matched_time = None
     active_end_time = None
 
@@ -226,7 +225,7 @@ class Memory:
         logger.debug(f'activating {self.simple_str()}')
         if not self.live:
             return False
-        if self.status == constants.MATCHING:
+        if self.status is not constants.DORMANT:
             return False
         self.status = constants.MATCHING
         logger.debug(f'activated {self.simple_str()}')
@@ -235,7 +234,7 @@ class Memory:
         return True
 
     @util.timeit
-    def match(self):
+    def match_children(self):
         # if self.memory_type > 0:
         #     logger.debug(f'matching_memory {self.simple_str()}')
         if self.status != constants.MATCHING:
@@ -295,25 +294,8 @@ class Memory:
     def refresh_relative(self):
         self.children = [x for x in self.children if x.live is True]
         self.parent = {x for x in self.parent if x.live is True}
-        if self.memory_type > 0:
-            if len(self.children) == 0:
-                self.kill()
-            elif len(self.children) == 1:
-                child = self.children[0]
-                if not child.live:
-                    self.kill()
-                elif self.memory_type == get_memory_type(constants.LONG_MEMORY) and \
-                        child.memory_type == get_memory_type(constants.LONG_MEMORY) and len(child.children) == 1:
-                    self.children = child.children
-                    child.children = []
-            else:
-                has_child = False
-                for m in self.children:
-                    if m.live:
-                        has_child = True
-                        break
-                if not has_child:
-                    self.kill()
+        if self.memory_type > 0 and len(self.children) == 0:
+            self.kill()
 
     @util.timeit
     def create_index_common(self, indexes: dict):
@@ -356,8 +338,8 @@ class Memory:
             return self.create_index_common(indexes)
 
     def kill(self):
+        self.deactivate()
         self.live = False
-        self.active_end_time = 0
 
     def simple_str(self):
         parent = {x.mid for x in self.parent}
@@ -379,7 +361,7 @@ class Memory:
             if self.memory_type < 4:
                 if self.mid not in temp_set:
                     # leaf = f'L{level}:{level_line} id:{self.mid},type:{self.memory_type},count:{self.recall_count}'
-                    leaf = f'L{level}:{level_line} {self.simple_str()}'
+                    leaf = f'T{self.memory_type}:{level_line} {self.simple_str()}'
                     print(leaf)
                     logger.debug(leaf)
                     temp_set.add(self.mid)

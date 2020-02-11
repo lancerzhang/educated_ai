@@ -69,7 +69,7 @@ class Sound(object):
         feature = self.filter_feature(data_map, m.kernel, m.feature)
         if feature.similar:
             m.feature = feature.data
-            m.recall()
+            m.matched()
             self.update_used_kernel(m.kernel)
 
     # match the experience sound sense

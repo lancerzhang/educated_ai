@@ -49,7 +49,7 @@ class Action(object):
         q.set_feature_type(constants.ACTION_MOUSE_CLICK)
         q.click_type = click
         m = self.brain.put_physical_memory(q)
-        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY)
+        self.brain.put_slice_memory([m], constants.SLICE_MEMORY,constants.ACTION_MOUSE_CLICK)
 
     @util.timeit
     def left_click(self):

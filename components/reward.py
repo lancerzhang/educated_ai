@@ -20,7 +20,7 @@ class Reward(object):
         q.set_feature_type(constants.ACTION_REWARD)
         q.reward = reward
         m = self.brain.put_physical_memory(q)
-        self.brain.put_virtual_memory([m], constants.SLICE_MEMORY, reward=reward)
+        self.brain.put_slice_memory([m], constants.SLICE_MEMORY, constants.ACTION_REWARD, reward=reward)
 
     @util.timeit
     def process(self, key):
