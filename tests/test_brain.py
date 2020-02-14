@@ -13,45 +13,16 @@ class TestBrain(unittest.TestCase):
     def setUp(self):
         memory.id_sequence = 0
 
-    def test_associate_active_memories_normal(self):
+    def test_associate_active_memories(self):
         # normal case
         brain = Brain()
-        memories = []
-        for x in range(0, 4):
-            m = memory.create()
-            m.set_memory_type(constants.LONG_MEMORY)
-            m.status = constants.MATCHED
-            m.parent = set(memories)
-            memories.append(m)
-        brain.active_memories = set(memories[1:])
+        memories = test_memory.build_a_tree()
+        memories[0].status = constants.MATCHED
+        brain.memories = memories
+        active_memories = {memories[0]}
+        brain.active_memories = active_memories
         brain.associate()
-        self.assertEqual(4, len(brain.active_memories))
-        # dead case
-        brain.active_memories = set(memories[1:])
-        memories[0].live = False
-        brain.associate()
-        self.assertEqual(3, len(brain.active_memories))
-        # duplicated case
-        brain.active_memories = set(memories)
-        memories[0].live = True
-        brain.associate()
-        self.assertEqual(4, len(brain.active_memories))
-        # base case
-        brain.active_memories = set(memories[2:])
-        memories[0].matched_time = time.time()
-        memories[1].matched_time = time.time() - 4000
-        brain.associate()
-        self.assertEqual(3, len(brain.active_memories))
-        self.assertTrue(memories[0] in brain.active_memories)
-        self.assertFalse(memories[1] in brain.active_memories)
-        # low desire desire
-        brain.active_memories = set(memories[2:])
-        memories[0].reward = 1
-        memories[1].reward = 1
-        brain.associate()
-        self.assertEqual(3, len(brain.active_memories))
-        self.assertTrue(memories[1] in brain.active_memories)
-        self.assertFalse(memories[0] in brain.active_memories)
+        self.assertEqual(constants.MATCHING, memories[10].status)
 
     def test_match_virtual_memories(self):
         brain = Brain()

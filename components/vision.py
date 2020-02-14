@@ -8,11 +8,14 @@ import random
 import skimage.measure
 import time
 from . import constants
+from . import memory
 from . import util
 from .brain import Brain
 from .favor import Favor
 from .feature import Feature
 from .memory import Memory
+from .memory import MemoryType
+from .memory import FeatureType
 
 logger = logging.getLogger('Vision')
 logger.setLevel(logging.INFO)
@@ -457,13 +460,10 @@ class Vision(object):
 
     @util.timeit
     def put_vision_move_memory(self, degrees, speed, duration):
-        q = Memory()
-        q.set_feature_type(constants.VISION_FOCUS_MOVE)
-        q.degrees = degrees
-        q.speed = speed
-        q.duration = duration
-        m = self.brain.put_physical_memory(q)
-        self.brain.put_slice_memory([m], constants.SLICE_MEMORY,constants.VISION_FOCUS_MOVE)
+        m = Memory(MemoryType.FEATURE, feature_type=FeatureType.VISION_FOCUS_MOVE, degrees=degrees, speed=speed,
+                   duration=duration)
+        self.brain.put_memory(m)
+        self.brain.put_slice_memory([m], FeatureType.VISION_FOCUS_MOVE)
 
     @util.timeit
     def explore(self):
@@ -533,12 +533,10 @@ class Vision(object):
 
     @util.timeit
     def put_vision_zoom_memory(self, zoom_type, zoom_direction):
-        q = Memory()
-        q.set_feature_type(constants.VISION_FOCUS_ZOOM)
-        q.zoom_type = zoom_type
-        q.zoom_direction = zoom_direction
-        m = self.brain.put_physical_memory(q)
-        self.brain.put_slice_memory([m], constants.SLICE_MEMORY,constants.VISION_FOCUS_ZOOM)
+        m = Memory(MemoryType.FEATURE, feature_type=memory.FeatureType.VISION_FOCUS_ZOOM, zoom_direction=zoom_direction,
+                   zoom_type=zoom_type)
+        self.brain.put_memory(m)
+        self.brain.put_slice_memory([m], FeatureType.VISION_FOCUS_ZOOM)
 
     @util.timeit
     def try_zoom_in(self, zoom_direction):

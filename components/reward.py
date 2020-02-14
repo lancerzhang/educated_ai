@@ -2,6 +2,8 @@ from . import constants
 from . import util
 from .brain import Brain
 from .memory import Memory
+from .memory import MemoryType
+from .memory import FeatureType
 import logging
 
 logger = logging.getLogger('Reward')
@@ -16,11 +18,10 @@ class Reward(object):
 
     @util.timeit
     def add_reward_memory(self, reward):
-        q = Memory()
-        q.set_feature_type(constants.ACTION_REWARD)
-        q.reward = reward
-        m = self.brain.put_physical_memory(q)
-        self.brain.put_slice_memory([m], constants.SLICE_MEMORY, constants.ACTION_REWARD, reward=reward)
+        m = Memory(MemoryType.FEATURE, feature_type=FeatureType.ACTION_REWARD)
+        m.reward = reward
+        self.brain.put_memory(m)
+        self.brain.put_slice_memory([m], FeatureType.ACTION_REWARD, reward=reward)
 
     @util.timeit
     def process(self, key):

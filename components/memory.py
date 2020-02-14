@@ -9,17 +9,33 @@ import time
 
 logger = logging.getLogger('Memory')
 logger.setLevel(logging.INFO)
-MEMORY_DURATIONS = [0.15, 0.15, 0.5, 3, 60]
-MEMORY_TYPES = [constants.FEATURE_MEMORY, constants.SLICE_MEMORY, constants.INSTANT_MEMORY, constants.SHORT_MEMORY,
-                constants.LONG_MEMORY]
-MEMORY_FEATURES = [constants.SOUND_FEATURE, constants.VISION_FEATURE, constants.VISION_FOCUS_MOVE,
-                   constants.VISION_FOCUS_ZOOM, constants.ACTION_MOUSE_CLICK, constants.ACTION_REWARD]
+
+
+class MemoryType:
+    FEATURE = 0
+    SLICE = 1
+    INSTANT = 2
+    SHORT = 3
+    LONG = 4
+
+
+class FeatureType:
+    SOUND_FEATURE = 0
+    VISION_FEATURE = 1
+    VISION_FOCUS_MOVE = 2
+    VISION_FOCUS_ZOOM = 3
+    ACTION_MOUSE_CLICK = 4
+    ACTION_REWARD = 5
+
+
+MEMORY_DURATIONS = [0.1, 0.3, 1, 5, 20]
+MEMORY_TYPES_LENGTH = 5
+MEMORY_FEATURES_LENGTH = 6
 COMPOSE_NUMBER = 4
 GREEDY_RATIO = 0.8
 NOT_FORGET_STEP = 10
 BASE_DESIRE = 0.1
 BASE_STRENGTH = 0.1
-id_sequence = 0
 
 TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296,
             326, 358, 392, 428, 466, 506, 548, 593, 641, 692, 746, 803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367,
@@ -28,20 +44,6 @@ TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 
             537840, 853200, 1326240, 2035800, 3100140, 3609835, 4203316, 4894372, 5699043, 6636009, 7727020,
             8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033,
             41225925, 48003823, 55896067, 65085866]
-
-
-def create():
-    m = Memory()
-    m.assign_id()
-    return m
-
-
-def get_memory_type(memory_type_str):
-    return MEMORY_TYPES.index(memory_type_str)
-
-
-def get_feature_type(feature_type_str):
-    return MEMORY_FEATURES.index(feature_type_str)
 
 
 @util.timeit
@@ -96,10 +98,7 @@ def construct(memories):
 
 
 class Memory:
-    mid = 0
     live = True
-    memory_type = None
-    feature_type = None
     recall_count = 1
     created_time = 0
     last_recall_time = 0
@@ -107,46 +106,44 @@ class Memory:
     reward = 0
     desire = 0
     strength = 0
-    parent = None
-    children = None
 
     # for active period
     status = None  # constants.MATCHED, constants.MATCHING, constants.DORMANT
     matched_time = None
     active_end_time = None
 
-    kernel = None
-    feature = None
-    channel = None
-    click_type = None
-    degrees = None
-    speed = None
-    duration = None
-    zoom_type = None
-    zoom_direction = None
-
-    def __init__(self):
+    def __init__(self, memory_type, feature_type=None, children=[], kernel=None, feature=None, channel=None,
+                 click_type=None, degrees=None, speed=None, duration=None, zoom_type=None, zoom_direction=None):
         self.created_time = time.time()
         self.status = constants.MATCHED
         self.matched_time = time.time()
         self.recall_count = 1
         self.last_recall_time = time.time()
         self.parent = set()
-        self.children = []
+        # below variable should not be change after init
+        self.memory_type = memory_type
+        self.feature_type = feature_type
+        self.kernel = kernel
+        self.feature = feature
+        self.channel = channel
+        self.click_type = click_type
+        self.degrees = degrees
+        self.speed = speed
+        self.duration = duration
+        self.zoom_type = zoom_type
+        self.zoom_direction = zoom_direction
+        self.children = children
+        self.mid = self.create_hash()
+        self.kernel_index = self.create_kernel_hash()
 
     def __hash__(self):
-        return int(self.mid)
+        return self.mid
 
     def __str__(self):
         return str(self.__dict__)
 
     def __eq__(self, other):
         return other == self.mid
-
-    def assign_id(self):
-        global id_sequence
-        id_sequence += 1
-        self.mid = id_sequence
 
     # add protect time to prevent frequent calculation of deletion
     @util.timeit
@@ -262,80 +259,47 @@ class Memory:
     def recall(self):
         self.refresh_self(True, False)
 
-    # disable for performance issue @util.timeit
-    def equal(self, query):
-        equal_fields = ['memory_type', 'feature_type', 'channel', 'kernel', 'feature', 'click_type', 'degrees', 'speed',
-                        'duration', 'zoom_type', 'zoom_direction']
-        for field in equal_fields:
-            if getattr(query, field) is not None:
-                if getattr(query, field) != getattr(self, field):
-                    return False
-        if len(query.children) > 0:
-            if self.memory_type <= 1:
-                return util.list_equal_no_order(self.children, query.children)
-            else:
-                return util.list_equal_order(self.children, query.children)
-        return True
-
     @util.timeit
     def deactivate(self):
         self.status = constants.DORMANT
         self.active_end_time = 0
 
-    @util.timeit
-    def set_memory_type(self, memory_type_str):
-        self.memory_type = get_memory_type(memory_type_str)
+    # @util.timeit
+    # def refresh_relative(self):
+    #     self.parent = {x for x in self.parent if x.live is True}
+
+    def create_hash(self):
+        raw = f'{self.memory_type}|{self.feature_type}|{self.kernel}|{self.feature}|{self.channel}|{self.click_type}|' \
+              f'{self.degrees}|{self.speed}|{self.duration}|{self.zoom_type}|{self.zoom_direction}|'
+        if self.memory_type in [constants.SLICE_MEMORY]:
+            # without order
+            raw += f'{set(self.children)}'
+        else:
+            raw += f'{self.children}'
+        return int(hashlib.md5(raw.encode('utf-8')).hexdigest(),16)
 
     @util.timeit
-    def set_feature_type(self, feature_type_str):
-        self.feature_type = get_feature_type(feature_type_str)
+    def create_unique_index(self, indexes: dict):
+        indexes.update({self.mid: self})
+
+    def create_kernel_hash(self):
+        raw = f'{self.memory_type}|{self.feature_type}|{self.kernel}|{self.channel}'
+        return int(hashlib.md5(raw.encode('utf-8')).hexdigest(),16)
 
     @util.timeit
-    def refresh_relative(self):
-        self.children = [x for x in self.children if x.live is True]
-        self.parent = {x for x in self.parent if x.live is True}
-        if self.memory_type > 0 and len(self.children) == 0:
-            self.kill()
-
-    @util.timeit
-    def create_index_common(self, indexes: dict):
-        raw = f'{self.memory_type}|{self.feature_type}|{self.click_type}|{self.degrees}|{self.speed}|{self.duration}|' \
-              f'{self.zoom_type}|{self.zoom_direction}|'
-        if len(self.children) > 0:
-            mids = [x.mid for x in self.children]
-            if self.memory_type <= 2:
-                # without order
-                raw += f'{sorted(mids)}'
-            else:
-                raw += f'{mids}'
-        index = hashlib.md5(raw.encode('utf-8')).hexdigest()
-        if indexes is not None:
-            indexes.update({index: self})
-        return index
-
-    @util.timeit
-    def create_index_kernel(self, indexes: dict):
-        raw = f'{self.memory_type}|{self.feature_type}|{self.channel}|{self.kernel}'
-        index = hashlib.md5(raw.encode('utf-8')).hexdigest()
-        if indexes is not None:
-            index_objects = indexes.get(index)
-            if index_objects:
-                index_objects.append(self)
-                indexes.update({index: index_objects})
-            else:
-                indexes.update({index: [self]})
-        return index
-
-    @util.timeit
-    def get_index(self):
-        return self.create_index(None)
+    def create_kernel_index(self, indexes: dict):
+        index_objects = indexes.get(self.kernel_index)
+        if index_objects:
+            index_objects.append(self)
+            indexes.update({self.kernel_index: index_objects})
+        else:
+            indexes.update({self.kernel_index: [self]})
 
     @util.timeit
     def create_index(self, indexes):
-        if self.memory_type == MEMORY_TYPES.index(constants.FEATURE_MEMORY) and self.feature_type < 2:
-            return self.create_index_kernel(indexes)
-        else:
-            return self.create_index_common(indexes)
+        self.create_unique_index(indexes)
+        if self.feature_type in [FeatureType.SOUND_FEATURE, FeatureType.VISION_FEATURE]:
+            self.create_kernel_index(indexes)
 
     def kill(self):
         self.deactivate()
