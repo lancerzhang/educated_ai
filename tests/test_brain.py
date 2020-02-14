@@ -31,7 +31,7 @@ class TestBrain(unittest.TestCase):
         brain.active_memories = set(memories)
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
-        brain.match_memories()
+        brain.match_by_children()
         self.assertEqual(memories[2].status, constants.MATCHED)
         # match whole tree
         memories = test_memory.build_a_tree(constants.MATCHING)
@@ -42,7 +42,7 @@ class TestBrain(unittest.TestCase):
         memories[9].status = constants.MATCHED
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
-        brain.match_memories()
+        brain.match_by_children()
         self.assertEqual(memories[10].status, constants.MATCHED)
 
     def test_compose_memory(self):

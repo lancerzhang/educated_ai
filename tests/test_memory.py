@@ -3,6 +3,7 @@ from components import constants
 from components import memory
 from components.memory import MemoryType
 from components.memory import FeatureType
+import numpy as np
 import time
 import unittest
 
@@ -43,6 +44,11 @@ def build_a_tree(status=constants.DORMANT):
 
 class TestMemory(unittest.TestCase):
 
+    def test_calculate_protect_time(self):
+        m = Memory(MemoryType.FEATURE)
+        time1 = m.calculate_protect_time(1)
+        self.assertEqual(int(time1), int(time.time() + np.sum(memory.TIME_SEC[1:11])))
+
     def test_get_desire(self):
         # normal case
         memory1 = Memory(MemoryType.FEATURE)
@@ -59,7 +65,8 @@ class TestMemory(unittest.TestCase):
         self.assertFalse(memories[2].match_children())
         for i in range(0, 2):
             memories[i].status = constants.MATCHED
-        self.assertTrue(memories[2].match_children())
+        memories[2].match_children()
+        self.assertTrue(memories[2].status is constants.MATCHED)
 
     def test_flatten(self):
         memories = build_a_tree()
@@ -131,6 +138,18 @@ class TestMemory(unittest.TestCase):
         self.assertAlmostEqual(m.get_strength(), memory.BASE_STRENGTH + 0.5, 2)
         m.recall_count = 99
         self.assertEqual(m.get_strength(), 1)
+
+    def test_match_children(self):
+        memories = build_a_tree(constants.MATCHING)
+        memories[0].matched_time = time.time() - 0.1
+        memories[1].matched_time = time.time() - 0.1
+        memories[2].match_children()
+        self.assertEqual(memories[2].status, constants.MATCHED)
+        memories[3].matched_time = time.time() - 1
+        self.assertEqual(memories[4].status, constants.MATCHING)
+        memories[4].match_children()
+        self.assertEqual(memories[4].status, constants.MATCHING)
+
 
 
 if __name__ == "__main__":

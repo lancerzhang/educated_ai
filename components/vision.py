@@ -728,7 +728,7 @@ class Vision(object):
         return blocks_histogram
 
     @util.timeit
-    def reproduce_movement(self, m):
+    def reproduce_movement(self, m: Memory):
         print(f'reproduce_movement {m}')
         degrees = m.degrees
         speed = m.speed
@@ -745,10 +745,10 @@ class Vision(object):
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed,
                                    constants.MOVE_DURATION: duration,
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
-            m.status = constants.MATCHED
+            m.matched()
 
     @util.timeit
-    def reproduce_zoom(self, m):
+    def reproduce_zoom(self, m: Memory):
         zoom_type = m.zoom_type
         zoom_direction = m.zoom_direction
         if zoom_type is self.ZOOM_OUT:
@@ -758,7 +758,7 @@ class Vision(object):
         if new_block is None:
             return None
         self.current_block = new_block
-        m.status = constants.MATCHED
+        m.matched()
 
     @util.timeit
     def grab(self, top, left, width, height):

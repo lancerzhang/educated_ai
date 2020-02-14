@@ -42,7 +42,7 @@ class Action(object):
     def reproduce_mouse_click(self, m: Memory):
         if m.click_type == constants.LEFT_CLICK:
             self.left_click()
-            m.status = constants.MATCHED
+            m.matched()
 
     @util.timeit
     def feel_clicks(self, click):

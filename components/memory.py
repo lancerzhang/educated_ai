@@ -99,25 +99,22 @@ def construct(memories):
 
 class Memory:
     live = True
-    recall_count = 1
-    created_time = 0
-    last_recall_time = 0
     protect_time = 0
     reward = 0
     desire = 0
     strength = 0
 
     # for active period
-    status = None  # constants.MATCHED, constants.MATCHING, constants.DORMANT
+    status = None  # constants.MATCHING, constants.MATCHED, constants.LIVING, constants.DORMANT
     matched_time = None
     active_end_time = None
 
-    def __init__(self, memory_type, feature_type=None, children=[], kernel=None, feature=None, channel=None,
+    def __init__(self, memory_type, feature_type=None, children=None, kernel=None, feature=None, channel=None,
                  click_type=None, degrees=None, speed=None, duration=None, zoom_type=None, zoom_direction=None):
         self.created_time = time.time()
         self.status = constants.MATCHED
         self.matched_time = time.time()
-        self.recall_count = 1
+        self.recall_count = 0
         self.last_recall_time = time.time()
         self.parent = set()
         # below variable should not be change after init
@@ -132,7 +129,10 @@ class Memory:
         self.duration = duration
         self.zoom_type = zoom_type
         self.zoom_direction = zoom_direction
-        self.children = children
+        if children:
+            self.children = children
+        else:
+            self.children = set()
         self.mid = self.create_hash()
         self.kernel_index = self.create_kernel_hash()
 
@@ -186,6 +186,10 @@ class Memory:
                 break
 
     @util.timeit
+    def recall(self):
+        self.refresh_self(True, False)
+
+    @util.timeit
     def calculate_desire(self):
         elapse = time.time() - self.matched_time
         # linear func, weight is 0 at beginning, it's 1 after 400 seconds
@@ -218,51 +222,40 @@ class Memory:
         return self.strength
 
     @util.timeit
+    def match_children(self):
+        for m in self.children:
+            if (time.time() - m.matched_time) > MEMORY_DURATIONS[self.memory_type]:
+                return
+        self.matched()
+
+    @util.timeit
+    # Dormant > Matching
     def activate(self):
-        logger.debug(f'activating {self.simple_str()}')
-        if not self.live:
-            return False
-        if self.status is not constants.DORMANT:
-            return False
         self.status = constants.MATCHING
-        logger.debug(f'activated {self.simple_str()}')
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
-        return True
 
     @util.timeit
-    def match_children(self):
-        # if self.memory_type > 0:
-        #     logger.debug(f'matching_memory {self.simple_str()}')
-        if self.status != constants.MATCHING:
-            return False
-
-        for m in self.children:
-            # if self.memory_type > 0:
-            #     logger.debug(f'child_memory {m.simple_str()}')
-            if m.status != constants.MATCHED:
-                return False
-
-        self.matched()
-        if self.memory_type > 1:
-            logger.debug(f'matched_memory {self.simple_str()}')
-        return True
-
-    @util.timeit
+    # call this right after the memory is matched. Matching > Matched
     def matched(self):
         self.status = constants.MATCHED
         # extend active end time when it's matched, keeping it in active memories for composing
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
         self.recall()
 
-    @util.timeit
-    def recall(self):
-        self.refresh_self(True, False)
+    # call this after the memory is confirmed matched by brain. Matched > Living
+    def post_matched(self):
+        self.status = constants.LIVING
 
-    @util.timeit
+    # Living > Dormant
     def deactivate(self):
         self.status = constants.DORMANT
         self.active_end_time = 0
+
+    # this memory won't be used
+    def kill(self):
+        self.deactivate()
+        self.live = False
 
     # @util.timeit
     # def refresh_relative(self):
@@ -276,7 +269,7 @@ class Memory:
             raw += f'{set(self.children)}'
         else:
             raw += f'{self.children}'
-        return int(hashlib.md5(raw.encode('utf-8')).hexdigest(),16)
+        return int(hashlib.md5(raw.encode('utf-8')).hexdigest(), 16)
 
     @util.timeit
     def create_unique_index(self, indexes: dict):
@@ -284,7 +277,7 @@ class Memory:
 
     def create_kernel_hash(self):
         raw = f'{self.memory_type}|{self.feature_type}|{self.kernel}|{self.channel}'
-        return int(hashlib.md5(raw.encode('utf-8')).hexdigest(),16)
+        return int(hashlib.md5(raw.encode('utf-8')).hexdigest(), 16)
 
     @util.timeit
     def create_kernel_index(self, indexes: dict):
@@ -300,10 +293,6 @@ class Memory:
         self.create_unique_index(indexes)
         if self.feature_type in [FeatureType.SOUND_FEATURE, FeatureType.VISION_FEATURE]:
             self.create_kernel_index(indexes)
-
-    def kill(self):
-        self.deactivate()
-        self.live = False
 
     def simple_str(self):
         parent = {x.mid for x in self.parent}
