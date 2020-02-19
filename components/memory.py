@@ -1,4 +1,3 @@
-from . import constants
 from components import util
 import copy
 import hashlib
@@ -12,14 +11,14 @@ logger.setLevel(logging.INFO)
 
 
 class MemoryType:
-    FEATURE = 0
-    SLICE = 1
-    INSTANT = 2
+    REAL = 0  # one real memory
+    SLICE = 1  # collection of one type of real memories
+    INSTANT = 2  # collection of slice memories in a short time
     SHORT = 3
     LONG = 4
 
 
-class FeatureType:
+class RealType:
     SOUND_FEATURE = 0
     VISION_FEATURE = 1
     VISION_FOCUS_MOVE = 2
@@ -28,7 +27,18 @@ class FeatureType:
     ACTION_REWARD = 5
 
 
-MEMORY_DURATIONS = [0.1, 0.3, 1, 5, 20]
+class MemoryStatus:
+    # dormant memories will be clean up in high priority
+    # dormant memories can't be activated
+    # dormant memories can be retrieved if it's yet clean up, recall count will be kept
+    DORMANT = 0
+    SLEEP = 1
+    LIVING = 2
+    MATCHED = 3
+    MATCHING = 4
+
+
+MEMORY_DURATIONS = [0.3, 0.3, 1, 5, 20]
 MEMORY_TYPES_LENGTH = 5
 MEMORY_FEATURES_LENGTH = 6
 COMPOSE_NUMBER = 4
@@ -98,28 +108,28 @@ def construct(memories):
 
 
 class Memory:
-    live = True
+    # live = True
     protect_time = 0
     reward = 0
     desire = 0
     strength = 0
 
     # for active period
-    status = None  # constants.MATCHING, constants.MATCHED, constants.LIVING, constants.DORMANT
+    status = None
     matched_time = None
     active_end_time = None
 
-    def __init__(self, memory_type, feature_type=None, children=None, kernel=None, feature=None, channel=None,
+    def __init__(self, memory_type, real_type=None, children=None, kernel=None, feature=None, channel=None,
                  click_type=None, degrees=None, speed=None, duration=None, zoom_type=None, zoom_direction=None):
         self.created_time = time.time()
-        self.status = constants.MATCHED
+        self.status = MemoryStatus.MATCHED
         self.matched_time = time.time()
         self.recall_count = 0
         self.last_recall_time = time.time()
         self.parent = set()
         # below variable should not be change after init
         self.memory_type = memory_type
-        self.feature_type = feature_type
+        self.real_type = real_type
         self.kernel = kernel
         self.feature = feature
         self.channel = channel
@@ -177,7 +187,7 @@ class Memory:
                         ran = random.randint(1, 100)
                         strength = 100 - count
                         if ran > strength:
-                            self.kill()
+                            self.hibernate()
                             break
                     # if this is recall, will update recall count and last recall time
                     if recall:
@@ -224,6 +234,9 @@ class Memory:
     @util.timeit
     def match_children(self):
         for m in self.children:
+            # ignore dormant memory as it's forgot
+            if m.status is MemoryStatus.DORMANT:
+                continue
             if (time.time() - m.matched_time) > MEMORY_DURATIONS[self.memory_type]:
                 return
         self.matched()
@@ -231,74 +244,72 @@ class Memory:
     @util.timeit
     # Dormant > Matching
     def activate(self):
-        self.status = constants.MATCHING
+        self.status = MemoryStatus.MATCHING
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
 
     @util.timeit
     # call this right after the memory is matched. Matching > Matched
     def matched(self):
-        self.status = constants.MATCHED
+        # normally change memory status from Matching to Matched
+        # but there also maybe form dormant to Matched
+        if self.status is MemoryStatus.DORMANT:
+            logger.debug(f'activated dormant memory:{self.simple_str()}')
+        self.status = MemoryStatus.MATCHED
         # extend active end time when it's matched, keeping it in active memories for composing
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
         self.recall()
 
     # call this after the memory is confirmed matched by brain. Matched > Living
     def post_matched(self):
-        self.status = constants.LIVING
+        self.status = MemoryStatus.LIVING
 
-    # Living > Dormant
+    # Living > SLEEP
     def deactivate(self):
-        self.status = constants.DORMANT
+        self.status = MemoryStatus.SLEEP
         self.active_end_time = 0
 
-    # this memory won't be used
-    def kill(self):
-        self.deactivate()
-        self.live = False
-
-    # @util.timeit
-    # def refresh_relative(self):
-    #     self.parent = {x for x in self.parent if x.live is True}
+    # Sleep > Dormant, this memory won't be used, waiting to be clean up
+    def hibernate(self):
+        self.status = MemoryStatus.DORMANT
 
     def create_hash(self):
-        raw = f'{self.memory_type}|{self.feature_type}|{self.kernel}|{self.feature}|{self.channel}|{self.click_type}|' \
+        raw = f'{self.memory_type}|{self.real_type}|{self.kernel}|{self.feature}|{self.channel}|{self.click_type}|' \
               f'{self.degrees}|{self.speed}|{self.duration}|{self.zoom_type}|{self.zoom_direction}|'
-        if self.memory_type in [constants.SLICE_MEMORY]:
+        if self.memory_type in [MemoryType.SLICE]:
             # without order
             raw += f'{set(self.children)}'
         else:
             raw += f'{self.children}'
         return int(hashlib.md5(raw.encode('utf-8')).hexdigest(), 16)
 
-    @util.timeit
-    def create_unique_index(self, indexes: dict):
-        indexes.update({self.mid: self})
-
     def create_kernel_hash(self):
-        raw = f'{self.memory_type}|{self.feature_type}|{self.kernel}|{self.channel}'
+        raw = f'{self.memory_type}|{self.real_type}|{self.kernel}|{self.channel}'
         return int(hashlib.md5(raw.encode('utf-8')).hexdigest(), 16)
 
     @util.timeit
     def create_kernel_index(self, indexes: dict):
         index_objects = indexes.get(self.kernel_index)
         if index_objects:
-            index_objects.append(self)
-            indexes.update({self.kernel_index: index_objects})
+            index_objects.add(self)
         else:
-            indexes.update({self.kernel_index: [self]})
+            indexes.update({self.kernel_index: {self}})
+
+    @util.timeit
+    def create_common_index(self, indexes: dict):
+        indexes.update({self.mid: self})
 
     @util.timeit
     def create_index(self, indexes):
-        self.create_unique_index(indexes)
-        if self.feature_type in [FeatureType.SOUND_FEATURE, FeatureType.VISION_FEATURE]:
+        self.create_common_index(indexes)
+        if self.real_type in [RealType.SOUND_FEATURE, RealType.VISION_FEATURE]:
             self.create_kernel_index(indexes)
 
     def simple_str(self):
         parent = {x.mid for x in self.parent}
         children = [x.mid for x in self.children]
-        return f'[id:{self.mid},type:{self.memory_type},feature:{self.feature_type},recall:{self.recall_count},' \
-               f'reward:{self.reward},live:{self.live},status:{self.status},parent:{parent},children:{children}]'
+        return f'[id:{self.mid},type:{self.memory_type},feature:{self.real_type},recall:{self.recall_count},' \
+               f'reward:{self.reward},status:{self.status},parent:{parent},children:{children}]'
 
     # @util.timeit
     def render_tree(self, temp_set, level=0, max_level=30):
@@ -308,7 +319,7 @@ class Memory:
         level_line = ''
         for i in range(0, level):
             level_line = '---{0}'.format(level_line)
-        if not self.live:
+        if self.status is MemoryStatus.DORMANT:
             print('dead')
         else:
             if self.memory_type < 4:

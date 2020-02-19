@@ -24,14 +24,19 @@ memories = brain.memories
 #         f = open('parent.txt', 'w')
 #         for x in m.parent:
 #             f.write(str(x))
-# brain.cleanup_memories()
-# memories = brain.memories
-for x in memories:
-    if x.memory_type == 4 and x.recall_count > 1:
-        print(x.simple_str())
-        #     print(x.simple_str())
-        # if x.mid == 20600:
-        x.render_tree(set())
+
+# parent = set()
+# for x in memories:
+#     if x.memory_type ==0:
+#         # if x.mid == 3064:
+#         print(x)
+#         # x.render_tree(set())
+#         for p in x.parent:
+#             parent.add(p)
+# for p in parent:
+#     if p.recall_count>1:
+#         print(p.simple_str())
+    # p.render_tree(set())
 dashboard.log(memories, 'all_memories')
 # ff = open('features.txt', 'w')
 # fs = set()

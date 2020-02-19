@@ -1,4 +1,6 @@
 from components import constants
+from components.memory import MemoryType
+from components.memory import MemoryStatus
 import collections
 import logging
 import numpy as np
@@ -15,11 +17,11 @@ LOG_TYPE_ACTIVE_TIME = True
 def log(memories, label, with_status=False, need_active=False):
     data = []
     for x in memories:
-        if x.live and x.status in [constants.MATCHING, constants.MATCHED] and x.active_end_time:
+        if x.status in [MemoryStatus.MATCHING, MemoryStatus.MATCHED] and x.active_end_time:
             active_time = x.get_active_time()
         else:
             active_time = 0
-        m = [x.memory_type, x.feature_type, x.recall_count, x.status, int((time.time() - x.created_time) / 60),
+        m = [x.memory_type, x.real_type, x.recall_count, x.status, int((time.time() - x.created_time) / 60),
              int(active_time)]
         data.append(m)
     data = np.array(data)

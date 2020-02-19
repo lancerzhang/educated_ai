@@ -13,6 +13,7 @@ from .brain import Brain
 from .favor import Favor
 from .feature import Feature
 from .memory import Memory
+from .memory import RealType
 
 logger = logging.getLogger('Sound')
 logger.setLevel(logging.ERROR)
@@ -59,7 +60,7 @@ class Sound(object):
 
     @util.timeit
     def match_features(self):
-        feature_memories = self.brain.get_matching_feature_memories(constants.SOUND_FEATURE)
+        feature_memories = self.brain.get_matching_real_memories(RealType.SOUND_FEATURE)
         data_map = self.get_data_map()
         for m in feature_memories:
             self.match_feature(data_map, m)
@@ -133,7 +134,7 @@ class Sound(object):
         feature = self.filter_feature(self.get_data_map(), kernel)
         if feature.data is None:
             return
-        self.brain.put_feature_memory(constants.SOUND_FEATURE, kernel, feature.data)
+        self.brain.put_feature_memory(RealType.SOUND_FEATURE, kernel, feature.data)
         self.update_used_kernel(kernel)
 
     @util.timeit

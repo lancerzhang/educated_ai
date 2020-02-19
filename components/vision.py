@@ -15,7 +15,7 @@ from .favor import Favor
 from .feature import Feature
 from .memory import Memory
 from .memory import MemoryType
-from .memory import FeatureType
+from .memory import RealType
 
 logger = logging.getLogger('Vision')
 logger.setLevel(logging.INFO)
@@ -24,6 +24,8 @@ VISION_USED_KERNEL = 'vuk'
 USED_CHANNEL = 'channel'
 USED_DEGREES = 'degrees'
 USED_SPEED = 'speed'
+ACTUAL_SPEED_TIMES = 50
+ACTUAL_DEGREES_TIMES = 10
 
 
 class Vision(object):
@@ -138,7 +140,7 @@ class Vision(object):
 
     @util.timeit
     def match_features(self):
-        feature_memories = self.brain.get_matching_feature_memories(constants.VISION_FEATURE)
+        feature_memories = self.brain.get_matching_real_memories(RealType.VISION_FEATURE)
         img = self.get_region(self.current_block)
         y, u, v = get_channel_imgs(img)
         data_map = None
@@ -163,13 +165,13 @@ class Vision(object):
 
     @util.timeit
     def reproduce_movements(self):
-        feature_memories = self.brain.get_matching_feature_memories(constants.VISION_FOCUS_MOVE)
+        feature_memories = self.brain.get_matching_real_memories(RealType.VISION_FOCUS_MOVE)
         for m in feature_memories:
             self.reproduce_movement(m)
 
     @util.timeit
     def reproduce_zooms(self):
-        feature_memories = self.brain.get_matching_feature_memories(constants.VISION_FOCUS_ZOOM)
+        feature_memories = self.brain.get_matching_real_memories(RealType.VISION_FOCUS_ZOOM)
         for m in feature_memories:
             self.reproduce_zoom(m)
 
@@ -242,7 +244,7 @@ class Vision(object):
         feature = self.search_feature(self.current_block)
         if feature.data is None:
             return
-        self.brain.put_feature_memory(constants.VISION_FEATURE, feature.kernel, feature.data, channel=feature.channel)
+        self.brain.put_feature_memory(RealType.VISION_FEATURE, feature.kernel, feature.data, channel=feature.channel)
         self.update_used_kernel(feature.kernel)
         self.update_used_channel(feature.channel)
 
@@ -460,10 +462,10 @@ class Vision(object):
 
     @util.timeit
     def put_vision_move_memory(self, degrees, speed, duration):
-        m = Memory(MemoryType.FEATURE, feature_type=FeatureType.VISION_FOCUS_MOVE, degrees=degrees, speed=speed,
+        q = Memory(MemoryType.REAL, real_type=RealType.VISION_FOCUS_MOVE, degrees=degrees, speed=speed,
                    duration=duration)
-        self.brain.put_memory(m)
-        self.brain.put_slice_memory([m], FeatureType.VISION_FOCUS_MOVE)
+        m = self.brain.put_memory(q)
+        self.brain.compose_memory([m], MemoryType.SLICE, real_type=RealType.VISION_FOCUS_MOVE)
 
     @util.timeit
     def explore(self):
@@ -533,10 +535,10 @@ class Vision(object):
 
     @util.timeit
     def put_vision_zoom_memory(self, zoom_type, zoom_direction):
-        m = Memory(MemoryType.FEATURE, feature_type=memory.FeatureType.VISION_FOCUS_ZOOM, zoom_direction=zoom_direction,
+        q = Memory(MemoryType.REAL, real_type=memory.RealType.VISION_FOCUS_ZOOM, zoom_direction=zoom_direction,
                    zoom_type=zoom_type)
-        self.brain.put_memory(m)
-        self.brain.put_slice_memory([m], FeatureType.VISION_FOCUS_ZOOM)
+        m = self.brain.put_memory(q)
+        self.brain.compose_memory([m], MemoryType.SLICE, real_type=RealType.VISION_FOCUS_ZOOM)
 
     @util.timeit
     def try_zoom_in(self, zoom_direction):
@@ -601,14 +603,13 @@ class Vision(object):
         degrees = self.calculate_degrees(new_block)
         length = math.hypot(new_block[self.START_Y] - self.current_block[self.START_Y],
                             new_block[self.START_X] - self.current_block[self.START_X])
-        speed = length / duration / constants.ACTUAL_SPEED_TIMES
+        speed = length / duration / ACTUAL_SPEED_TIMES
         self.set_movement_relative(degrees, speed, duration)
 
     @util.timeit
     def set_movement_relative(self, degrees, speed, duration):
         self.put_vision_move_memory(degrees, speed, duration)
         self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.MOVE_DURATION: duration,
-                               constants.PHYSICAL_MEMORY_TYPE: constants.VISION_FOCUS_MOVE,
                                self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
 
     @util.timeit
@@ -634,14 +635,14 @@ class Vision(object):
         radians = math.atan2(new_block[self.START_Y] - self.current_block[self.START_Y],
                              new_block[self.START_X] - self.current_block[self.START_X])
         degrees = math.degrees(radians)
-        return int(round(degrees / float(constants.ACTUAL_DEGREES_TIMES)))
+        return int(round(degrees / float(ACTUAL_DEGREES_TIMES)))
 
     @util.timeit
     def try_move_away(self, elapse, degrees, speed):
         # actual degrees is 10 times
-        actual_degrees = degrees * constants.ACTUAL_DEGREES_TIMES
+        actual_degrees = degrees * ACTUAL_DEGREES_TIMES
         # actual speed is 50 times
-        actual_speed = speed * constants.ACTUAL_SPEED_TIMES
+        actual_speed = speed * ACTUAL_SPEED_TIMES
         new_start_y = self.current_block[self.START_Y] + math.sin(math.radians(actual_degrees)) * elapse * actual_speed
         new_start_x = self.current_block[self.START_X] + math.cos(math.radians(actual_degrees)) * elapse * actual_speed
         new_block = copy.deepcopy(self.current_block)

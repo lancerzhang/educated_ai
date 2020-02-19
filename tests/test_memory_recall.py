@@ -2,7 +2,7 @@ from components.memory import Memory
 from components import constants
 from components import memory
 from components.memory import MemoryType
-from components.memory import FeatureType
+from components.memory import RealType
 import time
 import unittest
 

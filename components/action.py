@@ -3,7 +3,7 @@ from . import util
 from .brain import Brain
 from .memory import Memory
 from .memory import MemoryType
-from .memory import FeatureType
+from .memory import RealType
 import logging
 import random
 from pynput.mouse import Button, Controller
@@ -34,7 +34,7 @@ class Action(object):
 
     @util.timeit
     def reproduce_mouse_clicks(self):
-        physical_memories = self.brain.get_matching_feature_memories(constants.ACTION_MOUSE_CLICK)
+        physical_memories = self.brain.get_matching_real_memories(RealType.ACTION_MOUSE_CLICK)
         for m in physical_memories:
             self.reproduce_mouse_click(m)
 
@@ -46,9 +46,9 @@ class Action(object):
 
     @util.timeit
     def feel_clicks(self, click):
-        m = Memory(MemoryType.FEATURE, feature_type=FeatureType.ACTION_MOUSE_CLICK, click_type=click)
-        self.brain.put_memory(m)
-        self.brain.put_slice_memory([m], FeatureType.ACTION_MOUSE_CLICK)
+        q = Memory(MemoryType.REAL, real_type=RealType.ACTION_MOUSE_CLICK, click_type=click)
+        m = self.brain.put_memory(q)
+        self.brain.compose_memory([m], MemoryType.SLICE, real_type=RealType.ACTION_MOUSE_CLICK)
 
     @util.timeit
     def left_click(self):
