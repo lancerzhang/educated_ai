@@ -233,17 +233,20 @@ class Memory:
 
     @util.timeit
     def match_children(self):
+        count = 0
         for m in self.children:
             # ignore dormant memory as it's forgot
             if m.status is MemoryStatus.DORMANT:
                 continue
-            if (time.time() - m.matched_time) > MEMORY_DURATIONS[self.memory_type]:
-                return
-        self.matched()
+            if (time.time() - m.matched_time) < MEMORY_DURATIONS[self.memory_type]:
+                count += 1
+        if count >= len(self.children):
+            self.matched()
 
     @util.timeit
     # Sleep > Matching
     def activate(self):
+        # logger.debug(f'before_activate_memory:{self.simple_str()}')
         self.status = MemoryStatus.MATCHING
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
@@ -312,7 +315,7 @@ class Memory:
                f'reward:{self.reward},status:{self.status},parent:{parent},children:{children}]'
 
     # @util.timeit
-    def render_tree(self, temp_set, level=0, max_level=30):
+    def render_tree(self, temp_set, level=1, max_level=30):
         if level >= max_level:
             # print('hit max level, return')
             return

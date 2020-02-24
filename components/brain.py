@@ -50,8 +50,12 @@ class Brain:
             if m.status is MemoryStatus.LIVING:
                 self.search_top_parent(m)
         for m in self.temp_set1:
-            # TODO, need to check desire?
-            self.activate_memory(m)
+            if m.status is MemoryStatus.DORMANT:
+                continue
+            if m in self.active_memories:
+                continue
+            if m.get_desire() > 0.9:
+                self.activate_memory(m)
 
     # @util.timeit
     def search_top_parent(self, m: Memory):
@@ -295,7 +299,12 @@ class Brain:
     def load(self):
         try:
             raw_data = np.load(MEMORY_FILE, allow_pickle=True)
-            self.memories = memory.construct(set(raw_data))
+            memories = memory.construct(set(raw_data))
+            # reset status from unexpected exit
+            for m in memories:
+                if m.status is not MemoryStatus.DORMANT:
+                    m.status = MemoryStatus.SLEEP
+            self.memories = memories
             self.reindex()
         except:
             pass
