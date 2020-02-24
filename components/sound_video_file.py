@@ -7,10 +7,10 @@ from . import util
 class VideoFileSound(Sound):
     audio_buffers = None
     buf_seq = 0
-    CHUNK = 2048
 
     @util.timeit
     def __init__(self, brain, favor, video_file):
+        self.CHUNK = 2048
         self.file_path = video_file
         self.frame_data = []
         self.frame_count = 0
@@ -24,10 +24,10 @@ class VideoFileSound(Sound):
         self.buf_seq = 0
 
     @util.timeit
-    def get_frequency_map(self, status_controller):
-        fps = status_controller.video_fps
+    def get_frequency_map(self, config):
+        fps = config.video_fps
         # which frame is in current video
-        frame = status_controller.video_frame
+        frame = config.video_frame
         if frame == 1:
             self.open_video()
         # how long did video play
@@ -50,4 +50,4 @@ class VideoFileSound(Sound):
                     self.frame_count = 0
             except StopIteration:
                 break
-        return super(VideoFileSound, self).get_frequency_map(status_controller)
+        return super(VideoFileSound, self).get_frequency_map(config)

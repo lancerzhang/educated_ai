@@ -11,12 +11,13 @@ from . import constants
 from . import util
 from .brain import Brain
 from .favor import Favor
-from .feature import Feature
+from .featurepack import FeaturePack
 from .memory import Memory
 from .memory import RealType
+from multiprocessing import Pool
 
 logger = logging.getLogger('Sound')
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 
 MAX_FREQUENCY = 8000
 ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
@@ -33,7 +34,46 @@ MAX_DB = 80.0
 SOUND_USED_KERNEL = 'suk'
 
 
+# match the experience sound sense
+# @util.timeit
+def filter_feature(fp: FeaturePack):
+    kernel_arr = util.string_to_feature_matrix(fp.kernel)
+    cov = cv2.filter2D(fp.data, -1, kernel_arr)
+    # down-sampling once use max pool, size is 50% of origin
+    new_feature_pool1 = skimage.measure.block_reduce(cov, (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
+    # down-sampling again use max pool, size is 25% of origin
+    new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1,
+                                                     (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
+    # reduce not obvious feature
+    threshold_feature = np.where(new_feature_pool2 < FEATURE_THRESHOLD, 0, new_feature_pool2)
+    sum_feature = threshold_feature.sum()
+    if sum_feature == 0:
+        return fp  # no any feature found
+    # logger.debug('data map is {0}'.format(np.around(data_map, decimals=2)))
+    # logger.debug('new_feature_pool1 is {0}'.format(new_feature_pool1))
+    # logger.debug('new_feature_pool2 is {0}'.format(new_feature_pool2))
+    # logger.debug('threshold_feature is {0}'.format(threshold_feature))
+    standard_feature = util.standardize_feature(threshold_feature)
+    new_feature = standard_feature.flatten().astype(int)
+    fp.feature = new_feature
+    difference = util.np_array_diff(new_feature, fp.feature)
+    if difference < FEATURE_SIMILARITY_THRESHOLD:
+        fp.similar = True
+    # if fp.feature is None:
+    #     fp.feature = new_feature
+    # else:
+    #     difference = util.np_array_diff(new_feature, fp.feature)
+    #     if difference < FEATURE_SIMILARITY_THRESHOLD:
+    #         fp.similar = True
+    # avg_feature = (fp.feature + new_feature) // 2
+    # fp.feature = avg_feature
+    # else:
+    #     fp.feature = new_feature
+    return fp
+
+
 class Sound(object):
+    CHUNK = 64 # for UT only
     SAMPLE_RATE = 44100
     phases = collections.deque()  # phases queue
 
@@ -46,66 +86,33 @@ class Sound(object):
         self.buffer_count_of_phase = int(math.ceil(DEFAULT_PHASE_DURATION / buffer_duration))
         self.sound_kernels = np.load(SOUND_KERNEL_FILE)
         self.previous_phase = None
+        self.config = None
+        self.data_map = None
+        self.pool = Pool()
 
     @util.timeit
     def process(self, status_controller):
-        start = time.time()
-        self.frequency_map = self.get_frequency_map(status_controller)
-        if self.frequency_map is None:
-            logger.info('no frequency data!')
+        self.config = status_controller
+        if not self.init_data_map():
             return
-
         self.match_features()
         self.search_feature_memory()
 
     @util.timeit
     def match_features(self):
         feature_memories = self.brain.get_matching_real_memories(RealType.SOUND_FEATURE)
-        data_map = self.get_data_map()
-        for m in feature_memories:
-            self.match_feature(data_map, m)
-
-    @util.timeit
-    def match_feature(self, data_map, m: Memory):
-        feature = self.filter_feature(data_map, m.kernel, m.feature)
-        if feature.similar:
-            m.feature = feature.data
-            m.matched()
-            self.update_used_kernel(m.kernel)
-
-    # match the experience sound sense
-    @util.timeit
-    def filter_feature(self, data_map, kernel_str, data=None):
-        feature = Feature()
-        kernel_arr = util.string_to_feature_matrix(kernel_str)
-        cov = cv2.filter2D(data_map, -1, kernel_arr)
-        # down-sampling once use max pool, size is 50% of origin
-        new_feature_pool1 = skimage.measure.block_reduce(cov, (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
-        # down-sampling again use max pool, size is 25% of origin
-        new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1,
-                                                         (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
-        # reduce not obvious feature
-        threshold_feature = np.where(new_feature_pool2 < FEATURE_THRESHOLD, 0, new_feature_pool2)
-        sum_feature = threshold_feature.sum()
-        if sum_feature == 0:
-            return feature  # no any feature found
-        # logger.debug('data map is {0}'.format(np.around(data_map, decimals=2)))
-        # logger.debug('new_feature_pool1 is {0}'.format(new_feature_pool1))
-        # logger.debug('new_feature_pool2 is {0}'.format(new_feature_pool2))
-        # logger.debug('threshold_feature is {0}'.format(threshold_feature))
-        standard_feature = util.standardize_feature(threshold_feature)
-        new_feature = standard_feature.flatten().astype(int)
-        if data is None:
-            feature.data = new_feature
-        else:
-            difference = util.np_array_diff(new_feature, data)
-            if difference < FEATURE_SIMILARITY_THRESHOLD:
-                feature.similar = True
-                avg_feature = (data + new_feature) // 2
-                feature.data = avg_feature
-            else:
-                feature.data = new_feature
-        return feature
+        data_inputs = [FeaturePack(mid=m.mid, kernel=m.kernel, feature=m.feature, data=self.data_map) for m in
+                       feature_memories]
+        for fp in self.pool.imap_unordered(filter_feature, data_inputs):
+            if fp.similar:
+                m = self.brain.memory_indexes.get(fp.mid)
+                m.matched()
+                self.update_used_kernel(fp.kernel)
+        # for m in feature_memories:
+        #     fp = self.filter_feature(FeaturePack(mid=m.mid, kernel=m.kernel, feature=m.feature))
+        #     if fp.similar:
+        #         m.matched()
+        #         self.update_used_kernel(m.kernel)
 
     # get a frequent use kernel or a random kernel by certain possibility
     @util.timeit
@@ -131,14 +138,14 @@ class Sound(object):
     @util.timeit
     def search_feature_memory(self):
         kernel = self.get_kernel()
-        feature = self.filter_feature(self.get_data_map(), kernel)
-        if feature.data is None:
+        feature = filter_feature(FeaturePack(kernel=kernel, data=self.data_map))
+        if feature.feature is None:
             return
-        self.brain.put_feature_memory(RealType.SOUND_FEATURE, kernel, feature.data)
+        self.brain.put_feature_memory(RealType.SOUND_FEATURE, kernel, feature.feature)
         self.update_used_kernel(kernel)
 
     @util.timeit
-    def get_frequency_map(self, status_controller):
+    def get_frequency_map(self, config):
         if len(self.phases) == 0:
             return None
         phase = self.phases.popleft()
@@ -164,8 +171,13 @@ class Sound(object):
         return frequency_map
 
     @util.timeit
-    def get_data_map(self):
+    def init_data_map(self):
+        frequency_map = self.get_frequency_map(self.config)
+        if frequency_map is None:
+            logger.info('no frequency data!')
+            return False
         # map to image color range
-        color_data = self.frequency_map / (MAX_DB / 256)
+        color_data = frequency_map / (MAX_DB / 256)
         data = color_data.astype(np.uint8)
-        return cv2.resize(data, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
+        self.data_map = cv2.resize(data, (FEATURE_INPUT_SIZE, FEATURE_INPUT_SIZE))
+        return True

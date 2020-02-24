@@ -4,18 +4,21 @@ import json
 import time
 import logging
 import sys
-from components import constants
+from components import brain
 from components import dashboard
 from anytree import RenderTree
-from components.memory import Memory
+from components.memory import MemoryStatus
 from components.brain import Brain
 
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-brain = Brain()
 brain.MEMORY_FILE = '../data/memory.npy'
-brain.load()
-memories = brain.memories
+brain1 = Brain()
+brain1.load()
+memories = brain1.memories
+# memories = {x for x in memories if x.status is not MemoryStatus.DORMANT}
+# memories = [x for x in memories if x.memory_type == 0]
+# print(len(memories))
 # for m in memories:
 #     if len(m.parent) == 171:
 #         print(m)
@@ -36,7 +39,7 @@ memories = brain.memories
 # for p in parent:
 #     if p.recall_count>1:
 #         print(p.simple_str())
-    # p.render_tree(set())
+# p.render_tree(set()))
 dashboard.log(memories, 'all_memories')
 # ff = open('features.txt', 'w')
 # fs = set()

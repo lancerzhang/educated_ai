@@ -5,6 +5,7 @@ from components import dashboard
 from components import memory
 from components import util
 from collections import deque
+from multiprocessing import Pool
 import logging
 import numpy as np
 import traceback
@@ -18,9 +19,10 @@ ACTIVE_LONG_MEMORY_LIMIT = 100
 MEMORIES_NUM = 100 * 100 * 10
 MEMORIES_CLEANUP_NUM = 100 * 100 * 11
 
+MEMORY_FILE = 'data/memory.npy'
+
 
 class Brain:
-    MEMORY_FILE = 'data/memory.npy'
 
     def __init__(self):
         self.counter = 0
@@ -36,10 +38,12 @@ class Brain:
         self.work_memories.append(work_feature_memories)
         for i in range(1, memory.MEMORY_TYPES_LENGTH):
             self.work_memories.append(deque(maxlen=memory.COMPOSE_NUMBER))
+        self.pool = Pool()
 
     @util.timeit
     # find top parents
     def associate(self):
+        # logger.info(f'NO, of active memories:{len(self.active_memories)}')
         self.temp_set1.clear()
         self.temp_set2.clear()
         for m in self.active_memories:
@@ -66,6 +70,8 @@ class Brain:
     @util.timeit
     def activate_memory(self, m: Memory):
         if m.status is MemoryStatus.DORMANT:
+            return
+        if m in self.active_memories:
             return
         m.activate()
         self.active_memories.add(m)
@@ -174,6 +180,8 @@ class Brain:
         m = self.find_similar_feature_memories(q)
         if m:
             self.put_memory(m)
+        else:
+            self.put_memory(q)
 
     @util.timeit
     def compose_memory(self, children, memory_type, real_type=-1, reward=0):
@@ -254,7 +262,7 @@ class Brain:
     @util.timeit
     def cleanup_memories(self):
         # TODO, is there performance issue?
-        for m in self.memories:
+        for m in self.memories.copy():
             m.refresh_self(recall=False, is_forget=True)
 
         if len(self.memories) < MEMORIES_CLEANUP_NUM:
@@ -272,7 +280,7 @@ class Brain:
     def save(self):
         try:
             self.cleanup_memories()
-            np.save(self.MEMORY_FILE, list(memory.flatten(self.memories)))
+            np.save(MEMORY_FILE, list(memory.flatten(self.memories)))
         except:
             logging.error(traceback.format_exc())
 
@@ -286,7 +294,7 @@ class Brain:
     @util.timeit
     def load(self):
         try:
-            raw_data = np.load(self.MEMORY_FILE, allow_pickle=True)
+            raw_data = np.load(MEMORY_FILE, allow_pickle=True)
             self.memories = memory.construct(set(raw_data))
             self.reindex()
         except:

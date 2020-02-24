@@ -5,9 +5,10 @@ import numpy as np
 logger = logging.getLogger('Favor')
 logger.setLevel(logging.INFO)
 
+FAVOR_FILE = 'data/favor.npy'
+
 
 class Favor:
-    FAVOR_FILE = 'data/favor.npy'
 
     def __init__(self):
         self.vuk = Rank()
@@ -31,12 +32,12 @@ class Favor:
         self.vuk.items = self.vuk.items[:50]
         self.suk.items = self.suk.items[:50]
         favors = [self.vuk, self.suk, self.speed, self.degrees, self.channel]
-        np.save('data/favor', list(favors))
+        np.save(FAVOR_FILE, list(favors))
 
     @util.timeit
     def load(self):
         try:
-            all = np.load(self.FAVOR_FILE, allow_pickle=True)
+            all = np.load(FAVOR_FILE, allow_pickle=True)
             self.vuk = all[0]
             self.suk = all[1]
             self.speed = all[2]

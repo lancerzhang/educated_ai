@@ -12,7 +12,7 @@ from . import memory
 from . import util
 from .brain import Brain
 from .favor import Favor
-from .feature import Feature
+from .featurepack import FeaturePack
 from .memory import Memory
 from .memory import MemoryType
 from .memory import RealType
@@ -94,7 +94,6 @@ class Vision(object):
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
         # fix error of Mac - Process finished with exit code 132 (interrupted by signal 4: SIGILL)
         if self.is_show is not 'n':
-            print(f'v is_show {self.is_show}')
             cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
 
     @util.timeit
@@ -179,7 +178,7 @@ class Vision(object):
     def match_feature(self, data_map, m: Memory):
         feature = self.filter_feature(data_map, m.kernel, m.feature)
         if feature.similar:
-            m.feature = feature.data
+            m.feature = feature.feature
             logger.debug(f'matched_feature {m.mid}')
             m.matched()
             self.update_used_channel(m.channel)
@@ -188,7 +187,7 @@ class Vision(object):
     # match the experience vision sense
     @util.timeit
     def filter_feature(self, data_map, kernel, data=None):
-        feature = Feature()
+        feature = FeaturePack()
         kernel_arr = util.string_to_feature_matrix(kernel)
         cov = cv2.filter2D(data_map, -1, kernel_arr)
         # down-sampling once use max pool, size is 50% of origin
@@ -206,15 +205,15 @@ class Vision(object):
         standard_feature = util.standardize_feature(threshold_feature)
         new_feature = standard_feature.flatten().astype(int)
         if data is None:
-            feature.data = new_feature
+            feature.feature = new_feature
         else:
-            difference = util.np_array_diff(new_feature, feature)
+            difference = util.np_array_diff(new_feature, data)
             if difference < self.FEATURE_SIMILARITY_THRESHOLD:
                 feature.similar = True
                 avg_feature = (data + new_feature) // 2
-                feature.data = avg_feature
+                feature.feature = avg_feature
             else:
-                feature.data = new_feature
+                feature.feature = new_feature
         return feature
 
     # get a frequent use kernel or a random kernel by certain possibility
@@ -242,9 +241,9 @@ class Vision(object):
     @util.timeit
     def search_feature_memory(self):
         feature = self.search_feature(self.current_block)
-        if feature.data is None:
+        if feature.feature is None:
             return
-        self.brain.put_feature_memory(RealType.VISION_FEATURE, feature.kernel, feature.data, channel=feature.channel)
+        self.brain.put_feature_memory(RealType.VISION_FEATURE, feature.kernel, feature.feature, channel=feature.channel)
         self.update_used_kernel(feature.kernel)
         self.update_used_channel(feature.channel)
 
@@ -608,9 +607,9 @@ class Vision(object):
 
     @util.timeit
     def set_movement_relative(self, degrees, speed, duration):
-        self.put_vision_move_memory(degrees, speed, duration)
         self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed, constants.MOVE_DURATION: duration,
                                self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
+        self.put_vision_move_memory(degrees, int(speed), duration)
 
     @util.timeit
     def restrict_edge_start_x(self, new_start_x):
@@ -730,7 +729,7 @@ class Vision(object):
 
     @util.timeit
     def reproduce_movement(self, m: Memory):
-        print(f'reproduce_movement {m}')
+        # print(f'reproduce_movement {m}')
         degrees = m.degrees
         speed = m.speed
         duration = m.duration

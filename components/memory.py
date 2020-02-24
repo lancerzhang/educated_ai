@@ -242,7 +242,7 @@ class Memory:
         self.matched()
 
     @util.timeit
-    # Dormant > Matching
+    # Sleep > Matching
     def activate(self):
         self.status = MemoryStatus.MATCHING
         # keep it in active memories for matching

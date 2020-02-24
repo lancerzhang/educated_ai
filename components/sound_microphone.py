@@ -10,13 +10,13 @@ logger.setLevel(logging.INFO)
 
 class MicrophoneSound(Sound):
     running = True
-    CHUNK = 1024
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     MAX_PHASES = 5  # max phases storage
 
     @util.timeit
     def __init__(self, brain, favor):
+        self.CHUNK = 1024
         super(MicrophoneSound, self).__init__(brain, favor)
 
     @util.timeit

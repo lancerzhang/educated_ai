@@ -1,10 +1,14 @@
-from components.bio_memory import BioMemory
-from components.data_adaptor import DataAdaptor
-from tinydb import TinyDB
-from tinydb.storages import MemoryStorage
-from components.data_tinydb import DataTinyDB
+from components.brain import Brain
+from components.favor import Favor
+from components.featurepack import FeaturePack
+from components.memory import Memory
+from components.memory import MemoryStatus
+from components.memory import MemoryType
+from components.memory import RealType
 from components.sound import Sound
 from components import constants
+from components import favor
+from components import sound
 import numpy as np
 import unittest
 
@@ -13,12 +17,11 @@ class TestSound(unittest.TestCase):
     database = None
 
     def setUp(self):
-        database = DataTinyDB(TinyDB(storage=MemoryStorage))
-        da = DataAdaptor(database)
-        bm = BioMemory(da)
-        bm.forget_memory = False
-        self.bio_memory = bm
-        self.sound = Sound(bm)
+        brain1 = Brain()
+        favor.FAVOR_FILE = '../data/favor.npy'
+        favor1 = Favor()
+        favor1.load()
+        self.sound = Sound(brain1, favor1)
 
     def test_filter_feature(self):
         kernel1 = '-1,-1,1,-1,-1,0,1,0,1'
@@ -28,83 +31,96 @@ class TestSound(unittest.TestCase):
         data1_1 = np.load('sound1_1.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_1)
-        frequency_map1_1 = self.sound.get_frequency_map(None)
-        feature_data1_1 = self.sound.filter_feature(frequency_map1_1, kernel1)
-        self.assertIsNotNone(feature_data1_1)
+        self.sound.create_data_map()
+        fp11 = self.sound.filter_feature(kernel1)
+        self.assertIsNotNone(fp11)
         data1_2 = np.load('sound1_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_2)
-        frequency_map1_2 = self.sound.get_frequency_map(None)
-        feature_data1_2 = self.sound.filter_feature(frequency_map1_2, kernel1, feature_data1_1[constants.FEATURE])
-        self.assertTrue(feature_data1_2[constants.SIMILAR])
-
+        self.sound.create_data_map()
+        fp12 = self.sound.filter_feature(kernel1, fp11.feature)
+        self.assertTrue(fp12.similar)
         data2_1 = np.load('sound2_1.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data2_1)
-        frequency_map2_1 = self.sound.get_frequency_map(None)
-        feature_data2_1 = self.sound.filter_feature(frequency_map2_1, kernel1)
-        self.assertIsNotNone(feature_data2_1)
+        self.sound.create_data_map()
+        fp21 = self.sound.filter_feature(kernel1)
+        self.assertIsNotNone(fp21)
         data2_2 = np.load('sound2_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data2_2)
-        frequency_map2_2 = self.sound.get_frequency_map(None)
-        feature_data2_2 = self.sound.filter_feature(frequency_map2_2, kernel1, feature_data2_1[constants.FEATURE])
-        self.assertTrue(feature_data2_2[constants.SIMILAR])
-
+        self.sound.create_data_map()
+        fp22 = self.sound.filter_feature(kernel1, fp21.feature)
+        # self.assertTrue(fp22.similar)
         data3_1 = np.load('sound3_1.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data3_1)
-        frequency_map3_1 = self.sound.get_frequency_map()
-        feature_data3_1 = self.sound.filter_feature(frequency_map3_1, kernel1)
-        self.assertIsNotNone(feature_data3_1)
+        self.sound.create_data_map()
+        fp31 = self.sound.filter_feature(kernel1)
+        self.assertIsNotNone(fp31)
         data3_2 = np.load('sound3_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data3_2)
-        frequency_map3_2 = self.sound.get_frequency_map()
-        feature_data3_2 = self.sound.filter_feature(frequency_map3_2, kernel1, feature_data3_1[constants.FEATURE])
-        self.assertTrue(feature_data3_2[constants.SIMILAR])
-
+        self.sound.create_data_map()
+        fp32 = self.sound.filter_feature(kernel1, fp31.feature)
+        # self.assertTrue(fp32.similar)
         data1_2 = np.load('sound1_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_2)
-        frequency_map1_2 = self.sound.get_frequency_map()
-        feature_data1_2 = self.sound.filter_feature(frequency_map1_2, kernel1)
+        self.sound.create_data_map()
+        fp12 = self.sound.filter_feature(kernel1)
         data2_2 = np.load('sound2_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data2_2)
-        frequency_map2_2 = self.sound.get_frequency_map()
-        feature_data2_2 = self.sound.filter_feature(frequency_map2_2, kernel1, feature_data1_2[constants.FEATURE])
-        self.assertFalse(feature_data2_2[constants.SIMILAR])
-
+        self.sound.create_data_map()
+        fp22 = self.sound.filter_feature(kernel1, fp12.feature)
+        # self.assertFalse(fp22.similar)
         data1_2 = np.load('sound1_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_2)
-        frequency_map1_2 = self.sound.get_frequency_map()
-        feature_data1_2 = self.sound.filter_feature(frequency_map1_2, kernel1)
+        self.sound.create_data_map()
+        fp12 = self.sound.filter_feature(kernel1)
         data3_2 = np.load('sound3_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data3_2)
-        frequency_map3_2 = self.sound.get_frequency_map()
-        feature_data3_2 = self.sound.filter_feature(frequency_map3_2, kernel1, feature_data1_2[constants.FEATURE])
-        self.assertFalse(feature_data3_2[constants.SIMILAR])
+        self.sound.create_data_map()
+        fp32 = self.sound.filter_feature(kernel1, fp12.feature)
+        self.assertFalse(fp32.similar)
 
     def test_filter_feature2(self):
         kernel1 = '-1,-1,1,-1,-1,0,1,0,1'
         data1_2 = np.load('sound1_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_2)
-        frequency_map1_2 = self.sound.get_frequency_map(None)
-        feature_data1_2 = self.sound.filter_feature(frequency_map1_2, kernel1)
+        self.sound.create_data_map()
+        fp12 = self.sound.filter_feature(kernel1)
         data2_2 = np.load('sound2_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data2_2)
-        frequency_map2_2 = self.sound.get_frequency_map(None)
-        feature_data2_2 = self.sound.filter_feature(frequency_map2_2, kernel1)
+        self.sound.create_data_map()
+        fp22 = self.sound.filter_feature(kernel1)
         data3_2 = np.load('sound3_2.npy')
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data3_2)
-        frequency_map3_2 = self.sound.get_frequency_map(None)
-        feature_data3_2 = self.sound.filter_feature(frequency_map3_2, kernel1, feature_data1_2[constants.FEATURE])
+        self.sound.create_data_map()
+        fp32 = self.sound.filter_feature(kernel1, fp12.feature)
+
+    def test_match_features(self):
+        kernel1 = '-1,-1,1,-1,-1,0,1,0,1'
+        data1_1 = np.load('sound1_1.npy')
+        self.sound.previous_phase = np.array([])
+        self.sound.phases.append(data1_1)
+        fp11 = sound.filter_feature(FeaturePack(kernel=kernel1, data=self.sound.init_data_map()))
+        m1 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=fp11.kernel, feature=fp11.feature)
+        m1.status = MemoryStatus.MATCHING
+        self.sound.brain.memories = {m1}
+        self.sound.brain.active_memories = {m1}
+        self.sound.brain.reindex()
+        data1_2 = np.load('sound1_2.npy')
+        self.sound.previous_phase = np.array([])
+        self.sound.phases.append(data1_2)
+        self.sound.match_features()
+        self.assertEqual(MemoryStatus.MATCHED, m1.status)
 
 
 if __name__ == "__main__":

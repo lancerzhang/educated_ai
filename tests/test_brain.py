@@ -42,6 +42,19 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(MemoryStatus.MATCHING, memories[8].status)
         self.assertEqual(MemoryStatus.MATCHING, memories[9].status)
 
+    # def test_associate(self):
+    #     brain.MEMORY_FILE = '../data/memory.npy'
+    #     brain1 = Brain()
+    #     brain1.load()
+    #     # print(len(brain1.memories))
+    #     memories = list(brain1.memories)
+    #     brain1.active_memories = set(memories[0:5000])
+    #     time1 = time.time()
+    #     brain1.associate()
+    #     time2 = time.time()
+    #     print(f'{(time2 - time1) * 1000}')
+    #     # print(brain1.counter)
+
     def test_search_top_parent_1(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree()
@@ -288,6 +301,15 @@ class TestBrain(unittest.TestCase):
         brain1.cleanup_memories()
         self.assertEqual(2, len(brain1.memories))
         self.assertEqual(MemoryType.REAL, brain1.memories.pop().memory_type)
+
+    def test_put_feature_memory(self):
+        brain1 = Brain()
+        brain1.put_feature_memory(RealType.SOUND_FEATURE, b'0,-1,-1,1,0,1,1,-1,1',
+                                  np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
+        self.assertEqual(1, len(brain1.memories))
+        brain1.put_feature_memory(RealType.SOUND_FEATURE, b'0,-1,-1,1,0,1,1,-1,1',
+                                  np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
+        self.assertEqual(1, len(brain1.memories))
 
         # for m in memories:
         #     m.last_recall_time = time.time() - 1
