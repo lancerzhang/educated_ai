@@ -35,7 +35,6 @@ SOUND_USED_KERNEL = 'suk'
 
 
 # match the experience sound sense
-# @util.timeit
 def filter_feature(fp: FeaturePack):
     kernel_arr = util.string_to_feature_matrix(fp.kernel)
     cov = cv2.filter2D(fp.data, -1, kernel_arr)
@@ -59,21 +58,11 @@ def filter_feature(fp: FeaturePack):
     difference = util.np_array_diff(new_feature, fp.feature)
     if difference < FEATURE_SIMILARITY_THRESHOLD:
         fp.similar = True
-    # if fp.feature is None:
-    #     fp.feature = new_feature
-    # else:
-    #     difference = util.np_array_diff(new_feature, fp.feature)
-    #     if difference < FEATURE_SIMILARITY_THRESHOLD:
-    #         fp.similar = True
-    # avg_feature = (fp.feature + new_feature) // 2
-    # fp.feature = avg_feature
-    # else:
-    #     fp.feature = new_feature
     return fp
 
 
 class Sound(object):
-    CHUNK = 64 # for UT only
+    CHUNK = 64  # for UT only
     SAMPLE_RATE = 44100
     phases = collections.deque()  # phases queue
 
@@ -115,6 +104,13 @@ class Sound(object):
         #         self.update_used_kernel(m.kernel)
 
     # get a frequent use kernel or a random kernel by certain possibility
+
+    # for UT
+    def filter_feature(self, fp):
+        self.init_data_map()
+        fp.data = self.data_map
+        return filter_feature(fp)
+
     @util.timeit
     def get_kernel(self):
         used_kernel = None
