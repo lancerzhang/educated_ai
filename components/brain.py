@@ -54,7 +54,7 @@ class Brain:
                 continue
             if m in self.active_memories:
                 continue
-            if m.get_desire() > 0.9:
+            if m.get_desire() > 0.16:
                 self.activate_memory(m)
 
     # @util.timeit
@@ -208,7 +208,7 @@ class Brain:
             nm = self.compose_memory(self.get_valid_work_memories(MemoryType.REAL, i), MemoryType.SLICE,
                                      real_type=i)
             if nm:
-                self.work_memories[MemoryType.REAL + 1].append(nm)
+                self.add_matched_memory(nm)
 
         for j in range(MemoryType.REAL + 1, memory.MEMORY_TYPES_LENGTH - 1):
             memory_type = j + 1
@@ -216,7 +216,7 @@ class Brain:
             #     memory_type = j
             nm = self.compose_memory(self.get_valid_work_memories(j, -1), memory_type)
             if nm:
-                self.work_memories[memory_type].append(nm)
+                self.add_matched_memory(nm)
 
     @util.timeit
     def get_valid_work_memories(self, memory_type, real_type):
@@ -271,11 +271,11 @@ class Brain:
 
         if len(self.memories) < MEMORIES_CLEANUP_NUM:
             return
-        new_memories = sorted(list(self.memories), key=lambda x: (x.status, x.recall_count, x.matched_time),
+        new_memories = sorted(list(self.memories.copy()), key=lambda x: (x.status, x.recall_count, x.matched_time),
                               reverse=True)
         trim_memories = new_memories[0:MEMORIES_NUM]
         self.memories = set(trim_memories)
-        for m in self.memories:
+        for m in self.memories.copy():
             m.parent = {x for x in m.parent if x in new_memories}
         self.reindex()
 
@@ -284,7 +284,7 @@ class Brain:
     def save(self):
         try:
             self.cleanup_memories()
-            np.save(MEMORY_FILE, list(memory.flatten(self.memories)))
+            np.save(MEMORY_FILE, list(memory.flatten(self.memories.copy())))
         except:
             logging.error(traceback.format_exc())
 

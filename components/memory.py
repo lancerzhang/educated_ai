@@ -59,7 +59,7 @@ TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 
 @util.timeit
 def flatten(memories):
     new_memories = set()
-    for m in memories.copy():
+    for m in memories:
         nm = copy.copy(m)
         nm.parent = set([x.mid for x in m.parent])
         nm.children = [x.mid for x in m.children]
