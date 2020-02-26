@@ -16,6 +16,7 @@ from .featurepack import FeaturePack
 from .memory import Memory
 from .memory import MemoryType
 from .memory import RealType
+from multiprocessing import Pool
 
 logger = logging.getLogger('Vision')
 logger.setLevel(logging.INFO)
@@ -26,6 +27,36 @@ USED_DEGREES = 'degrees'
 USED_SPEED = 'speed'
 ACTUAL_SPEED_TIMES = 50
 ACTUAL_DEGREES_TIMES = 10
+
+FEATURE_THRESHOLD = 20
+FEATURE_SIMILARITY_THRESHOLD = 0.2
+POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
+
+
+# match the experience vision sense
+@util.timeit
+def filter_feature(fp: FeaturePack):
+    kernel_arr = util.string_to_feature_matrix(fp.kernel)
+    cov = cv2.filter2D(fp.data.get(fp.channel), -1, kernel_arr)
+    # down-sampling once use max pool, size is 50% of origin
+    new_feature_pool1 = skimage.measure.block_reduce(cov, (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
+    # down-sampling again use max pool, size is 25% of origin
+    new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1,
+                                                     (POOL_BLOCK_SIZE, POOL_BLOCK_SIZE), np.max)
+    # reduce not obvious feature
+    threshold_feature = np.where(new_feature_pool2 < FEATURE_THRESHOLD, 0, new_feature_pool2)
+    sum_feature = threshold_feature.sum()
+    if sum_feature == 0:
+        return fp  # no any feature found
+    if util.np_array_all_same(threshold_feature):
+        return fp  # useless feature data
+    standard_feature = util.standardize_feature(threshold_feature)
+    new_feature = standard_feature.flatten().astype(int)
+    fp.feature = new_feature
+    difference = util.np_array_diff(new_feature, fp.feature)
+    if difference < FEATURE_SIMILARITY_THRESHOLD:
+        fp.similar = True
+    return fp
 
 
 class Vision(object):
@@ -40,9 +71,6 @@ class Vision(object):
     HEIGHT = 'height'
     HISTOGRAM_BINS = 27
     FEATURE_INPUT_SIZE = 12
-    FEATURE_THRESHOLD = 20
-    FEATURE_SIMILARITY_THRESHOLD = 0.2
-    POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
     REGION_VARIANCE_THRESHOLD = 0.05
     MAX_DEGREES = 36  # actual is 10 times
     MAX_SPEED = 40  # actual is 50 times, pixel
@@ -95,6 +123,7 @@ class Vision(object):
         # fix error of Mac - Process finished with exit code 132 (interrupted by signal 4: SIGILL)
         if self.is_show is not 'n':
             cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
+        self.pool = Pool()
 
     @util.timeit
     def process(self, status, key):
@@ -142,25 +171,18 @@ class Vision(object):
         feature_memories = self.brain.get_matching_real_memories(RealType.VISION_FEATURE)
         img = self.get_region(self.current_block)
         y, u, v = get_channel_imgs(img)
-        data_map = None
-        data_map_y = None
-        data_map_u = None
-        data_map_v = None
-        for m in feature_memories:
-            channel = m.channel
-            if channel == 'y':
-                if data_map_y is None:
-                    data_map_y = self.get_data_map(y)
-                data_map = data_map_y
-            elif channel == 'u':
-                if data_map_u is None:
-                    data_map_u = self.get_data_map(u)
-                data_map = data_map_u
-            elif channel == 'v':
-                if data_map_v is None:
-                    data_map_v = self.get_data_map(v)
-                data_map = data_map_v
-            self.match_feature(data_map, m)
+        data_map = {}
+        data_map.update({'y': self.get_data_map(y)})
+        data_map.update({'u': self.get_data_map(u)})
+        data_map.update({'v': self.get_data_map(v)})
+        data_inputs = [FeaturePack(mid=m.mid, kernel=m.kernel, channel=m.channel, feature=m.feature, data=data_map) for
+                       m in feature_memories]
+        for fp in self.pool.imap_unordered(filter_feature, data_inputs):
+            if fp.similar:
+                m = self.brain.memory_indexes.get(fp.mid)
+                m.matched()
+                self.update_used_kernel(fp.kernel)
+                self.update_used_channel(fp.channel)
 
     @util.timeit
     def reproduce_movements(self):
@@ -173,48 +195,6 @@ class Vision(object):
         feature_memories = self.brain.get_matching_real_memories(RealType.VISION_FOCUS_ZOOM)
         for m in feature_memories:
             self.reproduce_zoom(m)
-
-    @util.timeit
-    def match_feature(self, data_map, m: Memory):
-        feature = self.filter_feature(data_map, m.kernel, m.feature)
-        if feature.similar:
-            m.feature = feature.feature
-            logger.debug(f'matched_feature {m.mid}')
-            m.matched()
-            self.update_used_channel(m.channel)
-            self.update_used_kernel(m.kernel)
-
-    # match the experience vision sense
-    @util.timeit
-    def filter_feature(self, data_map, kernel, data=None):
-        feature = FeaturePack()
-        kernel_arr = util.string_to_feature_matrix(kernel)
-        cov = cv2.filter2D(data_map, -1, kernel_arr)
-        # down-sampling once use max pool, size is 50% of origin
-        new_feature_pool1 = skimage.measure.block_reduce(cov, (self.POOL_BLOCK_SIZE, self.POOL_BLOCK_SIZE), np.max)
-        # down-sampling again use max pool, size is 25% of origin
-        new_feature_pool2 = skimage.measure.block_reduce(new_feature_pool1,
-                                                         (self.POOL_BLOCK_SIZE, self.POOL_BLOCK_SIZE), np.max)
-        # reduce not obvious feature
-        threshold_feature = np.where(new_feature_pool2 < self.FEATURE_THRESHOLD, 0, new_feature_pool2)
-        sum_feature = threshold_feature.sum()
-        if sum_feature == 0:
-            return feature  # no any feature found
-        if util.np_array_all_same(threshold_feature):
-            return feature  # useless feature data
-        standard_feature = util.standardize_feature(threshold_feature)
-        new_feature = standard_feature.flatten().astype(int)
-        if data is None:
-            feature.feature = new_feature
-        else:
-            difference = util.np_array_diff(new_feature, data)
-            if difference < self.FEATURE_SIMILARITY_THRESHOLD:
-                feature.similar = True
-                avg_feature = (data + new_feature) // 2
-                feature.feature = avg_feature
-            else:
-                feature.feature = new_feature
-        return feature
 
     # get a frequent use kernel or a random kernel by certain possibility
     @util.timeit
@@ -413,8 +393,8 @@ class Vision(object):
         img = self.get_region(block)
         kernel = self.get_kernel()
         channel_img = get_channel_img(img, channel)
-        data_map = self.get_data_map(channel_img)
-        feature = self.filter_feature(data_map, kernel)
+        data_map = {channel: self.get_data_map(channel_img)}
+        feature = filter_feature(FeaturePack(kernel=kernel, channel=channel, data=data_map))
         feature.kernel = kernel
         feature.channel = channel
         return feature
