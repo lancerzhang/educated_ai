@@ -55,9 +55,10 @@ def filter_feature(fp: FeaturePack):
     standard_feature = util.standardize_feature(threshold_feature)
     new_feature = standard_feature.flatten().astype(int)
     fp.feature = new_feature
-    difference = util.np_array_diff(new_feature, fp.feature)
-    if difference < FEATURE_SIMILARITY_THRESHOLD:
-        fp.similar = True
+    if fp.contrast is not None:
+        difference = util.np_array_diff(new_feature, fp.contrast)
+        if difference < FEATURE_SIMILARITY_THRESHOLD:
+            fp.similar = True
     return fp
 
 
@@ -90,7 +91,7 @@ class Sound(object):
     @util.timeit
     def match_features(self):
         feature_memories = self.brain.get_matching_real_memories(RealType.SOUND_FEATURE)
-        data_inputs = [FeaturePack(mid=m.mid, kernel=m.kernel, feature=m.feature, data=self.data_map) for m in
+        data_inputs = [FeaturePack(mid=m.mid, kernel=m.kernel, contrast=m.feature, data=self.data_map) for m in
                        feature_memories]
         for fp in self.pool.imap_unordered(filter_feature, data_inputs):
             if fp.similar:

@@ -53,22 +53,33 @@ def filter_feature(fp: FeaturePack):
     standard_feature = util.standardize_feature(threshold_feature)
     new_feature = standard_feature.flatten().astype(int)
     fp.feature = new_feature
-    difference = util.np_array_diff(new_feature, fp.feature)
-    if difference < FEATURE_SIMILARITY_THRESHOLD:
-        fp.similar = True
+    if fp.contrast is not None:
+        difference = util.np_array_diff(new_feature, fp.contrast)
+        if difference < FEATURE_SIMILARITY_THRESHOLD:
+            fp.similar = True
     return fp
+
+
+class Block(object):
+    def __init__(self, x, y, w=0, h=0, ri=0, v=0):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.ri = ri
+        self.v = v
 
 
 class Vision(object):
     FRAME_WIDTH = 0
     FRAME_HEIGHT = 0
     ROI_ARR = [32, 64, 128, 256]
-    roi_index = 2
-    ROI_INDEX_NAME = 'ROI_INDEX'
-    START_X = 'sx'
-    START_Y = 'sy'
-    WIDTH = 'width'
-    HEIGHT = 'height'
+    INIT_ROI_INDEX = 2
+    # ROI_INDEX_NAME = 'ROI_INDEX'
+    # START_X = 'sx'
+    # START_Y = 'sy'
+    # WIDTH = 'width'
+    # HEIGHT = 'height'
     HISTOGRAM_BINS = 27
     FEATURE_INPUT_SIZE = 12
     REGION_VARIANCE_THRESHOLD = 0.05
@@ -83,6 +94,7 @@ class Vision(object):
     last_focus_state = ''
     last_focus_state_time = 0
 
+    current_block = None
     STATUS = 'sts'
     IN_PROGRESS = 'pgs'
     COMPLETED = 'cmp'
@@ -113,22 +125,25 @@ class Vision(object):
         self.brain = brain
         self.favor = favor
         self.mouse = Controller()
-        center_x = self.FRAME_WIDTH // 2
-        center_y = self.FRAME_HEIGHT // 2
-        width = self.ROI_ARR[self.roi_index]
-        half_width = width // 2
-        self.current_block = {self.START_X: center_x - half_width, self.START_Y: center_y - half_width,
-                              self.WIDTH: width, self.HEIGHT: width, self.ROI_INDEX_NAME: self.roi_index}
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
+        self.init_current_block()
         # fix error of Mac - Process finished with exit code 132 (interrupted by signal 4: SIGILL)
         if self.is_show is not 'n':
             cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
         self.pool = Pool()
 
     @util.timeit
+    def init_current_block(self):
+        center_x = self.FRAME_WIDTH // 2
+        center_y = self.FRAME_HEIGHT // 2
+        width = self.ROI_ARR[self.INIT_ROI_INDEX]
+        half_width = width // 2
+        self.current_block = Block(center_x - half_width, center_y - half_width, width, width, self.INIT_ROI_INDEX)
+
+    @util.timeit
     def process(self, status, key):
-        old_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] // 2
-        old_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] // 2
+        old_focus_x = self.current_block.x + self.current_block.w // 2
+        old_focus_y = self.current_block.y + self.current_block.h // 2
         if self.current_action[self.STATUS] == self.IN_PROGRESS:
             self.calculate_move_action(self.current_action)
 
@@ -158,8 +173,8 @@ class Vision(object):
 
         self.previous_full_image = this_full_image
 
-        new_focus_x = self.current_block[self.START_X] + self.current_block[self.WIDTH] // 2
-        new_focus_y = self.current_block[self.START_Y] + self.current_block[self.HEIGHT] // 2
+        new_focus_x = self.current_block.x + self.current_block.w // 2
+        new_focus_y = self.current_block.y + self.current_block.h // 2
         if new_focus_x == old_focus_x and new_focus_y == old_focus_y:
             focus = None
         else:
@@ -175,7 +190,7 @@ class Vision(object):
         data_map.update({'y': self.get_data_map(y)})
         data_map.update({'u': self.get_data_map(u)})
         data_map.update({'v': self.get_data_map(v)})
-        data_inputs = [FeaturePack(mid=m.mid, kernel=m.kernel, channel=m.channel, feature=m.feature, data=data_map) for
+        data_inputs = [FeaturePack(mid=m.mid, kernel=m.kernel, channel=m.channel, contrast=m.feature, data=data_map) for
                        m in feature_memories]
         for fp in self.pool.imap_unordered(filter_feature, data_inputs):
             if fp.similar:
@@ -235,10 +250,10 @@ class Vision(object):
     def aware(self, image):
         duration = self.get_duration()
         block = self.find_most_variable_block_division(image, 0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT,
-                                                       self.current_block[self.WIDTH], self.current_block[self.HEIGHT])
+                                                       self.current_block.w, self.current_block.h)
         if block is None:
             return None
-        if block['v'] < self.REGION_VARIANCE_THRESHOLD:
+        if block.v < self.REGION_VARIANCE_THRESHOLD:
             return None
         # move focus to variable region
         self.set_movement_absolute(block, duration)
@@ -246,15 +261,14 @@ class Vision(object):
 
     @util.timeit
     def find_most_variable_block(self, this_full_image):
-        new_block = {}
         if self.previous_full_image is None:
             return None
         else:
             # logger.debug('compare channel img {0}'.format((self.previous_full_image == this_full_image).all()))
-            blocks_x = self.FRAME_WIDTH // self.current_block[self.WIDTH]
-            blocks_y = self.FRAME_HEIGHT // self.current_block[self.HEIGHT]
-            block_width = self.current_block[self.WIDTH]
-            block_height = self.current_block[self.HEIGHT]
+            blocks_x = self.FRAME_WIDTH // self.current_block.w
+            blocks_y = self.FRAME_HEIGHT // self.current_block.h
+            block_width = self.current_block.w
+            block_height = self.current_block.h
             # this_cells_histogram = self.calculate_cells_histogram(this_full_image)
             # self.this_cells_histogram = this_cells_histogram  # save a copy
             # previous_block_histogram = self.sum_blocks_histogram(self.previous_cells_histogram)
@@ -276,19 +290,17 @@ class Vision(object):
             # np.save('pimg.npy', self.previous_full_image)
             # np.save('timg.npy', this_full_image)
             new_index_x, new_index_y = util.find_2d_index(max_index, blocks_x)
-            new_start_x = new_index_x * self.current_block[self.WIDTH]
-            new_start_y = new_index_y * self.current_block[self.HEIGHT]
-            new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
-            new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
-            new_block.update({'v': max_var})
+            new_start_x = new_index_x * self.current_block.w
+            new_start_y = new_index_y * self.current_block.h
+            new_block_x = self.restrict_edge_start_x(new_start_x)
+            new_block_y = self.restrict_edge_start_y(new_start_y)
+            new_block = Block(new_block_x, new_block_y, v=max_var)
         return new_block
 
     # reduce number of histogram call,it's time consuming
     @util.timeit
     def find_most_variable_block_division(self, this_full_image, start_x, start_y, width, height, focus_width,
                                           focus_height):
-        # start = time.time()
-        new_block = {}
         if self.previous_full_image is None:
             self.previous_histogram1 = self.calculate_blocks_histogram(this_full_image, 2, 2, width // 2, height // 2)
             return None
@@ -317,9 +329,7 @@ class Vision(object):
         new_start_y = start_y + new_index_y * block_height
         valid_start_x = self.restrict_edge_start_x(new_start_x)
         valid_start_y = self.restrict_edge_start_y(new_start_y)
-        new_block[self.START_X] = valid_start_x
-        new_block[self.START_Y] = valid_start_y
-        new_block.update({'v': max_var})
+        new_block = Block(valid_start_x, valid_start_y, v=max_var)
         # print 'find_most_variable_block_division used time:{0}'.format(time.time() - start)
         if width > focus_width:
             return self.find_most_variable_block_division(this_full_image, valid_start_x, valid_start_y, width // 2,
@@ -413,13 +423,13 @@ class Vision(object):
     def try_move_aside(self, move_direction):
         new_block = copy.deepcopy(self.current_block)
         if move_direction is self.MOVE_UP:
-            new_block[self.START_Y] = new_block[self.START_Y] - self.current_block[self.HEIGHT]
+            new_block.y = new_block.y - self.current_block.h
         elif move_direction is self.MOVE_DOWN:
-            new_block[self.START_Y] = new_block[self.START_Y] + self.current_block[self.HEIGHT]
+            new_block.y = new_block.y + self.current_block.h
         elif move_direction is self.MOVE_LEFT:
-            new_block[self.START_X] = new_block[self.START_X] - self.current_block[self.WIDTH]
+            new_block.x = new_block.x - self.current_block.w
         elif move_direction is self.MOVE_RIGHT:
-            new_block[self.START_X] = new_block[self.START_X] + self.current_block[self.WIDTH]
+            new_block.x = new_block.x + self.current_block.w
         if not self.verify_block(new_block):
             return None
         return new_block
@@ -521,58 +531,58 @@ class Vision(object):
 
     @util.timeit
     def try_zoom_in(self, zoom_direction):
-        temp_index = self.current_block[self.ROI_INDEX_NAME] - 1
+        temp_index = self.current_block.ri - 1
         if temp_index < 0:
             return None
         new_block = copy.deepcopy(self.current_block)
-        new_block[self.ROI_INDEX_NAME] = temp_index
-        new_block[self.WIDTH] = self.ROI_ARR[temp_index]
-        new_block[self.HEIGHT] = self.ROI_ARR[temp_index]
+        new_block.ri = temp_index
+        new_block.w = self.ROI_ARR[temp_index]
+        new_block.h = self.ROI_ARR[temp_index]
         if zoom_direction is self.ZOOM_RIGHT_TOP:
-            new_block[self.START_X] = new_block[self.START_X] + new_block[self.WIDTH]
+            new_block.x = new_block.x + new_block.w
         elif zoom_direction is self.ZOOM_LEFT_BOTTOM:
-            new_block[self.START_Y] = new_block[self.START_Y] + new_block[self.HEIGHT]
+            new_block.y = new_block.y + new_block.h
         elif zoom_direction is self.ZOOM_RIGHT_BOTTOM:
-            new_block[self.START_X] = new_block[self.START_X] + new_block[self.WIDTH]
-            new_block[self.START_Y] = new_block[self.START_Y] + new_block[self.HEIGHT]
+            new_block.x = new_block.x + new_block.w
+            new_block.y = new_block.y + new_block.h
         return new_block
 
     @util.timeit
     def try_zoom_out(self, zoom_direction):
-        temp_index = self.current_block[self.ROI_INDEX_NAME] + 1
+        temp_index = self.current_block.ri + 1
         if temp_index > (len(self.ROI_ARR) - 1):
             return None
         new_block = copy.deepcopy(self.current_block)
-        new_block[self.ROI_INDEX_NAME] = temp_index
-        new_block[self.WIDTH] = self.ROI_ARR[temp_index]
-        new_block[self.HEIGHT] = self.ROI_ARR[temp_index]
+        new_block.ri = temp_index
+        new_block.w = self.ROI_ARR[temp_index]
+        new_block.h = self.ROI_ARR[temp_index]
         if zoom_direction is self.ZOOM_LEFT_TOP:
-            new_block[self.START_X] = new_block[self.START_X] - self.current_block[self.WIDTH]
-            new_block[self.START_Y] = new_block[self.START_Y] - self.current_block[self.HEIGHT]
+            new_block.x = new_block.x - self.current_block.w
+            new_block.y = new_block.y - self.current_block.h
         elif zoom_direction is self.ZOOM_RIGHT_TOP:
-            new_block[self.START_Y] = new_block[self.START_Y] - self.current_block[self.HEIGHT]
+            new_block.y = new_block.y - self.current_block.h
         elif zoom_direction is self.ZOOM_LEFT_BOTTOM:
-            new_block[self.START_X] = new_block[self.START_X] - self.current_block[self.WIDTH]
+            new_block.x = new_block.x - self.current_block.w
         if not self.verify_block(new_block):
             return None
         return new_block
 
     @util.timeit
     def verify_block(self, block):
-        if block[self.START_X] < 0:
+        if block.x < 0:
             return False
-        if block[self.START_Y] < 0:
+        if block.y < 0:
             return False
-        if block[self.START_X] + block[self.WIDTH] > self.FRAME_WIDTH:
+        if block.x + block.w > self.FRAME_WIDTH:
             return False
-        if block[self.START_Y] + block[self.HEIGHT] > self.FRAME_HEIGHT:
+        if block.y + block.h > self.FRAME_HEIGHT:
             return False
         return True
 
     @util.timeit
     def get_region(self, block):
-        roi_image = self.grab(block[self.START_Y], block[self.START_X],
-                              block[self.WIDTH], block[self.HEIGHT])
+        roi_image = self.grab(block.y, block.x,
+                              block.w, block.h)
         cv_img = cv2.cvtColor(np.array(roi_image), cv2.COLOR_RGB2BGR)
         img = cv2.resize(cv_img, (self.FEATURE_INPUT_SIZE, self.FEATURE_INPUT_SIZE))
         return img
@@ -580,8 +590,8 @@ class Vision(object):
     @util.timeit
     def set_movement_absolute(self, new_block, duration):
         degrees = self.calculate_degrees(new_block)
-        length = math.hypot(new_block[self.START_Y] - self.current_block[self.START_Y],
-                            new_block[self.START_X] - self.current_block[self.START_X])
+        length = math.hypot(new_block.y - self.current_block.y,
+                            new_block.x - self.current_block.x)
         speed = length / duration / ACTUAL_SPEED_TIMES
         self.set_movement_relative(degrees, speed, duration)
 
@@ -596,8 +606,8 @@ class Vision(object):
         actual_start_x = new_start_x
         if new_start_x < 0:
             actual_start_x = 0
-        if new_start_x + self.current_block[self.WIDTH] > self.FRAME_WIDTH:
-            actual_start_x = self.FRAME_WIDTH - self.current_block[self.WIDTH]
+        if new_start_x + self.current_block.w > self.FRAME_WIDTH:
+            actual_start_x = self.FRAME_WIDTH - self.current_block.w
         return int(round(actual_start_x))
 
     @util.timeit
@@ -605,14 +615,14 @@ class Vision(object):
         actual_start_y = new_start_y
         if new_start_y < 0:
             actual_start_y = 0
-        if new_start_y + self.current_block[self.HEIGHT] > self.FRAME_HEIGHT:
-            actual_start_y = self.FRAME_HEIGHT - self.current_block[self.HEIGHT]
+        if new_start_y + self.current_block.h > self.FRAME_HEIGHT:
+            actual_start_y = self.FRAME_HEIGHT - self.current_block.h
         return int(round(actual_start_y))
 
     @util.timeit
     def calculate_degrees(self, new_block):
-        radians = math.atan2(new_block[self.START_Y] - self.current_block[self.START_Y],
-                             new_block[self.START_X] - self.current_block[self.START_X])
+        radians = math.atan2(new_block.y - self.current_block.y,
+                             new_block.x - self.current_block.x)
         degrees = math.degrees(radians)
         return int(round(degrees / float(ACTUAL_DEGREES_TIMES)))
 
@@ -622,11 +632,11 @@ class Vision(object):
         actual_degrees = degrees * ACTUAL_DEGREES_TIMES
         # actual speed is 50 times
         actual_speed = speed * ACTUAL_SPEED_TIMES
-        new_start_y = self.current_block[self.START_Y] + math.sin(math.radians(actual_degrees)) * elapse * actual_speed
-        new_start_x = self.current_block[self.START_X] + math.cos(math.radians(actual_degrees)) * elapse * actual_speed
+        new_start_y = self.current_block.y + math.sin(math.radians(actual_degrees)) * elapse * actual_speed
+        new_start_x = self.current_block.x + math.cos(math.radians(actual_degrees)) * elapse * actual_speed
         new_block = copy.deepcopy(self.current_block)
-        new_block[self.START_X] = int(round(new_start_x))
-        new_block[self.START_Y] = int(round(new_start_y))
+        new_block.x = int(round(new_start_x))
+        new_block.y = int(round(new_start_y))
         if not self.verify_block(new_block):
             return None
         return new_block
@@ -674,9 +684,9 @@ class Vision(object):
     @util.timeit
     def sum_blocks_histogram(self, cells_histogram):
         blocks_histogram = []
-        times = self.current_block[self.WIDTH] // self.ROI_ARR[0]
-        blocks_x = self.FRAME_WIDTH // self.current_block[self.WIDTH]
-        blocks_y = self.FRAME_HEIGHT // self.current_block[self.HEIGHT]
+        times = self.current_block.w // self.ROI_ARR[0]
+        blocks_x = self.FRAME_WIDTH // self.current_block.w
+        blocks_y = self.FRAME_HEIGHT // self.current_block.h
         for j in range(0, blocks_y):
             for i in range(0, blocks_x):
                 hist = None
@@ -692,7 +702,7 @@ class Vision(object):
         return blocks_histogram
 
     @util.timeit
-    def calculate_blocks_histogram(self, full_image, blocks_x, blocks_y, block_width, block_height):
+    def calculate_blocks_histogram(self, full_image, blocks_x: int, blocks_y: int, block_width: int, block_height: int):
         blocks_histogram = []
         # b, g, r = cv2.split(full_image)
         gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
@@ -746,13 +756,13 @@ class Vision(object):
 
     @util.timeit
     def move_focus_to_mouse(self):
-        new_block = {}
         mouse_x = int(self.mouse.position[0])
         mouse_y = int(self.mouse.position[1])
-        new_start_x = mouse_x - self.current_block[self.WIDTH] // 2
-        new_start_y = mouse_y - self.current_block[self.HEIGHT] // 2
-        new_block[self.START_X] = self.restrict_edge_start_x(new_start_x)
-        new_block[self.START_Y] = self.restrict_edge_start_y(new_start_y)
+        new_start_x = mouse_x - self.current_block.w // 2
+        new_start_y = mouse_y - self.current_block.h // 2
+        new_block_x = self.restrict_edge_start_x(new_start_x)
+        new_block_y = self.restrict_edge_start_y(new_start_y)
+        new_block = Block(new_block_x, new_block_y)
         self.set_movement_absolute(new_block, 0.5)
 
     @util.timeit
@@ -773,7 +783,7 @@ class Vision(object):
 
     @util.timeit
     def get_focus_state(self, block):
-        list1 = [block[self.START_X], block[self.START_Y], block[self.WIDTH], block[self.HEIGHT]]
+        list1 = [block.x, block.y, block.w, block.h]
         return util.list_to_str(list1)
 
 
