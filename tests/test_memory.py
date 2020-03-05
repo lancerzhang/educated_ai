@@ -75,14 +75,6 @@ class TestMemory(unittest.TestCase):
         memory1.matched_time = time.time() - 401
         self.assertEqual(1, memory1.get_desire())
 
-    def test_match(self):
-        memories = build_a_tree(MemoryStatus.MATCHING)
-        self.assertFalse(memories[2].match_children())
-        for i in range(0, 2):
-            memories[i].status = MemoryStatus.MATCHED
-        memories[2].match_children()
-        self.assertTrue(memories[2].status is MemoryStatus.MATCHED)
-
     def test_flatten(self):
         memories = build_a_tree()
         new_memories = memory.flatten(set(memories))
@@ -184,9 +176,9 @@ class TestMemory(unittest.TestCase):
     def test_match_children_exception(self):
         memories = build_a_tree(MemoryStatus.MATCHING)
         memories[0].matched_time = time.time() - memory.MEMORY_DURATIONS[memories[0].memory_type] + 0.1
-        memories[1].matched_time = time.time() - memory.MEMORY_DURATIONS[memories[1].memory_type] - 0.1
+        memories[1].matched_time = time.time() - memory.MEMORY_DURATIONS[memories[1].memory_type] - 2
         memories[2].match_children()
-        self.assertEqual(MemoryStatus.MATCHING, memories[2].status)
+        self.assertEqual(MemoryStatus.MATCHED, memories[2].status)
         memories[1].matched_time = time.time() - memory.MEMORY_DURATIONS[memories[1].memory_type] + 0.1
         memories[2].match_children()
         self.assertEqual(MemoryStatus.MATCHED, memories[2].status)

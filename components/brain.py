@@ -12,7 +12,7 @@ import traceback
 import time
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 ACTIVE_LONG_MEMORY_LIMIT = 100
@@ -108,11 +108,12 @@ class Brain:
 
     @util.timeit
     def match_memories(self):
+        logger.debug(f'match_memories start')
         self.temp_set1.clear()
         for i in range(0, memory.MEMORY_TYPES_LENGTH):
-            for m in {x for x in self.active_memories if x.memory_type == i}:
-                if m.status is MemoryStatus.LIVING:
-                    continue
+            for m in {x for x in self.active_memories if
+                      x.memory_type == i and x.status in [MemoryStatus.MATCHING, MemoryStatus.MATCHED]}:
+                logger.debug(f'{m.mid},type:{m.memory_type},status:{m.status}')
                 m.match_children()
                 # self.counter += 1
                 if m.status is MemoryStatus.MATCHED:
@@ -159,13 +160,15 @@ class Brain:
 
     @util.timeit
     def put_memory(self, m: Memory):
+        logger.debug(f'put_memory:{m.mid}')
         em = self.memory_indexes.get(m.mid)
         if em:
             m = em
+            m.matched(recall=True)
         else:
             self.memories.add(m)
             m.create_index(self.memory_indexes)
-        m.matched()
+            m.matched(recall=False)
         self.post_matched_memory(m)
         return m
 

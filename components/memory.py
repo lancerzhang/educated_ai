@@ -2,12 +2,13 @@ from components import util
 import copy
 import hashlib
 import logging
+import math
 import numpy as np
 import random
 import time
 
 logger = logging.getLogger('Memory')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class MemoryType:
@@ -233,6 +234,9 @@ class Memory:
 
     @util.timeit
     def match_children(self):
+        if self.status is not MemoryStatus.MATCHING:
+            return
+        logger.debug(f'match_children:{self.simple_str()}')
         count = 0
         for m in self.children:
             # ignore dormant memory as it's forgot
@@ -240,28 +244,33 @@ class Memory:
                 continue
             if (time.time() - m.matched_time) < MEMORY_DURATIONS[self.memory_type]:
                 count += 1
-        if count >= len(self.children):
+        if count >= math.ceil(len(self.children) / 2):
+            logger.debug(f'matched_children:{self.simple_str()}')
+            # self.render_tree(set())
             self.matched()
 
     @util.timeit
     # Sleep > Matching
     def activate(self):
-        # logger.debug(f'before_activate_memory:{self.simple_str()}')
+        logger.debug(f'activate_memory:{self.simple_str()}')
         self.status = MemoryStatus.MATCHING
         # keep it in active memories for matching
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
 
     @util.timeit
     # call this right after the memory is matched. Matching > Matched
-    def matched(self):
+    def matched(self, recall=True):
+        logger.debug(f'matched_memory:{self.simple_str()}')
         # normally change memory status from Matching to Matched
         # but there also maybe form dormant to Matched
         if self.status is MemoryStatus.DORMANT:
             logger.debug(f'activated dormant memory:{self.simple_str()}')
         self.status = MemoryStatus.MATCHED
+        self.matched_time = time.time()
         # extend active end time when it's matched, keeping it in active memories for composing
         self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
-        self.recall()
+        if recall:
+            self.recall()
 
     # call this after the memory is confirmed matched by brain. Matched > Living
     def post_matched(self):
@@ -312,7 +321,9 @@ class Memory:
         parent = {x.mid for x in self.parent}
         children = [x.mid for x in self.children]
         return f'[id:{self.mid},type:{self.memory_type},feature:{self.real_type},recall:{self.recall_count},' \
-               f'reward:{self.reward},status:{self.status},parent:{parent},children:{children}]'
+               f'reward:{self.reward},status:{self.status},matched_time:{time.ctime(self.matched_time)}' \
+               f',created_time:{time.ctime(self.created_time)}' \
+               f',parent:{parent},children:{children}]'
 
     # @util.timeit
     def render_tree(self, temp_set, level=1, max_level=30):
@@ -322,16 +333,16 @@ class Memory:
         level_line = ''
         for i in range(0, level):
             level_line = '---{0}'.format(level_line)
-        if self.status is MemoryStatus.DORMANT:
-            print('dead')
-        else:
-            if self.memory_type < 4:
-                if self.mid not in temp_set:
-                    # leaf = f'L{level}:{level_line} id:{self.mid},type:{self.memory_type},count:{self.recall_count}'
-                    leaf = f'T{self.memory_type}:{level_line} {self.simple_str()}'
-                    print(leaf)
-                    logger.debug(leaf)
-                    temp_set.add(self.mid)
-            sub_level = level + 1
-            for child in self.children:
-                child.render_tree(temp_set, sub_level, max_level)
+        # if self.status is MemoryStatus.DORMANT:
+        #     print('dead')
+        # else:
+        if self.memory_type < 4:
+            if self.mid not in temp_set:
+                # leaf = f'L{level}:{level_line} id:{self.mid},type:{self.memory_type},count:{self.recall_count}'
+                leaf = f'T{self.memory_type}:{level_line} {self.simple_str()}'
+                print(leaf)
+                logger.debug(leaf)
+                temp_set.add(self.mid)
+        sub_level = level + 1
+        for child in self.children:
+            child.render_tree(temp_set, sub_level, max_level)

@@ -129,7 +129,7 @@ def main(argv):
             logging.debug('frame is {0} '.format(frames))
             frames = frames + 1
 
-            status.calculate_status(dps, frames)
+            # status.calculate_status(dps, frames)
             brain.associate()
             brain.activate_children()
             focus = vision.process(status, key)

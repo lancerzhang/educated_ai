@@ -17,7 +17,7 @@ brain1 = Brain()
 brain1.load()
 memories = brain1.memories
 # memories = {x for x in memories if x.status is not MemoryStatus.DORMANT}
-# memories = [x for x in memories if x.memory_type == 0]
+# memories = [x for x in memories if x.memory_type == 4 and x.recall_count>0]
 # print(len(memories))
 # for m in memories:
 #     if len(m.parent) == 171:
@@ -30,10 +30,10 @@ memories = brain1.memories
 
 # parent = set()
 # for x in memories:
-#     if x.memory_type ==0:
-#         # if x.mid == 3064:
-#         print(x)
-#         # x.render_tree(set())
+#         if x.mid == 288051305350406992021860502037144657801:
+#             print(x.simple_str())
+#             x.render_tree(set())
+#         print('end')
 #         for p in x.parent:
 #             parent.add(p)
 # for p in parent:

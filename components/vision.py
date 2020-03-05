@@ -31,10 +31,11 @@ ACTUAL_DEGREES_TIMES = 10
 FEATURE_THRESHOLD = 20
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
+HISTOGRAM_BINS = 27
 
 
 # match the experience vision sense
-@util.timeit
+# @util.timeit
 def filter_feature(fp: FeaturePack):
     kernel_arr = util.string_to_feature_matrix(fp.kernel)
     cov = cv2.filter2D(fp.data.get(fp.channel), -1, kernel_arr)
@@ -60,6 +61,12 @@ def filter_feature(fp: FeaturePack):
     return fp
 
 
+def calculate_histogram(img):
+    # TODO, use np.bincount() for faster calculation?
+    hist_np, bins = np.histogram(img.ravel(), bins=HISTOGRAM_BINS, range=[0, 256])
+    return hist_np
+
+
 class Block(object):
     def __init__(self, x, y, w=0, h=0, ri=0, v=0):
         self.x = x
@@ -73,14 +80,9 @@ class Block(object):
 class Vision(object):
     FRAME_WIDTH = 0
     FRAME_HEIGHT = 0
-    ROI_ARR = [32, 64, 128, 256]
+    ROI_ARR = [10, 20, 40, 80]
     INIT_ROI_INDEX = 2
-    # ROI_INDEX_NAME = 'ROI_INDEX'
-    # START_X = 'sx'
-    # START_Y = 'sy'
-    # WIDTH = 'width'
-    # HEIGHT = 'height'
-    HISTOGRAM_BINS = 27
+
     FEATURE_INPUT_SIZE = 12
     REGION_VARIANCE_THRESHOLD = 0.05
     MAX_DEGREES = 36  # actual is 10 times
@@ -258,44 +260,6 @@ class Vision(object):
         # move focus to variable region
         self.set_movement_absolute(block, duration)
         return True
-
-    @util.timeit
-    def find_most_variable_block(self, this_full_image):
-        if self.previous_full_image is None:
-            return None
-        else:
-            # logger.debug('compare channel img {0}'.format((self.previous_full_image == this_full_image).all()))
-            blocks_x = self.FRAME_WIDTH // self.current_block.w
-            blocks_y = self.FRAME_HEIGHT // self.current_block.h
-            block_width = self.current_block.w
-            block_height = self.current_block.h
-            # this_cells_histogram = self.calculate_cells_histogram(this_full_image)
-            # self.this_cells_histogram = this_cells_histogram  # save a copy
-            # previous_block_histogram = self.sum_blocks_histogram(self.previous_cells_histogram)
-            # this_block_histogram = self.sum_blocks_histogram(this_cells_histogram)
-            previous_block_histogram = self.calculate_blocks_histogram(self.previous_full_image, blocks_x, blocks_y,
-                                                                       block_width, block_height)
-            this_block_histogram = self.calculate_blocks_histogram(this_full_image, blocks_x, blocks_y, block_width,
-                                                                   block_height)
-
-            # logger.debug('previous histogram array is {0}'.format(previous_block_histogram))
-            # logger.debug('this histogram array is {0}'.format(this_block_histogram))
-            diff_arr = util.np_matrix_diff(this_block_histogram, previous_block_histogram)
-            max_index = np.argmax(diff_arr)
-            max_var = diff_arr[max_index]
-            if max_var < self.REGION_VARIANCE_THRESHOLD:
-                return None
-            # logger.debug('diff histogram array is {0}'.format(diff_arr))
-            # logger.debug('max_var is {0}'.format(max_var))
-            # np.save('pimg.npy', self.previous_full_image)
-            # np.save('timg.npy', this_full_image)
-            new_index_x, new_index_y = util.find_2d_index(max_index, blocks_x)
-            new_start_x = new_index_x * self.current_block.w
-            new_start_y = new_index_y * self.current_block.h
-            new_block_x = self.restrict_edge_start_x(new_start_x)
-            new_block_y = self.restrict_edge_start_y(new_start_y)
-            new_block = Block(new_block_x, new_block_y, v=max_var)
-        return new_block
 
     # reduce number of histogram call,it's time consuming
     @util.timeit
@@ -661,27 +625,6 @@ class Vision(object):
 
     # deprecated, low performance
     @util.timeit
-    def calculate_cells_histogram(self, full_image):
-        cells_histogram = []
-        width = self.ROI_ARR[0]
-        height = self.ROI_ARR[0]
-        # b, g, r = cv2.split(full_image)
-        gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
-        cells_x = self.FRAME_WIDTH // width
-        cells_y = self.FRAME_HEIGHT // height
-        for j in range(0, cells_y):
-            for i in range(0, cells_x):
-                # ret_b = b[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                # ret_g = g[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                # ret_r = r[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                # ret = np.concatenate([ret_b, ret_g, ret_r])
-                ret = gray_image[j * height:(j + 1) * height, i * width:(i + 1) * width]
-                hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
-                cells_histogram.append(hist_np)
-        return cells_histogram
-
-    # deprecated, low performance
-    @util.timeit
     def sum_blocks_histogram(self, cells_histogram):
         blocks_histogram = []
         times = self.current_block.w // self.ROI_ARR[0]
@@ -703,18 +646,14 @@ class Vision(object):
 
     @util.timeit
     def calculate_blocks_histogram(self, full_image, blocks_x: int, blocks_y: int, block_width: int, block_height: int):
-        blocks_histogram = []
-        # b, g, r = cv2.split(full_image)
+        data_inputs = []
         gray_image = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)  # use gray to save process time
         for j in range(0, blocks_y):
             for i in range(0, blocks_x):
-                # ret_b = b[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
-                # ret_g = g[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
-                # ret_r = r[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
-                # ret = np.concatenate([ret_b, ret_g, ret_r])
                 ret = gray_image[j * block_height:(j + 1) * block_height, i * block_width:(i + 1) * block_width]
-                hist_np, bins = np.histogram(ret.ravel(), bins=self.HISTOGRAM_BINS, range=[0, 256])
-                blocks_histogram.append(hist_np)
+                data_inputs.append(ret)
+        run_results = self.pool.imap(calculate_histogram, data_inputs)
+        blocks_histogram = list(run_results)
         return blocks_histogram
 
     @util.timeit

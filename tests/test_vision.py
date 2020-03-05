@@ -13,12 +13,19 @@ from components.vision import Block
 import unittest, cv2, time, math
 from components import vision, constants
 import numpy as np
+from multiprocessing import Pool
 
 
 def filter_feature(kernel, data, contrast=None, channel='g'):
     data_map = {channel: data}
     fp = FeaturePack(kernel=kernel, data=data_map, contrast=contrast, channel=channel)
     return vision.filter_feature(fp)
+
+
+def np_histogram(img):
+    # hist_np, bins = np.histogram(img.ravel(), 27, range=[0, 256])
+    hist_np = np.bincount(img.ravel())
+    return hist_np
 
 
 class TestVision(unittest.TestCase):
@@ -151,26 +158,27 @@ class TestVision(unittest.TestCase):
         self.assertEqual(1, self.vision1.current_action[constants.SPEED])
 
     def test_calculate_block_histogram(self):
-        img0 = cv2.imread('rgb1.jpg', 0)
+        img0 = cv2.imread('1920a.jpg', 0)
         height, width = img0.shape
         self.vision1.FRAME_WIDTH = width
         self.vision1.FRAME_HEIGHT = height
-        img1 = cv2.imread('rgb1.jpg', 1)
+        img1 = cv2.imread('1920a.jpg', 1)
         hist1 = self.vision1.calculate_blocks_histogram(img1, 2, 2, width // 2, height // 2)
         self.assertEqual(4, len(hist1))
 
-    def test_find_most_variable_block(self):
-        img0 = cv2.imread('rgb1.jpg', 0)
-        height, width = img0.shape
-        self.vision1.FRAME_WIDTH = width
-        self.vision1.FRAME_HEIGHT = height
-        img1 = cv2.imread('rgb1.jpg', 1)
-        self.vision1.previous_full_image = img1
-        self.vision1.current_block = Block(0, 0, w=8, h=8)
-        img2 = cv2.imread('rgb2.jpg', 1)
-        block = self.vision1.find_most_variable_block(img2)
-        self.assertEqual(width // 2, block.x)
-        self.assertEqual(height // 2, block.y)
+    def test_np_histogram(self):
+        img0 = cv2.imread('1920a.jpg', 0)
+        pool = Pool()
+        time1 = time.time()
+        inputs = []
+        for _ in range(0, 4):
+            # np_histogram(img0)
+            inputs.append(img0)
+        it = pool.imap_unordered(np_histogram, inputs)
+        rs = list(it)
+        time2 = time.time()
+        print(f'used {(time2 - time1) * 1000} ms')
+        print(rs)
 
     def test_find_most_variable_block_division(self):
         img0 = cv2.imread('1920a.jpg', 0)
@@ -181,7 +189,8 @@ class TestVision(unittest.TestCase):
         img2 = cv2.imread('1920b.jpg', 1)
         self.vision1.previous_full_image = img1
         focus_width = 12
-        self.vision1.previous_histogram1 = self.vision1.calculate_blocks_histogram(img1, 2, 2, width // 2, height // 2)
+        self.vision1.previous_histogram1 = self.vision1.calculate_blocks_histogram(img1, 12, 12, width // 2,
+                                                                                   height // 2)
         self.vision1.current_block = Block(0, 0, w=focus_width, h=focus_width)
         start = time.time()
         block = self.vision1.find_most_variable_block_division(img2, 0, 0, width, height, focus_width, focus_width)
