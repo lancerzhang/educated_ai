@@ -8,7 +8,7 @@ import random
 import time
 
 logger = logging.getLogger('Memory')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class MemoryType:
@@ -39,7 +39,7 @@ class MemoryStatus:
     MATCHING = 4
 
 
-MEMORY_DURATIONS = [0.3, 0.3, 1, 5, 20]
+MEMORY_DURATIONS = [0.15, 0.15, 0.5, 5, 20]
 MEMORY_TYPES_LENGTH = 5
 MEMORY_FEATURES_LENGTH = 6
 COMPOSE_NUMBER = 4
@@ -62,7 +62,7 @@ def flatten(memories):
     new_memories = set()
     for m in memories:
         nm = copy.copy(m)
-        nm.parent = set([x.mid for x in m.parent])
+        # nm.parent = set([x.mid for x in m.parent])
         nm.children = [x.mid for x in m.children]
         new_memories.add(nm)
     return new_memories
@@ -71,18 +71,18 @@ def flatten(memories):
 def construct_loop(mset, mdict):
     changed_set = set()
     for m in mset:
-        is_parent_changed = False
-        new_parent = set()
-        for x in m.parent:
-            if util.is_int(x):
-                is_parent_changed = True
-                npr = mdict.get(x)
-                if npr:
-                    new_parent.add(npr)
-            else:
-                new_parent.add(x)
-        if is_parent_changed:
-            m.parent = new_parent
+        # is_parent_changed = False
+        # new_parent = set()
+        # for x in m.parent:
+        #     if util.is_int(x):
+        #         is_parent_changed = True
+        #         npr = mdict.get(x)
+        #         if npr:
+        #             new_parent.add(npr)
+        #     else:
+        #         new_parent.add(x)
+        # if is_parent_changed:
+        #     m.parent = new_parent
         is_children_changed = False
         new_children = []
         for x in m.children:
@@ -95,7 +95,7 @@ def construct_loop(mset, mdict):
                 new_children.append(x)
         if is_children_changed:
             m.children = new_children
-        if is_parent_changed or is_children_changed:
+            # if is_parent_changed or is_children_changed:
             changed_set.add(m)
     if len(changed_set) > 0:
         construct_loop(changed_set, mdict)
@@ -106,6 +106,13 @@ def construct(memories):
     mdict = dict((x.mid, x) for x in memories)
     construct_loop(new_memories, mdict)
     return new_memories
+
+
+def create_children_hash(children, memory_type):
+    if memory_type is MemoryType.SLICE:
+        return util.create_list_hash(children, False)
+    else:
+        return util.create_list_hash(children, True)
 
 
 class Memory:
@@ -127,7 +134,7 @@ class Memory:
         self.matched_time = time.time()
         self.recall_count = 0
         self.last_recall_time = time.time()
-        self.parent = set()
+        # self.parent = set()
         # below variable should not be change after init
         self.memory_type = memory_type
         self.real_type = real_type
@@ -143,7 +150,7 @@ class Memory:
         if children:
             self.children = children
         else:
-            self.children = set()
+            self.children = []
         self.mid = self.create_hash()
         self.kernel_index = self.create_kernel_hash()
 
@@ -214,7 +221,7 @@ class Memory:
         return self.desire
 
     def get_active_time(self):
-        active_start = self.active_end_time - MEMORY_DURATIONS[self.memory_type]
+        active_start = self.active_end_time - self.get_duration()
         return time.time() - active_start
 
     @util.timeit
@@ -236,39 +243,44 @@ class Memory:
     def match_children(self):
         if self.status is not MemoryStatus.MATCHING:
             return
-        logger.debug(f'match_children:{self.simple_str()}')
+        logger.debug(f'match_children:{self.mid}')
         count = 0
+        rest_not_matched = set()
         for m in self.children:
             # ignore dormant memory as it's forgot
             if m.status is MemoryStatus.DORMANT:
                 continue
-            if (time.time() - m.matched_time) < MEMORY_DURATIONS[self.memory_type]:
+            if (time.time() - m.matched_time) < self.get_duration():
                 count += 1
-        if count >= math.ceil(len(self.children) / 2):
-            logger.debug(f'matched_children:{self.simple_str()}')
+            else:
+                rest_not_matched.add(m)
+        if util.greater_than_half(count, len(self.children)):
+            logger.debug(f'matched_children:{self.mid}')
             # self.render_tree(set())
             self.matched()
+            for m in rest_not_matched:
+                m.matched()
 
-    @util.timeit
+    # @util.timeit
     # Sleep > Matching
     def activate(self):
-        logger.debug(f'activate_memory:{self.simple_str()}')
+        # logger.debug(f'activate_memory:{self.mid}')
         self.status = MemoryStatus.MATCHING
         # keep it in active memories for matching
-        self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
+        self.active_end_time = time.time() + self.get_duration()
 
     @util.timeit
     # call this right after the memory is matched. Matching > Matched
     def matched(self, recall=True):
-        logger.debug(f'matched_memory:{self.simple_str()}')
+        logger.debug(f'matched_memory:{self.mid}')
         # normally change memory status from Matching to Matched
         # but there also maybe form dormant to Matched
         if self.status is MemoryStatus.DORMANT:
-            logger.debug(f'activated dormant memory:{self.simple_str()}')
+            logger.debug(f'activated dormant memory:{self.mid}')
         self.status = MemoryStatus.MATCHED
         self.matched_time = time.time()
         # extend active end time when it's matched, keeping it in active memories for composing
-        self.active_end_time = time.time() + MEMORY_DURATIONS[self.memory_type]
+        self.active_end_time = time.time() + self.get_duration()
         if recall:
             self.recall()
 
@@ -288,42 +300,53 @@ class Memory:
     def create_hash(self):
         raw = f'{self.memory_type}|{self.real_type}|{self.kernel}|{self.feature}|{self.channel}|{self.click_type}|' \
               f'{self.degrees}|{self.speed}|{self.duration}|{self.zoom_type}|{self.zoom_direction}|'
-        if self.memory_type in [MemoryType.SLICE]:
-            # without order
-            raw += f'{set(self.children)}'
-        else:
-            raw += f'{self.children}'
+        children = [x.mid for x in self.children]
+        if self.memory_type is MemoryType.SLICE:
+            children = sorted(children)
+        raw += f'{children}'
         return int(hashlib.md5(raw.encode('utf-8')).hexdigest(), 16)
 
     def create_kernel_hash(self):
         raw = f'{self.memory_type}|{self.real_type}|{self.kernel}|{self.channel}'
-        return int(hashlib.md5(raw.encode('utf-8')).hexdigest(), 16)
+        return hashlib.md5(raw.encode('utf-8')).hexdigest()
 
     @util.timeit
     def create_kernel_index(self, indexes: dict):
-        index_objects = indexes.get(self.kernel_index)
-        if index_objects:
-            index_objects.add(self)
-        else:
-            indexes.update({self.kernel_index: {self}})
+        util.dict_set_add(indexes, self.kernel_index, self)
 
     @util.timeit
     def create_common_index(self, indexes: dict):
         indexes.update({self.mid: self})
 
     @util.timeit
+    def create_children_index(self, indexes: dict):
+        children_id_list = [x.mid for x in self.children]
+        if self.memory_type is MemoryType.SLICE:
+            sub_sets = util.list_combinations(children_id_list, False)
+        else:
+            sub_sets = util.list_combinations(children_id_list, True)
+        for sub_set in sub_sets:
+            k = create_children_hash(sub_set, self.memory_type)
+            util.dict_set_add(indexes, k, self)
+
+    @util.timeit
     def create_index(self, indexes):
         self.create_common_index(indexes)
         if self.real_type in [RealType.SOUND_FEATURE, RealType.VISION_FEATURE]:
             self.create_kernel_index(indexes)
+        if len(self.children) > 0:
+            self.create_children_index(indexes)
+
+    def get_duration(self):
+        return MEMORY_DURATIONS[self.memory_type]
 
     def simple_str(self):
-        parent = {x.mid for x in self.parent}
+        # parent = {x.mid for x in self.parent}
         children = [x.mid for x in self.children]
         return f'[id:{self.mid},type:{self.memory_type},feature:{self.real_type},recall:{self.recall_count},' \
                f'reward:{self.reward},status:{self.status},matched_time:{time.ctime(self.matched_time)}' \
                f',created_time:{time.ctime(self.created_time)}' \
-               f',parent:{parent},children:{children}]'
+               f',children:{children}]'
 
     # @util.timeit
     def render_tree(self, temp_set, level=1, max_level=30):

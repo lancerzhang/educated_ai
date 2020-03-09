@@ -268,21 +268,6 @@ class TestUtil(unittest.TestCase):
         d1 = util.list_element_count(l1)
         self.assertEqual(3, d1.get('c'))
 
-    def test_group_collection(self):
-        m1 = memory.create()
-        m2 = memory.create()
-        m3 = memory.create()
-        m4 = memory.create()
-        m5 = memory.create()
-        m1.memory_type = 0
-        m2.memory_type = 1
-        m3.memory_type = 0
-        m4.memory_type = 2
-        m5.memory_type = 2
-        s1 = {m1, m2, m3, m4, m5}
-        g1 = util.group_collection(s1, 'memory_type')
-        self.assertEqual(3, util.sum_iterator(g1))
-
     def test_group_collection_perf(self):
         s1 = set()
         for i in range(100 * 100):
@@ -300,8 +285,86 @@ class TestUtil(unittest.TestCase):
         t3 = time.time()
         d1 = t2 - t1
         d2 = t3 - t2
-        print(f'{d1}, {d2}')
+        # print(f'{d1}, {d2}')
         self.assertTrue(d2 > d1)
+
+    def test_dict_set_add(self):
+        d1 = {}
+        k1 = 1
+        v1 = 'a'
+        util.dict_set_add(d1, k1, v1)
+        self.assertEqual(1, len(d1.get(k1)))
+        k2 = 1
+        v2 = 'a'
+        util.dict_set_add(d1, k2, v2)
+        self.assertEqual(1, len(d1.get(k1)))
+        k3 = 1
+        v3 = 'b'
+        util.dict_set_add(d1, k3, v3)
+        self.assertEqual(2, len(d1.get(k1)))
+        k4 = 2
+        v4 = 'b'
+        util.dict_set_add(d1, k4, v4)
+        self.assertEqual(2, len(d1.get(k1)))
+        self.assertEqual(1, len(d1.get(k4)))
+
+    def test_list_continue_combination(self):
+        list1 = [1]
+        result1 = util.list_continuous_combination(list1, 1)
+        self.assertEqual(1, len(result1))
+        result1 = util.list_continuous_combination(list1, 2)
+        self.assertEqual(0, len(result1))
+        list1 = [1, 2]
+        result1 = util.list_continuous_combination(list1, 1)
+        self.assertEqual(2, len(result1))
+        list1 = [1, 2]
+        result1 = util.list_continuous_combination(list1, 2)
+        self.assertEqual(1, len(result1))
+        list1 = [1, 2, 3]
+        result1 = util.list_continuous_combination(list1, 1)
+        self.assertEqual(3, len(result1))
+        list1 = [1, 2, 3]
+        result1 = util.list_continuous_combination(list1, 2)
+        self.assertEqual(2, len(result1))
+        list1 = [1, 2, 3]
+        result1 = util.list_continuous_combination(list1, 3)
+        self.assertEqual(1, len(result1))
+        list1 = [1, 2, 3, 4]
+        result1 = util.list_continuous_combination(list1, 1)
+        self.assertEqual(4, len(result1))
+        list1 = [1, 2, 3, 4]
+        result1 = util.list_continuous_combination(list1, 2)
+        self.assertEqual(3, len(result1))
+        list1 = [1, 2, 3, 4]
+        result1 = util.list_continuous_combination(list1, 3)
+        self.assertEqual(2, len(result1))
+        list1 = [1, 2, 3, 4]
+        result1 = util.list_continuous_combination(list1, 4)
+        self.assertEqual(1, len(result1))
+        list1 = ['a', 'b', 'c', 'c']
+        result1 = util.list_continuous_combination(list1, 3)
+        self.assertEqual(2, len(result1))
+
+    def test_test_list_continue_combinations(self):
+        list1 = [1, 2, 3, 4]
+        result1 = util.list_combinations(list1, True)
+        # print(result1)
+        self.assertEqual(10, len(result1))
+        result1 = util.list_combinations(list1, False)
+        # print(result1)
+        self.assertEqual(15, len(result1))
+
+    def test_greater_than_half(self):
+        self.assertTrue(util.greater_than_half(1, 1))
+        self.assertTrue(util.greater_than_half(2, 2))
+        self.assertTrue(util.greater_than_half(2, 3))
+        self.assertTrue(util.greater_than_half(3, 3))
+        self.assertTrue(util.greater_than_half(3, 4))
+        self.assertTrue(util.greater_than_half(4, 4))
+        self.assertFalse(util.greater_than_half(1, 2))
+        self.assertFalse(util.greater_than_half(1, 3))
+        self.assertFalse(util.greater_than_half(1, 4))
+        self.assertFalse(util.greater_than_half(2, 4))
 
 
 if __name__ == "__main__":

@@ -15,73 +15,119 @@ import unittest
 
 class TestBrain(unittest.TestCase):
 
-    def test_associate_1(self):
+    def test_associate_long(self):
         brain1 = Brain()
-        memories = test_memory.build_a_tree()
-        memories[0].status = MemoryStatus.LIVING
-        memories[1].status = MemoryStatus.LIVING
+        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
         brain1.memories = memories
-        active_memories = {memories[0], memories[1]}
         brain1.active_memories = active_memories
-        with patch.object(Memory, 'activate', return_value=None) as mock_method:
-            brain1.associate()
-        mock_method.assert_called_once_with()
-        # print(f'counter:{brain1.counter}')
-
-    def test_associate_2(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree()
-        memories[1].status = MemoryStatus.LIVING
-        memories[8].parent = set()
-        memories[9].parent = set()
-        brain1.memories = memories
-        active_memories = {memories[0], memories[1]}
-        brain1.active_memories = active_memories
+        brain1.reindex()
+        # case1
+        memories[8].status = MemoryStatus.SLEEP
+        memories[8].matched_time = time.time() - memories[8].get_duration() - 1
+        brain1.active_memories = {memories[6], memories[7]}
         brain1.associate()
-        self.assertEqual(4, len(brain1.active_memories))
+        self.assertEqual(3, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.MATCHING, memories[8].status)
+        # case6
+        # memories[8].status = MemoryStatus.SLEEP
+        # memories[8].matched_time = time.time() - memories[8].get_duration() - 1
+        # memories[7].matched_time = memories[6].matched_time - 0.01
+        # brain1.active_memories = {memories[6], memories[7]}
+        # brain1.associate()
+        # self.assertEqual(2, len(brain1.active_memories))
+        # self.assertEqual(MemoryStatus.SLEEP, memories[8].status)
+        # case2
+        memories[8].status = MemoryStatus.SLEEP
+        memories[8].matched_time = time.time() - memories[8].get_duration() - 1
+        brain1.active_memories = {memories[7]}
+        brain1.associate()
+        self.assertEqual(2, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.MATCHING, memories[8].status)
+        # case3
+        memories[8].status = MemoryStatus.DORMANT
+        memories[8].matched_time = time.time() - memories[8].get_duration() - 1
+        brain1.active_memories = {memories[7]}
+        brain1.associate()
+        self.assertEqual(1, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.DORMANT, memories[8].status)
+        # case4
+        memories[8].status = MemoryStatus.SLEEP
+        memories[8].matched_time = time.time() - memories[8].get_duration() + 1
+        brain1.active_memories = {memories[7]}
+        brain1.associate()
+        self.assertEqual(1, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.SLEEP, memories[8].status)
+        # case5
+        memories[8].status = MemoryStatus.SLEEP
+        memories[8].matched_time = time.time() - memories[8].get_duration() - 1
+        memories[9].status = MemoryStatus.SLEEP
+        memories[9].matched_time = time.time() - memories[8].get_duration() - 1
+        brain1.active_memories = {memories[6]}
+        brain1.associate()
+        self.assertEqual(3, len(brain1.active_memories))
         self.assertEqual(MemoryStatus.MATCHING, memories[8].status)
         self.assertEqual(MemoryStatus.MATCHING, memories[9].status)
 
-    # def test_associate(self):
+    def test_associate_short(self):
+        brain1 = Brain()
+        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
+        brain1.memories = memories
+        brain1.reindex()
+        memories[6].status = MemoryStatus.SLEEP
+        memories[6].matched_time = time.time() - memories[6].get_duration() - 1
+        brain1.active_memories = {memories[5]}
+        brain1.associate()
+        self.assertEqual(2, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.MATCHING, memories[6].status)
+
+    def test_associate_short_long(self):
+        brain1 = Brain()
+        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
+        brain1.memories = memories
+        brain1.reindex()
+        memories[6].status = MemoryStatus.SLEEP
+        memories[6].matched_time = time.time() - memories[6].get_duration() - 1
+        memories[8].status = MemoryStatus.SLEEP
+        memories[8].matched_time = time.time() - memories[8].get_duration() - 1
+        brain1.active_memories = {memories[5], memories[7]}
+        brain1.associate()
+        self.assertEqual(3, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.SLEEP, memories[6].status)
+        self.assertEqual(MemoryStatus.MATCHING, memories[8].status)
+
+    def test_associate_slice(self):
+        brain1 = Brain()
+        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
+        brain1.memories = memories
+        brain1.reindex()
+        # case1
+        memories[2].status = MemoryStatus.SLEEP
+        memories[2].matched_time = time.time() - memories[2].get_duration() - 1
+        brain1.active_memories = {memories[0], memories[1]}
+        brain1.associate()
+        self.assertEqual(3, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.MATCHING, memories[2].status)
+        # case2
+        memories[2].status = MemoryStatus.SLEEP
+        memories[2].matched_time = time.time() - memories[2].get_duration() - 1
+        brain1.active_memories = {memories[1]}
+        brain1.associate()
+        self.assertEqual(2, len(brain1.active_memories))
+        self.assertEqual(MemoryStatus.MATCHING, memories[2].status)
+
+    # def test_associate_real(self):
     #     brain.MEMORY_FILE = '../data/memory.npy'
     #     brain1 = Brain()
     #     brain1.load()
-    #     # print(len(brain1.memories))
-    #     memories = list(brain1.memories)
-    #     brain1.active_memories = set(memories[0:5000])
+    #     print(len(brain1.memories))
+    #     m1 = brain1.memory_indexes.get(307823400922517223494783918578472016341)
+    #     m1.status = MemoryStatus.LIVING
+    #     brain1.active_memories = {m1}
     #     time1 = time.time()
     #     brain1.associate()
     #     time2 = time.time()
-    #     print(f'{(time2 - time1) * 1000}')
-    #     # print(brain1.counter)
-
-    def test_search_top_parent_1(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree()
-        memories[0].status = MemoryStatus.LIVING
-        brain1.search_top_parent(memories[0])
-        self.assertEqual(1, len(brain1.temp_set1))
-        self.assertEqual(MemoryType.LONG, brain1.temp_set1.pop().memory_type)
-        # exception case
-        brain1.temp_set1.clear()
-        memories[10].status = MemoryStatus.DORMANT
-        brain1.search_top_parent(memories[0])
-        self.assertEqual(0, len(brain1.temp_set1))
-
-    def test_search_top_parent_2(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree()
-        memories[1].status = MemoryStatus.LIVING
-        memories[8].parent = set()
-        memories[9].parent = set()
-        brain1.search_top_parent(memories[1])
-        self.assertEqual(2, len(brain1.temp_set1))
-        # exception case
-        brain1.temp_set1.clear()
-        memories[4].status = MemoryStatus.DORMANT
-        memories[6].status = MemoryStatus.DORMANT
-        brain1.search_top_parent(memories[1])
-        self.assertEqual(0, len(brain1.temp_set1))
+    #     print(f'test_associate:{(time2 - time1) * 1000}')
+    #     print(f'counter:{brain1.counter}')
 
     def test_activate_tree_left_leaf(self):
         memories = test_memory.build_a_tree()
@@ -141,69 +187,101 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(memories[6].status, MemoryStatus.MATCHING)
         self.assertEqual(memories[9].status, MemoryStatus.MATCHING)
 
-    def test_match_memories_all(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree(MemoryStatus.MATCHED)
-        brain1.active_memories = set(memories)
-        brain1.match_memories()
-        # print(f'counter:{brain1.counter}')
-        for i in range(0, len(memories)):
-            self.assertEqual(MemoryStatus.LIVING, memories[i].status)
-
-    def test_match_memories_some_real(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        for i in range(0, 2):
-            memories[i].status = MemoryStatus.MATCHED
-        memories[2].status = MemoryStatus.SLEEP
-        brain1.active_memories = set(memories)
-        brain1.match_memories()
-        # print(f'counter:{brain1.counter}')
-        for i in range(0, 3):
-            self.assertEqual(MemoryStatus.LIVING, memories[i].status)
-
-    def test_match_memories_some_virtual(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        for i in range(0, 4):
-            memories[i].status = MemoryStatus.MATCHED
-        memories[4].status = MemoryStatus.SLEEP
-        brain1.active_memories = set(memories)
-        brain1.match_memories()
-        self.assertEqual(MemoryStatus.LIVING, memories[4].status)
-
-    def test_match_memories_not_match(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        memories[0].matched_time = time.time() - 100
-        memories[1].status = MemoryStatus.MATCHED
-        memories[2].status = MemoryStatus.MATCHING
-        brain1.active_memories = set(memories)
-        brain1.match_memories()
-        self.assertNotEqual(MemoryStatus.LIVING, memories[2].status)
-
-    def test_match_memories_some_parent(self):
-        brain1 = Brain()
-        memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        memories[0].status = MemoryStatus.MATCHED
-        memories[1].matched_time = time.time() - 100
-        memories[3].status = MemoryStatus.MATCHING
-        brain1.active_memories = set(memories)
-        brain1.match_memories()
-        self.assertEqual(MemoryStatus.LIVING, memories[3].status)
-
-    def test_extend_matching_parent(self):
+    def test_match_memories(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.MATCHING)
-        for i in range(0, len(memories)):
-            memories[i].active_end_time = time.time()
-        self.assertTrue(memories[10].active_end_time - time.time() < 1)
-        brain1.extend_matching_parent(memories[0])
-        self.assertTrue(memories[10].active_end_time - time.time() < 1)
         brain1.active_memories = set(memories)
-        brain1.temp_set1.clear()
-        brain1.extend_matching_parent(memories[0])
-        self.assertTrue(memories[10].active_end_time - time.time() > 1)
+        brain1.match_memories()
+        self.assertEqual(MemoryStatus.MATCHED, memories[2].status)
+        self.assertEqual(MemoryStatus.MATCHED, memories[4].status)
+        self.assertEqual(MemoryStatus.MATCHED, memories[6].status)
+        self.assertEqual(MemoryStatus.MATCHED, memories[8].status)
+        self.assertEqual(MemoryStatus.MATCHING, memories[3].status)
+        self.assertEqual(MemoryStatus.MATCHING, memories[5].status)
+        self.assertEqual(MemoryStatus.MATCHING, memories[7].status)
+        self.assertEqual(MemoryStatus.MATCHING, memories[9].status)
+
+    def test_match_rest_memories(self):
+        memories = []
+        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+                               feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
+        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+                               feature=np.array([2, 228, 189, 55, 49, 37, 16, 35, 12])))
+        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+                               feature=np.array([3, 228, 189, 55, 49, 37, 16, 35, 12])))
+        memories.append(Memory(MemoryType.SLICE, real_type=-1, children=[memories[0], memories[1], memories[2]]))
+        for m in memories:
+            m.status = MemoryStatus.MATCHING
+        memories[2].matched_time = time.time() - 1
+        brain1 = Brain()
+        brain1.active_memories = set(memories)
+        brain1.match_memories()
+        self.assertEqual(MemoryStatus.MATCHED, memories[2].status)
+        self.assertEqual(MemoryStatus.MATCHED, memories[3].status)
+
+    # def test_match_memories_all(self):
+    #     brain1 = Brain()
+    #     memories = test_memory.build_a_tree(MemoryStatus.MATCHED)
+    #     brain1.active_memories = set(memories)
+    #     brain1.match_memories()
+    #     # print(f'counter:{brain1.counter}')
+    #     for i in range(0, len(memories)):
+    #         self.assertEqual(MemoryStatus.LIVING, memories[i].status)
+    #
+    # def test_match_memories_some_real(self):
+    #     brain1 = Brain()
+    #     memories = test_memory.build_a_tree(MemoryStatus.LIVING)
+    #     for i in range(0, 2):
+    #         memories[i].status = MemoryStatus.MATCHED
+    #     memories[2].status = MemoryStatus.SLEEP
+    #     brain1.active_memories = set(memories)
+    #     brain1.match_memories()
+    #     # print(f'counter:{brain1.counter}')
+    #     for i in range(0, 3):
+    #         self.assertEqual(MemoryStatus.LIVING, memories[i].status)
+    #
+    # def test_match_memories_some_virtual(self):
+    #     brain1 = Brain()
+    #     memories = test_memory.build_a_tree(MemoryStatus.LIVING)
+    #     for i in range(0, 4):
+    #         memories[i].status = MemoryStatus.MATCHED
+    #     memories[4].status = MemoryStatus.SLEEP
+    #     brain1.active_memories = set(memories)
+    #     brain1.match_memories()
+    #     self.assertEqual(MemoryStatus.LIVING, memories[4].status)
+    #
+    # def test_match_memories_not_match(self):
+    #     brain1 = Brain()
+    #     memories = test_memory.build_a_tree(MemoryStatus.LIVING)
+    #     memories[0].matched_time = time.time() - 100
+    #     memories[1].status = MemoryStatus.MATCHED
+    #     memories[2].status = MemoryStatus.MATCHING
+    #     brain1.active_memories = set(memories)
+    #     brain1.match_memories()
+    #     self.assertNotEqual(MemoryStatus.LIVING, memories[2].status)
+    #
+    # def test_match_memories_some_parent(self):
+    #     brain1 = Brain()
+    #     memories = test_memory.build_a_tree(MemoryStatus.LIVING)
+    #     memories[0].status = MemoryStatus.MATCHED
+    #     memories[1].matched_time = time.time() - 100
+    #     memories[3].status = MemoryStatus.MATCHING
+    #     brain1.active_memories = set(memories)
+    #     brain1.match_memories()
+    #     self.assertEqual(MemoryStatus.LIVING, memories[3].status)
+
+    # def test_extend_matching_parent(self):
+    #     brain1 = Brain()
+    #     memories = test_memory.build_a_tree(MemoryStatus.MATCHING)
+    #     for i in range(0, len(memories)):
+    #         memories[i].active_end_time = time.time()
+    #     self.assertTrue(memories[10].active_end_time - time.time() < 1)
+    #     brain1.extend_matching_parent(memories[0])
+    #     self.assertTrue(memories[10].active_end_time - time.time() < 1)
+    #     brain1.active_memories = set(memories)
+    #     brain1.temp_set1.clear()
+    #     brain1.extend_matching_parent(memories[0])
+    #     self.assertTrue(memories[10].active_end_time - time.time() > 1)
 
     def test_find_similar_feature_memories(self):
         brain1 = Brain()

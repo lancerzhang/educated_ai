@@ -1,10 +1,11 @@
 import time, numpy, cv2, random
 import collections
 import logging
+import hashlib
 import numpy as np
 from functools import reduce
 from itertools import groupby
-from operator import itemgetter
+from itertools import combinations
 
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')
@@ -19,7 +20,7 @@ def timeit(f):
         result = f(*args, **kw)
         te = time.time()
         tms = int((te - ts) * 1000)
-        if tms > 0:
+        if tms > 10:
             logger.info('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
         return result
 
@@ -100,6 +101,30 @@ def list_remove_duplicates(list1):
             new_list.append(el)
             new_set.add(el)
     return new_list
+
+
+@timeit
+def list_avg(arr):
+    return sum(arr) / len(arr)
+
+
+def list_combinations(list1, continuous):
+    lists = []
+    for i in range(1, len(list1) + 1):
+        if continuous:
+            lists += list_continuous_combination(list1, i)
+        else:
+            lists += [list(x) for x in combinations(list1, i)]
+    return lists
+
+
+def list_continuous_combination(list1, width):
+    if len(list1) < width:
+        return []
+    lists = []
+    for i in range(0, len(list1) - width + 1):
+        lists.append(list1[i:i + width])
+    return lists
 
 
 @timeit
@@ -191,19 +216,6 @@ def image_hash(im, size):
     data = gray.flatten().tolist()
     avg_value = reduce(lambda x, y: x + y, data) / (size * size)
     return reduce(lambda x, a: x | (a[1] << a[0]), enumerate([0 if i < avg_value else 1 for i in data]), 0)
-
-
-@timeit
-def list_avg(arr):
-    return sum(arr) / len(arr)
-
-
-@timeit
-def group_collection(col, field):
-    if isinstance(col, set):
-        col = list(col)
-    col.sort(key=lambda x: getattr(x, field))
-    return groupby(col, lambda x: getattr(x, field))
 
 
 @timeit
@@ -325,3 +337,26 @@ def is_int(i):
 
 def sum_iterator(iter):
     return sum(1 for _ in iter)
+
+
+def dict_set_add(d1, key, value):
+    item = d1.get(key)
+    if item:
+        item.add(value)
+    else:
+        d1.update({key: {value}})
+
+
+def create_list_hash(list1, order):
+    if order:
+        raw = f'{list1}'
+    else:
+        raw = f'{sorted(list1)}'
+    return hashlib.md5(raw.encode('utf-8')).hexdigest()
+
+
+def greater_than_half(a, b):
+    if a > b / 2:
+        return True
+    else:
+        return False

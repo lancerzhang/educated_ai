@@ -153,8 +153,8 @@ class Vision(object):
         self.search_feature_memory()
 
         # when she's mature, below is the major way of focus move/zoom.
-        self.reproduce_movements()
-        self.reproduce_zooms()
+        # self.reproduce_movements()
+        # self.reproduce_zooms()
 
         # when she's not mature, need to guide her.
         this_full_image = self.grab(0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT)
@@ -202,16 +202,25 @@ class Vision(object):
                 self.update_used_channel(fp.channel)
 
     @util.timeit
+    def reproduce(self):
+        self.reproduce_movements()
+        self.reproduce_zooms()
+
+    @util.timeit
     def reproduce_movements(self):
-        feature_memories = self.brain.get_matching_real_memories(RealType.VISION_FOCUS_MOVE)
+        feature_memories = self.brain.get_matched_slice_memories(RealType.VISION_FOCUS_MOVE)
         for m in feature_memories:
-            self.reproduce_movement(m)
+            for c in m.children:
+                self.reproduce_movement(c)
+            m.post_matched()
 
     @util.timeit
     def reproduce_zooms(self):
-        feature_memories = self.brain.get_matching_real_memories(RealType.VISION_FOCUS_ZOOM)
+        feature_memories = self.brain.get_matched_slice_memories(RealType.VISION_FOCUS_ZOOM)
         for m in feature_memories:
-            self.reproduce_zoom(m)
+            for c in m.children:
+                self.reproduce_zoom(c)
+            m.post_matched()
 
     # get a frequent use kernel or a random kernel by certain possibility
     @util.timeit
@@ -674,7 +683,8 @@ class Vision(object):
             self.current_action = {constants.DEGREES: degrees, constants.SPEED: speed,
                                    constants.MOVE_DURATION: duration,
                                    self.LAST_MOVE_TIME: time.time(), self.STATUS: self.IN_PROGRESS}
-            m.matched()
+        m.matched()
+        m.post_matched()
 
     @util.timeit
     def reproduce_zoom(self, m: Memory):
@@ -688,6 +698,7 @@ class Vision(object):
             return None
         self.current_block = new_block
         m.matched()
+        m.post_matched()
 
     @util.timeit
     def grab(self, top, left, width, height):

@@ -17,11 +17,11 @@ brain1 = Brain()
 brain1.load()
 memories = brain1.memories
 # memories = {x for x in memories if x.status is not MemoryStatus.DORMANT}
-# memories = [x for x in memories if x.memory_type == 4 and x.recall_count>0]
+# memories = [x for x in memories if x.memory_type == 0 and x.recall_count>50]
 # print(len(memories))
 # for m in memories:
 #     if len(m.parent) == 171:
-#         print(m)
+#         print(m.simple_str())
 #         dashboard.log(m.parent, 'parent')
 #         dashboard.log(m.children, 'children')
 #         f = open('parent.txt', 'w')

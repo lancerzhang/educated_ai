@@ -5,6 +5,7 @@ from components import dashboard
 from components import memory
 from components import util
 from collections import deque
+from itertools import combinations
 from multiprocessing import Pool
 import logging
 import numpy as np
@@ -16,10 +17,22 @@ logger.setLevel(logging.DEBUG)
 
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 ACTIVE_LONG_MEMORY_LIMIT = 100
+ASSOCIATE_MEMORY_LIMIT = 10
 MEMORIES_NUM = 100 * 100 * 10
 MEMORIES_CLEANUP_NUM = 100 * 100 * 11
 
 MEMORY_FILE = 'data/memory.npy'
+
+
+def children_combinations(memories, width):
+    if len(memories) < width or len(memories) == 0:
+        return []
+    memory_type = memories[0].memory_type
+    memory_id_list = [x.mid for x in memories]
+    if memory_type is MemoryType.REAL:
+        return combinations(memory_id_list, width)
+    else:
+        return util.list_continuous_combination(memory_id_list, width)
 
 
 class Brain:
@@ -41,42 +54,42 @@ class Brain:
         self.pool = Pool()
 
     @util.timeit
-    # find top parents
     def associate(self):
-        # logger.info(f'NO, of active memories:{len(self.active_memories)}')
-        self.temp_set1.clear()
-        self.temp_set2.clear()
-        for m in self.active_memories:
-            if m.status is MemoryStatus.LIVING:
-                self.search_top_parent(m)
-        for m in self.temp_set1:
-            if m.status is MemoryStatus.DORMANT:
-                continue
-            if m in self.active_memories:
-                continue
-            if m.get_desire() > 0.16:
-                self.activate_memory(m)
+        for memory_type in reversed(range(memory.MEMORY_TYPES_LENGTH - 1)):
+            memories = [x for x in self.active_memories if
+                        x.memory_type == memory_type and x.status is MemoryStatus.LIVING]
+            logger.debug(f'memory_type:{memory_type}')
+            logger.debug(f'len memories:{len(memories)}')
+            sorted_memories = sorted(memories, key=lambda x: x.matched_time, reverse=False)
+            logger.debug(f'len sorted_memories:{len(sorted_memories)}')
+            # print(f'{memory_type},sorted_memories:{sorted_memories}')
+            activated_count = 0
+            for width in reversed(range(1, memory.COMPOSE_NUMBER - 1)):
+                logger.debug(f'width:{width}')
+                sub_sets = children_combinations(sorted_memories, width)
+                logger.debug(f'len sub_sets:{len(sub_sets)}')
+                # print(f'sub_sets:{sub_sets}')
+                for sub_set in sub_sets:
+                    # print(f'sub_set:{sub_set}')
+                    parents = self.memory_indexes.get(memory.create_children_hash(sub_set, memory_type + 1))
+                    # print(f'parents:{parents}')
+                    if parents is not None:
+                        logger.debug(f'len parents:{len(parents)}')
+                        for m in parents:
+                            if activated_count > ASSOCIATE_MEMORY_LIMIT:
+                                return
+                                # print(f'{m.simple_str()}')
+                            if m.status is MemoryStatus.DORMANT:
+                                continue
+                            activated_count += 1
+                            if m in self.active_memories:
+                                continue
+                            if time.time() - m.matched_time > m.get_duration():
+                                self.activate_memory(m)
+                if activated_count > 0:
+                    return
 
-    # @util.timeit
-    def search_top_parent(self, m: Memory):
-        if m.status is MemoryStatus.DORMANT:
-            return
-        if m in self.temp_set2:
-            return
-        self.temp_set2.add(m)
-        # self.counter += 1
-        for p in m.parent:
-            if len(p.parent) == 0:
-                self.temp_set1.add(p)
-            else:
-                self.search_top_parent(p)
-
-    @util.timeit
     def activate_memory(self, m: Memory):
-        if m.status is MemoryStatus.DORMANT:
-            return
-        if m in self.active_memories:
-            return
         m.activate()
         self.active_memories.add(m)
 
@@ -94,7 +107,8 @@ class Brain:
         if m in self.temp_set1:
             return
         self.temp_set1.add(m)
-        self.activate_memory(m)
+        if m not in self.active_memories:
+            self.activate_memory(m)
         # self.counter += 1
         for x in m.children:
             if x.memory_type in [MemoryType.REAL, MemoryType.SLICE]:
@@ -108,29 +122,26 @@ class Brain:
 
     @util.timeit
     def match_memories(self):
-        logger.debug(f'match_memories start')
-        self.temp_set1.clear()
+        # logger.debug(f'match_memories start')
+        # self.temp_set1.clear()
         for i in range(0, memory.MEMORY_TYPES_LENGTH):
             for m in {x for x in self.active_memories if
                       x.memory_type == i and x.status in [MemoryStatus.MATCHING, MemoryStatus.MATCHED]}:
-                logger.debug(f'{m.mid},type:{m.memory_type},status:{m.status}')
                 m.match_children()
                 # self.counter += 1
                 if m.status is MemoryStatus.MATCHED:
-                    self.post_matched_memory(m)
-                    for x in m.parent:
-                        # avoid duplicated process
-                        if x.status is MemoryStatus.LIVING:
-                            continue
-                        x.match_children()
-                        # self.counter += 1
-                        if x.status is MemoryStatus.MATCHED:
-                            self.post_matched_memory(x)
+                    self.add_matched_memory(m)
+                    # match bottom up
+                    # for x in m.parent:
+                    #     if x.status in [MemoryStatus.DORMANT, MemoryStatus.SLEEP]:
+                    #         x.match_children()
+                    #         # self.counter += 1
+                    #         if x.status is MemoryStatus.MATCHED:
+                    #             self.add_matched_memory(m)
 
-    def post_matched_memory(self, m: Memory):
-        m.post_matched()
-        self.add_matched_memory(m)
-        self.extend_matching_parent(m)
+    def post_matched_memories(self):
+        for m in {x for x in self.active_memories if x.status is MemoryStatus.MATCHED}:
+            m.post_matched()
 
     @util.timeit
     def add_matched_memory(self, m):
@@ -142,25 +153,25 @@ class Brain:
             work_list.append(m)
             self.active_memories.add(m)
 
-    @util.timeit
+    # @util.timeit
     # extend active time of parent memory which are in active and matching status
-    def extend_matching_parent(self, m: Memory):
-        for x in m.parent:
-            self.extend_matching_parent_tree(x)
+    # def extend_matching_parent(self, m: Memory):
+    #     for x in m.parent:
+    #         self.extend_matching_parent_tree(x)
 
-    def extend_matching_parent_tree(self, m: Memory):
-        if m in self.temp_set1:
-            return
-        self.temp_set1.add(m)  # record that x have been processed, will skip it in the same frame
-        if m in self.active_memories and m.status is MemoryStatus.MATCHING:
-            m.active_end_time = time.time() + memory.MEMORY_DURATIONS[m.memory_type]
-        # self.counter += 1
-        for x in m.parent:
-            self.extend_matching_parent_tree(x)
+    # def extend_matching_parent_tree(self, m: Memory):
+    #     if m in self.temp_set1:
+    #         return
+    #     self.temp_set1.add(m)  # record that x have been processed, will skip it in the same frame
+    #     if m in self.active_memories and m.status is MemoryStatus.MATCHING:
+    #         m.active_end_time = time.time() + memory.MEMORY_DURATIONS[m.memory_type]
+    #     # self.counter += 1
+    #     for x in m.parent:
+    #         self.extend_matching_parent_tree(x)
 
     @util.timeit
     def put_memory(self, m: Memory):
-        logger.debug(f'put_memory:{m.mid}')
+        # logger.debug(f'put_memory:{m.mid}')
         em = self.memory_indexes.get(m.mid)
         if em:
             m = em
@@ -169,7 +180,7 @@ class Brain:
             self.memories.add(m)
             m.create_index(self.memory_indexes)
             m.matched(recall=False)
-        self.post_matched_memory(m)
+        self.add_matched_memory(m)
         return m
 
     def find_similar_feature_memories(self, query: Memory):
@@ -196,8 +207,8 @@ class Brain:
             return
         q = Memory(memory_type, real_type=real_type, children=children)
         m = self.put_memory(q)
-        for c in children:
-            c.parent.add(m)
+        # for c in children:
+        #     c.parent.add(m)
         if reward > 0:
             m.reward = reward
         else:
@@ -268,7 +279,7 @@ class Brain:
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
     def cleanup_memories(self):
-        # TODO, is there performance issue?
+        # TODO, is there performance issue? Seems multi thread don't help
         for m in self.memories.copy():
             m.refresh_self(recall=False, is_forget=True)
 
@@ -278,8 +289,8 @@ class Brain:
                               reverse=True)
         trim_memories = new_memories[0:MEMORIES_NUM]
         self.memories = set(trim_memories)
-        for m in self.memories.copy():
-            m.parent = {x for x in m.parent if x in new_memories}
+        # for m in self.memories.copy():
+        #     m.parent = {x for x in m.parent if x in new_memories}
         self.reindex()
 
     # Use a separate thread to persist memories to storage regularly.
@@ -318,3 +329,10 @@ class Brain:
                          x.memory_type == MemoryType.REAL and
                          x.real_type == real_type and x.status == MemoryStatus.MATCHING}
         return real_memories
+
+    @util.timeit
+    def get_matched_slice_memories(self, real_type):
+        slice_memories = {x for x in self.active_memories if
+                          x.memory_type == MemoryType.SLICE and
+                          x.real_type == real_type and x.status == MemoryStatus.MATCHED}
+        return slice_memories

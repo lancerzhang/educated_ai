@@ -1,15 +1,9 @@
 from components import favor
-from components import vision
 from components.brain import Brain
 from components.favor import Favor
 from components.featurepack import FeaturePack
-from components.memory import Memory
-from components.memory import MemoryStatus
-from components.memory import MemoryType
-from components.memory import RealType
 from components.vision import Vision
 from components.vision import Block
-
 import unittest, cv2, time, math
 from components import vision, constants
 import numpy as np
@@ -178,7 +172,7 @@ class TestVision(unittest.TestCase):
         rs = list(it)
         time2 = time.time()
         print(f'used {(time2 - time1) * 1000} ms')
-        print(rs)
+        # print(rs)
 
     def test_find_most_variable_block_division(self):
         img0 = cv2.imread('1920a.jpg', 0)

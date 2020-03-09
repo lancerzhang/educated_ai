@@ -34,15 +34,18 @@ class Action(object):
 
     @util.timeit
     def reproduce_mouse_clicks(self):
-        physical_memories = self.brain.get_matching_real_memories(RealType.ACTION_MOUSE_CLICK)
+        physical_memories = self.brain.get_matched_slice_memories(RealType.ACTION_MOUSE_CLICK)
         for m in physical_memories:
-            self.reproduce_mouse_click(m)
+            for c in m.children:
+                self.reproduce_mouse_click(c)
+            m.post_matched()
 
     @util.timeit
     def reproduce_mouse_click(self, m: Memory):
         if m.click_type == constants.LEFT_CLICK:
             self.left_click()
             m.matched()
+            m.post_matched()
 
     @util.timeit
     def feel_clicks(self, click):

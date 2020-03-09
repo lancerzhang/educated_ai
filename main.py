@@ -138,15 +138,21 @@ def main(argv):
                 action.process(button, focus)
             reward.process(key)
             brain.match_memories()
+            vision.reproduce()
             brain.compose_memories()
 
             # work end
             work_duration = util.time_diff(start)
             # status_controller.update_status(work_duration)
+            brain.post_matched_memories()
             brain.cleanup_active_memories()
 
             all_duration = util.time_diff(start)
-            logging.info('frame took %d ms' % (all_duration * 1000))
+            duration_ms = all_duration * 1000
+            if duration_ms > 100:
+                logging.info('frame took %d ms' % duration_ms)
+            else:
+                logging.debug('frame took %d ms' % duration_ms)
 
             # all end, sleep to avoid running too fast
             if all_duration < dps:
