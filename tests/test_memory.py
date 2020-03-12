@@ -76,17 +76,6 @@ class TestMemory(unittest.TestCase):
         memory1.matched_time = time.time() - 401
         self.assertEqual(1, memory1.get_desire())
 
-    def test_flatten(self):
-        memories = build_a_tree()
-        new_memories = memory.flatten(set(memories))
-        self.assertEqual(len(memories), len(new_memories))
-
-    def test_construct(self):
-        memories = build_a_tree()
-        saved = memory.flatten(set(memories))
-        new_memories = memory.construct(set(saved))
-        self.assertEqual(len(memories), len(new_memories))
-
     def test_hash(self):
         memories = build_a_tree()
         list1 = [memories[0], memories[1]]

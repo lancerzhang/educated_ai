@@ -7,6 +7,7 @@ from components import util
 from collections import deque
 from itertools import combinations
 from multiprocessing import Pool
+import copy
 import logging
 import numpy as np
 import traceback
@@ -18,9 +19,9 @@ logger.setLevel(logging.DEBUG)
 FEATURE_SIMILARITY_THRESHOLD = 0.2
 ACTIVE_LONG_MEMORY_LIMIT = 100
 ASSOCIATE_MEMORY_LIMIT = 10
-MEMORIES_NUM = 100 * 100 * 10
-MEMORIES_CLEANUP_NUM = 100 * 100 * 11
-
+MEMORIES_NUM = 100 * 100 * 5
+MEMORIES_CLEANUP_NUM = 100 * 100 * 6
+INTERVAL_MS = 5
 MEMORY_FILE = 'data/memory.npy'
 
 
@@ -33,6 +34,33 @@ def children_combinations(memories, width):
         return combinations(memory_id_list, width)
     else:
         return util.list_continuous_combination(memory_id_list, width)
+
+
+def flatten_memory(m: Memory):
+    nm = copy.copy(m)
+    nm.children = [x.mid for x in m.children]
+    return nm
+
+
+def slow_loop(mode, memory_list, function_name, arg):
+    interval_s = INTERVAL_MS / 1000
+    time.sleep(interval_s)
+    start = time.time()
+    chunk_size = 10
+    result = []
+    for i in range(0, len(memory_list), chunk_size):
+        chunk = memory_list[i:i + chunk_size]
+        for m in chunk:
+            if mode == 'c':
+                getattr(m, function_name)(arg)
+                result.append(m)
+            elif mode == 'm':
+                new_memory = globals()[function_name](m)
+                result.append(new_memory)
+        if time.time() - start > interval_s:
+            start = time.time()
+            time.sleep(interval_s)
+    return result
 
 
 class Brain:
@@ -58,24 +86,26 @@ class Brain:
         for memory_type in reversed(range(memory.MEMORY_TYPES_LENGTH - 1)):
             memories = [x for x in self.active_memories if
                         x.memory_type == memory_type and x.status is MemoryStatus.LIVING]
-            logger.debug(f'memory_type:{memory_type}')
-            logger.debug(f'len memories:{len(memories)}')
+            # logger.debug(f'memory_type:{memory_type}')
+            # logger.debug(f'len memories:{len(memories)}')
             sorted_memories = sorted(memories, key=lambda x: x.matched_time, reverse=False)
-            logger.debug(f'len sorted_memories:{len(sorted_memories)}')
+            # logger.debug(f'len sorted_memories:{len(sorted_memories)}')
             # print(f'{memory_type},sorted_memories:{sorted_memories}')
             activated_count = 0
             for width in reversed(range(1, memory.COMPOSE_NUMBER - 1)):
-                logger.debug(f'width:{width}')
+                # logger.debug(f'width:{width}')
                 sub_sets = children_combinations(sorted_memories, width)
-                logger.debug(f'len sub_sets:{len(sub_sets)}')
+                # logger.debug(f'len sub_sets:{len(sub_sets)}')
                 # print(f'sub_sets:{sub_sets}')
                 for sub_set in sub_sets:
                     # print(f'sub_set:{sub_set}')
                     parents = self.memory_indexes.get(memory.create_children_hash(sub_set, memory_type + 1))
                     # print(f'parents:{parents}')
                     if parents is not None:
-                        logger.debug(f'len parents:{len(parents)}')
-                        for m in parents:
+                        sorted_parent = sorted(list(parents), key=lambda x: (x.recall_count, x.matched_time),
+                                               reverse=True)
+                        # logger.debug(f'len parents:{len(parents)}')
+                        for m in sorted_parent:
                             if activated_count > ASSOCIATE_MEMORY_LIMIT:
                                 return
                                 # print(f'{m.simple_str()}')
@@ -279,34 +309,48 @@ class Brain:
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
     def cleanup_memories(self):
-        # TODO, is there performance issue? Seems multi thread don't help
-        for m in self.memories.copy():
-            m.refresh_self(recall=False, is_forget=True)
-
+        interval_s = INTERVAL_MS / 1000
+        memories = list(self.memories)
+        time.sleep(interval_s)
+        new_memories = slow_loop('c', memories, 'cleanup_refresh', None)
+        time.sleep(interval_s)
         if len(self.memories) < MEMORIES_CLEANUP_NUM:
-            return
-        new_memories = sorted(list(self.memories.copy()), key=lambda x: (x.status, x.recall_count, x.matched_time),
-                              reverse=True)
-        trim_memories = new_memories[0:MEMORIES_NUM]
+            return new_memories
+        sorted_memories = sorted(new_memories, key=lambda x: (x.status, x.recall_count, x.matched_time),
+                                 reverse=True)
+        time.sleep(interval_s)
+        trim_memories = sorted_memories[0:MEMORIES_NUM]
+        time.sleep(interval_s)
+        self.reindex(fast_mode=False, memory_list=trim_memories)
+        time.sleep(interval_s)
         self.memories = set(trim_memories)
-        # for m in self.memories.copy():
-        #     m.parent = {x for x in m.parent if x in new_memories}
-        self.reindex()
+        return trim_memories
 
     # Use a separate thread to persist memories to storage regularly.
     @util.timeit
     def save(self):
         try:
-            self.cleanup_memories()
-            np.save(MEMORY_FILE, list(memory.flatten(self.memories.copy())))
+            memories = self.cleanup_memories()
+            new_memories = slow_loop('m', memories, 'flatten_memory', None)
+            np.save(MEMORY_FILE, new_memories)
         except:
             logging.error(traceback.format_exc())
 
+    def persist(self):
+        while True:
+            self.save()
+            time.sleep(1)
+
     @util.timeit
-    def reindex(self):
+    def reindex(self, fast_mode=True, memory_list=None):
         memory_indexes = {}
-        for m in self.memories:
-            m.create_index(memory_indexes)
+        if memory_list is None:
+            memory_list = list(self.memories)
+        if fast_mode:
+            for m in memory_list:
+                m.create_index(memory_indexes)
+        else:
+            slow_loop('c', memory_list, 'create_index', memory_indexes)
         self.memory_indexes = memory_indexes
 
     @util.timeit

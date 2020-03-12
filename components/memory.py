@@ -57,17 +57,6 @@ TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 
             41225925, 48003823, 55896067, 65085866]
 
 
-@util.timeit
-def flatten(memories):
-    new_memories = set()
-    for m in memories:
-        nm = copy.copy(m)
-        # nm.parent = set([x.mid for x in m.parent])
-        nm.children = [x.mid for x in m.children]
-        new_memories.add(nm)
-    return new_memories
-
-
 def construct_loop(mset, mdict):
     changed_set = set()
     for m in mset:
@@ -172,6 +161,9 @@ class Memory:
             end_number = len(time_seq)
         sub_arr = time_seq[recall_count:end_number]
         return time.time() + np.sum(sub_arr)
+
+    def cleanup_refresh(self, arg=None):
+        self.refresh_self(recall=False, is_forget=True)
 
     # longer time elapsed, easier to forget
     # more times recall, harder to forget

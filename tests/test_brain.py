@@ -19,8 +19,7 @@ class TestBrain(unittest.TestCase):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
         brain1.memories = memories
-        brain1.active_memories = active_memories
-        brain1.reindex()
+        brain1.reindex(fast_mode=False)
         # case1
         memories[8].status = MemoryStatus.SLEEP
         memories[8].matched_time = time.time() - memories[8].get_duration() - 1
@@ -72,7 +71,7 @@ class TestBrain(unittest.TestCase):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
         brain1.memories = memories
-        brain1.reindex()
+        brain1.reindex(fast_mode=False)
         memories[6].status = MemoryStatus.SLEEP
         memories[6].matched_time = time.time() - memories[6].get_duration() - 1
         brain1.active_memories = {memories[5]}
@@ -84,7 +83,7 @@ class TestBrain(unittest.TestCase):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
         brain1.memories = memories
-        brain1.reindex()
+        brain1.reindex(fast_mode=False)
         memories[6].status = MemoryStatus.SLEEP
         memories[6].matched_time = time.time() - memories[6].get_duration() - 1
         memories[8].status = MemoryStatus.SLEEP
@@ -99,7 +98,7 @@ class TestBrain(unittest.TestCase):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
         brain1.memories = memories
-        brain1.reindex()
+        brain1.reindex(fast_mode=False)
         # case1
         memories[2].status = MemoryStatus.SLEEP
         memories[2].matched_time = time.time() - memories[2].get_duration() - 1
@@ -291,7 +290,7 @@ class TestBrain(unittest.TestCase):
         memories.append(Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                channel='u', feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
         brain1.memories = memories
-        brain1.reindex()
+        brain1.reindex(fast_mode=False)
         em = brain1.find_similar_feature_memories(memories[0])
         self.assertTrue(em)
         em = brain1.find_similar_feature_memories(memories[11])
@@ -305,7 +304,7 @@ class TestBrain(unittest.TestCase):
                     feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
         m1.reward = 50
         brain1.memories = [m1]
-        brain1.reindex()
+        brain1.reindex(fast_mode=True)
         m2 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                     feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
         self.assertEqual(0, m2.reward)
@@ -316,7 +315,7 @@ class TestBrain(unittest.TestCase):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.MATCHING)
         brain1.memories = set(memories)
-        brain1.reindex()
+        brain1.reindex(fast_mode=False)
         # existing memory
         m1 = brain1.compose_memory([memories[0], memories[1]], MemoryType.SLICE)
         self.assertEqual(m1, memories[2])
@@ -396,21 +395,18 @@ class TestBrain(unittest.TestCase):
         # brain1.cleanup_memories()
         # self.assertEqual(6, len(brain1.memories))
 
-    # def test_persist_memories(self):
-    #     brain1 = Brain()
-    #     memories = test_memory.build_a_tree()
-    #     brain1.memories = set(memories)
-    #     brain1.active_memories = memories
-    #     brain1.save()
-    #     memory.id_sequence = 0
-    #     brain2 = Brain()
-    #     brain2.load()
-    #     self.assertTrue(isinstance(brain2.memories, set))
-    #     self.assertEqual(7, len(brain2.memories))
-    #     m2 = util.get_from_set(brain2.memories, 3)
-    #     self.assertEqual(2, len(m2.children))
-    #     self.assertEqual(len(memories), memory.id_sequence)
-    #
+    def test_persist_memories(self):
+        brain.MEMORY_FILE = 'memory.npy'
+        brain1 = Brain()
+        memories = test_memory.build_a_tree()
+        brain1.memories = set(memories)
+        brain1.save()
+        brain2 = Brain()
+        brain2.load()
+        self.assertTrue(isinstance(brain2.memories, set))
+        self.assertEqual(11, len(brain2.memories))
+        m2 = util.get_from_set(brain2.memories, memories[2])
+        self.assertEqual(2, len(m2.children))
 
 
 if __name__ == "__main__":

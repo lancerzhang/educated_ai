@@ -85,12 +85,15 @@ def main(argv):
         #     configs = load_main_conf()
         #     if configs:
         #         da.synchronize_memory_time(configs[0][constants.LAST_SYSTEM_TIME])
-        schedule.every(5).seconds.do(brain.save)
-        schedule.every(10).seconds.do(brain.log_dashboard)
-        schedule.every(59).seconds.do(favor.save)
+        # schedule.every(89).seconds.do(brain.save)
+        # schedule.every(10).seconds.do(brain.log_dashboard)
+        schedule.every(60).seconds.do(favor.save)
         schedule_thread = threading.Thread(target=run_pending)
         schedule_thread.daemon = True
         schedule_thread.start()
+        persist_thread = threading.Thread(target=brain.persist)
+        persist_thread.daemon = True
+        persist_thread.start()
         reward = Reward(brain)
         status = Status(brain)
         action = Action(brain)
@@ -149,7 +152,7 @@ def main(argv):
 
             all_duration = util.time_diff(start)
             duration_ms = all_duration * 1000
-            if duration_ms > 100:
+            if duration_ms > 10:
                 logging.info('frame took %d ms' % duration_ms)
             else:
                 logging.debug('frame took %d ms' % duration_ms)
