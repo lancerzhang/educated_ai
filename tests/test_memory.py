@@ -1,13 +1,14 @@
-from components import memory
-from components import util
-from components.memory import Memory
-from components.memory import MemoryType
-from components.memory import MemoryStatus
-from components.memory import RealType
-import numpy as np
-import time
 import hashlib
+import time
 import unittest
+
+import numpy as np
+
+from components import memory
+from components.memory import Memory
+from components.memory import MemoryStatus
+from components.memory import MemoryType
+from components.memory import RealType
 
 
 # parent (0,1)-2, (0)-3, (2,3)-4, (2)-5, (4,5)-6, (4)-7, (6,7)-8, (6)-9, (8,9)-10

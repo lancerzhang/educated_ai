@@ -1,17 +1,19 @@
-from components.memory import Memory
-from components.memory import MemoryType
-from components.memory import MemoryStatus
-from components import dashboard
-from components import memory
-from components import util
+import copy
+import logging
+import time
+import traceback
 from collections import deque
 from itertools import combinations
 from multiprocessing import Pool
-import copy
-import logging
+
 import numpy as np
-import traceback
-import time
+
+from components import dashboard
+from components import memory
+from components import util
+from components.memory import Memory
+from components.memory import MemoryStatus
+from components.memory import MemoryType
 
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.DEBUG)

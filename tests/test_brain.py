@@ -1,16 +1,16 @@
+import time
+import unittest
+
+import numpy as np
+
+from components import brain
+from components import util
+from components.brain import Brain
 from components.memory import Memory
 from components.memory import MemoryStatus
 from components.memory import MemoryType
 from components.memory import RealType
-from components.brain import Brain
-from components import brain
-from components import memory
-from components import util
 from tests import test_memory
-from unittest.mock import patch
-import numpy as np
-import time
-import unittest
 
 
 class TestBrain(unittest.TestCase):

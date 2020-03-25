@@ -1,3 +1,7 @@
+import unittest
+
+import numpy as np
+
 from components import favor
 from components.brain import Brain
 from components.favor import Favor
@@ -7,8 +11,6 @@ from components.memory import MemoryStatus
 from components.memory import MemoryType
 from components.memory import RealType
 from components.sound import Sound
-import numpy as np
-import unittest
 
 
 class TestSound(unittest.TestCase):

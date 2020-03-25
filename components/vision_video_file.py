@@ -1,9 +1,11 @@
-from .vision import Vision
-from . import util
-import cv2
 import logging
-import mss
 import time
+
+import cv2
+import mss
+
+from . import util
+from .vision import Vision
 
 
 class VideoFileVision(Vision):
@@ -38,11 +40,10 @@ class VideoFileVision(Vision):
         if self.is_show is 'n':
             return focus
 
-        print(f'vf is_show {self.is_show}')
         display_frame = self.source_frame.copy()
-        cv2.rectangle(display_frame, (self.current_block[self.START_X], self.current_block[self.START_Y]),
-                      (self.current_block[self.START_X] + self.current_block[self.WIDTH],
-                       self.current_block[self.START_Y] + self.current_block[self.HEIGHT]), (0, 255, 0), 1)
+        cv2.rectangle(display_frame, (self.current_block.x, self.current_block.y),
+                      (self.current_block.x + self.current_block.w,
+                       self.current_block.y + self.current_block.h), (0, 255, 0), 1)
 
         if self.monitor_width == self.FRAME_WIDTH:
             cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)

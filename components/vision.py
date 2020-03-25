@@ -1,12 +1,15 @@
-from pynput.mouse import Controller
 import copy
-import cv2
 import logging
 import math
-import numpy as np
 import random
-import skimage.measure
 import time
+from multiprocessing import Pool
+
+import cv2
+import numpy as np
+import skimage.measure
+from pynput.mouse import Controller
+
 from . import constants
 from . import memory
 from . import util
@@ -16,7 +19,6 @@ from .featurepack import FeaturePack
 from .memory import Memory
 from .memory import MemoryType
 from .memory import RealType
-from multiprocessing import Pool
 
 logger = logging.getLogger('Vision')
 logger.setLevel(logging.INFO)

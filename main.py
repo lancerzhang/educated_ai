@@ -1,3 +1,15 @@
+import getopt
+import logging
+import sys
+import threading
+import time
+import traceback
+
+import numpy as np
+import schedule
+
+from components import constants
+from components import util
 from components.action import Action
 from components.brain import Brain
 from components.favor import Favor
@@ -9,16 +21,6 @@ from components.sound_video_file import VideoFileSound
 from components.status import Status
 from components.vision_screen import ScreenVision
 from components.vision_video_file import VideoFileVision
-from components import constants
-from components import util
-import getopt
-import logging
-import numpy as np
-import schedule
-import sys
-import threading
-import time
-import traceback
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
@@ -152,7 +154,7 @@ def main(argv):
 
             all_duration = util.time_diff(start)
             duration_ms = all_duration * 1000
-            if duration_ms > 10:
+            if duration_ms > 100:
                 logging.info('frame took %d ms' % duration_ms)
             else:
                 logging.debug('frame took %d ms' % duration_ms)

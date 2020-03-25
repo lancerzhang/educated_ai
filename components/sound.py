@@ -1,20 +1,19 @@
 import collections
-import cv2
-import librosa
 import logging
 import math
-import numpy as np
 import random
+from multiprocessing import Pool
+
+import cv2
+import librosa
+import numpy as np
 import skimage.measure
-import time
-from . import constants
+
 from . import util
 from .brain import Brain
 from .favor import Favor
 from .featurepack import FeaturePack
-from .memory import Memory
 from .memory import RealType
-from multiprocessing import Pool
 
 logger = logging.getLogger('Sound')
 logger.setLevel(logging.INFO)
