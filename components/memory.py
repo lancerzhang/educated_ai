@@ -273,6 +273,8 @@ class Memory:
         self.matched_time = time.time()
         # extend active end time when it's matched, keeping it in active memories for composing
         self.active_end_time = time.time() + self.get_duration()
+        if self.recall_count > 50:
+            print(f'match: t.{self.memory_type} r.{self.real_type} {self.mid}')
         if recall:
             self.recall()
 

@@ -4,6 +4,7 @@
 TinyDB.json
 tests/*.npy
 train/*.mp4
+debug/img/*
 data/*
 app.log
 test.py

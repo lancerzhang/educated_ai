@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import time
 
@@ -65,4 +66,7 @@ class VideoFileVision(Vision):
         left = int(left)
         width = int(width)
         height = int(height)
-        return self.source_frame[top:top + height, left:left + width]
+        img = self.source_frame[top:top + height, left:left + width]
+        # img = img.copy(order='C')
+        # cv2.imwrite(f'debug/img/{hashlib.sha1(img).hexdigest()}.jpg', img)
+        return img
