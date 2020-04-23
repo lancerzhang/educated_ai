@@ -67,6 +67,6 @@ class VideoFileVision(Vision):
         width = int(width)
         height = int(height)
         img = self.source_frame[top:top + height, left:left + width]
-        # img = img.copy(order='C')
-        # cv2.imwrite(f'debug/img/{hashlib.sha1(img).hexdigest()}.jpg', img)
+        img = img.copy(order='C')
+        cv2.imwrite(f'debug/img/{hashlib.sha1(img).hexdigest()}.jpg', img)
         return img

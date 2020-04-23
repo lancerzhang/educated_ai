@@ -1,5 +1,6 @@
 import copy
 import logging
+import hashlib
 import math
 import random
 import time
@@ -82,7 +83,7 @@ class Block(object):
 class Vision(object):
     FRAME_WIDTH = 0
     FRAME_HEIGHT = 0
-    ROI_ARR = [10, 20, 40, 80]
+    ROI_ARR = [28, 56, 112]
     INIT_ROI_INDEX = 2
 
     FEATURE_INPUT_SIZE = 12
@@ -200,6 +201,7 @@ class Vision(object):
             if fp.similar:
                 m = self.brain.memory_indexes.get(fp.mid)
                 m.matched()
+                cv2.imwrite(f'img/{hashlib.sha1(img).hexdigest()}.jpg', img)
                 self.update_used_kernel(fp.kernel)
                 self.update_used_channel(fp.channel)
 

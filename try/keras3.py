@@ -6,11 +6,30 @@ from keras.preprocessing.image import img_to_array
 from keras.models import Model
 from matplotlib import pyplot
 from numpy import expand_dims
+from keras import Input, layers
+from keras.models import Model
+from keras.models import Sequential
+from keras.layers import Dense, Activation
+
 # load the model
 model = VGG16()
-# redefine model to output right after the first hidden layer
-model = Model(inputs=model.inputs, outputs=model.layers[1].output)
+filters, biases = model.layers[1].get_weights()
+
+
+def my_kernel(shape, dtype=None):
+    return filters
+
+
+input_tensor = Input(shape=(224, 224, 3))
+x = layers.Conv2D(filters=64,
+                  kernel_size=3,
+                  kernel_initializer=my_kernel,
+                  strides=1,
+                  activation='relu',
+                  padding='same')(input_tensor)
+model = Model(inputs=input_tensor, outputs=x)
 model.summary()
+
 # load the image with the required shape
 img = load_img('triangle1.jpg', target_size=(224, 224))
 # convert the image to an array
@@ -25,11 +44,11 @@ feature_maps = model.predict(img)
 square = 8
 ix = 1
 for _ in range(square):
-	for _ in range(square):
-		# specify subplot and turn of axis
-		ax = pyplot.subplot(square, square, ix)
-		# plot filter channel in grayscale
-		pyplot.imshow(feature_maps[0, :, :, ix-1], cmap='gray')
-		ix += 1
+    for _ in range(square):
+        # specify subplot and turn of axis
+        ax = pyplot.subplot(square, square, ix)
+        # plot filter channel in grayscale
+        pyplot.imshow(feature_maps[0, :, :, ix - 1], cmap='gray')
+        ix += 1
 # show the figure
 pyplot.show()

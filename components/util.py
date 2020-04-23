@@ -266,6 +266,14 @@ def np_array_group_by_count(list1):
     return dict(list(zip(unique, counts)))
 
 
+def np_2d_array_nonzero_box(arr):
+    nz = arr.nonzero()
+    if len(nz[0])>0 and len(nz[1])>0:
+        return arr[min(nz[0]):max(nz[0]) + 1, min(nz[1]):max(nz[1]) + 1]
+    else:
+        return arr
+
+
 @timeit
 def get_high_rank(rank_list):
     ri = random.randint(0, 9)
