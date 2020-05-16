@@ -16,7 +16,7 @@ favor1.load()
 for f in favor1.vuk.items:
     print(f)
 
-img = cv2.imread('../try/triangle1.jpg', 0)
+img = cv2.imread('../try/triangle1.jpg', 1)
 # from keras.applications.vgg16 import preprocess_input
 # from keras.preprocessing.image import load_img
 # from keras.preprocessing.image import img_to_array
@@ -32,8 +32,9 @@ for i in range(x * y):
     # kernel = kernel.astype(np.float64)
     kernel = vgg16_filters[:, :, 0, i]
     feature = cv2.filter2D(img, -1, kernel)
+    feature = np.maximum(feature, 0)
     # feature = skimage.measure.block_reduce(feature, (2, 2), np.max)
     # feature = skimage.measure.block_reduce(feature, (2, 2), np.max)
-    pyplot.imshow(feature, cmap='gray')
+    pyplot.imshow(feature[:, :, 0], cmap='gray')
 
 pyplot.show()

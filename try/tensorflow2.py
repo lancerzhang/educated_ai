@@ -2,11 +2,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 # TensorFlow and tf.keras
 import tensorflow as tf
-from tensorflow import keras
-import time
+
 # Helper libraries
-import numpy as np
-import matplotlib.pyplot as plt
 
 print(tf.__version__)
 
@@ -27,18 +24,12 @@ from keras.preprocessing.image import img_to_array
 with open('vgg16.l1.filters', 'rb') as filters:
     vgg16_filters = pickle.load(filters)
 
-img = load_img('triangle1.jpg', target_size=(224, 224))
+img = load_img('triangle1.jpg', target_size=(64, 64))
+img = img_to_array(img)
+img = expand_dims(img, axis=0)
+img = preprocess_input(img)
 x = 8
 y = 8
-# pyplot.subplot(x, y, ix)
-# pyplot.imshow(img, cmap='gray')
-# convert the image to an array
-img = img_to_array(img)
-# expand dimensions so that it represents a single 'sample'
-img = expand_dims(img, axis=0)
-# prepare the image (e.g. scale pixel values for the vgg)
-img = preprocess_input(img)
-# ix += 1
 
 
 # feature = tf.nn.conv2d(img, vgg16_filters, [1, 1, 1, 1], padding="SAME")
@@ -51,13 +42,13 @@ t = 0
 for i in range(x * y):
     pyplot.subplot(x, y, i + 1)
     t1 = time.time()
-    filter = vgg16_filters[:, :, :, i]
-    filter = expand_dims(filter, axis=-1)
-    feature = tf.nn.conv2d(img, filter, [1, 1, 1, 1], padding="VALID")
+    kernel = vgg16_filters[:, :, :, i]
+    kernel = expand_dims(kernel, axis=-1)
+    feature = tf.nn.conv2d(img, kernel, [1, 1, 1, 1], padding="VALID")
     feature = tf.nn.relu(feature)
     t2 = time.time()
     t = t + (t2 - t1)
     pyplot.imshow(feature[0, :, :, 0], cmap='gray')
-print(f'avg {t * 1000 / (x * y)} ms to con an image once')
+print(f'avg {t * 1000 / (x * y)} ms to conv an image')
 
 pyplot.show()

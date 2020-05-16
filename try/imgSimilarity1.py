@@ -24,7 +24,7 @@ def normalize(img):
     return normalize2(img)
 
 
-def filter(img):
+def filter_image(img):
     return img
 
 
