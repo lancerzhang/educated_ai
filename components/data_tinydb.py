@@ -1,5 +1,6 @@
-from . import constants
 from tinydb import Query
+
+from . import constants
 
 
 class DataTinyDB:

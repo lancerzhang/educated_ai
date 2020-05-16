@@ -1,8 +1,10 @@
-import audioread, librosa
-import numpy as np
-from components import util
-import matplotlib.pyplot as plt
+import audioread
+import librosa
 import librosa.display as dsp
+import matplotlib.pyplot as plt
+import numpy as np
+
+from components import util
 
 RATE = 44100
 i = 0

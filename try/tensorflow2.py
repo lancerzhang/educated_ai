@@ -31,7 +31,6 @@ img = preprocess_input(img)
 x = 8
 y = 8
 
-
 # feature = tf.nn.conv2d(img, vgg16_filters, [1, 1, 1, 1], padding="SAME")
 # feature = tf.nn.relu(feature)
 # for i in range(x * y):

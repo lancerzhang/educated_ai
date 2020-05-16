@@ -1,10 +1,11 @@
-from components import util
-from components import memory
-from itertools import groupby
-import numpy as np
 import random
 import time
 import unittest
+from itertools import groupby
+
+import numpy as np
+
+from components import util
 
 
 class TestUtil(unittest.TestCase):

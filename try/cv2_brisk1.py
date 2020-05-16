@@ -1,6 +1,5 @@
-import numpy as np
 import cv2
-import statistics
+import numpy as np
 import skimage.measure
 from matplotlib import pyplot as plt
 

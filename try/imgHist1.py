@@ -1,6 +1,6 @@
-import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 
 img = cv2.imread('head10.jpg', 0)
 hist_cv = cv2.calcHist([img], [0], None, [256], [0, 256])

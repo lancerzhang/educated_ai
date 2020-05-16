@@ -1,7 +1,7 @@
-from components.rgb_histogram import RGBHistogram
 import cv2
-import time
 import numpy as np
+
+from components.rgb_histogram import RGBHistogram
 
 
 def chi2_distance(histA, histB, eps=1e-10):

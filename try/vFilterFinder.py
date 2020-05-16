@@ -1,5 +1,6 @@
+import cv2
 import numpy as np
-import cv2, time
+import time
 
 # read image with color
 # img = cv2.imread('image2.jpg')
@@ -21,7 +22,8 @@ for p1 in range(0, 3):
                                 for p9 in range(0, 3):
                                     # count = count + 1
                                     # print count
-                                    filter = np.array([[p1 - 1, p2 - 1, p3 - 1], [p4 - 1, p5 - 1, p6 - 1], [p7 - 1, p8 - 1, p9 - 1]])
+                                    filter = np.array(
+                                        [[p1 - 1, p2 - 1, p3 - 1], [p4 - 1, p5 - 1, p6 - 1], [p7 - 1, p8 - 1, p9 - 1]])
                                     # print filter
                                     cov = cv2.filter2D(img, -1, filter)
                                     hist_cv = cv2.calcHist([cov], [0], None, [256], [0, 256])

@@ -1,8 +1,10 @@
-import pyaudio, librosa
-from components import util
-import matplotlib.pyplot as plt
+import librosa
 import librosa.display as dsp
+import matplotlib.pyplot as plt
 import numpy as np
+import pyaudio
+
+from components import util
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16

@@ -1,6 +1,6 @@
 import librosa
-import matplotlib.pyplot as plt
 import librosa.display as dsp
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
 
@@ -15,13 +15,12 @@ def rms(x):
 y = np.load('hi2.npy')
 mel_data0 = librosa.feature.melspectrogram(y=y, sr=44100, n_mels=128, fmax=8000)
 
-v=np.array([
-    [1,1,1],
-    [1,1,1],
-    [1,1,1]
+v = np.array([
+    [1, 1, 1],
+    [1, 1, 1],
+    [1, 1, 1]
 ])
 mel_data = signal.convolve2d(mel_data0, v, boundary='symm', mode='same')
-
 
 idata = mel_data.transpose()
 

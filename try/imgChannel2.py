@@ -3,10 +3,11 @@ import numpy as np
 
 
 def make_lut_u():
-    return np.array([[[i,255-i,0] for i in range(256)]],dtype=np.uint8)
+    return np.array([[[i, 255 - i, 0] for i in range(256)]], dtype=np.uint8)
+
 
 def make_lut_v():
-    return np.array([[[0,255-i,i] for i in range(256)]],dtype=np.uint8)
+    return np.array([[[0, 255 - i, i] for i in range(256)]], dtype=np.uint8)
 
 
 img = cv2.imread('image2.jpg')

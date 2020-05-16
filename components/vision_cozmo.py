@@ -1,8 +1,9 @@
-from .vision import Vision
-from . import util
 import cozmo
 import cv2
 import numpy as np
+
+from . import util
+from .vision import Vision
 
 
 class CozmoVision(Vision):

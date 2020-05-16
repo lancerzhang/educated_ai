@@ -1,11 +1,11 @@
-from components.favor import Favor
-from components import favor
-from components import util
-from matplotlib import pyplot
-import numpy as np
-import cv2
-import skimage.measure
 import pickle
+
+import cv2
+import numpy as np
+from matplotlib import pyplot
+
+from components import favor
+from components.favor import Favor
 
 with open('../try/vgg16.l1.filters', 'rb') as filters:
     vgg16_filters = pickle.load(filters)

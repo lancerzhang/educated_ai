@@ -5,11 +5,15 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import librosa, math, audioop, pyaudio
-from components import util
-import matplotlib.pyplot as plt
+import audioop
+import librosa
 import librosa.display as dsp
+import math
+import matplotlib.pyplot as plt
 import numpy as np
+import pyaudio
+
+from components import util
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16

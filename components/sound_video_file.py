@@ -1,7 +1,8 @@
-from .sound import Sound
 import audioread
 import numpy as np
+
 from . import util
+from .sound import Sound
 
 
 class VideoFileSound(Sound):

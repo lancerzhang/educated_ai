@@ -1,7 +1,9 @@
+import logging
+
 from pynput import keyboard
+
 from . import constants
 from . import util
-import logging
 
 logger = logging.getLogger('InputListener')
 logger.setLevel(logging.INFO)

@@ -1,7 +1,9 @@
 from os import listdir
+
 import cv2
 import numpy as np
 import skimage.measure
+
 from components import util
 
 SIZE = 14

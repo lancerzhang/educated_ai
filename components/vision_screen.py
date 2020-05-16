@@ -1,7 +1,8 @@
-from .vision import Vision
-from . import util
 import mss
 import numpy as np
+
+from . import util
+from .vision import Vision
 
 
 class ScreenVision(Vision):

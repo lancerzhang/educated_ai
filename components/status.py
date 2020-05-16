@@ -1,8 +1,9 @@
-from . import constants
 import logging
-from . import util
+
 import numpy as np
-import time
+
+from . import constants
+from . import util
 
 logger = logging.getLogger('status')
 logger.setLevel(logging.INFO)

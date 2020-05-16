@@ -1,7 +1,7 @@
 import cv2
-from scipy import spatial
 import numpy as np
 import skimage.measure
+from scipy import spatial
 
 PATH = '../tests/'
 SIZE = 14

@@ -1,11 +1,13 @@
-from components.bio_memory import BioMemory
-from components.data_adaptor import DataAdaptor
-from tinydb import TinyDB
-from tinydb.storages import MemoryStorage
-from components.data_tinydb import DataTinyDB
-from components import constants
 import time
 import unittest
+
+from tinydb import TinyDB
+from tinydb.storages import MemoryStorage
+
+from components import constants
+from components.bio_memory import BioMemory
+from components.data_adaptor import DataAdaptor
+from components.data_tinydb import DataTinyDB
 
 
 class TestBioMemory(unittest.TestCase):

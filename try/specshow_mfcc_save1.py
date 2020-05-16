@@ -1,6 +1,6 @@
 import librosa
-import matplotlib.pyplot as plt
 import librosa.display as dsp
+import matplotlib.pyplot as plt
 import numpy as np
 
 y = np.load('hello1.npy')

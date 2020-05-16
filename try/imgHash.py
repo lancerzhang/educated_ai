@@ -1,9 +1,9 @@
 import glob
 import os
 import sys
+from functools import reduce
 
 from PIL import Image
-from functools import reduce
 
 EXTS = 'jpg', 'jpeg', 'JPG', 'JPEG', 'gif', 'GIF', 'png', 'PNG'
 

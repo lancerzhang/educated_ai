@@ -1,12 +1,14 @@
+import logging
+import random
+
+from pynput.mouse import Button, Controller
+
 from . import constants
 from . import util
 from .brain import Brain
 from .memory import Memory
 from .memory import MemoryType
 from .memory import RealType
-import logging
-import random
-from pynput.mouse import Button, Controller
 
 logger = logging.getLogger('Action')
 logger.setLevel(logging.INFO)

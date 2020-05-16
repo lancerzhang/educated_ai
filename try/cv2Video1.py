@@ -1,7 +1,7 @@
-import numpy as np
+import threading
+
 import cv2
 from pynput import keyboard
-import threading
 
 cap = cv2.VideoCapture('../train/1440.mp4')
 

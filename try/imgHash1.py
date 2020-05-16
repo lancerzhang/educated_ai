@@ -1,7 +1,6 @@
-import cv2
+from functools import reduce
 
 from PIL import Image
-from functools import reduce
 
 
 def avhash(im):
@@ -21,8 +20,9 @@ def hamming(h1, h2):
         d &= d - 1
     return h
 
-hash1=avhash("head1.jpg")
-hash2=avhash("head2.jpg")
+
+hash1 = avhash("head1.jpg")
+hash2 = avhash("head2.jpg")
 print(hash1)
 print(hash2)
-print(hamming(hash1,hash2 ))
+print(hamming(hash1, hash2))

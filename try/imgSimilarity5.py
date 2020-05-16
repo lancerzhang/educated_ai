@@ -1,7 +1,8 @@
-from components.filter_colors import FilterColors
 import cv2
 import numpy as np
 from matplotlib import pyplot
+
+from components.filter_colors import FilterColors
 
 img = cv2.imread('triangle1.jpg', 1)
 fc = FilterColors(img)

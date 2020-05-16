@@ -1,11 +1,12 @@
 # plot feature map of first conv layer for given image
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg16 import preprocess_input
-from keras.preprocessing.image import load_img
-from keras.preprocessing.image import img_to_array
 from keras.models import Model
+from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import load_img
 from matplotlib import pyplot
 from numpy import expand_dims
+
 # load the model
 model = VGG16()
 # redefine model to output right after the first hidden layer
@@ -25,11 +26,11 @@ feature_maps = model.predict(img)
 square = 8
 ix = 1
 for _ in range(square):
-	for _ in range(square):
-		# specify subplot and turn of axis
-		ax = pyplot.subplot(square, square, ix)
-		# plot filter channel in grayscale
-		pyplot.imshow(feature_maps[0, :, :, ix-1], cmap='gray')
-		ix += 1
+    for _ in range(square):
+        # specify subplot and turn of axis
+        ax = pyplot.subplot(square, square, ix)
+        # plot filter channel in grayscale
+        pyplot.imshow(feature_maps[0, :, :, ix - 1], cmap='gray')
+        ix += 1
 # show the figure
 pyplot.show()

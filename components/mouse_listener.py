@@ -1,7 +1,9 @@
+import logging
+
 from pynput import mouse
+
 from . import constants
 from . import util
-import logging
 
 logger = logging.getLogger('MouseListener')
 logger.setLevel(logging.INFO)

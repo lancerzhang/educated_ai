@@ -1,10 +1,4 @@
-
-import os
-import stat
-import sys
-
 import pygtrie
-
 
 ps = pygtrie.PrefixSet(factory=pygtrie.StringTrie)
 

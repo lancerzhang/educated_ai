@@ -1,5 +1,6 @@
-import numpy, cv2
+import cv2
 import mss
+import numpy
 
 # with mss() as sct:
 #     sct.shot()

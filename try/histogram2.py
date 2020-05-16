@@ -1,6 +1,3 @@
-from PIL import Image
-
-
 # This module can classfiy the image by Average Hash Method with spilt the image to 16 pieces.
 # Then calculate every piece ,consider all data and return the result
 #

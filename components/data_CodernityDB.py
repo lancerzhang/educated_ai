@@ -1,10 +1,12 @@
-import constants, util, hashlib
+import constants
+import hashlib
+import util
+from CodernityDB.database import DatabasePathException
+from CodernityDB.database import RecordDeleted
+from CodernityDB.database import RecordNotFound
 from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
 from CodernityDB.hash_index import HashIndex
 from CodernityDB.tree_index import TreeBasedIndex
-from CodernityDB.database import RecordNotFound
-from CodernityDB.database import RecordDeleted
-from CodernityDB.database import DatabasePathException
 
 
 class ChildMemoryIndex(HashIndex):

@@ -1,10 +1,11 @@
-from .bio_memory import BioMemory
-from . import constants
 import logging
 import os
 import time
-from . import util
 import uuid
+
+from . import constants
+from . import util
+from .bio_memory import BioMemory
 
 logger = logging.getLogger('DataAdaptor')
 logger.setLevel(logging.INFO)

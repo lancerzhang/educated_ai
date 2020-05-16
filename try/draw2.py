@@ -1,5 +1,6 @@
 from tkinter import *
 
+
 def redrawAll(canvas):
     canvas.delete(ALL)
     # draw a red rectangle on the left half
@@ -11,8 +12,10 @@ def redrawAll(canvas):
     # canvas.create_rectangle(200, 375, 300, 425, fill="blue", stipple="gray25")
     # canvas.create_rectangle(200, 475, 300, 525, fill="blue", stipple="gray12")
 
+
 def init(canvas):
     redrawAll(canvas)
+
 
 ########### copy-paste below here ###########
 
@@ -24,7 +27,7 @@ def run():
     # Store canvas in root and in canvas itself for callbacks
     root.canvas = canvas.canvas = canvas
     # Set up canvas data and call init
-    canvas.data = { }
+    canvas.data = {}
     init(canvas)
     # set up events
     # root.bind("<Button-1>", mousePressed)
@@ -32,5 +35,6 @@ def run():
     # timerFired(canvas)
     # and launch the app
     root.mainloop()  # This call BLOCKS (so your program waits until you close the window!)
+
 
 run()

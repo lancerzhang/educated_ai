@@ -1,5 +1,5 @@
-from scipy import ndimage
 import numpy as np
+from scipy import ndimage
 
 arr = [[3, 4, 5, 2, 3],
        [3, 5, 1, 2, 7],

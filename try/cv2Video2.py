@@ -1,4 +1,5 @@
 import cv2
+
 from components import util
 
 cap = cv2.VideoCapture('D:/bak/test.mkv')
@@ -39,7 +40,8 @@ while cap.isOpened():
                             # hist_sim=util.color_hist_similarity(reg_img, roi_img, hist_size)
                             # if roi_cat == reg_cat and hash_dist < 3 and hist_sim > 0.6:
                             if roi_cat == reg_cat and hash_dist < 3:
-                                cv2.rectangle(frame, (newX, newY), (newX + windows[w], newY + windows[w]), (0, 255, 0), 1)
+                                cv2.rectangle(frame, (newX, newY), (newX + windows[w], newY + windows[w]), (0, 255, 0),
+                                              1)
             cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

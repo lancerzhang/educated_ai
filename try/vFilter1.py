@@ -1,5 +1,5 @@
+import cv2
 import numpy as np
-import cv2, time
 
 # read image with color
 img = cv2.imread('image2.jpg')

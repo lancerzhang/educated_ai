@@ -5,9 +5,14 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import math, audioop, pyaudio,collections
-from components import util
+import audioop
+import collections
+import math
+import pyaudio
+
 import numpy as np
+
+from components import util
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -42,7 +47,8 @@ try:
             np_buffer = np.fromstring(buffer, dtype=np.int16)
             normal_buffer = util.normalize_audio_data(np_buffer)
             frame_data.append(normal_buffer)
-            if len(frame_data) > non_speaking_buffer_count:  # ensure we only keep the needed amount of non-speaking buffers
+            if len(
+                    frame_data) > non_speaking_buffer_count:  # ensure we only keep the needed amount of non-speaking buffers
                 frame_data.popleft()
             energy = audioop.rms(buffer, SAMPLE_WIDTH)  # energy of the audio signal
             if energy > energy_threshold:                break

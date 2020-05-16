@@ -1,8 +1,10 @@
-from components.keyboard_listener import KeyboardListener
-from components.mouse_listener import MouseListener
-import schedule
 import threading
 import time
+
+import schedule
+
+from components.keyboard_listener import KeyboardListener
+from components.mouse_listener import MouseListener
 
 
 def schedule_action1():

@@ -1,5 +1,7 @@
 import time
+
 import msvcrt
+
 from components import util
 
 # number of process per second

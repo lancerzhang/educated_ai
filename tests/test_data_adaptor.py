@@ -1,9 +1,11 @@
+import os
 import unittest
-from components.data_adaptor import DataAdaptor
-from components.data_tinydb import DataTinyDB
+
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
-import os
+
+from components.data_adaptor import DataAdaptor
+from components.data_tinydb import DataTinyDB
 
 
 class TestDB(unittest.TestCase):

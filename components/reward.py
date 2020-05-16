@@ -1,10 +1,11 @@
+import logging
+
 from . import constants
 from . import util
 from .brain import Brain
 from .memory import Memory
 from .memory import MemoryType
 from .memory import RealType
-import logging
 
 logger = logging.getLogger('Reward')
 logger.setLevel(logging.INFO)

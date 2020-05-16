@@ -1,6 +1,3 @@
-from PIL import Image
-
-
 # This module can classify the image by histogram.
 # This method is easy for someone who is a beginner in Image classification.
 #

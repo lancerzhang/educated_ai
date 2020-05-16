@@ -1,13 +1,18 @@
+import cv2
+import math
+import time
+import unittest
+from multiprocessing import Pool
+
+import numpy as np
+
 from components import favor
+from components import vision, constants
 from components.brain import Brain
 from components.favor import Favor
 from components.featurepack import FeaturePack
-from components.vision import Vision
 from components.vision import Block
-import unittest, cv2, time, math
-from components import vision, constants
-import numpy as np
-from multiprocessing import Pool
+from components.vision import Vision
 
 
 def filter_feature(kernel, data, contrast=None, channel='g'):

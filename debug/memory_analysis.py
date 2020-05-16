@@ -1,13 +1,8 @@
-import numpy as np
-import collections
-import json
-import time
 import logging
 import sys
+
 from components import brain
 from components import dashboard
-from anytree import RenderTree
-from components.memory import MemoryStatus
 from components.brain import Brain
 
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))

@@ -1,7 +1,6 @@
-import time
 from CodernityDB.database import Database
-from CodernityDB.hash_index import HashIndex
 from CodernityDB.database import DatabasePathException
+from CodernityDB.hash_index import HashIndex
 
 
 class WithXIndex(HashIndex):
@@ -28,7 +27,7 @@ def main():
         db.create()
         x_ind = WithXIndex(db.path, 'x')
         db.add_index(x_ind)
-    new_record=db.insert(dict(x=1000))
+    new_record = db.insert(dict(x=1000))
     record1 = db.get('x', 1001, with_doc=True).get('doc')
     print(record1)
     # record1.update({'x': 1001})

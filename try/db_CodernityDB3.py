@@ -1,8 +1,8 @@
-import time, md5
+import md5
 from CodernityDB.database import Database
+from CodernityDB.database import DatabasePathException
 from CodernityDB.hash_index import HashIndex
 from CodernityDB.tree_index import TreeBasedIndex
-from CodernityDB.database import DatabasePathException
 
 
 class SimpleTreeIndex(TreeBasedIndex):
@@ -97,7 +97,9 @@ def main():
         db.add_index(z_ind)
         db.add_index(name_city_ind)
 
-    record = db.insert({'lrc': 1478892851.771, 'rwd': 0, 'cmy': [],  'pmy': [], 'mid': '773701af1bb745d4a21be7defbfc53f2', 'rcl': 1, 'str': 100, '_id': '773701af1bb745d4a21be7defbfc53f2'})
+    record = db.insert(
+        {'lrc': 1478892851.771, 'rwd': 0, 'cmy': [], 'pmy': [], 'mid': '773701af1bb745d4a21be7defbfc53f2', 'rcl': 1,
+         'str': 100, '_id': '773701af1bb745d4a21be7defbfc53f2'})
     record1 = db.get('id', record['_id'])
     print(record1)
     record1.update({'lrc': 1478892851.771})

@@ -1,11 +1,14 @@
-import time, numpy, cv2, random
 import collections
-import logging
+import cv2
 import hashlib
-import numpy as np
+import logging
+import numpy
+import random
+import time
 from functools import reduce
-from itertools import groupby
 from itertools import combinations
+
+import numpy as np
 
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')

@@ -1,10 +1,8 @@
-from components.memory import Memory
-from components import constants
-from components import memory
-from components.memory import MemoryType
-from components.memory import RealType
 import time
 import unittest
+
+from components.memory import Memory
+from components.memory import MemoryType
 
 
 class TestMemory(unittest.TestCase):

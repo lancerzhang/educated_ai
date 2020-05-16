@@ -1,10 +1,8 @@
-
 import os
 import stat
 import sys
 
 import pygtrie
-
 
 print('Storing file information in the trie')
 print('====================================\n')
@@ -44,7 +42,6 @@ print('Size of %s: %d' % (ROOT_DIR, sum(trie1.itervalues())))
 for directory in SUB_DIRS:
     print(directory, 'exists' if trie1.has_subtrie(directory) else 'does not exist')
 
-
 print('\nStoring URL handlers map')
 print('========================\n')
 
@@ -61,14 +58,13 @@ for url in ('/', '/foo', '/foot', '/foobar', 'invalid', '/foobarbaz', '/ba'):
     else:
         print('Unable to handle', repr(url))
 
-
 if not os.isatty(0):
     sys.exit(0)
-
 
 try:
     import termios
     import tty
+
 
     def getch():
         """Reads single character from standard input."""
@@ -85,7 +81,6 @@ except ImportError:
     except ImportError:
         sys.exit(0)
 
-
 print('\nPrefix set')
 print('==========\n')
 
@@ -100,7 +95,6 @@ ps.add('/usr/lib')  # Does not change anything
 print('Path prefixes:', ', '.join(iter(ps)))
 for path in ('/etc', '/etc/rc.d', '/usr', '/usr/local', '/usr/local/lib'):
     print('Is', path, 'in the set:', ('yes' if path in ps else 'no'))
-
 
 print('\nDictionary test')
 print('===============\n')

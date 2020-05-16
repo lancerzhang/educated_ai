@@ -1,9 +1,9 @@
-from . import constants
-from . import util
 import logging
 import os
 import sqlite3
-import time
+
+from . import constants
+from . import util
 
 logger = logging.getLogger('DataSqlite3')
 logger.setLevel(logging.INFO)

@@ -1,4 +1,6 @@
-import os, ssl
+import os
+import ssl
+
 import numpy as np
 
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and

@@ -1,7 +1,6 @@
-import time
 from CodernityDB.database import Database
-from CodernityDB.tree_index import TreeBasedIndex
 from CodernityDB.database import DatabasePathException
+from CodernityDB.tree_index import TreeBasedIndex
 
 
 class SimpleTreeIndex(TreeBasedIndex):
@@ -32,11 +31,11 @@ def main():
 
     # for x in xrange(2):
     #     db.insert({'lrc': x, 'rwd': 0, 'cmy': [],  'pmy': [], 'rcl': 1, 'str': 100})
-    db.insert({'lrc': 1, 'rwd': 0, 'cmy': [], 'pmy': [],  'rcl': 1, 'str': 100})
-    db.insert({'lrc': 2, 'rwd': 0, 'cmy': [], 'pmy': [],  'rcl': 1, 'str': 100})
+    db.insert({'lrc': 1, 'rwd': 0, 'cmy': [], 'pmy': [], 'rcl': 1, 'str': 100})
+    db.insert({'lrc': 2, 'rwd': 0, 'cmy': [], 'pmy': [], 'rcl': 1, 'str': 100})
     # for i in db.all('id'):
     #     print i
-    multi_records = db.get_many('lrc',  end=100, with_doc=True)
+    multi_records = db.get_many('lrc', end=100, with_doc=True)
     for curr in multi_records:
         print(curr)
 

@@ -1,5 +1,4 @@
 import cv2
-from components import util
 import numpy as np
 import skimage.measure
 

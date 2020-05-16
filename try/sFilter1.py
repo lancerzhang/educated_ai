@@ -1,8 +1,8 @@
-import librosa
-import matplotlib.pyplot as plt
-import librosa.display as dsp
-import numpy as np
 import cv2
+import librosa
+import librosa.display as dsp
+import matplotlib.pyplot as plt
+import numpy as np
 
 # edge detection
 filter1 = np.array([[1, 0, -1],

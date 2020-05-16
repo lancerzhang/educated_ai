@@ -1,9 +1,11 @@
-from . import constants
 import copy
 import logging
-import numpy as np
 import random
 import time
+
+import numpy as np
+
+from . import constants
 from . import util
 
 logger = logging.getLogger('BioMemory')

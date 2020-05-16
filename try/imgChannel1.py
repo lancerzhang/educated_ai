@@ -1,4 +1,3 @@
-import numpy as np
 import cv2
 
 bgr = cv2.imread('l1-1.jpg', 1)

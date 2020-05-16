@@ -1,6 +1,9 @@
-import pyaudio, wave, librosa, time
-import matplotlib.pyplot as plt
+import librosa
 import librosa.display as dsp
+import matplotlib.pyplot as plt
+import pyaudio
+import time
+import wave
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -41,7 +44,7 @@ wf.close()
 y, sr = librosa.load(WAVE_OUTPUT_FILENAME, sr=None)
 start = time.time()
 mfccs = librosa.feature.mfcc(y, sr=44100, n_mfcc=40)
-print('mfcc used(ms):', (time.time()-start)*1000)
+print('mfcc used(ms):', (time.time() - start) * 1000)
 # mfccs = librosa.feature.mfcc(y, sr=44100)
 print(mfccs)
 plt.figure(figsize=(10, 4))

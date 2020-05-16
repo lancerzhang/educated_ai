@@ -1,6 +1,4 @@
-import numpy as np
 import cv2
-import hashlib
 
 cap = cv2.VideoCapture('../train/320.mp4')
 while cap.isOpened():

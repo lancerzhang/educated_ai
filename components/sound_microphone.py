@@ -1,8 +1,10 @@
-from .sound import Sound
 import logging
+
 import numpy as np
 import pyaudio
+
 from . import util
+from .sound import Sound
 
 logger = logging.getLogger('MicrophoneSound')
 logger.setLevel(logging.INFO)

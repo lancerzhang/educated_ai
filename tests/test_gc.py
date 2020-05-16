@@ -1,6 +1,8 @@
-from components.mgc import GC
-from mock import patch
 import unittest
+
+from mock import patch
+
+from components.mgc import GC
 
 
 class TestUtil(unittest.TestCase):

@@ -1,5 +1,6 @@
-from components.filter_colors import FilterColors
 import cv2
+
+from components.filter_colors import FilterColors
 
 img = cv2.imread('triangle1.jpg', 1)
 # im = cv2.imread('../debug/img/00cc9631e55563f592b77ffba57346e946bf22a2.jpg', 1)

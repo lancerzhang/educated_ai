@@ -5,9 +5,13 @@
 # next time, can detect if has such activation
 # if recall many times, can explore more features
 
-import math, audioop, pyaudio
-from components import util
+import audioop
+import math
+import pyaudio
+
 import numpy as np
+
+from components import util
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -67,7 +71,7 @@ try:
         # plt.title('Mel spectrogram')
         # plt.tight_layout()
         # plt.savefig('chart' + str(file_ser) + '.png')
-        np.save('data' + str(file_ser) + '.npy',y)
+        np.save('data' + str(file_ser) + '.npy', y)
         file_ser += 1
         # plt.show()
 

@@ -1,6 +1,7 @@
 import csv
-import pygtrie
 import time
+
+import pygtrie
 
 lol = list(csv.reader(open('cmn.txt', 'r', encoding='utf8'), delimiter='\t'))
 print(f'len of sentences {len(lol)}')
@@ -15,12 +16,11 @@ print(f'len of en words {len(en_words)}')
 print(f'len of en words {len(cn_words)}')
 
 trie1 = pygtrie.CharTrie()
-time1=time.time()
+time1 = time.time()
 for w in en_words:
     trie1[w] = len(w)
-time2=time.time()
+time2 = time.time()
 print(trie1.items(prefix='ca'))
-time3=time.time()
-print(f'1 used {time2-time1}')
-print(f'1 used {time3-time2}')
-
+time3 = time.time()
+print(f'1 used {time2 - time1}')
+print(f'1 used {time3 - time2}')

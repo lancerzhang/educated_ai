@@ -1,7 +1,10 @@
-import pyaudio,wave,librosa,time
-import matplotlib.pyplot as plt
+import librosa
 import librosa.display as dsp
+import matplotlib.pyplot as plt
 import numpy as np
+import pyaudio
+import time
+import wave
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -39,12 +42,12 @@ wf.setframerate(RATE)
 wf.writeframes(b''.join(frames))
 wf.close()
 
-y, sr = librosa.load(WAVE_OUTPUT_FILENAME,sr=None)
-start=time.time()
-S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128,fmax=8000)
-print('mel used(ms):', (time.time()-start)*1000)
+y, sr = librosa.load(WAVE_OUTPUT_FILENAME, sr=None)
+start = time.time()
+S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
+print('mel used(ms):', (time.time() - start) * 1000)
 plt.figure(figsize=(10, 4))
-librosa.display.specshow(librosa.power_to_db(S,  ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
+librosa.display.specshow(librosa.power_to_db(S, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
 plt.colorbar(format='%+2.0f dB')
 plt.title('Mel spectrogram')
 plt.tight_layout()

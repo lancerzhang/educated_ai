@@ -1,11 +1,12 @@
+import copy
+import logging
+import time
+from enum import Enum
+
 from . import constants
 from . import util
 from .data_adaptor import DataAdaptor
 from .data_sqlite3 import DataSqlite3
-from enum import Enum
-import copy
-import logging
-import time
 
 logger = logging.getLogger('mgc')
 logger.setLevel(logging.INFO)

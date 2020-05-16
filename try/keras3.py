@@ -1,15 +1,12 @@
 # plot feature map of first conv layer for given image
+from keras import Input, layers
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg16 import preprocess_input
-from keras.preprocessing.image import load_img
-from keras.preprocessing.image import img_to_array
 from keras.models import Model
+from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import load_img
 from matplotlib import pyplot
 from numpy import expand_dims
-from keras import Input, layers
-from keras.models import Model
-from keras.models import Sequential
-from keras.layers import Dense, Activation
 
 # load the model
 model = VGG16()

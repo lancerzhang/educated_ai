@@ -1,11 +1,12 @@
-from components import util
 import copy
 import hashlib
 import logging
-import math
-import numpy as np
 import random
 import time
+
+import numpy as np
+
+from components import util
 
 logger = logging.getLogger('Memory')
 logger.setLevel(logging.INFO)

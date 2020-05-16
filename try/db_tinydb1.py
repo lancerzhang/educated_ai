@@ -1,7 +1,7 @@
 from tinydb import TinyDB, Query
-from tinydb.storages import MemoryStorage
+
 db = TinyDB('TinyDB.json')
-table=db.table('Memory')
+table = db.table('Memory')
 table.insert({"name": "John", "age": 22})
 table.insert({"name": "Grace", "age": 18})
 table.insert({"name": "Ben", "age": 22})

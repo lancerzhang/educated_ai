@@ -1,9 +1,8 @@
-import librosa,time
-import matplotlib.pyplot as plt
-import librosa.display as dsp
-import numpy as np
 import cv2
-
+import librosa
+import librosa.display as dsp
+import matplotlib.pyplot as plt
+import numpy as np
 
 y = np.load('hi1.npy')
 mel_data = librosa.feature.melspectrogram(y=y, sr=44100, n_mels=128, fmax=8000)
@@ -30,4 +29,3 @@ except KeyboardInterrupt:
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-

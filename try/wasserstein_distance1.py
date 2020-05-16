@@ -1,6 +1,6 @@
-from scipy.stats import wasserstein_distance
 import cv2
 import numpy as np
+from scipy.stats import wasserstein_distance
 
 PATH = '../tests/'
 

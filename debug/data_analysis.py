@@ -1,9 +1,8 @@
+import numpy as np
+
 from components import constants
-from components import util
 from components.data_adaptor import DataAdaptor
 from components.data_sqlite3 import DataSqlite3
-import numpy as np
-import time
 
 data_service = DataAdaptor(DataSqlite3('../data/dump.sql'))
 

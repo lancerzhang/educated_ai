@@ -1,7 +1,4 @@
-import numpy as np
 import cv2
-import statistics
-import skimage.measure
 from matplotlib import pyplot as plt
 
 PATH = '../tests/'
