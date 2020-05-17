@@ -1,7 +1,8 @@
+import time
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 
 # read image with color
 # img = cv2.imread('image2.jpg')

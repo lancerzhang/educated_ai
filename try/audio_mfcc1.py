@@ -1,9 +1,10 @@
+import time
+import wave
+
 import librosa
 import librosa.display as dsp
 import matplotlib.pyplot as plt
 import pyaudio
-import time
-import wave
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16

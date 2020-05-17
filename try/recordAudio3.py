@@ -8,9 +8,9 @@
 import audioop
 import collections
 import math
-import pyaudio
 
 import numpy as np
+import pyaudio
 
 from components import util
 

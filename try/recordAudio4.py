@@ -6,9 +6,10 @@
 # if recall many times, can explore more features
 
 import audioop
+import math
+
 import librosa
 import librosa.display as dsp
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
