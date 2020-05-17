@@ -34,16 +34,16 @@ def append_ranges(ranges, next_rank, mask):
 
 
 def get_rank_ranges(arr, num=1):
-    print(arr)
     rank_ranges = []
     mask = np.arange(0, 180)
     top_rank = arr[0][0]
     append_ranges(rank_ranges, top_rank, mask)
+    print(f'top_rank:{top_rank}')
     for i in range(1, num):
         next_rank = get_next_rank(arr, mask)
         if next_rank > -1:
+            print(f'next_rank:{next_rank}')
             append_ranges(rank_ranges, next_rank, mask)
-    print(rank_ranges)
     return rank_ranges
 
 
