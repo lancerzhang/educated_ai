@@ -1,21 +1,21 @@
 import pickle
-from os import listdir
 import time
+
 import cv2
-import numpy as np
-import skimage.measure
 import tensorflow as tf
 from keras.applications.vgg16 import preprocess_input
 from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
+from matplotlib import pyplot
 from numpy import expand_dims
 
-from matplotlib import pyplot
+"""
+vgg16 filters + threshold + matchShapes
+"""
 
 images = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
           'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.png', 's2.png',
           'square1.jpg', 'square2.jpg', 'square3.jpg', 'triangle1.jpg']
-
 
 with open('vgg16.l1.filters', 'rb') as filters:
     vgg16_filters = pickle.load(filters)

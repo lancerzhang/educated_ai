@@ -4,6 +4,10 @@ from matplotlib import pyplot
 
 from components.filter_colors import FilterColors
 
+"""
+canny + drawContours + matchShapes
+"""
+
 img = cv2.imread('square1.jpg', 1)
 img = cv2.resize(img, (50, 50))
 fc = FilterColors(img)

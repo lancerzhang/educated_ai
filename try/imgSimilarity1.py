@@ -1,10 +1,10 @@
-from os import listdir
-
 import cv2
 import numpy as np
 import skimage.measure
 
-from components import util
+"""
+threshold / Canny + matchShapes
+"""
 
 SIZE = 50
 images = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
