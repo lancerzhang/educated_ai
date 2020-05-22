@@ -3,6 +3,10 @@ import numpy as np
 
 from components.rgb_histogram import RGBHistogram
 
+images = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
+          'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.png', 's2.png',
+          'square1.jpg', 'square2.jpg', 'square3.jpg', 'triangle1.jpg']
+
 
 def chi2_distance(histA, histB, eps=1e-10):
     # compute the chi-squared distance
@@ -19,13 +23,16 @@ def compare(img, feature):
 
 
 desc = RGBHistogram([8, 8, 8])
-image = cv2.imread('head1.jpg')
-# t1 = time.time()
-features1 = desc.describe(image)
-# t2 = time.time()
-# print(features1)
-# print((t2 - t1) * 1000)
 
-images = ['head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg']
-for img in images:
-    print(compare(img, features1))
+for file1 in images:
+    im1 = cv2.imread(file1)
+    features1 = desc.describe(im1)
+    similarity = []
+    for file2 in images:
+        if file1 == file2:
+            continue
+        d1 = compare(file2, features1)
+        similarity.append((d1, file2))
+    sorted_similarity = sorted(similarity, key=lambda x: x[0], reverse=False)
+    most_similar = sorted_similarity[0]
+    print(f'{file1} is similar to {most_similar[1]}, distance is {most_similar[0]}')

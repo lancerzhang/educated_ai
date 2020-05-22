@@ -6,7 +6,10 @@ import skimage.measure
 
 from components import util
 
-SIZE = 14
+SIZE = 50
+images = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
+          'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.png', 's2.png',
+          'square1.jpg', 'square2.jpg', 'square3.jpg', 'triangle1.jpg']
 
 
 def normalize1(img):
@@ -18,7 +21,8 @@ def normalize1(img):
 def normalize2(img):
     img = skimage.measure.block_reduce(img, (2, 2), np.max)
     img = cv2.resize(img, (SIZE, SIZE))
-    ret, img = cv2.threshold(img, 127, 255, 0)
+    # ret, img = cv2.threshold(img, 127, 255, 0)
+    img = cv2.Canny(img, 30, 200)
     return img
 
 
@@ -30,19 +34,17 @@ def filter_image(img):
     return img
 
 
-PATH = '../debug/img/'
-file1 = '0a83840db259c334447b7b9537d9cc088bfd5707.jpg'
-im1 = ~cv2.imread(f'{PATH}{file1}', cv2.IMREAD_GRAYSCALE)
-im1 = util.np_2d_array_nonzero_box(im1)
-im1 = normalize(im1)
-
-for file in listdir(PATH):
-    if file == '.DS_Store':
-        continue
-    im2 = ~cv2.imread(f'{PATH}{file}', cv2.IMREAD_GRAYSCALE)
-    im2 = util.np_2d_array_nonzero_box(im2)
-    im2 = normalize(im2)
-    d1 = cv2.matchShapes(im1, im2, cv2.CONTOURS_MATCH_I2, 0)
-    if d1 < 0.01:
-        print(f'{file1} compared with {file}')
-        print(f'd1 {d1}')
+for file1 in images:
+    im1 = ~cv2.imread(file1, cv2.IMREAD_GRAYSCALE)
+    im1 = normalize(im1)
+    similarity = []
+    for file2 in images:
+        if file1 == file2:
+            continue
+        im2 = ~cv2.imread(file2, cv2.IMREAD_GRAYSCALE)
+        im2 = normalize(im2)
+        d1 = cv2.matchShapes(im1, im2, cv2.CONTOURS_MATCH_I2, 0)
+        similarity.append((d1, file2))
+    sorted_similarity = sorted(similarity, key=lambda x: x[0], reverse=False)
+    most_similar = sorted_similarity[0]
+    print(f'{file1} is similar to {most_similar[1]}, distance is {most_similar[0]}')
