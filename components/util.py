@@ -1,13 +1,13 @@
 import collections
-import cv2
 import hashlib
 import logging
-import numpy
 import random
 import time
 from functools import reduce
 from itertools import combinations
 
+import cv2
+import numpy
 import numpy as np
 
 USED_COUNT = 'uct'
@@ -371,3 +371,13 @@ def greater_than_half(a, b):
         return True
     else:
         return False
+
+
+def img_fill_rate(img):
+    return img.sum() / (img.shape[0] * img.shape[1] * 255)
+
+
+def img_has_content(img):
+    if img_fill_rate(img) > 0.05:
+        return True
+    return False

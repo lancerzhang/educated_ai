@@ -38,11 +38,11 @@ def get_rank_ranges(arr, num=1):
     mask = np.arange(0, 180)
     top_rank = arr[0][0]
     append_ranges(rank_ranges, top_rank, mask)
-    print(f'top_rank:{top_rank}')
+    # print(f'top_rank:{top_rank}')
     for i in range(1, num):
         next_rank = get_next_rank(arr, mask)
         if next_rank > -1:
-            print(f'next_rank:{next_rank}')
+            # print(f'next_rank:{next_rank}')
             append_ranges(rank_ranges, next_rank, mask)
     return rank_ranges
 
@@ -82,7 +82,7 @@ class FilterColors:
     def get_filtered_gray_image(self, rank):
         masks = []
         for idx_pair in self.rank_ranges[rank]:
-            mask = cv2.inRange(self.img_hsv, (idx_pair[0], 100, 0), (idx_pair[1], 255, 255))
+            mask = cv2.inRange(self.img_hsv, (idx_pair[0], 50, 50), (idx_pair[1], 245, 245))
             mask = mask.astype('bool')
             masks.append(mask)
         full_mask = functools.reduce(lambda a, b: a + b, masks)
