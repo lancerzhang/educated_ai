@@ -9,7 +9,12 @@ from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from numpy import expand_dims
 
+from components import util
 from components.rgb_histogram import RGBHistogram
+
+"""
+1) RGBHistogram 2) vgg16 top filters + canny + drawContours + matchShapes
+"""
 
 files = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
          'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.png', 's2.png',
@@ -66,8 +71,7 @@ def compute_feature_maps():
             if len(sorted_cnts) > 0:
                 cnts = sorted_cnts[0]
                 cv2.drawContours(outline, [cnts], -1, 255, -1)
-            filled_rate = outline.sum() / (outline.shape[0] * outline.shape[1] * 255)
-            if filled_rate > 0.05:
+            if util.img_has_content(outline):
                 features.append(outline)
         image_features.update({file1: features})
     return image_features

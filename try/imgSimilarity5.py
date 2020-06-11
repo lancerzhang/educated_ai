@@ -5,7 +5,7 @@ import numpy as np
 from components.filter_colors import FilterColors
 
 """
-filter_colors (major colors) + canny + drawContours + matchShapes
+1) filter_colors (major colors) 2) (major color shape) canny + drawContours + matchShapes
 """
 
 files = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
