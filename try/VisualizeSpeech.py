@@ -34,13 +34,13 @@ from __future__ import print_function
 import argparse
 import sys
 
-import tensorflow as tf
-from matplotlib import pyplot
 import numpy as np
+import tensorflow as tf
+from matplotlib import cm
+from matplotlib import pyplot
 
 FLAGS = None
-ROTATE = True
-ROWS = 8
+ROWS = 4
 
 
 def load_graph(filename):
@@ -74,8 +74,9 @@ def run_graph(wav_data, labels, input_layer_name, output_layer_name,
 
 
 def show_img(img):
-    pyplot.subplot(1, 1, 1)
-    pyplot.imshow(img, cmap='gray')
+    ax = pyplot.subplot(1, 1, 1)
+    img = np.swapaxes(img, 0, 1)
+    ax.imshow(img, interpolation='nearest', cmap=cm.coolwarm, origin='lower')
     pyplot.show()
 
 
@@ -87,15 +88,10 @@ def show_conv(predictions):
         for _ in range(square):
             # specify subplot and turn of axis
             ax = pyplot.subplot(square, square, ix)
-            ax.set_xticks([])
-            ax.set_yticks([])
             # plot filter channel in grayscale
             img = predictions[:, :, ix - 1]
-            if ROTATE:
-                npa = np.array(img)
-                npa = np.rot90(npa)
-                img = npa.tolist()
-            pyplot.imshow(img, cmap='gray')
+            img = np.swapaxes(img, 0, 1)
+            ax.imshow(img, interpolation='nearest', cmap=cm.coolwarm, origin='lower')
             ix += 1
     # show the figure
     pyplot.show()
@@ -131,7 +127,7 @@ def main(_):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--wav', type=str, default='speech_dataset/yes/0a2b400e_nohash_1.wav', help='Audio file to be identified.')
+        '--wav', type=str, default='speech_dataset/follow/0a2b400e_nohash_1.wav', help='Audio file to be identified.')
     parser.add_argument(
         '--graph', type=str, default='conv_actions_frozen.pb', help='Model to use for identification.')
     parser.add_argument(
