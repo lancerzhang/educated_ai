@@ -5,7 +5,7 @@ import numpy as np
 from numpy.linalg import norm
 
 y1, sr1 = librosa.load('speech_dataset/yes/0a2b400e_nohash_0.wav')
-y2, sr2 = librosa.load('speech_dataset/no/cfbedff9_nohash_1.wav')
+y2, sr2 = librosa.load('speech_dataset/no/0a2b400e_nohash_0.wav')
 
 
 # y2, sr2 = librosa.load('speech_dataset/no/0a2b400e_nohash_1.wav')

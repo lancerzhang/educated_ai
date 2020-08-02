@@ -1,23 +1,28 @@
 import glob
 import os
+from multiprocessing import Pool
 
 import librosa
 import numpy as np
 from dtw import dtw
 from numpy.linalg import norm
+import time
 
 DATABASE_PATH = 'speech_dataset'
-labels = {'no'}
+labels = {'nine'}
 
 
-def save_mfcc():
+def save_mfcc(s):
+    y, sr = librosa.load(s)
+    mfcc = librosa.feature.mfcc(y, sr, n_mfcc=13).T
+    np.save(f'{s}_mfcc', mfcc)
+
+
+def save_mfccs():
     for l in labels:
         sounds = glob.glob(os.path.join(DATABASE_PATH, l, '*.wav'))
-
-        for s in sounds:
-            y, sr = librosa.load(s)
-            mfcc = librosa.feature.mfcc(y, sr, n_mfcc=13).T
-            np.save(f'{s}_mfcc', mfcc)
+        pool = Pool()
+        pool.map(save_mfcc, sounds)
 
 
 def compare():
@@ -34,5 +39,10 @@ def compare():
             print(dist)
 
 
-save_mfcc()
-# compare()
+if __name__ == '__main__':
+    time1 = time.time()
+    save_mfccs()
+    # compare()
+    time2 = time.time()
+    print(f'used time {time2 - time1}')
+

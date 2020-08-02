@@ -7,12 +7,14 @@ import numpy as np
 from numpy.linalg import norm
 
 DATABASE_PATH = 'speech_dataset'
-
+SEARCH_FOLDER = 'no'
+SEARCH_FILE_NUM = 20
 base_file = 'speech_dataset/yes/0a2b400e_nohash_0.wav_mfcc.npy'
+
 base_mfcc = np.load(base_file)
 base_mfcc = base_mfcc[:, 1:]
 
-n_peak = 3
+n_peak = 1
 
 
 def manhattan_distance(x, y):
@@ -30,7 +32,7 @@ def sort_similar_mfcc_vector(i, peak_indices, v1_peek, mfcc2):
     distances = sorted(distances, key=lambda x: x[3])
     if len(distances) > 0:
         min_d = distances[0]
-        if min_d[3] < 10:
+        if min_d[3] < 10 * n_peak:
             return min_d
 
 
@@ -48,8 +50,8 @@ def find_common_mfcc_vector(i):
     v1abs = np.abs(v1)
     peak_indices = sorted(np.argpartition(v1abs, -n_peak)[-n_peak:])
     v1_peek = v1[peak_indices]
-    files = glob.glob(os.path.join(DATABASE_PATH, 'yes', '*.npy'))
-    # files = files[:100]
+    files = glob.glob(os.path.join(DATABASE_PATH, SEARCH_FOLDER, '*mfcc.npy'))
+    # files = files[:SEARCH_FILE_NUM]
     n_files = 0
     vectors = []
     for file in files:
@@ -69,7 +71,7 @@ def find_common_mfcc_vector(i):
 
 if __name__ == '__main__':
     time1 = time.time()
-    pool = Pool(8)
+    pool = Pool()
     similar_vectors = pool.map(find_common_mfcc_vector, range(len(base_mfcc)))
     for r in similar_vectors:
         print(r)
