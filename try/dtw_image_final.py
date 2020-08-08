@@ -2,14 +2,13 @@
 # Helper libraries
 import time
 from multiprocessing import Pool
-from skimage.metrics import structural_similarity as ssim
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from skimage.metrics import structural_similarity as ssim
 from tensorflow import keras
-from fastdtw import fastdtw
-from scipy.spatial.distance import euclidean
 
 print(tf.__version__)
 
@@ -27,7 +26,8 @@ LARGE = 2
 SIZE_UNIT = 7
 BASE_SIZE = 14
 MIN_FILL_RATE = 0.05
-MIN_DISTANCE = 0.05
+MIN_DISTANCE = 0.2
+COMMON_RATE = 0.6
 image_group = np.load('image_group.npy', allow_pickle=True)
 image_group = image_group[()]
 
@@ -38,12 +38,14 @@ ret, selected_image = cv2.threshold(selected_image, 127, 255, cv2.THRESH_BINARY)
 # compare_images = [0, 2, 3, 6, 8, 9, 10, 11, 12, 15]
 compare_images = range(3000)
 
+
 def np_2d_array_nonzero_box(arr):
     nz = arr.nonzero()
     if len(nz[0]) > 0 and len(nz[1]) > 0:
         return arr[min(nz[0]):max(nz[0]) + 1, min(nz[1]):max(nz[1]) + 1]
     else:
         return arr
+
 
 def get_fill_rate(img):
     return img.sum() / (img.shape[0] * img.shape[1] * 255)
@@ -133,7 +135,7 @@ def is_similar(block1, block2):
     block2 = cv2.resize(block2, (block1.shape[0], block1.shape[1]))
     distance = ssim(block1, block2)
     # distance, path = fastdtw(block1, block2, dist=euclidean)
-    if distance > 0.2:
+    if distance > MIN_DISTANCE:
         return True
     else:
         return False
@@ -225,7 +227,7 @@ if __name__ == '__main__':
             if result:
                 common_n += 1
         print(f'common_n {common_n}')
-        if common_n > len(compare_images) * 0.6:
+        if common_n > len(compare_images) * COMMON_RATE:
             all_common_block_seqs.append(common_block_seq)
     print(f'all_common_block_seqs len {len(all_common_block_seqs)}')
     show_blocks_seqs(all_common_block_seqs)

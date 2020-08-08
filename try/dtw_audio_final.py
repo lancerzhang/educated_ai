@@ -4,21 +4,20 @@ import time
 from multiprocessing import Pool
 
 import numpy as np
-from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 
 base_file = 'speech_dataset/yes/0a2b400e_nohash_0.wav_mfcc.npy'
-BLOCK_WIDTH = 3
+BLOCK_WIDTH = 2
 BLOCK_HEIGHT = 2
 MIN_ENERGY = 50
-MIN_DISTANCE = 0.8
+MIN_DISTANCE_UNIT = 0.1
 DATABASE_PATH = 'speech_dataset'
-SEARCH_FOLDER = 'stop'
+SEARCH_FOLDER = 'yes'
 mfcc_files = glob.glob(os.path.join(DATABASE_PATH, SEARCH_FOLDER, '*mfcc.npy'))
 SEARCH_FILE_NUM = 999
 n_mfcc_files = len(mfcc_files)
 base_mfcc = np.load(base_file)
-batches = [9, 99, 3000]
+batches = [9, 99, 500]
 
 
 def find_blocks(mfcc):
@@ -40,8 +39,8 @@ def has_similar_dtw1(params):
     block1 = params[0]
     common_blocks = params[1]
     for block2 in common_blocks:
-        distance, path = fastdtw(block1, block2, dist=euclidean)
-        if distance < MIN_DISTANCE:
+        distance = euclidean(block1[0], block2[0]) + euclidean(block1[1], block2[1])
+        if distance < MIN_DISTANCE_UNIT * BLOCK_WIDTH * BLOCK_HEIGHT:
             return True
     return False
 
@@ -51,8 +50,8 @@ def has_similar_dtw2(params):
     file = params[1]
     all_blocks = find_blocks(np.load(file))
     for block2 in all_blocks:
-        distance, path = fastdtw(block1, block2, dist=euclidean)
-        if distance < MIN_DISTANCE:
+        distance = euclidean(block1[0], block2[0]) + euclidean(block1[1], block2[1])
+        if distance < MIN_DISTANCE_UNIT * BLOCK_WIDTH * BLOCK_HEIGHT:
             return True
     return False
 
