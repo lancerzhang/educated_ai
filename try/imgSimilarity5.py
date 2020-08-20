@@ -1,7 +1,7 @@
 import cv2
 import imutils
 import numpy as np
-
+from matplotlib import pyplot
 from components.filter_colors import FilterColors
 
 """
@@ -9,7 +9,7 @@ from components.filter_colors import FilterColors
 """
 
 files = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
-         'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.png', 's2.png',
+         'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.jpg', 's2.jpg',
          'square1.jpg', 'square2.jpg', 'square3.jpg', 'triangle1.jpg']
 
 IMG_SIZE = 50
@@ -43,7 +43,7 @@ def compare_contour(ifc1, color1, ranges1, ifc2, color2, ranges2):
         shape2 = get_shape(ifc2, color2)
         if shape2 is not None:
             distance = cv2.matchShapes(shape1, shape2, cv2.CONTOURS_MATCH_I2, 0)
-            if distance < 0.01:
+            if distance < 1:
                 # pyplot.subplot(1, 2, 1)
                 # pyplot.imshow(shape1, cmap='gray')
                 # pyplot.subplot(1, 2, 2)

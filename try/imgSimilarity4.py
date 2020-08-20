@@ -15,7 +15,7 @@ vgg16 top filters + canny + drawContours + matchShapes
 """
 
 images = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
-          'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.png', 's2.png',
+          'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.jpg', 's2.jpg',
           'square1.jpg', 'square2.jpg', 'square3.jpg', 'triangle1.jpg']
 
 with open('vgg16.l1.top.filters', 'rb') as filters:
