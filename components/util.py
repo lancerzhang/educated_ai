@@ -381,3 +381,22 @@ def img_has_content(img):
     if img_fill_rate(img) > 0.05:
         return True
     return False
+
+
+def chi2_distance(histA, histB, eps=1e-10):
+    # compute the chi-squared distance
+    d = 0.5 * np.sum([((a - b) ** 2) / (a + b + eps)
+                      for (a, b) in zip(histA, histB)])
+    # return the chi-squared distance
+    return d
+
+
+def get_filled_shape(img):
+    outline = np.zeros(img.shape, dtype="uint8")
+    im_canny = cv2.Canny(img, 30, 200)
+    contours, hierarchy = cv2.findContours(im_canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    sorted_cnts = sorted(contours, key=cv2.contourArea, reverse=True)
+    if len(sorted_cnts) > 0:
+        cnts = sorted_cnts[0]
+        cv2.drawContours(outline, [cnts], -1, 255, -1)
+        return outline

@@ -4,6 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
+from components import util
 
 print(tf.__version__)
 
@@ -22,6 +23,8 @@ SIZE_UNIT = 7
 image_group = {}
 for i in range(len(train_labels)):
     image_group.setdefault(train_labels[i], []).append(i)
+
+# np.save('image_group', image_group)
 
 selected_group = 9
 selected_index = 6
@@ -62,7 +65,12 @@ def show_images(size):
         for j in range(size):
             idx = i * size + j
             plt.subplot(size, size, idx + 1)
-            plt.imshow(train_images[image_group[selected_group][idx]], cmap='gray')
+            img = train_images[image_group[selected_group][idx]]
+            # ret, img = cv2.threshold(img, 64, 255, cv2.THRESH_BINARY)
+            # img = ~cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 3, 2)
+            # img = ~cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 3, 1)
+            img = util.get_filled_shape(img)
+            plt.imshow(img, cmap='gray')
     plt.show()
 
 

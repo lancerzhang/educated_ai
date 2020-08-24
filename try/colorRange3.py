@@ -1,26 +1,21 @@
-import cv2
 import matplotlib.pyplot as plt
-import numpy as np
+import cv2
+from components import util
+from components.hsv_color_shapes import ColorShape
 
-from components.img_palette import ImgPalette
 
-fc = ImgPalette('square3.jpg')
-# print(fc.palettes_hsv)
+img = cv2.imread('square2.jpg', 1)
+cs = ColorShape(img)
 
 idx = 1
-for k in fc.palettes_hsv:
-    img = fc.get_filtered_gray_image(k)
-
-    outline = np.zeros(img.shape, dtype="uint8")
-    cannied = cv2.Canny(img, 30, 200)
-    contours, hierarchy = cv2.findContours(cannied,
-                                           cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    sorted_cnts = sorted(contours, key=cv2.contourArea, reverse=True)
-    if len(sorted_cnts) > 0:
-        cnts = sorted_cnts[0]
-        cv2.drawContours(outline, [cnts], -1, 255, -1)
-
-    plt.subplot(3, 3, idx)
-    idx += 1
-    plt.imshow(outline, cmap='gray')
+for k in cs.top_colors_hsv:
+    img = cs.get_grey_shape(k)
+    # ret, img = cv2.threshold(img, 64, 255, cv2.THRESH_BINARY)
+    # img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+    # img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    img = util.get_filled_shape(img)
+    if img is not None:
+        plt.subplot(3, 3, idx)
+        idx += 1
+        plt.imshow(img, cmap='gray')
 plt.show()
