@@ -60,7 +60,7 @@ class ImgRgbHistogram:
 
 
 class ImgShapes:
-    similar_threshold = 0.6  # 0.6 for threshold 64, 0.8 for threshold 127
+    similar_threshold = 0.4  # 0.6 for threshold 64, 0.8 for threshold 127
     top_colors_hsv = {}
 
     def __init__(self, img=None, feature=None):

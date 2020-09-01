@@ -4,12 +4,14 @@ import time
 from multiprocessing import Pool
 
 import cv2
+import imagehash
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 from tensorflow import keras
 
-from components.recognitions import ImgShapes
+from components import util
 
 print(tf.__version__)
 
@@ -41,6 +43,8 @@ ret, selected_image = cv2.threshold(selected_image, CV_THRESHOLD, 255, cv2.THRES
 compare_images = range(3000)
 all_matched_seq = []
 
+IMG_SIZE = 14
+
 
 def np_2d_array_nonzero_box(arr):
     nz = arr.nonzero()
@@ -52,6 +56,35 @@ def np_2d_array_nonzero_box(arr):
 
 def get_fill_rate(img):
     return img.sum() / (img.shape[0] * img.shape[1] * 255)
+
+
+def resize_img(img):
+    img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
+    return img
+
+
+def prepare_img(img):
+    ret, img = cv2.threshold(img, CV_THRESHOLD, 255, cv2.THRESH_BINARY)
+    if util.img_has_content(img):
+        img = util.np_2d_array_nonzero_box(img)
+        img = resize_img(img)
+        return img
+
+
+def compare_img(im1, im2):
+    im1 = prepare_img(im1)
+    im2 = prepare_img(im2)
+    if im1 is None or im2 is None:
+        return False
+    im1 = Image.fromarray(im1)
+    h1 = imagehash.phash(im1)
+    im2 = Image.fromarray(im2)
+    h2 = imagehash.phash(im2)
+    d = h1 - h2
+    if d < IMG_SIZE * IMG_SIZE * 0.12:
+        return True
+    else:
+        return False
 
 
 def get_seq_let_right_down(img, size):
@@ -138,7 +171,7 @@ def match_block_seq(img_seq, move_seq, img, width, x_start, y_start):
         if x_start < 0 or y_start < 0 or x_end > img_width or y_end > img_height:
             return False
         block2 = img[y_start:y_end, x_start:x_end]
-        if not ImgShapes(block1).is_similar(block2):
+        if not compare_img(block1, block2):
             return False
         else:
             matched_seq.append([block1, block2])
@@ -157,7 +190,7 @@ def search_block_seq(img_seq, move_seq, img, size):
             p_x = i * step
             p_y = j * step
             block2 = img[p_y:p_y + width, p_x:p_x + width]
-            if ImgShapes(img_seq[0]).is_similar(block2):
+            if compare_img(img_seq[0], block2):
                 if match_block_seq(img_seq, move_seq, img, width, p_x, p_y):
                     return True
     return False
