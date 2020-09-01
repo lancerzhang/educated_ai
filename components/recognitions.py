@@ -1,18 +1,26 @@
 import cv2
 import numpy as np
 from scipy.spatial.distance import euclidean
+from skimage.metrics import structural_similarity as ssim
 
 from components import util
 from components.hsv_color_shapes import ColorShape
 
-IMG_SIZE = 24
+IMG_SIZE = 14
+CV_THRESHOLD = 64
 
 
 def resize_img(img):
-    h, w, c = img.shape
-    if h > IMG_SIZE or w > IMG_SIZE:
-        img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
+    img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
     return img
+
+
+def prepare_img(img):
+    ret, img = cv2.threshold(img, CV_THRESHOLD, 255, cv2.THRESH_BINARY)
+    if util.img_has_content(img):
+        img = util.np_2d_array_nonzero_box(img)
+        img = resize_img(img)
+        return img
 
 
 class ImgRgbHistogram:
@@ -51,8 +59,8 @@ class ImgRgbHistogram:
             return False
 
 
-class ImgColorShapes:
-    similar_threshold = 0.01
+class ImgShapes:
+    similar_threshold = 0.6  # 0.6 for threshold 64, 0.8 for threshold 127
     top_colors_hsv = {}
 
     def __init__(self, img=None, feature=None):
@@ -62,14 +70,27 @@ class ImgColorShapes:
             self.features = self.describe(img)
 
     def describe(self, img):
+        if len(img.shape) == 2:
+            return self.describe_grey(img)
+        else:
+            return self.describe_color(img)
+
+    def describe_grey(self, img):
+        features = []
+        img = prepare_img(img)
+        if img is not None:
+            features.append(img)
+        return features
+
+    def describe_color(self, img):
         img = resize_img(img)
         features = []
         cs = ColorShape(img)
         self.top_colors_hsv = cs.top_colors_hsv
         for k in cs.top_colors_hsv:
             img = cs.get_grey_shape(k)
-            ret, img = cv2.threshold(img, 64, 255, cv2.THRESH_BINARY)
-            if util.img_has_content(img):
+            img = prepare_img(img)
+            if img is not None:
                 features.append(img)
         return features
 
@@ -78,7 +99,7 @@ class ImgColorShapes:
         features2 = self.describe(img2)
         for f1 in self.features:
             for f2 in features2:
-                d1 = cv2.matchShapes(f1, f2, cv2.CONTOURS_MATCH_I2, 0)
+                d1 = 1 - ssim(f1, f2)
                 if d1 < distance:
                     distance = d1
         return distance
@@ -120,7 +141,7 @@ class VoiceMfccFrame:
         features = []
         h, w = mfcc_frames.shape
         for i in range(w - self.BLOCK_WIDTH + 1):
-            block = mfcc_frames[, i:i + self.BLOCK_WIDTH]
+            block = mfcc_frames[:, i:i + self.BLOCK_WIDTH]
             block_abs = np.abs(block)
             if np.sum(block_abs) > self.MIN_ENERGY_UNIT * h * w:
                 norm_block = block / block_abs.max()
@@ -137,7 +158,7 @@ class VoiceMfccFrame:
             return distance
         for f1 in self.features:
             for f2 in feature2:
-                d1 = self.get_distance(f1, f2)
+                d1 = get_euclidean_distance(f1, f2)
                 if d1 < distance:
                     distance = d1
         return distance

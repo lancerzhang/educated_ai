@@ -1,5 +1,4 @@
 import colorsys
-import functools
 
 import cv2
 import numpy as np
@@ -56,7 +55,10 @@ def get_mask(color, im_hsv):
             mask = cv2.inRange(im_hsv, (idx_pair[0], low_s, low_v), (idx_pair[1], high_s, high_v))
             mask = mask.astype('bool')
             masks.append(mask)
-        full_mask = functools.reduce(lambda a, b: a + b, masks)
+        if len(masks) == 2:
+            full_mask = masks[0] + masks[1]
+        else:
+            full_mask = masks[0]
     return full_mask
 
 
