@@ -40,7 +40,7 @@ CV_THRESHOLD = 64
 selected_image = train_images[image_group[9][0]]
 ret, selected_image = cv2.threshold(selected_image, CV_THRESHOLD, 255, cv2.THRESH_BINARY)
 # compare_images = [0, 2, 3, 6, 8, 9, 10, 11, 12, 15]
-compare_images = range(3000)
+compare_images = range(10)
 all_matched_seq = []
 
 IMG_SIZE = 14
@@ -175,7 +175,7 @@ def match_block_seq(img_seq, move_seq, img, width, x_start, y_start):
             return False
         else:
             matched_seq.append([block1, block2])
-            # all_matched_seq.append([block1, block2])
+            all_matched_seq.append([block1, block2])
     # np.save(str(time.time()), matched_seq)
     return True
 
@@ -245,18 +245,18 @@ if __name__ == '__main__':
         for i in range(1, len(compare_images)):
             img = train_images[image_group[selected_group][compare_images[i]]]
             pool_params.append([common_block_seq, img])
-            # if has_similar_block_seq([common_block_seq, img]):
-            #     common_n += 1
-        results = pool.map(has_similar_block_seq, pool_params)
-        for result in results:
-            if result:
+            if has_similar_block_seq([common_block_seq, img]):
                 common_n += 1
+        # results = pool.map(has_similar_block_seq, pool_params)
+        # for result in results:
+        #     if result:
+        #         common_n += 1
         print(f'common_n {common_n}')
         if common_n > len(compare_images) * COMMON_RATE:
             all_common_block_seqs.append(common_block_seq)
     print(f'all_common_block_seqs len {len(all_common_block_seqs)}')
     show_blocks_seqs(all_common_block_seqs)
     # print(len(all_matched_seq))
-    # show_blocks(all_matched_seq, 10)
+    show_blocks(all_matched_seq, 10)
     time2 = time.time()
     print(f'used time {time2 - time1}')
