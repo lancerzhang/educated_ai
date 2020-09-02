@@ -1,32 +1,20 @@
 import cv2
+import imagehash
 import numpy as np
+from PIL import Image
 from scipy.spatial.distance import euclidean
-from skimage.metrics import structural_similarity as ssim
 
 from components import util
 from components.hsv_color_shapes import ColorShape
 
-IMG_SIZE = 14
 CV_THRESHOLD = 64
-
-
-def resize_img(img):
-    img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
-    return img
-
-
-def prepare_img(img):
-    ret, img = cv2.threshold(img, CV_THRESHOLD, 255, cv2.THRESH_BINARY)
-    if util.img_has_content(img):
-        img = util.np_2d_array_nonzero_box(img)
-        img = resize_img(img)
-        return img
 
 
 class ImgRgbHistogram:
     # Use 6 instead of 8 to make it faster
     bins = [6, 6, 6]
     similar_threshold = 1
+    img_size = 100
 
     def __init__(self, img=None, feature=None):
         if feature is not None:
@@ -35,7 +23,7 @@ class ImgRgbHistogram:
             self.feature = self.describe(img)
 
     def describe(self, img):
-        img = resize_img(img)
+        img = cv2.resize(img, (self.img_size, self.img_size))
         # compute a 3D histogram in the RGB color space,
         # then normalize the histogram so that images
         # with the same content, but either scaled larger
@@ -60,8 +48,10 @@ class ImgRgbHistogram:
 
 
 class ImgShapes:
-    similar_threshold = 0.4  # 0.6 for threshold 64, 0.8 for threshold 127
+    similar_threshold = 21
     top_colors_hsv = {}
+    matched = []
+    img_size = 100
 
     def __init__(self, img=None, feature=None):
         if feature is not None:
@@ -71,27 +61,31 @@ class ImgShapes:
 
     def describe(self, img):
         if len(img.shape) == 2:
-            return self.describe_grey(img)
+            feature = self.describe_grey(img)
+            if feature is not None:
+                return [feature]
         else:
             return self.describe_color(img)
 
     def describe_grey(self, img):
-        features = []
-        img = prepare_img(img)
-        if img is not None:
-            features.append(img)
-        return features
+        ret, img = cv2.threshold(img, CV_THRESHOLD, 255, cv2.THRESH_BINARY)
+        if util.img_has_content(img):
+            img = util.np_2d_array_nonzero_box(img)
+            self.matched.append(img)
+            img = Image.fromarray(img)
+            # img will be resize to 32x32 in phash
+            return imagehash.phash(img)
 
     def describe_color(self, img):
-        img = resize_img(img)
+        img = cv2.resize(img, (self.img_size, self.img_size))
         features = []
         cs = ColorShape(img)
         self.top_colors_hsv = cs.top_colors_hsv
         for k in cs.top_colors_hsv:
             img = cs.get_grey_shape(k)
-            img = prepare_img(img)
-            if img is not None:
-                features.append(img)
+            feature = self.describe_grey(img)
+            if feature is not None:
+                features.append(feature)
         return features
 
     def compare(self, img2):
@@ -99,9 +93,9 @@ class ImgShapes:
         features2 = self.describe(img2)
         for f1 in self.features:
             for f2 in features2:
-                d1 = 1 - ssim(f1, f2)
-                if d1 < distance:
-                    distance = d1
+                d = f1 - f2
+                if d < distance:
+                    distance = d
         return distance
 
     def is_similar(self, img2):
