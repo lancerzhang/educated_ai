@@ -3,6 +3,7 @@ import imagehash
 import numpy as np
 from PIL import Image
 from scipy.spatial.distance import euclidean
+from skimage.metrics import structural_similarity as ssim
 
 from components import util
 from components.hsv_color_shapes import ColorShape
@@ -48,12 +49,15 @@ class ImgRgbHistogram:
 
 
 class ImgShapes:
-    similar_threshold = 21
+    hash_threshold = 21
+    ssim_threshold = 0.4
     top_colors_hsv = {}
     matched = []
     img_size = 100
+    ssim_img_size = 14
 
-    def __init__(self, img=None, feature=None):
+    def __init__(self, img=None, feature=None, mode='hash'):
+        self.mode = mode
         if feature is not None:
             self.features = [feature]
         else:
@@ -71,10 +75,15 @@ class ImgShapes:
         ret, img = cv2.threshold(img, CV_THRESHOLD, 255, cv2.THRESH_BINARY)
         if util.img_has_content(img):
             img = util.np_2d_array_nonzero_box(img)
-            self.matched.append(img)
-            img = Image.fromarray(img)
-            # img will be resize to 32x32 in phash
-            return imagehash.phash(img)
+            # self.matched.append(img)
+            if self.mode == 'ssim':
+                img = cv2.resize(img, (self.ssim_img_size, self.ssim_img_size))
+                return img
+            elif self.mode == 'hash':
+                img = Image.fromarray(img)
+                # img will be resize to 32x32 in phash
+                feature = imagehash.phash(img)
+                return feature
 
     def describe_color(self, img):
         img = cv2.resize(img, (self.img_size, self.img_size))
@@ -93,14 +102,20 @@ class ImgShapes:
         features2 = self.describe(img2)
         for f1 in self.features:
             for f2 in features2:
-                d = f1 - f2
+                if self.mode == 'ssim':
+                    d = 1 - ssim(f1, f2)
+                else:
+                    d = f1 - f2
                 if d < distance:
                     distance = d
         return distance
 
     def is_similar(self, img2):
         distance = self.compare(img2)
-        if distance < self.similar_threshold:
+        similar_threshold = self.hash_threshold
+        if self.mode == 'ssim':
+            similar_threshold = self.ssim_threshold
+        if distance < similar_threshold:
             return True
         else:
             return False

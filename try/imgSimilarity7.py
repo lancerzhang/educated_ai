@@ -1,5 +1,4 @@
 import cv2
-import matplotlib.pyplot as plt
 
 from components.recognitions import ImgShapes
 
@@ -10,7 +9,7 @@ files = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head1
 
 for file1 in ['square1.jpg']:
     im1 = cv2.imread(file1)
-    ics = ImgShapes(im1)
+    ics = ImgShapes(im1, mode='ssim')
     # ics.similar_threshold = 0.6
     for file2 in files:
         im2 = cv2.imread(file2)
