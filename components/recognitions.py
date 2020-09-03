@@ -56,8 +56,8 @@ class ImgShapes:
     img_size = 100
     ssim_img_size = 14
 
-    def __init__(self, img=None, feature=None, mode='hash'):
-        self.mode = mode
+    def __init__(self, img=None, feature=None, mode='ssim'):
+        self.mode = mode  # ssim or hash, ssim is better for small img (less than32x32)
         if feature is not None:
             self.features = [feature]
         else:
@@ -68,6 +68,8 @@ class ImgShapes:
             feature = self.describe_grey(img)
             if feature is not None:
                 return [feature]
+            else:
+                return []
         else:
             return self.describe_color(img)
 
