@@ -1,5 +1,6 @@
 import cv2
 import imagehash
+import librosa
 import numpy as np
 from PIL import Image
 from scipy.spatial.distance import euclidean
@@ -128,17 +129,14 @@ def get_euclidean_distance(block1, block2):
     return distance
 
 
-class VoiceMfccFrame:
+class MfccFeatures:
     BLOCK_WIDTH = 2
     BLOCK_HEIGHT = 2
-    MIN_ENERGY_UNIT = 10
+    MIN_ENERGY_UNIT = 25
     MIN_DISTANCE_UNIT = 0.1
 
-    def __init__(self, mfcc=None, feature=None):
-        if feature is not None:
-            self.features = [feature]
-        else:
-            self.features = self.describe(mfcc)
+    def __init__(self, y, sr):
+        self.features = self.describe(y, sr)
 
     def has_similar_dtw(self, block1, blocks):
         for block2 in blocks:
@@ -147,20 +145,27 @@ class VoiceMfccFrame:
                 return True
         return False
 
-    def describe(self, mfcc_frames):
-        mfcc_frames = mfcc_frames[:, 1:]
+    def describe(self, y, sr):
+        mfcc_frames = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13).T
         features = []
         h, w = mfcc_frames.shape
-        for i in range(w - self.BLOCK_WIDTH + 1):
-            block = mfcc_frames[:, i:i + self.BLOCK_WIDTH]
-            block_abs = np.abs(block)
-            if np.sum(block_abs) > self.MIN_ENERGY_UNIT * h * w:
-                norm_block = block / block_abs.max()
-                if not self.has_similar_dtw(norm_block, features):
-                    features.append(norm_block)
+        for j in range(h - self.BLOCK_WIDTH + 1):
+            feature = []
+            # first mfcc value is total energy
+            total_energy = mfcc_frames[j:j + self.BLOCK_HEIGHT, 0:1]
+            max_energy = np.max(total_energy)
+            feature.append({"frequency": 0, "energy": max_energy, "shape": None})
+            # find shape start from 2nd mfcc value
+            for i in range(1, w - self.BLOCK_WIDTH + 1):
+                block = mfcc_frames[j:j + self.BLOCK_HEIGHT, i:i + self.BLOCK_WIDTH]
+                if np.sum(np.abs(block)) > self.MIN_ENERGY_UNIT * self.BLOCK_WIDTH * self.BLOCK_HEIGHT:
+                    norm_block = block / np.max(np.abs(block))
+                    max_energy = np.max(block)
+                    feature.append({"frequency": i, "energy": max_energy, "shape": norm_block})
+            features.append(feature)
         return features
 
-    def compare(self, mfcc_block2):
+    def compare_a_feature(self, mfcc_block2):
         distance = 10000
         if len(self.features) == 0:
             return distance

@@ -7,48 +7,73 @@ from .sound import Sound
 
 class VideoFileSound(Sound):
     audio_buffers = None
-    buf_seq = 0
+    read_buffer_total_count = 0
+    read_buffer_phase_count = 0
+    frame_data = []
 
     @util.timeit
-    def __init__(self, brain, favor, video_file):
-        self.CHUNK = 2048
-        self.file_path = video_file
-        self.frame_data = []
-        self.frame_count = 0
-        super(VideoFileSound, self).__init__(brain, favor)
+    def __init__(self, brain, config, file_path):
+        self.config = config
+        self.CHUNK = 1024
+        self.file_path = file_path
+        self.open_video()
+        super(VideoFileSound, self).__init__(brain)
 
     @util.timeit
     def open_video(self):
         audio = audioread.audio_open(self.file_path)
+        self.SAMPLE_RATE = audio.samplerate
+        self.CHANNELS = audio.channels
         self.audio_buffers = audio.read_data()
         # numbers of buffers were loaded
-        self.buf_seq = 0
+        self.read_buffer_total_count = 0
+        self.read_buffer_phase_count = 0
+
+    def read_data(self):
+        buf = next(self.audio_buffers)
+        if self.CHANNELS == 2:
+            buf = np.reshape(bytearray(buf), (-1, 2))
+            buf = buf[::2].flatten()
+        np_buffer = np.frombuffer(buf, dtype=np.int16)
+        self.CHUNK = len(np_buffer)
+        normal_buffer = util.normalize_audio_data(np_buffer)
+        self.frame_data = self.frame_data + normal_buffer.tolist()
+        self.read_buffer_total_count += 1
+        self.read_buffer_phase_count += 1
+        if self.read_buffer_phase_count >= self.buffers_per_phase:
+            # got enough data, save it to a phase
+            self.phases.append(self.frame_data)
+            self.frame_data = []
+            self.read_buffer_phase_count = 0
 
     @util.timeit
-    def get_frequency_map(self, config):
-        fps = config.video_fps
+    def get_frequency_map(self):
+        fps = self.config["video"]["fps"]
+        frame_count = self.config["video"]["frame_count"]
         # which frame is in current video
-        frame = config.video_frame
-        if frame == 1:
+        play_frame = self.config["video"]["play_frame"]
+        if play_frame == self.read_buffer_phase_count:
+            return
+        if play_frame < self.read_buffer_phase_count:
+            print("read rest of data")
+            # read rest of data
+            while True:
+                try:
+                    self.read_data()
+                except StopIteration:
+                    print("end of audio")
+                    break
+            # open the file again, read from beginning
             self.open_video()
         # how long did video play
-        video_duration = frame / fps
+        video_duration = play_frame / fps
         # how long is a buffer
         buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
         # how much frames it should have loaded
-        max_buf = int(video_duration / buffer_duration)
-        while self.buf_seq <= max_buf:
+        total_buffer_count = int(video_duration / buffer_duration)
+        while self.read_buffer_total_count <= total_buffer_count:
             try:
-                np_buffer = np.frombuffer(next(self.audio_buffers), dtype=np.int16)
-                normal_buffer = util.normalize_audio_data(np_buffer)
-                self.frame_data = self.frame_data + normal_buffer.tolist()
-                self.buf_seq += 1
-                self.frame_count += 1
-                if self.frame_count >= self.buffer_count_of_phase:
-                    # got enough data, save it to a phase
-                    self.phases.append(self.frame_data)
-                    self.frame_data = []
-                    self.frame_count = 0
+                self.read_data()
             except StopIteration:
                 break
-        return super(VideoFileSound, self).get_frequency_map(config)
+        return super(VideoFileSound, self).get_frequency_map()
