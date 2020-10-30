@@ -51,7 +51,7 @@ class Sound(object):
             return False
         audio_data = np.array(list(self.phases)).flatten()
         # remove silence
-        # audio_data[abs(audio_data) < 0.05] = 0
+        audio_data[abs(audio_data) < 0.05] = 0
         self.phases.clear()
         # self.data_map = librosa.feature.mfcc(y=audio_data, sr=self.SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT).T
         mf = MfccFeatures(y=audio_data, sr=self.SAMPLE_RATE)
