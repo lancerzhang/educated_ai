@@ -11,34 +11,26 @@ from .brain import Brain
 logger = logging.getLogger('Sound')
 logger.setLevel(logging.INFO)
 
-MAX_FREQUENCY = 8000
-ENERGY_THRESHOLD = 250  # minimum audio energy to consider for processing
 DEFAULT_PHASE_DURATION = 0.2  # second of buffer
-
-FREQUENCY_MAP_HEIGHT = 13
-HOP_LENGTH = 512
-FEATURE_INPUT_SIZE = 12
-FEATURE_THRESHOLD = 10
-FEATURE_SIMILARITY_THRESHOLD = 0.2
-POOL_BLOCK_SIZE = 2  # after down-sampling, feature is 3x3
-SOUND_KERNEL_FILE = 'kernels.npy'
-MAX_DB = 80.0
 
 
 class Sound(object):
-    CHUNK = 64  # for UT only
-    SAMPLE_RATE = 44100
+    CHUNK = 1  # need to be overwrote
+    SAMPLE_RATE = 1  # need to be overwrote
     CHANNELS = 1
+    buffers_per_phase = 1
     phases = collections.deque()  # phases queue
 
     @util.timeit
     def __init__(self, brain: Brain):
         self.brain = brain
         self.frequency_map = None
-        buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
-        self.buffers_per_phase = int(math.ceil(DEFAULT_PHASE_DURATION / buffer_duration))
         self.data_map = None
         # self.pool = Pool()
+
+    def set_chunk(self):
+        buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
+        self.buffers_per_phase = int(math.ceil(DEFAULT_PHASE_DURATION / buffer_duration))
 
     @util.timeit
     def process(self):
@@ -56,6 +48,6 @@ class Sound(object):
             # self.data_map = librosa.feature.mfcc(y=audio_data, sr=self.SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT).T
             mf = MfccRecognizer(y=audio_data, sr=self.SAMPLE_RATE)
             data_map = mf.features
-            # print(f'found features:{len(data_map)}')
+            print(f'found features:{len(data_map)}')
             # for feature in data_map:
             #     print(feature)

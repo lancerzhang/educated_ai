@@ -14,7 +14,6 @@ class VideoFileSound(Sound):
     @util.timeit
     def __init__(self, brain, config, file_path):
         self.config = config
-        self.CHUNK = 1024
         self.file_path = file_path
         super(VideoFileSound, self).__init__(brain)
 
@@ -27,8 +26,11 @@ class VideoFileSound(Sound):
         # numbers of buffers were loaded
         self.read_buffer_total_count = 0
         self.read_buffer_phase_count = 0
+        # detect chunk size
+        self.read_a_buffer()
+        self.set_chunk()
 
-    def read_data(self):
+    def read_a_buffer(self):
         buf = next(self.audio_buffers)
         if self.CHANNELS == 2:
             buf = np.reshape(bytearray(buf), (-1, 2))
@@ -39,6 +41,9 @@ class VideoFileSound(Sound):
         self.frame_data = self.frame_data + normal_buffer.tolist()
         self.read_buffer_total_count += 1
         self.read_buffer_phase_count += 1
+
+    def process_a_buffer(self):
+        self.read_a_buffer()
         if self.read_buffer_phase_count >= self.buffers_per_phase:
             # got enough data, save it to a phase
             self.phases.append(self.frame_data)
@@ -61,7 +66,7 @@ class VideoFileSound(Sound):
         total_buffer_count = int(video_duration / buffer_duration)
         while self.read_buffer_total_count < total_buffer_count:
             try:
-                self.read_data()
+                self.process_a_buffer()
             except StopIteration:
                 break
         return True

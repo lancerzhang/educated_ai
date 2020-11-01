@@ -100,7 +100,7 @@ class ImgShapeRecognizer:
                 features.append(feature)
         return features
 
-    def compare(self, img2):
+    def compare_a_feature(self, img2):
         distance = 1000  # max distance
         features2 = self.describe(img2)
         for f1 in self.features:
@@ -114,7 +114,7 @@ class ImgShapeRecognizer:
         return distance
 
     def is_similar(self, img2):
-        distance = self.compare(img2)
+        distance = self.compare_a_feature(img2)
         similar_threshold = self.hash_threshold
         if self.mode == 'ssim':
             similar_threshold = self.ssim_threshold
@@ -181,7 +181,7 @@ class MfccRecognizer:
         return distance
 
     def is_similar(self, mfcc_block2):
-        distance = self.compare(mfcc_block2)
+        distance = self.compare_a_feature(mfcc_block2)
         if distance < self.MIN_DISTANCE_UNIT * self.BLOCK_WIDTH * self.BLOCK_HEIGHT:
             return True
         else:
