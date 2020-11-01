@@ -16,7 +16,6 @@ class VideoFileSound(Sound):
         self.config = config
         self.CHUNK = 1024
         self.file_path = file_path
-        self.open_video()
         super(VideoFileSound, self).__init__(brain)
 
     @util.timeit
@@ -47,23 +46,12 @@ class VideoFileSound(Sound):
             self.read_buffer_phase_count = 0
 
     @util.timeit
-    def get_frequency_map(self):
+    def receive_data(self):
         fps = self.config["video"]["fps"]
         frame_count = self.config["video"]["frame_count"]
         # which frame is in current video
         play_frame = self.config["video"]["play_frame"]
-        if play_frame == self.read_buffer_phase_count:
-            return
-        if play_frame < self.read_buffer_phase_count:
-            print("read rest of data")
-            # read rest of data
-            while True:
-                try:
-                    self.read_data()
-                except StopIteration:
-                    print("end of audio")
-                    break
-            # open the file again, read from beginning
+        if play_frame == 1:
             self.open_video()
         # how long did video play
         video_duration = play_frame / fps
@@ -71,9 +59,9 @@ class VideoFileSound(Sound):
         buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
         # how much frames it should have loaded
         total_buffer_count = int(video_duration / buffer_duration)
-        while self.read_buffer_total_count <= total_buffer_count:
+        while self.read_buffer_total_count < total_buffer_count:
             try:
                 self.read_data()
             except StopIteration:
                 break
-        return super(VideoFileSound, self).get_frequency_map()
+        return True

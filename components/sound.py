@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 
-from components.recognitions import MfccFeatures
+from components.recognizer import MfccRecognizer
 from . import util
 from .brain import Brain
 
@@ -42,18 +42,20 @@ class Sound(object):
 
     @util.timeit
     def process(self):
-        if not self.get_frequency_map():
-            return
+        self.receive_data()
+        self.get_features()
 
     @util.timeit
-    def get_frequency_map(self):
-        if len(self.phases) == 0:
-            return False
-        audio_data = np.array(list(self.phases)).flatten()
-        # remove silence
-        audio_data[abs(audio_data) < 0.05] = 0
-        self.phases.clear()
-        # self.data_map = librosa.feature.mfcc(y=audio_data, sr=self.SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT).T
-        mf = MfccFeatures(y=audio_data, sr=self.SAMPLE_RATE)
-        self.data_map = mf.features
-        return True
+    def get_features(self):
+        while len(self.phases) > 0:
+            print(f'len(self.phases):{len(self.phases)}')
+            audio_data = np.array(list(self.phases)).flatten()
+            # remove silence
+            audio_data[abs(audio_data) < 0.05] = 0
+            self.phases.clear()
+            # self.data_map = librosa.feature.mfcc(y=audio_data, sr=self.SAMPLE_RATE, n_mfcc=FREQUENCY_MAP_HEIGHT).T
+            mf = MfccRecognizer(y=audio_data, sr=self.SAMPLE_RATE)
+            data_map = mf.features
+            print(f'found features:{len(data_map)}')
+            # for feature in data_map:
+            #     print(feature)

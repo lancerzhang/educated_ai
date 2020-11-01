@@ -12,7 +12,7 @@ from components.hsv_color_shapes import ColorShape
 CV_THRESHOLD = 64
 
 
-class ImgRgbHistogram:
+class ImgHistRecognizer:
     # Use 6 instead of 8 to make it faster
     bins = [6, 6, 6]
     similar_threshold = 1
@@ -49,7 +49,7 @@ class ImgRgbHistogram:
             return False
 
 
-class ImgShapes:
+class ImgShapeRecognizer:
     hash_threshold = 21
     ssim_threshold = 0.4
     top_colors_hsv = {}
@@ -129,14 +129,14 @@ def get_euclidean_distance(block1, block2):
     return distance
 
 
-class MfccFeatures:
+class MfccRecognizer:
     BLOCK_WIDTH = 2
     BLOCK_HEIGHT = 2
     MIN_ENERGY_UNIT = 25
     MIN_DISTANCE_UNIT = 0.1
 
     def __init__(self, y, sr):
-        self.features = self.describe(y, sr)
+        self.features = self.recognize(y, sr)
 
     def has_similar_dtw(self, block1, blocks):
         for block2 in blocks:
@@ -145,16 +145,12 @@ class MfccFeatures:
                 return True
         return False
 
-    def describe(self, y, sr):
+    def recognize(self, y, sr):
         mfcc_frames = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13).T
         features = []
         h, w = mfcc_frames.shape
         for j in range(h - self.BLOCK_WIDTH + 1):
             feature = []
-            # first mfcc value is total energy
-            total_energy = mfcc_frames[j:j + self.BLOCK_HEIGHT, 0:1]
-            max_energy = np.max(total_energy)
-            feature.append({"frequency": 0, "energy": max_energy, "shape": None})
             # find shape start from 2nd mfcc value
             for i in range(1, w - self.BLOCK_WIDTH + 1):
                 block = mfcc_frames[j:j + self.BLOCK_HEIGHT, i:i + self.BLOCK_WIDTH]
@@ -162,14 +158,19 @@ class MfccFeatures:
                     norm_block = block / np.max(np.abs(block))
                     max_energy = np.max(block)
                     feature.append({"frequency": i, "energy": max_energy, "shape": norm_block})
-            features.append(feature)
+            if len(feature) > 0:
+                # first mfcc value is total energy
+                total_energy = mfcc_frames[j:j + self.BLOCK_HEIGHT, 0:1]
+                max_energy = np.max(total_energy)
+                feature.append({"frequency": 0, "energy": max_energy, "shape": None})
+                features.append(feature)
         return features
 
     def compare_a_feature(self, mfcc_block2):
         distance = 10000
         if len(self.features) == 0:
             return distance
-        feature2 = self.describe(mfcc_block2)
+        feature2 = self.recognize(mfcc_block2)
         if len(feature2) == 0:
             return distance
         for f1 in self.features:
