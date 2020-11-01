@@ -162,7 +162,7 @@ class MfccRecognizer:
                 # first mfcc value is total energy
                 total_energy = mfcc_frames[j:j + self.BLOCK_HEIGHT, 0:1]
                 max_energy = np.max(total_energy)
-                feature.append({"frequency": 0, "energy": max_energy, "shape": None})
+                feature.insert(0, {"frequency": 0, "energy": max_energy, "shape": None})
                 features.append(feature)
         return features
 

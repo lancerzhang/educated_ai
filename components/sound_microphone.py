@@ -42,7 +42,7 @@ class MicrophoneSound(Sound):
                     normal_buffer = util.normalize_audio_data(np_buffer)
                     frame_data = frame_data + normal_buffer.tolist()
                     frame_count += 1
-                    if frame_count >= self.buffer_count_of_phase:
+                    if frame_count >= self.buffers_per_phase:
                         break
 
                 # reach buffer threshold, save it as phase

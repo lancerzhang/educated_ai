@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from components.recognizer import ImgShapeRecognizer
+from components.recognizers import ImgShapeRecognizer
 
 print(tf.__version__)
 
