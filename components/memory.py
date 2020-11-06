@@ -15,15 +15,6 @@ class MemoryType:
     LONG2 = 6  # memories happened in a longer time, it's sentence in voice
 
 
-class RealType:
-    SOUND_FEATURE = 0
-    VISION_FEATURE = 1
-    VISION_FOCUS_MOVE = 2
-    VISION_FOCUS_ZOOM = 3
-    ACTION_MOUSE_CLICK = 4
-    ACTION_REWARD = 5
-
-
 class MemoryStatus:
     # dormant memories will be clean up in high priority
     # dormant memories can't be activated

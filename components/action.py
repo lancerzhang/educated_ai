@@ -8,7 +8,7 @@ from . import util
 from .brain import Brain
 from .memory import Memory
 from .memory import MemoryType
-from .memory import RealType
+from .memory import FeatureTypes
 
 logger = logging.getLogger('Action')
 logger.setLevel(logging.INFO)
@@ -36,7 +36,7 @@ class Action(object):
 
     @util.timeit
     def reproduce_mouse_clicks(self):
-        physical_memories = self.brain.get_matched_slice_memories(RealType.ACTION_MOUSE_CLICK)
+        physical_memories = self.brain.get_matched_slice_memories(FeatureTypes.ACTION_MOUSE_CLICK)
         for m in physical_memories:
             for c in m.children:
                 self.reproduce_mouse_click(c)
@@ -51,9 +51,9 @@ class Action(object):
 
     @util.timeit
     def feel_clicks(self, click):
-        q = Memory(MemoryType.REAL, real_type=RealType.ACTION_MOUSE_CLICK, click_type=click)
+        q = Memory(MemoryType.REAL, real_type=FeatureTypes.ACTION_MOUSE_CLICK, click_type=click)
         m = self.brain.put_memory(q)
-        self.brain.compose_memory([m], MemoryType.SLICE, real_type=RealType.ACTION_MOUSE_CLICK)
+        self.brain.compose_memory([m], MemoryType.SLICE, real_type=FeatureTypes.ACTION_MOUSE_CLICK)
 
     @util.timeit
     def left_click(self):

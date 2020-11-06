@@ -5,7 +5,7 @@ import threading
 
 import numpy as np
 
-from components.recognizers import MfccRecognizer
+from components.recognizers import VoiceRecognizer
 from . import util
 
 logger = logging.getLogger('Sound')
@@ -13,15 +13,15 @@ logger.setLevel(logging.DEBUG)
 
 
 class Voice(object):
-    running = True
     MAX_PHASE_DURATION = 0.2  # second of phase
-    CHUNK = 0  # need to be overwrote
-    SAMPLE_RATE = 0  # need to be overwrote
-    CHANNELS = 0
-    buffers_per_phase = 0
+    chunk = 0  # need to be overwrote
+    sample_rate = 0  # need to be overwrote
+    channels = 0  # need to be overwrote
 
     @util.timeit
     def __init__(self):
+        self.running = True
+        self.buffers_per_phase = 0
         self.phases = collections.deque()  # phases queue
 
     def start(self):
@@ -42,7 +42,7 @@ class Voice(object):
         return self.get_features()
 
     def set_chunk(self):
-        buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
+        buffer_duration = float(self.chunk) / self.sample_rate
         self.buffers_per_phase = int(math.ceil(self.MAX_PHASE_DURATION / buffer_duration))
 
     # @util.timeit
@@ -52,6 +52,6 @@ class Voice(object):
         phase = self.phases.popleft()
         print(f'len phase:{len(phase)}')
         phase = np.array(phase)
-        mf = MfccRecognizer(y=phase, sr=self.SAMPLE_RATE)
+        mf = VoiceRecognizer(y=phase, sr=self.sample_rate)
         features = mf.features
         return features

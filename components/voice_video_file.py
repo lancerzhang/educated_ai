@@ -8,19 +8,19 @@ from .voice import Voice
 
 
 class VideoFileVoice(Voice):
-    NFRAMES = 0
-    DURATION = 0
-    buffer_duration = 0
-    play_start_time = 0
-    read_time = 0
-    audio_buffers = None
-    phase_is_start = False
-    phase_start_time = 0
-    phase_data = []
 
     @util.timeit
     def __init__(self, file_path):
         self.file_path = file_path
+        self.nframes = 0
+        self.duration = 0
+        self.buffer_duration = 0
+        self.play_start_time = 0
+        self.read_time = 0
+        self.audio_buffers = None
+        self.phase_is_start = False
+        self.phase_start_time = 0
+        self.phase_data = []
         self.open_video()
         # detect chunk size
         self.read_a_buffer()
@@ -30,10 +30,10 @@ class VideoFileVoice(Voice):
     @util.timeit
     def open_video(self):
         audio = audioread.audio_open(self.file_path)
-        self.SAMPLE_RATE = audio.samplerate
-        self.CHANNELS = audio.channels
-        self.NFRAMES = audio.nframes
-        self.DURATION = audio.duration
+        self.sample_rate = audio.samplerate
+        self.channels = audio.channels
+        self.nframes = audio.nframes
+        self.duration = audio.duration
         self.audio_buffers = audio.read_data()
         self.read_time = 0
         self.play_start_time = time.time()
@@ -41,14 +41,14 @@ class VideoFileVoice(Voice):
     @util.timeit
     def read_a_buffer(self):
         buf = next(self.audio_buffers)
-        if self.CHANNELS == 2:
+        if self.channels == 2:
             buf = np.reshape(bytearray(buf), (-1, 2))
             buf = buf[::2].flatten()
         np_buffer = np.frombuffer(buf, dtype=np.int16)
-        if self.CHUNK == 0:
-            self.CHUNK = len(np_buffer)
+        if self.chunk == 0:
+            self.chunk = len(np_buffer)
             # how long is a buffer
-            self.buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
+            self.buffer_duration = float(self.chunk) / self.sample_rate
         self.read_time += self.buffer_duration
         normal_buffer = util.normalize_audio_data(np_buffer)
         return normal_buffer

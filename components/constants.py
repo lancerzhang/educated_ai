@@ -1,3 +1,16 @@
+# feature types
+voice = 'Voice'
+image = 'Image'
+
+# memory types
+real = 'Real'  # one real memory
+piece = 'Piece'  # collection of one type of real memories happened at the same time
+context = 'Context'  # indicate if a memory is context of another
+instant = 'Instant'  # collection of slice memories happened in an instant, it's phone in voice
+short = 'Short'  # memories happened in a short time, it's word in voice
+long = 'Long'  # memories happened in a long time, it's sentence in voice
+long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
+
 # vision
 ZOOM_TYPE = 'zmt'
 ZOOM_DIRECTION = 'zdt'

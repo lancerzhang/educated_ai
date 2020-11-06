@@ -8,15 +8,15 @@ from components import memory
 from components.memory import Memory
 from components.memory import MemoryStatus
 from components.memory import MemoryType
-from components.memory import RealType
+from components.memory import FeatureTypes
 
 
 # parent (0,1)-2, (0)-3, (2,3)-4, (2)-5, (4,5)-6, (4)-7, (6,7)-8, (6)-9, (8,9)-10
 def build_a_tree(status=MemoryStatus.SLEEP):
     memories = []
-    memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+    memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                            feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
-    memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+    memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                            feature=np.array([2, 228, 189, 55, 49, 37, 16, 35, 12])))
     memories.append(Memory(MemoryType.SLICE, real_type=-1, children=[memories[0], memories[1]]))
     memories.append(Memory(MemoryType.SLICE, real_type=-1, children=[memories[0]]))
@@ -50,11 +50,11 @@ class TestMemory(unittest.TestCase):
 
     def test_memory(self):
         memories = set()
-        m1 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0])
         m1.recall_count = 9
         memories.add(m1)
-        m2 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m2 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0])
         m2.recall_count = 1
         memories.add(m2)
@@ -90,18 +90,18 @@ class TestMemory(unittest.TestCase):
         self.assertNotEqual(hash1, hash2)
 
     def test_memory_hash(self):
-        m1 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0])
         self.assertIsNotNone(m1.mid)
-        m2 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m2 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0])
         # if content are the same, hash should be the same
         self.assertEqual(m1, m2)
-        m3 = Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m3 = Memory(MemoryType.REAL, real_type=FeatureTypes.vision, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0])
         # different feature type, hash should be different
         self.assertNotEqual(m3, m2)
-        m4 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m4 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[1, 0, 0, 0, 1, 0, 0, 0, 0])
         # different feature, hash should be different
         self.assertNotEqual(m4, m2)
@@ -110,13 +110,13 @@ class TestMemory(unittest.TestCase):
         # different feature type, kernel hash are different
         self.assertNotEqual(m4.kernel_index, m3.kernel_index)
         # test different memory type
-        m5 = Memory(MemoryType.SLICE, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m5 = Memory(MemoryType.SLICE, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[1, 0, 0, 0, 1, 0, 0, 0, 0])
         self.assertNotEqual(m5, m4)
         # different channel
-        m6 = Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m6 = Memory(MemoryType.REAL, real_type=FeatureTypes.vision, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0], channel='y')
-        m7 = Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m7 = Memory(MemoryType.REAL, real_type=FeatureTypes.vision, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0], channel='u')
         self.assertNotEqual(m6.kernel_index, m7.kernel_index)
 
@@ -152,15 +152,15 @@ class TestMemory(unittest.TestCase):
 
     def test_create_kernel_index(self):
         indexes = {}
-        m1 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0])
         m1.create_index(indexes)
         self.assertEqual(1, len(indexes.get(m1.kernel_index)))
-        m2 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m2 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[0, 0, 0, 0, 1, 0, 0, 0, 0])
         m2.create_index(indexes)
         self.assertEqual(1, len(indexes.get(m1.kernel_index)))
-        m3 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,0,0,0,1,0,0,0,0',
+        m3 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,0,0,0,1,0,0,0,0',
                     feature=[1, 0, 0, 0, 1, 0, 0, 0, 0])
         m3.create_index(indexes)
         self.assertEqual(2, len(indexes.get(m1.kernel_index)))
@@ -179,11 +179,11 @@ class TestMemory(unittest.TestCase):
 
     def test_match_children_exception(self):
         memories = []
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                feature=np.array([2, 228, 189, 55, 49, 37, 16, 35, 12])))
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                feature=np.array([3, 228, 189, 55, 49, 37, 16, 35, 12])))
         memories.append(Memory(MemoryType.SLICE, real_type=-1, children=[memories[0], memories[1], memories[2]]))
         for m in memories:
@@ -203,7 +203,7 @@ class TestMemory(unittest.TestCase):
         self.assertEqual(MemoryStatus.DORMANT, memories[3].status)
 
     def test_matched(self):
-        m1 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                     feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
         m1.status = MemoryStatus.SLEEP
         m1.matched_time = 0

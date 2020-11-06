@@ -2,11 +2,14 @@ import logging
 import math
 import time
 from collections import deque
-from multiprocessing import Pool
 
+from components import constants
 from components import memory
 from components import util
+from components.features import Feature
 from components.memory import Memory
+from components.recognizers import ImageRecognizer
+from components.recognizers import VoiceRecognizer
 
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.DEBUG)
@@ -20,6 +23,10 @@ INTERVAL_MS = 5
 MEMORY_FILE = 'data/memory.npy'
 SELF_FUNC = 's'
 ITEM_FUNC = 'v'
+FEATURE_TYPES = [constants.voice, constants.image]
+RECOGNIZERS = {constants.voice: VoiceRecognizer, constants.image: ImageRecognizer}
+MEMORY_TYPES = [constants.real, constants.piece, constants.context, constants.instant, constants.short, constants.long,
+                constants.long2]
 
 
 def slow_loop(mode, items, map_func, args, chunk=10, interval=INTERVAL_MS):
@@ -76,22 +83,37 @@ def update_weight(item, memory_indexes):
 
 
 class Brain:
+    all_memories = {}  # contains both cache and vp tree
+    memory_cache = {}  # cache before put to vp tree
+    memory_vp_tree = {}  # speed up searching memories
+    work_memories = {}
 
     def __init__(self):
-        self.counter = 0
-        self.memories = set()
-        self.memory_indexes = {}  # speed up searching memories
-        self.work_memories = []
-        self.active_memories = set()
-        self.temp_set1 = set()  # speed up searching active memories
-        self.temp_set2 = set()
-        work_feature_memories = []
-        for i in range(0, memory.MEMORY_FEATURES_LENGTH):
-            work_feature_memories.append(deque(maxlen=memory.COMPOSE_NUMBER))
-        self.work_memories.append(work_feature_memories)
-        for i in range(1, memory.MEMORY_TYPES_LENGTH):
-            self.work_memories.append(deque(maxlen=memory.COMPOSE_NUMBER))
-        # self.pool = Pool()
+        for ft in FEATURE_TYPES:
+            self.all_memories.update({ft: set()})
+            self.memory_cache.update({ft: set()})
+            self.memory_vp_tree.update({ft: None})
+            self.work_memories.update({ft: deque(maxlen=memory.COMPOSE_NUMBER)})
+        for mt in MEMORY_TYPES:
+            self.all_memories.update({mt: set()})
+            self.memory_cache.update({mt: set()})
+            self.memory_vp_tree.update({mt: None})
+            self.work_memories.update({mt: deque(maxlen=memory.COMPOSE_NUMBER)})
+
+    def input(self, features):
+        for feature in features:
+            existed = self.find_memory(feature)
+        return
+
+    def find_memory(self, feature: Feature):
+        recognizer = RECOGNIZERS[feature.type]
+        cache = self.memory_cache[feature.type]
+        for m in cache:
+            recognizer.compare_feature(feature, m.data)
+        tree = self.memory_vp_tree[feature.type]
+        if tree is not None:
+            nearest2 = tree.get_nearest_neighbor()
+        return
 
     @util.timeit
     def associate(self):
@@ -119,11 +141,11 @@ class Brain:
     @util.timeit
     def cleanup_memories(self):
         interval_s = INTERVAL_MS / 1000
-        memories = list(self.memories)
+        memories = list(self.all_memories)
         time.sleep(interval_s)
         new_memories = slow_loop('c', memories, 'cleanup_refresh', None)
         time.sleep(interval_s)
-        if len(self.memories) < MEMORIES_CLEANUP_NUM:
+        if len(self.all_memories) < MEMORIES_CLEANUP_NUM:
             return new_memories
         sorted_memories = sorted(new_memories, key=lambda x: (x.status, x.recall_count, x.matched_time),
                                  reverse=True)
@@ -132,7 +154,7 @@ class Brain:
         time.sleep(interval_s)
         self.reindex(fast_mode=False, memories_list=trim_memories)
         time.sleep(interval_s)
-        self.memories = set(trim_memories)
+        self.all_memories = set(trim_memories)
         return trim_memories
 
     @util.timeit
@@ -140,7 +162,7 @@ class Brain:
         # refresh indexes of all memories
         memories_index = {}
         if memories_list is None:
-            memories_list = list(self.memories)
+            memories_list = list(self.all_memories)
         slow_loop(SELF_FUNC, memories_list, 'create_indexes', memories_index)
         self.memory_indexes = memories_index
         # refresh context and data indexes

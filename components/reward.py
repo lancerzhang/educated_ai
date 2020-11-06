@@ -5,7 +5,7 @@ from . import util
 from .brain import Brain
 from .memory import Memory
 from .memory import MemoryType
-from .memory import RealType
+from .memory import FeatureTypes
 
 logger = logging.getLogger('Reward')
 logger.setLevel(logging.INFO)
@@ -19,10 +19,10 @@ class Reward(object):
 
     @util.timeit
     def add_reward_memory(self, reward):
-        q = Memory(MemoryType.REAL, real_type=RealType.ACTION_REWARD)
+        q = Memory(MemoryType.REAL, real_type=FeatureTypes.ACTION_REWARD)
         m = self.brain.put_memory(q)
         m.reward = reward  # TODO, reward as search?
-        self.brain.compose_memory([m], MemoryType.SLICE, real_type=RealType.ACTION_REWARD, reward=reward)
+        self.brain.compose_memory([m], MemoryType.SLICE, real_type=FeatureTypes.ACTION_REWARD, reward=reward)
 
     @util.timeit
     def process(self, key):

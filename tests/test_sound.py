@@ -9,7 +9,7 @@ from components.featurepack import FeaturePack
 from components.memory import Memory
 from components.memory import MemoryStatus
 from components.memory import MemoryType
-from components.memory import RealType
+from components.memory import FeatureTypes
 from components.voice import Voice
 
 
@@ -97,9 +97,9 @@ class TestSound(unittest.TestCase):
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_1)
         fp11 = self.sound.filter_feature(FeaturePack(kernel=kernel1))
-        m1 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=fp11.kernel, feature=fp11.feature)
+        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=fp11.kernel, feature=fp11.feature)
         m1.status = MemoryStatus.MATCHING
-        self.sound.brain.memories = {m1}
+        self.sound.brain.all_memories = {m1}
         self.sound.brain.active_memories = {m1}
         self.sound.brain.reindex()
         data1_2 = np.load('sound1_2.npy')

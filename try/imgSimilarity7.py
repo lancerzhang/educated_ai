@@ -1,6 +1,6 @@
 import cv2
 
-from components.recognizers import ImgShapeRecognizer
+from components.recognizers import ImageRecognizer
 
 files = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head10.jpg', 'head11.jpg', 'gb1.jpg',
          'image1.jpg', 'image2.jpg', 'l1-1.jpg', 'l1-2.jpg', 'manu.jpg', 'rgb1.jpg', 'rgb2.jpg', 's1.jpg', 's2.jpg',
@@ -9,7 +9,7 @@ files = ['head1.jpg', 'head2.jpg', 'head3.jpg', 'head4.jpg', 'head5.jpg', 'head1
 
 for file1 in ['square1.jpg']:
     im1 = cv2.imread(file1)
-    ics = ImgShapeRecognizer(im1, mode='ssim')
+    ics = ImageRecognizer(im1, mode='ssim')
     # ics.similar_threshold = 0.6
     for file2 in files:
         im2 = cv2.imread(file2)

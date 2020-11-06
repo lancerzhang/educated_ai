@@ -13,12 +13,12 @@ logger.setLevel(logging.INFO)
 
 class MicrophoneVoice(Voice):
     FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    MAX_PHASES = 5  # max phases storage
 
     @util.timeit
     def __init__(self, brain, favor):
-        self.CHUNK = 1024
+        self.chunk = 1024
+        self.channels = 1
+        self.max_phases = 5  # max phases storage
         super(MicrophoneVoice, self).__init__(brain, favor)
 
     @util.timeit
@@ -26,16 +26,16 @@ class MicrophoneVoice(Voice):
         try:
             audio = pyaudio.PyAudio()
             stream = audio.open(format=self.FORMAT,
-                                channels=self.CHANNELS,
-                                rate=self.SAMPLE_RATE,
+                                channels=self.channels,
+                                rate=self.sample_rate,
                                 input=True,
-                                frames_per_buffer=self.CHUNK)
+                                frames_per_buffer=self.chunk)
             while self.running:
                 frame_count = 0
                 frame_data = []
                 # start to record
                 while True:
-                    audio_buffer = stream.read(self.CHUNK)
+                    audio_buffer = stream.read(self.chunk)
                     if len(audio_buffer) == 0:
                         break  # reached end of the stream
                     np_buffer = np.frombuffer(audio_buffer, dtype=np.int16)
@@ -46,7 +46,7 @@ class MicrophoneVoice(Voice):
                         break
 
                 # reach buffer threshold, save it as phase
-                if len(self.phases) > self.MAX_PHASES:
+                if len(self.phases) > self.max_phases:
                     # ignore non-process phase
                     self.phases.popleft()
                 self.phases.append(frame_data)

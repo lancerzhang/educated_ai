@@ -9,7 +9,7 @@ from components.brain import Brain
 from components.memory import Memory
 from components.memory import MemoryStatus
 from components.memory import MemoryType
-from components.memory import RealType
+from components.memory import FeatureTypes
 from tests import test_memory
 
 
@@ -18,7 +18,7 @@ class TestBrain(unittest.TestCase):
     def test_associate_long(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        brain1.memories = memories
+        brain1.all_memories = memories
         brain1.reindex(fast_mode=False)
         # case1
         memories[8].status = MemoryStatus.SLEEP
@@ -70,7 +70,7 @@ class TestBrain(unittest.TestCase):
     def test_associate_short(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        brain1.memories = memories
+        brain1.all_memories = memories
         brain1.reindex(fast_mode=False)
         memories[6].status = MemoryStatus.SLEEP
         memories[6].matched_time = time.time() - memories[6].get_duration() - 1
@@ -82,7 +82,7 @@ class TestBrain(unittest.TestCase):
     def test_associate_short_long(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        brain1.memories = memories
+        brain1.all_memories = memories
         brain1.reindex(fast_mode=False)
         memories[6].status = MemoryStatus.SLEEP
         memories[6].matched_time = time.time() - memories[6].get_duration() - 1
@@ -97,7 +97,7 @@ class TestBrain(unittest.TestCase):
     def test_associate_slice(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
-        brain1.memories = memories
+        brain1.all_memories = memories
         brain1.reindex(fast_mode=False)
         # case1
         memories[2].status = MemoryStatus.SLEEP
@@ -202,11 +202,11 @@ class TestBrain(unittest.TestCase):
 
     def test_match_rest_memories(self):
         memories = []
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                feature=np.array([2, 228, 189, 55, 49, 37, 16, 35, 12])))
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                feature=np.array([3, 228, 189, 55, 49, 37, 16, 35, 12])))
         memories.append(Memory(MemoryType.SLICE, real_type=-1, children=[memories[0], memories[1], memories[2]]))
         for m in memories:
@@ -285,11 +285,11 @@ class TestBrain(unittest.TestCase):
     def test_find_similar_feature_memories(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.MATCHING)
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.vision, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                channel='y', feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
-        memories.append(Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        memories.append(Memory(MemoryType.REAL, real_type=FeatureTypes.vision, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                channel='u', feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
-        brain1.memories = memories
+        brain1.all_memories = memories
         brain1.reindex(fast_mode=False)
         em = brain1.find_similar_feature_memories(memories[0])
         self.assertTrue(em)
@@ -300,12 +300,12 @@ class TestBrain(unittest.TestCase):
 
     def test_put_memory(self):
         brain1 = Brain()
-        m1 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                     feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
         m1.reward = 50
-        brain1.memories = [m1]
+        brain1.all_memories = [m1]
         brain1.reindex(fast_mode=True)
-        m2 = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        m2 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                     feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
         self.assertEqual(0, m2.reward)
         m2 = brain1.put_memory(m2)
@@ -314,25 +314,25 @@ class TestBrain(unittest.TestCase):
     def test_compose_memory(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.MATCHING)
-        brain1.memories = set(memories)
+        brain1.all_memories = set(memories)
         brain1.reindex(fast_mode=False)
         # existing memory
         m1 = brain1.compose_memory([memories[0], memories[1]], MemoryType.SLICE)
         self.assertEqual(m1, memories[2])
         # compose new memory
-        fm = Memory(MemoryType.REAL, real_type=RealType.SOUND_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        fm = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                     feature=np.array([3, 228, 189, 55, 49, 37, 16, 35, 12]))
-        m2 = brain1.compose_memory([memories[0], memories[1], fm], MemoryType.SLICE, RealType.SOUND_FEATURE)
+        m2 = brain1.compose_memory([memories[0], memories[1], fm], MemoryType.SLICE, FeatureTypes.voice)
         self.assertNotEqual(m2, memories[2])
 
     def test_compose_memories(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.MATCHED)
-        brain1.memories = set(memories)
+        brain1.all_memories = set(memories)
         brain1.active_memories = set(memories)
-        brain1.put_memory(Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        brain1.put_memory(Memory(MemoryType.REAL, real_type=FeatureTypes.vision, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                  channel='y', feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
-        brain1.put_memory(Memory(MemoryType.REAL, real_type=RealType.VISION_FEATURE, kernel=b'0,-1,-1,1,0,1,1,-1,1',
+        brain1.put_memory(Memory(MemoryType.REAL, real_type=FeatureTypes.vision, kernel=b'0,-1,-1,1,0,1,1,-1,1',
                                  channel='u', feature=np.array([1, 228, 189, 55, 49, 37, 16, 35, 12])))
         brain1.compose_memories()
         self.assertEqual(len(memories) + 2 + 4, len(brain1.active_memories))
@@ -342,8 +342,8 @@ class TestBrain(unittest.TestCase):
         memories = test_memory.build_a_tree(MemoryStatus.LIVING)
         for i in range(0, len(memories)):
             brain1.put_memory(memories[i])
-        self.assertEqual(2, len(brain1.get_valid_work_memories(MemoryType.REAL, RealType.SOUND_FEATURE)))
-        self.assertEqual(0, len(brain1.get_valid_work_memories(MemoryType.REAL, RealType.VISION_FEATURE)))
+        self.assertEqual(2, len(brain1.get_valid_work_memories(MemoryType.REAL, FeatureTypes.voice)))
+        self.assertEqual(0, len(brain1.get_valid_work_memories(MemoryType.REAL, FeatureTypes.vision)))
         self.assertEqual(2, len(brain1.get_valid_work_memories(MemoryType.SLICE, -1)))
         self.assertEqual(2, len(brain1.get_valid_work_memories(MemoryType.INSTANT, -1)))
         self.assertEqual(2, len(brain1.get_valid_work_memories(MemoryType.SHORT, -1)))
@@ -368,25 +368,25 @@ class TestBrain(unittest.TestCase):
     def test_cleanup_memories(self):
         brain1 = Brain()
         memories = test_memory.build_a_tree(MemoryStatus.SLEEP)
-        brain1.memories = set(memories)
+        brain1.all_memories = set(memories)
         brain1.cleanup_memories()
-        self.assertEqual(11, len(brain1.memories))
+        self.assertEqual(11, len(brain1.all_memories))
         memories[0].status = MemoryStatus.MATCHING
         memories[1].status = MemoryStatus.MATCHING
         brain.MEMORIES_CLEANUP_NUM = 3
         brain.MEMORIES_NUM = 2
         brain1.cleanup_memories()
-        self.assertEqual(2, len(brain1.memories))
-        self.assertEqual(MemoryType.REAL, brain1.memories.pop().memory_type)
+        self.assertEqual(2, len(brain1.all_memories))
+        self.assertEqual(MemoryType.REAL, brain1.all_memories.pop().memory_type)
 
     def test_put_feature_memory(self):
         brain1 = Brain()
-        brain1.put_feature_memory(RealType.SOUND_FEATURE, b'0,-1,-1,1,0,1,1,-1,1',
+        brain1.put_feature_memory(FeatureTypes.voice, b'0,-1,-1,1,0,1,1,-1,1',
                                   np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
-        self.assertEqual(1, len(brain1.memories))
-        brain1.put_feature_memory(RealType.SOUND_FEATURE, b'0,-1,-1,1,0,1,1,-1,1',
+        self.assertEqual(1, len(brain1.all_memories))
+        brain1.put_feature_memory(FeatureTypes.voice, b'0,-1,-1,1,0,1,1,-1,1',
                                   np.array([1, 228, 189, 55, 49, 37, 16, 35, 12]))
-        self.assertEqual(1, len(brain1.memories))
+        self.assertEqual(1, len(brain1.all_memories))
 
         # for m in memories:
         #     m.last_recall_time = time.time() - 1
@@ -399,13 +399,13 @@ class TestBrain(unittest.TestCase):
         brain.MEMORY_FILE = 'memory.npy'
         brain1 = Brain()
         memories = test_memory.build_a_tree()
-        brain1.memories = set(memories)
+        brain1.all_memories = set(memories)
         brain1.save()
         brain2 = Brain()
         brain2.load()
-        self.assertTrue(isinstance(brain2.memories, set))
-        self.assertEqual(11, len(brain2.memories))
-        m2 = util.get_from_set(brain2.memories, memories[2])
+        self.assertTrue(isinstance(brain2.all_memories, set))
+        self.assertEqual(11, len(brain2.all_memories))
+        m2 = util.get_from_set(brain2.all_memories, memories[2])
         self.assertEqual(2, len(m2.children))
 
 

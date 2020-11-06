@@ -50,7 +50,7 @@ class ImgHistRecognizer:
             return False
 
 
-class ImgShapeRecognizer:
+class ImageRecognizer:
     hash_threshold = 21
     ssim_threshold = 0.4
     top_colors_hsv = {}
@@ -101,7 +101,7 @@ class ImgShapeRecognizer:
                 features.append(feature)
         return features
 
-    def compare_a_feature(self, img2):
+    def compare_feature(self, img2):
         distance = 1000  # max distance
         features2 = self.describe(img2)
         for f1 in self.features:
@@ -115,7 +115,7 @@ class ImgShapeRecognizer:
         return distance
 
     def is_similar(self, img2):
-        distance = self.compare_a_feature(img2)
+        distance = self.compare_feature(img2)
         similar_threshold = self.hash_threshold
         if self.mode == 'ssim':
             similar_threshold = self.ssim_threshold
@@ -130,7 +130,7 @@ def get_euclidean_distance(block1, block2):
     return distance
 
 
-class MfccRecognizer:
+class VoiceRecognizer:
     BLOCK_WIDTH = 2
     BLOCK_HEIGHT = 2
     MIN_ENERGY_UNIT = 25
@@ -167,7 +167,7 @@ class MfccRecognizer:
                 features.append(feature)
         return features
 
-    def compare_a_feature(self, mfcc_block2):
+    def compare_feature(self, mfcc_block2):
         distance = 10000
         if len(self.features) == 0:
             return distance
@@ -182,7 +182,7 @@ class MfccRecognizer:
         return distance
 
     def is_similar(self, mfcc_block2):
-        distance = self.compare_a_feature(mfcc_block2)
+        distance = self.compare_feature(mfcc_block2)
         if distance < self.MIN_DISTANCE_UNIT * self.BLOCK_WIDTH * self.BLOCK_HEIGHT:
             return True
         else:

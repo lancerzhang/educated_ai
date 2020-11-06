@@ -10,7 +10,7 @@ logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 brain.MEMORY_FILE = '../data/memory.npy'
 brain1 = Brain()
 brain1.load()
-memories = brain1.memories
+memories = brain1.all_memories
 # memories = {x for x in memories if x.status is not MemoryStatus.DORMANT}
 # memories = [x for x in memories if x.memory_type == 0 and x.real_type == 3]
 # print(len(memories))
