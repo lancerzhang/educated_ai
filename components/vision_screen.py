@@ -8,12 +8,12 @@ from .vision import Vision
 class ScreenVision(Vision):
 
     @util.timeit
-    def __init__(self, brain, favor):
+    def __init__(self):
         self.sct = mss.mss()
         monitor = self.sct.monitors[1]
         self.SCREEN_WIDTH = monitor['width']
         self.SCREEN_HEIGHT = monitor['height']
-        super(ScreenVision, self).__init__(brain, favor)
+        super(ScreenVision, self).__init__()
 
     @util.timeit
     def grab(self, top, left, width, height):

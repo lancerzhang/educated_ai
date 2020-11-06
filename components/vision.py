@@ -3,8 +3,8 @@ import hashlib
 import logging
 import math
 import random
+import threading
 import time
-from multiprocessing import Pool
 
 import cv2
 import numpy as np
@@ -14,15 +14,13 @@ from pynput.mouse import Controller
 from . import constants
 from . import memory
 from . import util
-from .brain import Brain
-from .favor import Favor
 from .featurepack import FeaturePack
 from .memory import Memory
 from .memory import MemoryType
 from .memory import RealType
 
 logger = logging.getLogger('Vision')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 VISION_USED_KERNEL = 'vuk'
 USED_CHANNEL = 'channel'
@@ -81,6 +79,7 @@ class Block(object):
 
 
 class Vision(object):
+    running = True
     FRAME_WIDTH = 0
     FRAME_HEIGHT = 0
     ROI_ARR = [28, 56, 112]
@@ -126,16 +125,26 @@ class Vision(object):
     is_show = None
 
     @util.timeit
-    def __init__(self, brain: Brain, favor: Favor):
-        self.brain = brain
-        self.favor = favor
+    def __init__(self):
         self.mouse = Controller()
         self.vision_kernels = np.load(self.VISION_KERNEL_FILE)
         self.init_current_block()
         # fix error of Mac - Process finished with exit code 132 (interrupted by signal 4: SIGILL)
-        if self.is_show is not 'n':
+        if self.is_show != 'n':
             cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
-        self.pool = Pool()
+
+    def start(self):
+        sound_thread = threading.Thread(target=self.receive)
+        sound_thread.daemon = True
+        sound_thread.start()
+
+    def stop(self):
+        self.running = False
+
+    # need to overwrite this
+    def receive(self):
+        print('receive() not implemented!')
+        return
 
     @util.timeit
     def init_current_block(self):
@@ -147,44 +156,45 @@ class Vision(object):
 
     @util.timeit
     def process(self, status, key):
-        old_focus_x = self.current_block.x + self.current_block.w // 2
-        old_focus_y = self.current_block.y + self.current_block.h // 2
-        if self.current_action[self.STATUS] == self.IN_PROGRESS:
-            self.calculate_move_action(self.current_action)
-
-        self.match_features()
-        self.search_feature_memory()
-
-        # when she's mature, below is the major way of focus move/zoom.
-        # self.reproduce_movements()
-        # self.reproduce_zooms()
-
-        # when she's not mature, need to guide her.
-        this_full_image = self.grab(0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT)
-        self.calculate_vision_focus_state()
-        if self.current_action[self.STATUS] is not self.IN_PROGRESS:
-            if key is constants.KEY_ALT or key is constants.KEY_CTRL:
-                # the 1st and most efficient way is to set focus directly, and reward it
-                self.move_focus_to_mouse()
-            else:
-                # move out from current reward region.
-                is_aware = self.aware(this_full_image)
-                if not is_aware:
-                    if self.focus_status is self.PROCESS_STATUS_DIGGING:
-                        self.dig()
-                    elif self.focus_status is self.PROCESS_STATUS_EXPLORING:
-                        # if environment not change, random do some change.
-                        self.explore()
-
-        self.previous_full_image = this_full_image
-
-        new_focus_x = self.current_block.x + self.current_block.w // 2
-        new_focus_y = self.current_block.y + self.current_block.h // 2
-        if new_focus_x == old_focus_x and new_focus_y == old_focus_y:
-            focus = None
-        else:
-            focus = {constants.FOCUS_X: new_focus_x, constants.FOCUS_Y: new_focus_y}
-        return focus
+        return
+        # old_focus_x = self.current_block.x + self.current_block.w // 2
+        # old_focus_y = self.current_block.y + self.current_block.h // 2
+        # if self.current_action[self.STATUS] == self.IN_PROGRESS:
+        #     self.calculate_move_action(self.current_action)
+        #
+        # self.match_features()
+        # self.search_feature_memory()
+        #
+        # # when she's mature, below is the major way of focus move/zoom.
+        # # self.reproduce_movements()
+        # # self.reproduce_zooms()
+        #
+        # # when she's not mature, need to guide her.
+        # this_full_image = self.grab(0, 0, self.FRAME_WIDTH, self.FRAME_HEIGHT)
+        # self.calculate_vision_focus_state()
+        # if self.current_action[self.STATUS] is not self.IN_PROGRESS:
+        #     if key is constants.KEY_ALT or key is constants.KEY_CTRL:
+        #         # the 1st and most efficient way is to set focus directly, and reward it
+        #         self.move_focus_to_mouse()
+        #     else:
+        #         # move out from current reward region.
+        #         is_aware = self.aware(this_full_image)
+        #         if not is_aware:
+        #             if self.focus_status is self.PROCESS_STATUS_DIGGING:
+        #                 self.dig()
+        #             elif self.focus_status is self.PROCESS_STATUS_EXPLORING:
+        #                 # if environment not change, random do some change.
+        #                 self.explore()
+        #
+        # self.previous_full_image = this_full_image
+        #
+        # new_focus_x = self.current_block.x + self.current_block.w // 2
+        # new_focus_y = self.current_block.y + self.current_block.h // 2
+        # if new_focus_x == old_focus_x and new_focus_y == old_focus_y:
+        #     focus = None
+        # else:
+        #     focus = {constants.FOCUS_X: new_focus_x, constants.FOCUS_Y: new_focus_y}
+        # return focus
 
     @util.timeit
     def match_features(self):

@@ -11,7 +11,6 @@ logger.setLevel(logging.INFO)
 
 
 class MicrophoneSound(Sound):
-    running = True
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     MAX_PHASES = 5  # max phases storage
