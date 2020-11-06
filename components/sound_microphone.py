@@ -1,4 +1,5 @@
 import logging
+import time
 
 import numpy as np
 import pyaudio
@@ -49,5 +50,7 @@ class MicrophoneSound(Sound):
                     # ignore non-process phase
                     self.phases.popleft()
                 self.phases.append(frame_data)
+                # avoid looping too fast, that eat processing power of main thread
+                time.sleep(0.01)
         except IOError:
             raise Exception('Please connect your microphone!')
