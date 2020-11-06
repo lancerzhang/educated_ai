@@ -6,8 +6,8 @@ import traceback
 
 from components import constants
 from components.brain import Brain
-from components.sound_microphone import MicrophoneSound
-from components.sound_video_file import VideoFileSound
+from components.voice_microphone import MicrophoneVoice
+from components.voice_video_file import VideoFileVoice
 from components.vision_screen import ScreenVision
 from components.vision_video_file import VideoFileVision
 
@@ -36,30 +36,31 @@ def main(argv):
     try:
         logging.info('initializing, please wait.')
         brain = Brain()
-        config = {}
         process_time = 1 / constants.process_per_second
         if video_file:
             vision = VideoFileVision(video_file, is_show)
-            sound = VideoFileSound(video_file)
+            voice = VideoFileVoice(video_file)
         else:
             vision = ScreenVision(brain)
-            sound = MicrophoneSound(brain)
-        sound.start()
+            voice = MicrophoneVoice(brain)
+        voice.start()
         start_time = time.time()
         logging.info('initialized.')
         print('initialized.')
         while 1:
             process_start = time.time()
             # logging.debug('frame started.')
-            features = sound.process()
-            print(f'n features {len(features)}')
+            voice_pieces = voice.process()
+            print(f'n features {len(voice_pieces)}')
+            for piece in voice_pieces:
+                brain.input_real(piece)
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
-            logging.debug(f'idle time {idle_time}')
+            # logging.debug(f'idle time {idle_time}')
             # print(f'idle time {idle_time}')
             if idle_time > 0:
                 time.sleep(idle_time)
-            # print(f'elapse time {time.time() - start_time}')
+            print(f'elapse time {time.time() - start_time}')
     except:
         logging.error(traceback.format_exc())
 

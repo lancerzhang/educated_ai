@@ -125,11 +125,6 @@ class ImageRecognizer:
             return False
 
 
-def get_euclidean_distance(block1, block2):
-    distance = euclidean(block1[0], block2[0]) + euclidean(block1[1], block2[1])
-    return distance
-
-
 class VoiceRecognizer:
     BLOCK_WIDTH = 2
     BLOCK_HEIGHT = 2
@@ -138,13 +133,6 @@ class VoiceRecognizer:
 
     def __init__(self, y, sr):
         self.features = self.recognize(y, sr)
-
-    def has_similar_dtw(self, block1, blocks):
-        for block2 in blocks:
-            distance = get_euclidean_distance(block1, block2)
-            if distance < self.MIN_DISTANCE_UNIT * self.BLOCK_WIDTH * self.BLOCK_HEIGHT:
-                return True
-        return False
 
     def recognize(self, y, sr):
         mfcc_frames = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13).T
@@ -160,20 +148,28 @@ class VoiceRecognizer:
                     max_energy = np.max(block)
                     feature.append(VoiceFeature(i, max_energy, norm_block))
             if len(feature) > 0:
+                # TODO, do we need this?
                 # first mfcc value is total energy
-                total_energy = mfcc_frames[j:j + self.BLOCK_HEIGHT, 0:1]
-                max_energy = np.max(total_energy)
-                feature.insert(0, VoiceFeature(0, max_energy))
+                # total_energy = mfcc_frames[j:j + self.BLOCK_HEIGHT, 0:1]
+                # max_energy = np.max(total_energy)
+                # feature.insert(0, VoiceFeature(0, max_energy))
                 features.append(feature)
         return features
 
-    def compare_feature(self, shape1, shape2):
-        distance = get_euclidean_distance(shape1, shape2)
+    @staticmethod
+    def get_euclidean_distance(block1, block2):
+        distance = euclidean(block1[0], block2[0]) + euclidean(block1[1], block2[1])
         return distance
 
-    def is_similar(self, feature1, feature2):
-        distance = self.compare_feature(feature1.shape, feature2.shape)
-        if distance < self.MIN_DISTANCE_UNIT * self.BLOCK_WIDTH * self.BLOCK_HEIGHT:
+    @classmethod
+    def compare_feature(cls, shape1, shape2):
+        distance = cls.get_euclidean_distance(shape1, shape2)
+        return distance
+
+    @classmethod
+    def is_similar(cls, feature1, feature2):
+        distance = cls.compare_feature(feature1.shape, feature2.shape)
+        if distance < cls.MIN_DISTANCE_UNIT * cls.BLOCK_WIDTH * cls.BLOCK_HEIGHT:
             return True
         else:
             return False

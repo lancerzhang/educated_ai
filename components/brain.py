@@ -1,5 +1,6 @@
 import logging
 import math
+import random
 import time
 from collections import deque
 
@@ -21,8 +22,14 @@ INTERVAL_MS = 5
 MEMORY_FILE = 'data/memory.npy'
 SELF_FUNC = 's'
 ITEM_FUNC = 'v'
-FEATURE_TYPES = [constants.voice, constants.image]
 RECOGNIZERS = {constants.voice: VoiceRecognizer, constants.image: ImageRecognizer}
+TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296,
+            326, 358, 392, 428, 466, 506, 548, 593, 641, 692, 746, 803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367,
+            1451, 1538, 1628, 1721, 1920, 2100, 2280, 2460, 2640, 2880, 3120, 3360, 3600, 4680, 6120, 7920, 10440,
+            14040, 18720, 24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600,
+            537840, 853200, 1326240, 2035800, 3100140, 3609835, 4203316, 4894372, 5699043, 6636009, 7727020,
+            8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033,
+            41225925, 48003823, 55896067, 65085866]
 
 
 def slow_loop(mode, items, map_func, args, chunk=10, interval=INTERVAL_MS):
@@ -78,6 +85,38 @@ def update_weight(item, memory_indexes):
     item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
 
 
+def recall_memory(memory):
+    # TODO
+    return
+
+
+def refresh_memory(memory, recall=False, is_forget=False):
+    now_time = time.time()
+    time_elapse = now_time - memory.last_recall_time
+    if time_elapse < TIME_SEC[0]:
+        return
+    count = 0
+    for num in range(memory.recall_count, len(TIME_SEC)):
+        if TIME_SEC[num] <= time_elapse:
+            count = count + 1
+        else:
+            # if go to next section
+            if count > 0:
+                # random forget memory base on strength
+                if is_forget and time.time() > memory.protect_time:
+                    memory.protect_time = memory.calculate_protect_time(memory.recall_count)
+                    ran = random.randint(1, 100)
+                    strength = 100 - count
+                    if ran > strength:
+                        memory.hibernate()
+                        break
+                # if this is recall, will update recall count and last recall time
+                if recall:
+                    memory.recall_count += 1
+                    memory.last_recall_time = time.time()
+            break
+
+
 class Brain:
     all_memories = {}  # contains both cache and vp tree
     memory_cache = {}  # cache before put to vp tree
@@ -85,12 +124,7 @@ class Brain:
     work_memories = {}
 
     def __init__(self):
-        for ft in FEATURE_TYPES:
-            self.all_memories.update({ft: set()})
-            self.memory_cache.update({ft: set()})
-            self.memory_vp_tree.update({ft: None})
-            self.work_memories.update({ft: deque(maxlen=constants.n_memory_children)})
-        for mt in constants.memory_types:
+        for mt in constants.feature_types + constants.memory_types:
             self.all_memories.update({mt: set()})
             self.memory_cache.update({mt: set()})
             self.memory_vp_tree.update({mt: None})
@@ -101,14 +135,18 @@ class Brain:
             existed = self.find_memory(feature)
             if existed is None:
                 self.add_real_memory(feature)
+            else:
+                recall_memory(existed)
 
     def add_real_memory(self, feature):
         m = Memory(constants.real, feature, feature.type)
         self.all_memories[feature.type].add(m)
+        self.memory_cache[feature.type].add(m)
 
     def find_cache(self, feature):
         recognizer = RECOGNIZERS[feature.type]
         cache = self.memory_cache[feature.type]
+        print(f'len cache {len(cache)}')
         for m in cache:
             if recognizer.is_similar(feature, m.data):
                 return m
@@ -117,7 +155,7 @@ class Brain:
         recognizer = RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
         if tree is not None:
-            nearest1 = tree.get_nearest_neighbor()
+            nearest1 = tree.get_nearest_neighbor(feature)
             if recognizer.is_similar(nearest1, feature):
                 return nearest1
         nearest2 = self.find_cache(feature)
@@ -127,10 +165,9 @@ class Brain:
     @util.timeit
     def cleanup_memories(self):
         interval_s = INTERVAL_MS / 1000
-        all_types = FEATURE_TYPES + constants.memory_types
-        for ft in all_types:
-            memories = self.all_memories[ft]
-            new_memories = slow_loop('c', memories, 'cleanup_refresh', None)
+        for ft in constants.feature_types + constants.memory_types:
+            memories = self.all_memories[ft].copy()
+            new_memories = {x for x in memories if refresh_memory(x)}
             # TODO, some update may lost during this process
             self.all_memories.update({ft: new_memories})
             time.sleep(interval_s)

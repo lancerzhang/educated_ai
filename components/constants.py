@@ -2,6 +2,8 @@
 voice = 'Voice'
 image = 'Image'
 
+feature_types = [voice, image]
+
 # memory types
 real = 'Real'  # one real memory
 piece = 'Piece'  # collection of one type of real memories happened at the same time
@@ -13,7 +15,7 @@ long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
 
 memory_types = [real, piece, context, instant, short, long, long2]
 
-n_memory_children=4
+n_memory_children = 4
 # memory status
 # dormant memories will be clean up in high priority
 # dormant memories can't be activated

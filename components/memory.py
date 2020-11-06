@@ -22,5 +22,5 @@ class Memory:
         self.data_indexes = set()  # memories use this memory as data
         self.data_weight = 0  # weight when this memory is a data
         self.data_order = 'o'  # ordered
-        if memory_type <= constants.memory_types.index(constants.piece):
+        if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.piece):
             self.data_order = 'u'  # unordered
