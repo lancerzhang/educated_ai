@@ -4,9 +4,7 @@ import time
 from collections import deque
 
 from components import constants
-from components import memory
 from components import util
-from components.features import Feature
 from components.memory import Memory
 from components.recognizers import ImageRecognizer
 from components.recognizers import VoiceRecognizer
@@ -25,8 +23,6 @@ SELF_FUNC = 's'
 ITEM_FUNC = 'v'
 FEATURE_TYPES = [constants.voice, constants.image]
 RECOGNIZERS = {constants.voice: VoiceRecognizer, constants.image: ImageRecognizer}
-MEMORY_TYPES = [constants.real, constants.piece, constants.context, constants.instant, constants.short, constants.long,
-                constants.long2]
 
 
 def slow_loop(mode, items, map_func, args, chunk=10, interval=INTERVAL_MS):
@@ -93,69 +89,51 @@ class Brain:
             self.all_memories.update({ft: set()})
             self.memory_cache.update({ft: set()})
             self.memory_vp_tree.update({ft: None})
-            self.work_memories.update({ft: deque(maxlen=memory.COMPOSE_NUMBER)})
-        for mt in MEMORY_TYPES:
+            self.work_memories.update({ft: deque(maxlen=constants.n_memory_children)})
+        for mt in constants.memory_types:
             self.all_memories.update({mt: set()})
             self.memory_cache.update({mt: set()})
             self.memory_vp_tree.update({mt: None})
-            self.work_memories.update({mt: deque(maxlen=memory.COMPOSE_NUMBER)})
+            self.work_memories.update({mt: deque(maxlen=constants.n_memory_children)})
 
-    def input(self, features):
+    def input_real(self, features):
         for feature in features:
             existed = self.find_memory(feature)
-        return
+            if existed is None:
+                self.add_real_memory(feature)
 
-    def find_memory(self, feature: Feature):
+    def add_real_memory(self, feature):
+        m = Memory(constants.real, feature, feature.type)
+        self.all_memories[feature.type].add(m)
+
+    def find_cache(self, feature):
         recognizer = RECOGNIZERS[feature.type]
         cache = self.memory_cache[feature.type]
         for m in cache:
-            recognizer.compare_feature(feature, m.data)
+            if recognizer.is_similar(feature, m.data):
+                return m
+
+    def find_memory(self, feature):
+        recognizer = RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
         if tree is not None:
-            nearest2 = tree.get_nearest_neighbor()
-        return
-
-    @util.timeit
-    def associate(self):
-        return
-
-    def activate_memory(self, m: Memory):
-        return
-
-    @util.timeit
-    def match_memories(self):
-        return
-
-    def post_matched_memories(self):
-        return
-
-    @util.timeit
-    def compose_memories(self):
-        return
-
-    @util.timeit
-    def cleanup_active_memories(self):
-        return
+            nearest1 = tree.get_nearest_neighbor()
+            if recognizer.is_similar(nearest1, feature):
+                return nearest1
+        nearest2 = self.find_cache(feature)
+        return nearest2
 
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
     def cleanup_memories(self):
         interval_s = INTERVAL_MS / 1000
-        memories = list(self.all_memories)
-        time.sleep(interval_s)
-        new_memories = slow_loop('c', memories, 'cleanup_refresh', None)
-        time.sleep(interval_s)
-        if len(self.all_memories) < MEMORIES_CLEANUP_NUM:
-            return new_memories
-        sorted_memories = sorted(new_memories, key=lambda x: (x.status, x.recall_count, x.matched_time),
-                                 reverse=True)
-        time.sleep(interval_s)
-        trim_memories = sorted_memories[0:MEMORIES_NUM]
-        time.sleep(interval_s)
-        self.reindex(fast_mode=False, memories_list=trim_memories)
-        time.sleep(interval_s)
-        self.all_memories = set(trim_memories)
-        return trim_memories
+        all_types = FEATURE_TYPES + constants.memory_types
+        for ft in all_types:
+            memories = self.all_memories[ft]
+            new_memories = slow_loop('c', memories, 'cleanup_refresh', None)
+            # TODO, some update may lost during this process
+            self.all_memories.update({ft: new_memories})
+            time.sleep(interval_s)
 
     @util.timeit
     def reindex(self, memories_list=None):

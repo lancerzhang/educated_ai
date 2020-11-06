@@ -167,22 +167,12 @@ class VoiceRecognizer:
                 features.append(feature)
         return features
 
-    def compare_feature(self, mfcc_block2):
-        distance = 10000
-        if len(self.features) == 0:
-            return distance
-        feature2 = self.recognize(mfcc_block2)
-        if len(feature2) == 0:
-            return distance
-        for f1 in self.features:
-            for f2 in feature2:
-                d1 = get_euclidean_distance(f1, f2)
-                if d1 < distance:
-                    distance = d1
+    def compare_feature(self, shape1, shape2):
+        distance = get_euclidean_distance(shape1, shape2)
         return distance
 
-    def is_similar(self, mfcc_block2):
-        distance = self.compare_feature(mfcc_block2)
+    def is_similar(self, feature1, feature2):
+        distance = self.compare_feature(feature1.shape, feature2.shape)
         if distance < self.MIN_DISTANCE_UNIT * self.BLOCK_WIDTH * self.BLOCK_HEIGHT:
             return True
         else:

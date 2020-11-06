@@ -11,6 +11,19 @@ short = 'Short'  # memories happened in a short time, it's word in voice
 long = 'Long'  # memories happened in a long time, it's sentence in voice
 long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
 
+memory_types = [real, piece, context, instant, short, long, long2]
+
+n_memory_children=4
+# memory status
+# dormant memories will be clean up in high priority
+# dormant memories can't be activated
+# dormant memories can be retrieved if it's yet clean up, recall count will be kept
+dormant = 'Dormant'
+sleep = 'Sleep'
+living = 'Living'
+matched = 'Matched'
+matching = 'Matching'
+
 # vision
 ZOOM_TYPE = 'zmt'
 ZOOM_DIRECTION = 'zdt'
