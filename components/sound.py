@@ -11,11 +11,10 @@ from . import util
 logger = logging.getLogger('Sound')
 logger.setLevel(logging.DEBUG)
 
-DEFAULT_PHASE_DURATION = 0.2  # second of buffer
-
 
 class Sound(object):
     running = True
+    MAX_PHASE_DURATION = 0.2  # second of phase
     CHUNK = 0  # need to be overwrote
     SAMPLE_RATE = 0  # need to be overwrote
     CHANNELS = 0
@@ -46,17 +45,15 @@ class Sound(object):
 
     def set_chunk(self):
         buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
-        self.buffers_per_phase = int(math.ceil(DEFAULT_PHASE_DURATION / buffer_duration))
+        self.buffers_per_phase = int(math.ceil(self.MAX_PHASE_DURATION / buffer_duration))
 
     # @util.timeit
     def get_features(self):
         if len(self.phases) == 0:
             return []
-        audio_data = np.array(list(self.phases)).flatten()
-        # remove silence
-        # print(f'len audio_data {len(audio_data)}')
-        audio_data[abs(audio_data) < 0.05] = 0
-        self.phases.clear()
-        mf = MfccRecognizer(y=audio_data, sr=self.SAMPLE_RATE)
+        phase = self.phases.popleft()
+        print(f'len phase:{len(phase)}')
+        phase = np.array(phase)
+        mf = MfccRecognizer(y=phase, sr=self.SAMPLE_RATE)
         features = mf.features
         return features

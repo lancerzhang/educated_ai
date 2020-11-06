@@ -14,9 +14,9 @@ class VideoFileSound(Sound):
     play_start_time = 0
     read_time = 0
     audio_buffers = None
-    read_buffer_total_count = 0
-    read_buffer_phase_count = 0
-    frame_data = []
+    phase_is_start = False
+    phase_start_time = 0
+    phase_data = []
 
     @util.timeit
     def __init__(self, file_path):
@@ -35,9 +35,6 @@ class VideoFileSound(Sound):
         self.NFRAMES = audio.nframes
         self.DURATION = audio.duration
         self.audio_buffers = audio.read_data()
-        # numbers of buffers were loaded
-        self.read_buffer_total_count = 0
-        self.read_buffer_phase_count = 0
         self.read_time = 0
         self.play_start_time = time.time()
 
@@ -54,32 +51,38 @@ class VideoFileSound(Sound):
             self.buffer_duration = float(self.CHUNK) / self.SAMPLE_RATE
         self.read_time += self.buffer_duration
         normal_buffer = util.normalize_audio_data(np_buffer)
-        self.frame_data = self.frame_data + normal_buffer.tolist()
-        self.read_buffer_total_count += 1
-        self.read_buffer_phase_count += 1
+        return normal_buffer
 
     @util.timeit
     def process_a_buffer(self):
-        self.read_a_buffer()
-        if self.read_buffer_phase_count >= self.buffers_per_phase:
-            # got enough data, save it to a phase
-            self.phases.append(self.frame_data)
-            self.frame_data = []
-            self.read_buffer_phase_count = 0
+        np_buffer = self.read_a_buffer()
+        np_buffer = np_buffer.copy()
+        np_buffer[abs(np_buffer) < 0.05] = 0
+        abs_sum_abs_buffer = np.abs(np.sum(np_buffer))
+        if self.phase_is_start:
+            if abs_sum_abs_buffer > 0:
+                self.phase_data = self.phase_data + np_buffer.tolist()
+                if (time.time() - self.phase_start_time) > self.MAX_PHASE_DURATION:
+                    # force to stop a phase when gather enough data
+                    self.stop_phase()
+            else:
+                # phase stop, save it to a phase
+                self.stop_phase()
+        else:
+            if abs_sum_abs_buffer > 0:
+                # start a new phase
+                self.phase_data = self.phase_data + np_buffer.tolist()
+                self.phase_is_start = True
+                self.phase_start_time = time.time()
+
+    def stop_phase(self):
+        self.phase_is_start = False
+        self.phases.append(self.phase_data)
+        self.phase_data = []
 
     @util.timeit
     def receive(self):
         while self.running:
-            # print(f'receive start')
-            # print(f' len frame_data {len(self.frame_data)}')
-            # print(f' len phases {len(self.phases)}')
-            # print(f'read_time {self.read_time}')
-            # print(f'DURATION {self.DURATION}')
-            # if self.read_time >= self.DURATION:
-            #     self.read_time = 0
-            #     self.play_start_time = 0
-            #     print(f'restart video')
-            #     continue
             playing_time = time.time() - self.play_start_time
             while self.read_time < playing_time:
                 try:
