@@ -12,19 +12,17 @@ logger = logging.getLogger('Sound')
 logger.setLevel(logging.DEBUG)
 
 
-class Sound(object):
+class Voice(object):
     running = True
     MAX_PHASE_DURATION = 0.2  # second of phase
     CHUNK = 0  # need to be overwrote
     SAMPLE_RATE = 0  # need to be overwrote
     CHANNELS = 0
     buffers_per_phase = 0
-    phases = collections.deque()  # phases queue
 
     @util.timeit
     def __init__(self):
-        self.frequency_map = None
-        self.data_map = None
+        self.phases = collections.deque()  # phases queue
 
     def start(self):
         sound_thread = threading.Thread(target=self.receive)

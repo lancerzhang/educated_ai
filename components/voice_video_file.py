@@ -4,10 +4,10 @@ import audioread
 import numpy as np
 
 from . import util
-from .sound import Sound
+from .voice import Voice
 
 
-class VideoFileSound(Sound):
+class VideoFileVoice(Voice):
     NFRAMES = 0
     DURATION = 0
     buffer_duration = 0
@@ -25,7 +25,7 @@ class VideoFileSound(Sound):
         # detect chunk size
         self.read_a_buffer()
         self.set_chunk()
-        super(VideoFileSound, self).__init__()
+        super(VideoFileVoice, self).__init__()
 
     @util.timeit
     def open_video(self):

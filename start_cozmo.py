@@ -4,7 +4,7 @@ from components.favor import Favor
 from components.keyboard_listener import KeyboardListener
 from components.mouse_listener import MouseListener
 from components.reward import Reward
-from components.sound_microphone import MicrophoneSound
+from components.voice_microphone import MicrophoneVoice
 from components.vision_cozmo import CozmoVision
 from components.status import Status
 from components import constants
@@ -51,7 +51,7 @@ def main():
         vision_thread = threading.Thread(target=vision.run_cozmo_thread)
         vision_thread.daemon = True
         vision_thread.start()
-        sound = MicrophoneSound(brain, favor)
+        sound = MicrophoneVoice(brain, favor)
         sound_thread = threading.Thread(target=sound.receive)
         sound_thread.daemon = True
         sound_thread.start()

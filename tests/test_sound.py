@@ -10,7 +10,7 @@ from components.memory import Memory
 from components.memory import MemoryStatus
 from components.memory import MemoryType
 from components.memory import RealType
-from components.sound import Sound
+from components.voice import Voice
 
 
 class TestSound(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestSound(unittest.TestCase):
         brain1 = Brain()
         favor.FAVOR_FILE = 'favor.npy'
         favor1 = Favor()
-        self.sound = Sound(brain1, favor1)
+        self.sound = Voice(brain1, favor1)
 
     def test_filter_feature(self):
         kernel1 = '-1,-1,1,-1,-1,0,1,0,1'
