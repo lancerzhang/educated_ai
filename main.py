@@ -6,10 +6,10 @@ import traceback
 
 from components import constants
 from components.brain import Brain
-from components.voice_microphone import MicrophoneVoice
-from components.voice_video_file import VideoFileVoice
 from components.vision_screen import ScreenVision
 from components.vision_video_file import VideoFileVision
+from components.voice_microphone import MicrophoneVoice
+from components.voice_video_file import VideoFileVoice
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
@@ -50,17 +50,20 @@ def main(argv):
         while 1:
             process_start = time.time()
             # logging.debug('frame started.')
-            voice_pieces = voice.process()
-            print(f'n features {len(voice_pieces)}')
-            for piece in voice_pieces:
-                brain.input_real(piece)
+            voice_features_set = voice.process()
+            # print(f'n voice_features_set {len(voice_features_set)}')
+            for features in voice_features_set:
+                brain.input_real(features)
+            if time.time() - start_time > 10:
+                brain.reindex()
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
+            print(f'len brain.memory_cache voice {len(brain.memory_cache[constants.voice])}')
             # logging.debug(f'idle time {idle_time}')
-            # print(f'idle time {idle_time}')
+            print(f'idle time {idle_time}')
             if idle_time > 0:
                 time.sleep(idle_time)
-            print(f'elapse time {time.time() - start_time}')
+            # print(f'elapse time {time.time() - start_time}')
     except:
         logging.error(traceback.format_exc())
 

@@ -4,6 +4,8 @@ import random
 import time
 from collections import deque
 
+import vptree
+
 from components import constants
 from components import util
 from components.memory import Memory
@@ -146,20 +148,25 @@ class Brain:
     def find_cache(self, feature):
         recognizer = RECOGNIZERS[feature.type]
         cache = self.memory_cache[feature.type]
-        print(f'len cache {len(cache)}')
+        # print(f'len cache {len(cache)}')
         for m in cache:
-            if recognizer.is_similar(feature, m.data):
+            if recognizer.is_feature_similar(feature, m.data):
                 return m
 
-    def find_memory(self, feature):
+    def find_tree(self, feature):
         recognizer = RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
         if tree is not None:
-            nearest1 = tree.get_nearest_neighbor(feature)
-            if recognizer.is_similar(nearest1, feature):
-                return nearest1
-        nearest2 = self.find_cache(feature)
-        return nearest2
+            query = Memory(constants.real, feature, feature.type)
+            distance, nearest_memory = tree.get_nearest_neighbor(query)
+            if recognizer.is_similar(distance):
+                return nearest_memory
+
+    def find_memory(self, feature):
+        nearest = self.find_tree(feature)
+        if nearest is None:
+            nearest = self.find_cache(feature)
+        return nearest
 
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
@@ -173,16 +180,16 @@ class Brain:
             time.sleep(interval_s)
 
     @util.timeit
-    def reindex(self, memories_list=None):
-        # refresh indexes of all memories
-        memories_index = {}
-        if memories_list is None:
-            memories_list = list(self.all_memories)
-        slow_loop(SELF_FUNC, memories_list, 'create_indexes', memories_index)
-        self.memory_indexes = memories_index
-        # refresh context and data indexes
-        slow_loop(SELF_FUNC, memories_list, 'update_index', memories_index)
-        slow_loop(SELF_FUNC, memories_list, 'update_weight', memories_index)
+    def reindex(self):
+        interval_s = INTERVAL_MS / 1000
+        for ft in constants.feature_types:
+            recognizer = RECOGNIZERS[ft]
+            memories = self.all_memories[ft].copy()
+            tree = vptree.VPTree(list(memories), recognizer.compare_memory)
+            # TODO, some update may lost during this process
+            self.memory_vp_tree.update({ft: tree})
+            self.memory_cache[ft].clear()
+            time.sleep(interval_s)
 
     def persist(self):
         return

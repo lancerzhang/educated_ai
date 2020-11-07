@@ -167,9 +167,22 @@ class VoiceRecognizer:
         return distance
 
     @classmethod
-    def is_similar(cls, feature1, feature2):
-        distance = cls.compare_feature(feature1.shape, feature2.shape)
+    def compare_memory(cls, m1, m2):
+        distance = cls.compare_feature(m1.data.shape, m2.data.shape)
+        return distance
+
+    @classmethod
+    def is_similar(cls, distance):
         if distance < cls.MIN_DISTANCE_UNIT * cls.BLOCK_WIDTH * cls.BLOCK_HEIGHT:
             return True
         else:
             return False
+
+    @classmethod
+    def is_feature_similar(cls, feature1, feature2):
+        distance = cls.compare_feature(feature1.shape, feature2.shape)
+        return cls.is_similar(distance)
+
+    @classmethod
+    def is_memory_similar(cls, m1, m2):
+        return cls.is_feature_similar(m1.data, m2.data)

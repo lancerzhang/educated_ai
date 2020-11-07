@@ -50,8 +50,9 @@ class Voice(object):
         if len(self.phases) == 0:
             return []
         phase = self.phases.popleft()
-        print(f'len phase:{len(phase)}')
+        # print(f'len phase:{len(phase)}')
         phase = np.array(phase)
         mf = VoiceRecognizer(y=phase, sr=self.sample_rate)
         features = mf.features
+        print(f'len features:{len(features)}')
         return features

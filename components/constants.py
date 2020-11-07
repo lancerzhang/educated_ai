@@ -2,7 +2,7 @@
 voice = 'Voice'
 image = 'Image'
 
-feature_types = [voice, image]
+feature_types = [voice]
 
 # memory types
 real = 'Real'  # one real memory
