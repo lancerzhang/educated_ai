@@ -1,6 +1,7 @@
 import logging
 import math
 import random
+import threading
 import time
 from collections import deque
 
@@ -15,27 +16,56 @@ from components.recognizers import VoiceRecognizer
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.DEBUG)
 
-FEATURE_SIMILARITY_THRESHOLD = 0.2
-ACTIVE_LONG_MEMORY_LIMIT = 100
-ASSOCIATE_MEMORY_LIMIT = 10
-MEMORIES_NUM = 100 * 100 * 5
-MEMORIES_CLEANUP_NUM = 100 * 100 * 6
-INTERVAL_MS = 5
+interval_s = 5 / 1000
 MEMORY_FILE = 'data/memory.npy'
 SELF_FUNC = 's'
 ITEM_FUNC = 'v'
 RECOGNIZERS = {constants.voice: VoiceRecognizer, constants.image: ImageRecognizer}
-TIME_SEC = [5, 6, 8, 11, 15, 20, 26, 33, 41, 50, 60, 71, 83, 96, 110, 125, 141, 158, 176, 196, 218, 242, 268, 296,
-            326, 358, 392, 428, 466, 506, 548, 593, 641, 692, 746, 803, 863, 926, 992, 1061, 1133, 1208, 1286, 1367,
-            1451, 1538, 1628, 1721, 1920, 2100, 2280, 2460, 2640, 2880, 3120, 3360, 3600, 4680, 6120, 7920, 10440,
-            14040, 18720, 24840, 32400, 41760, 52920, 66240, 81720, 99720, 120240, 143640, 169920, 222480, 327600,
-            537840, 853200, 1326240, 2035800, 3100140, 3609835, 4203316, 4894372, 5699043, 6636009, 7727020,
-            8997403, 10476649, 12199095, 14204727, 16540102, 19259434, 22425848, 26112847, 30406022, 35405033,
-            41225925, 48003823, 55896067, 65085866]
+
+memory_cycles = [0, 30, 60, 120, 60 * 5, 60 * 30, 60 * 60 * 12, 60 * 60 * 24, 60 * 60 * 24 * 2, 60 * 60 * 24 * 4,
+                 60 * 60 * 24 * 7, 60 * 60 * 24 * 15, 60 * 60 * 24 * 30, 60 * 60 * 24 * 30 * 2, 60 * 60 * 24 * 30 * 4,
+                 60 * 60 * 24 * 30 * 7, 60 * 60 * 24 * 30 * 15]
 
 
-def slow_loop(mode, items, map_func, args, chunk=10, interval=INTERVAL_MS):
-    interval_s = interval / 1000
+def get_retrievability(t, stability=1):
+    if t <= 1200:
+        r = 1 - (0.00035 * t) / stability
+    elif t <= 3600:
+        r = 1 - (0.000155555 * t) / stability
+    elif t <= 86400:
+        r = 1 - (0.000008564 * t) / stability
+    elif t <= 604800:
+        r = 1 - (0.000001273 * t) / stability
+    elif t <= 2592000:
+        r = 1 - (0.000000304 * t) / stability
+    else:
+        r = 1 - 0.8 / stability
+    return r
+
+
+def activate_memory(m):
+    now_time = time.time()
+    m.activated_time = now_time
+    if now_time - m.created_time > memory_cycles[m.stability]:
+        m.stability += 1
+
+
+def validate_memory(m):
+    now_time = time.time()
+    if now_time < m.activated_time + memory_cycles[m.stability]:
+        # avoid frequent refresh
+        return True
+    else:
+        retrievability = get_retrievability(now_time - m.created_time, m.stability)
+        ran = random.randint(1, 100)
+        if ran > retrievability * 100:
+            return False
+        else:
+            m.activated_time = now_time
+            return True
+
+
+def slow_loop(mode, items, map_func, args, chunk=10, interval=interval_s):
     time.sleep(interval_s)
     start = time.time()
     chunk_size = chunk
@@ -87,38 +117,6 @@ def update_weight(item, memory_indexes):
     item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
 
 
-def recall_memory(memory):
-    # TODO
-    return
-
-
-def refresh_memory(memory, recall=False, is_forget=False):
-    now_time = time.time()
-    time_elapse = now_time - memory.last_recall_time
-    if time_elapse < TIME_SEC[0]:
-        return
-    count = 0
-    for num in range(memory.recall_count, len(TIME_SEC)):
-        if TIME_SEC[num] <= time_elapse:
-            count = count + 1
-        else:
-            # if go to next section
-            if count > 0:
-                # random forget memory base on strength
-                if is_forget and time.time() > memory.protect_time:
-                    memory.protect_time = memory.calculate_protect_time(memory.recall_count)
-                    ran = random.randint(1, 100)
-                    strength = 100 - count
-                    if ran > strength:
-                        memory.hibernate()
-                        break
-                # if this is recall, will update recall count and last recall time
-                if recall:
-                    memory.recall_count += 1
-                    memory.last_recall_time = time.time()
-            break
-
-
 class Brain:
     all_memories = {}  # contains both cache and vp tree
     memory_cache = {}  # cache before put to vp tree
@@ -126,19 +124,29 @@ class Brain:
     work_memories = {}
 
     def __init__(self):
+        self.running = True
         for mt in constants.feature_types + constants.memory_types:
             self.all_memories.update({mt: set()})
             self.memory_cache.update({mt: set()})
             self.memory_vp_tree.update({mt: None})
             self.work_memories.update({mt: deque(maxlen=constants.n_memory_children)})
 
+    def start(self):
+        brain_thread = threading.Thread(target=self.persist)
+        brain_thread.daemon = True
+        brain_thread.start()
+
+    def stop(self):
+        self.running = False
+
+    @util.timeit
     def input_real(self, features):
         for feature in features:
             existed = self.find_memory(feature)
             if existed is None:
                 self.add_real_memory(feature)
             else:
-                recall_memory(existed)
+                activate_memory(existed)
 
     def add_real_memory(self, feature):
         m = Memory(constants.real, feature, feature.type)
@@ -162,6 +170,7 @@ class Brain:
             if recognizer.is_similar(distance):
                 return nearest_memory
 
+    @util.timeit
     def find_memory(self, feature):
         nearest = self.find_tree(feature)
         if nearest is None:
@@ -171,25 +180,30 @@ class Brain:
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
     def cleanup_memories(self):
-        interval_s = INTERVAL_MS / 1000
         for ft in constants.feature_types + constants.memory_types:
             memories = self.all_memories[ft].copy()
-            new_memories = {x for x in memories if refresh_memory(x)}
+            new_memories = {x for x in memories if validate_memory(x)}
             # TODO, some update may lost during this process
             self.all_memories.update({ft: new_memories})
             time.sleep(interval_s)
 
     @util.timeit
     def reindex(self):
-        interval_s = INTERVAL_MS / 1000
         for ft in constants.feature_types:
-            recognizer = RECOGNIZERS[ft]
             memories = self.all_memories[ft].copy()
-            tree = vptree.VPTree(list(memories), recognizer.compare_memory)
-            # TODO, some update may lost during this process
-            self.memory_vp_tree.update({ft: tree})
-            self.memory_cache[ft].clear()
-            time.sleep(interval_s)
+            caches = self.memory_cache[ft]
+            if len(caches) > 0:
+                print(f'start to reindex')
+                recognizer = RECOGNIZERS[ft]
+                tree = vptree.VPTree(list(memories), recognizer.compare_memory)
+                print(f'vptree points:{len(memories)}')
+                # TODO, some update may lost during this process
+                self.memory_vp_tree.update({ft: tree})
+                caches.clear()
+                time.sleep(interval_s)
 
     def persist(self):
-        return
+        while self.running:
+            self.cleanup_memories()
+            self.reindex()
+            time.sleep(interval_s)

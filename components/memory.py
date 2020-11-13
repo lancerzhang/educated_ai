@@ -10,10 +10,8 @@ class Memory:
         self.MEMORY_TYPE = memory_type
         self.REAL_TYPE = real_type
         self.created_time = time.time()
-        self.status = constants.matched
-        self.matched_time = time.time()
-        self.recall_count = 0
-        self.last_recall_time = time.time()
+        self.activated_time = time.time()
+        self.stability = 1
         self.context = {}
         self.context_indexes = set()  # memories use this memory as context
         self.context_weight = 0  # weight when this memory is a context

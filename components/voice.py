@@ -45,7 +45,7 @@ class Voice(object):
         buffer_duration = float(self.chunk) / self.sample_rate
         self.buffers_per_phase = int(math.ceil(self.MAX_PHASE_DURATION / buffer_duration))
 
-    # @util.timeit
+    @util.timeit
     def get_features(self):
         if len(self.phases) == 0:
             return []
@@ -54,5 +54,5 @@ class Voice(object):
         phase = np.array(phase)
         mf = VoiceRecognizer(y=phase, sr=self.sample_rate)
         features = mf.features
-        print(f'len features:{len(features)}')
+        print(f'len features: {len(features)}')
         return features

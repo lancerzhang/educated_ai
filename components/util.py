@@ -23,7 +23,7 @@ def timeit(f):
         result = f(*args, **kw)
         te = time.time()
         tms = int((te - ts) * 1000)
-        if tms > 10:
+        if tms > 1:
             logger.info('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
         return result
 

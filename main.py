@@ -36,6 +36,7 @@ def main(argv):
     try:
         logging.info('initializing, please wait.')
         brain = Brain()
+        brain.start()
         process_time = 1 / constants.process_per_second
         if video_file:
             vision = VideoFileVision(video_file, is_show)
@@ -54,11 +55,11 @@ def main(argv):
             # print(f'n voice_features_set {len(voice_features_set)}')
             for features in voice_features_set:
                 brain.input_real(features)
-            if time.time() - start_time > 10:
-                brain.reindex()
+            # if 6 > (time.time() - start_time) > 5:
+            #     brain.reindex()
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
-            print(f'len brain.memory_cache voice {len(brain.memory_cache[constants.voice])}')
+            # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
             # logging.debug(f'idle time {idle_time}')
             print(f'idle time {idle_time}')
             if idle_time > 0:
