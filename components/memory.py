@@ -11,7 +11,7 @@ class Memory:
         self.REAL_TYPE = real_type
         self.created_time = time.time()
         self.activated_time = time.time()
-        self.stability = 1
+        self.stability = 0
         self.context = {}
         self.context_indexes = set()  # memories use this memory as context
         self.context_weight = 0  # weight when this memory is a context
