@@ -12,7 +12,6 @@ class VideoFileVoice(Voice):
     @util.timeit
     def __init__(self, file_path):
         self.file_path = file_path
-        self.nframes = 0
         self.duration = 0
         self.buffer_duration = 0
         self.play_start_time = 0
@@ -32,7 +31,6 @@ class VideoFileVoice(Voice):
         audio = audioread.audio_open(self.file_path)
         self.sample_rate = audio.samplerate
         self.channels = audio.channels
-        self.nframes = audio.nframes
         self.duration = audio.duration
         self.audio_buffers = audio.read_data()
         self.read_time = 0
