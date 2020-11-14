@@ -19,6 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 class Brain:
     all_memories = {}  # contains both cache and vp tree
+    n_memories = {}  # length of all_memories
     memory_cache = {}  # cache before put to vp tree
     memory_vp_tree = {}  # speed up searching memories
     work_memories = {}
@@ -36,6 +37,7 @@ class Brain:
         self.running = True
         for mt in constants.feature_types + constants.memory_types:
             self.all_memories.update({mt: set()})
+            self.n_memories.update({mt: 0})
             self.memory_cache.update({mt: set()})
             self.memory_vp_tree.update({mt: None})
             self.work_memories.update({mt: deque(maxlen=constants.n_memory_children)})
@@ -206,7 +208,9 @@ class Brain:
         for ft in constants.feature_types:
             memories = self.all_memories[ft].copy()
             caches = self.memory_cache[ft]
-            if len(caches) > 0:
+            has_creation = len(caches) > 0
+            has_deletion = self.n_memories[ft] != len(memories)
+            if has_creation or has_deletion:
                 print(f'start to reindex')
                 recognizer = self.RECOGNIZERS[ft]
                 tree = vptree.VPTree(list(memories), recognizer.compare_memory)
@@ -215,6 +219,7 @@ class Brain:
                 self.memory_vp_tree.update({ft: tree})
                 caches.clear()
                 time.sleep(self.interval_s)
+            self.n_memories.update({ft: len(memories)})
 
     def persist(self):
         while self.running:
