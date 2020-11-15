@@ -27,28 +27,28 @@ class TestBrain(unittest.TestCase):
     def test_activate_memory(self):
         stability = 0
         m = Memory(constants.real, None)
-        m.created_time = m.activated_time = time.time() - 5
+        m.CREATED_TIME = m.activated_time = time.time() - 5
         Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
-        m.created_time = m.activated_time = time.time() - 16
+        m.CREATED_TIME = m.activated_time = time.time() - 16
         Brain.activate_memory(m)
         stability += 1
         self.assertEqual(stability, m.stability)
-        m.created_time = m.activated_time = time.time() - 20
+        m.CREATED_TIME = m.activated_time = time.time() - 20
         Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
-        m.created_time = time.time() - 300
+        m.CREATED_TIME = time.time() - 300
         m.activated_time = time.time() - 20
         Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
-        m.created_time = m.activated_time = time.time() - 2592000
+        m.CREATED_TIME = m.activated_time = time.time() - 2592000
         Brain.activate_memory(m)
         stability += 1
         self.assertEqual(stability, m.stability)
         for _ in range(10):
             Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
-        m.created_time = m.activated_time = time.time() - 1200
+        m.CREATED_TIME = m.activated_time = time.time() - 1200
         m.stability = len(Brain.memory_cycles)
         Brain.activate_memory(m)
         stability = len(Brain.memory_cycles)
@@ -58,7 +58,7 @@ class TestBrain(unittest.TestCase):
         # test memory fail to validate
         m = Memory(constants.real, None)
         Brain.is_steady = MagicMock(return_value=False)
-        m.created_time = m.activated_time = time.time() - 2592000
+        m.CREATED_TIME = m.activated_time = time.time() - 2592000
         exist = True
         for _ in range(100):
             if exist:
@@ -75,7 +75,7 @@ class TestBrain(unittest.TestCase):
         # test memory always retrievable in very short time
         exist = True
         Brain.is_steady = MagicMock(return_value=False)
-        m.created_time = m.activated_time = time.time() - 10
+        m.CREATED_TIME = m.activated_time = time.time() - 10
         for _ in range(300):
             if exist:
                 exist = Brain.validate_memory(m)
@@ -83,9 +83,9 @@ class TestBrain(unittest.TestCase):
 
     def test_is_steady(self):
         m = Memory(constants.real, None)
-        m.created_time = m.activated_time = time.time() - 10
+        m.CREATED_TIME = m.activated_time = time.time() - 10
         self.assertEqual(True,Brain.is_steady(m))
-        m.created_time = m.activated_time = time.time() - 20
+        m.CREATED_TIME = m.activated_time = time.time() - 20
         self.assertEqual(False,Brain.is_steady(m))
 
 

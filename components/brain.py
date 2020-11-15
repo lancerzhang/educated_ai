@@ -73,7 +73,7 @@ class Brain:
         now_time = time.time()
         if m.stability == len(cls.memory_cycles) or cls.is_steady(m):
             pass
-        elif now_time - m.created_time > cls.memory_cycles[m.stability]:
+        elif now_time - m.CREATED_TIME > cls.memory_cycles[m.stability]:
             m.stability += 1
         m.activated_time = now_time
 
@@ -85,7 +85,7 @@ class Brain:
             # avoid frequent refresh
             return True
         else:
-            retrievability = cls.get_retrievability(now_time - m.created_time, m.stability)
+            retrievability = cls.get_retrievability(now_time - m.CREATED_TIME, m.stability)
             ran = random.randint(1, 100)
             if ran > retrievability * 100:
                 return False
@@ -155,19 +155,25 @@ class Brain:
     def stop(self):
         self.running = False
 
+    def input_features(self, features):
+        self.input_real(features)
+
     @util.timeit
     def input_real(self, features):
+        pack = set()
         for feature in features:
-            existed = self.find_memory(feature)
-            if existed is None:
-                self.add_real_memory(feature)
+            m = self.find_memory(feature)
+            if m is None:
+                m = self.add_real_memory(feature)
             else:
-                self.activate_memory(existed)
+                self.activate_memory(m)
+            pack.add(m)
 
     def add_real_memory(self, feature):
         m = Memory(constants.real, feature, feature.type)
         self.all_memories[feature.type].add(m)
         self.memory_cache[feature.type].add(m)
+        return m
 
     def find_cache(self, feature):
         recognizer = self.RECOGNIZERS[feature.type]

@@ -20,7 +20,7 @@ def log(memories, label, with_status=False, need_active=False):
             active_time = x.get_active_time()
         else:
             active_time = 0
-        m = [x.memory_type, x.real_type, x.recall_count, x.status, int((time.time() - x.created_time) / 60),
+        m = [x.memory_type, x.real_type, x.recall_count, x.status, int((time.time() - x.CREATED_TIME) / 60),
              int(active_time)]
         data.append(m)
     data = np.array(data)

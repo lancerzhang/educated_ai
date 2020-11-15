@@ -9,7 +9,7 @@ class Memory:
         self.MID = int(time.time() * 1000 * 1000)
         self.MEMORY_TYPE = memory_type
         self.REAL_TYPE = real_type
-        self.created_time = time.time()
+        self.CREATED_TIME = time.time()
         self.activated_time = time.time()
         self.stability = 0
         self.context = {}
@@ -22,3 +22,12 @@ class Memory:
         self.data_order = 'o'  # ordered
         if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.pack):
             self.data_order = 'u'  # unordered
+
+    def __hash__(self):
+        return self.MID
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __eq__(self, other):
+        return other == self.MID
