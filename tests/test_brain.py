@@ -1,5 +1,6 @@
 import time
 import unittest
+from unittest.mock import MagicMock
 
 from components import constants
 from components.brain import Brain
@@ -56,6 +57,7 @@ class TestBrain(unittest.TestCase):
     def test_validate_memory(self):
         # test memory fail to validate
         m = Memory(constants.real, None)
+        Brain.is_steady = MagicMock(return_value=False)
         m.created_time = m.activated_time = time.time() - 2592000
         exist = True
         for _ in range(100):
@@ -63,6 +65,7 @@ class TestBrain(unittest.TestCase):
                 exist = Brain.validate_memory(m)
         self.assertEqual(False, exist)
         # test memory protected by steady
+        Brain.is_steady = MagicMock(return_value=True)
         m.activated_time = time.time()
         exist = True
         for _ in range(100):
@@ -70,12 +73,20 @@ class TestBrain(unittest.TestCase):
                 exist = Brain.validate_memory(m)
         self.assertEqual(True, exist)
         # test memory always retrievable in very short time
-        m.created_time = m.activated_time = time.time() - 10
         exist = True
+        Brain.is_steady = MagicMock(return_value=False)
+        m.created_time = m.activated_time = time.time() - 10
         for _ in range(300):
             if exist:
                 exist = Brain.validate_memory(m)
         self.assertEqual(True, exist)
+
+    def test_is_steady(self):
+        m = Memory(constants.real, None)
+        m.created_time = m.activated_time = time.time() - 10
+        self.assertEqual(True,Brain.is_steady(m))
+        m.created_time = m.activated_time = time.time() - 20
+        self.assertEqual(False,Brain.is_steady(m))
 
 
 if __name__ == "__main__":
