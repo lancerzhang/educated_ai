@@ -91,8 +91,8 @@ class Brain:
                 return False
             else:
                 # print(f'here')
-                # TODO, need to protect this? how about frequent cleanup?
-                # m.activated_time = now_time
+                # avoid frequent cleanup
+                m.activated_time = now_time
                 return True
 
     @classmethod
