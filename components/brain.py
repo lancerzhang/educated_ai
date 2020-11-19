@@ -36,7 +36,7 @@ class Brain:
     def __init__(self):
         self.running = True
         for mt in constants.feature_types + constants.memory_types:
-            self.all_memories.update({mt: set()})
+            self.all_memories.update({mt: {}})
             self.n_memories.update({mt: 0})
             self.memory_cache.update({mt: set()})
             self.memory_vp_tree.update({mt: None})
@@ -156,7 +156,8 @@ class Brain:
         self.running = False
 
     def input_features(self, features):
-        self.input_real(features)
+        pack = self.input_real(features)
+        self.input_pack(pack)
 
     @util.timeit
     def input_real(self, features):
@@ -164,20 +165,54 @@ class Brain:
         for feature in features:
             m = self.find_memory(feature)
             if m is None:
-                m = self.add_real_memory(feature)
+                m = self.add_memory(constants.real, feature, feature.type)
             else:
                 self.activate_memory(m)
             pack.add(m)
+        return pack
 
-    def add_real_memory(self, feature):
-        m = Memory(constants.real, feature, feature.type)
-        self.all_memories[feature.type].add(m)
-        self.memory_cache[feature.type].add(m)
+    @util.timeit
+    def input_pack(self, pack):
+        if len(pack) == 0:
+            return
+        data = {p.MID for p in pack}
+        pack_memory = None
+        parent_ids = set()
+        for m in pack:
+            # print(f'm:{m}')
+            parent_ids = parent_ids.union(m.data_indexes)
+        # print(parent_ids)
+        for pid in parent_ids:
+            p = self.all_memories[constants.pack].get(pid)
+            if p is None:
+                # memory was deleted
+                continue
+            # print(p)
+            if p.data.issubset(pack):
+                # print(f'issubset')
+                self.activate_memory(p)
+            if p.data == data:
+                # print(f'exist')
+                pack_memory = p
+        if pack_memory is None:
+            pm = self.add_memory(constants.pack, data)
+            # print(f'added pack:{pm}')
+            # for m in self.all_memories[constants.pack].copy().values():
+            #     print(m)
+            for m in pack:
+                m.data_indexes.add(pm.MID)
+
+    def add_memory(self, memory_type, memory_data, real_type=None):
+        m = Memory(memory_type, memory_data, real_type)
+        if real_type:
+            memory_type = real_type
+        self.all_memories[memory_type].update({m.MID: m})
+        self.memory_cache[memory_type].add(m)
         return m
 
     def find_cache(self, feature):
         recognizer = self.RECOGNIZERS[feature.type]
-        cache = self.memory_cache[feature.type]
+        cache = self.memory_cache[feature.type].copy()
         # print(f'len cache {len(cache)}')
         for m in cache:
             if recognizer.is_feature_similar(feature, m.data):
@@ -204,7 +239,10 @@ class Brain:
     def cleanup_memories(self):
         for ft in constants.feature_types + constants.memory_types:
             memories = self.all_memories[ft].copy()
-            new_memories = {x for x in memories if self.validate_memory(x)}
+            new_memories = {}
+            for mid, m in memories.items():
+                if self.validate_memory(m):
+                    new_memories.update({mid: m})
             # TODO, some update may lost during this process
             self.all_memories.update({ft: new_memories})
             time.sleep(self.interval_s)
@@ -219,7 +257,7 @@ class Brain:
             if has_creation or has_deletion:
                 print(f'start to reindex')
                 recognizer = self.RECOGNIZERS[ft]
-                tree = vptree.VPTree(list(memories), recognizer.compare_memory)
+                tree = vptree.VPTree(list(memories.values()), recognizer.compare_memory)
                 print(f'vptree points:{len(memories)}')
                 # TODO, some update may lost during this process
                 self.memory_vp_tree.update({ft: tree})
