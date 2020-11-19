@@ -21,9 +21,9 @@ class VideoFileVision(Vision):
         frame_count = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = round(self.cap.get(cv2.CAP_PROP_FPS))
         self.source_frame = None
-        sct = mss.mss()
-        monitor = sct.monitors[1]
-        self.monitor_width = monitor['width']
+        # sct = mss.mss()
+        # monitor = sct.monitors[1]
+        # self.monitor_width = monitor['width']
         super(VideoFileVision, self).__init__()
 
     @util.timeit

@@ -51,20 +51,24 @@ def main(argv):
         while 1:
             process_start = time.time()
             # logging.debug('frame started.')
-            voice_features_set = voice.process()
+            voice_features_serial = voice.process()
             # print(f'n voice_features_set {len(voice_features_set)}')
-            for features in voice_features_set:
-                brain.input_real(features)
-            # if 6 > (time.time() - start_time) > 5:
-            #     brain.reindex()
+            # if (time.time() - start_time) > 10:
+            #     print('here')
+            for features in voice_features_serial:
+                brain.input_features(features)
+            # if (time.time() - start_time) > 20:
+            #     voice.stop()
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
             # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
+            print(f'len brain.all_memories voice: {len(brain.all_memories[constants.voice])}')
+            print(f'len brain.all_memories pack: {len(brain.all_memories[constants.pack])}')
             # logging.debug(f'idle time {idle_time}')
-            print(f'idle time {idle_time}')
+            # print(f'idle time {idle_time}')
             if idle_time > 0:
                 time.sleep(idle_time)
-            # print(f'elapse time {time.time() - start_time}')
+            print(f'elapse time {time.time() - start_time}')
     except:
         logging.error(traceback.format_exc())
 
