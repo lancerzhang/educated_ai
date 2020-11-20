@@ -75,8 +75,14 @@ class Brain:
 
     @util.timeit
     def input_memory(self, memory_type, data):
-        if len(data) == 0:
-            return None
+        if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.instant):
+            # for instant and below memory, require more at least one child
+            if len(data) == 0:
+                return None
+        else:
+            # for short and above memory, require more than one child
+            if len(data) <= 1:
+                return None
         memory = self.find_memory(memory_type, data)
         if memory is None:
             if constants.ordered == self.get_order(memory_type):
