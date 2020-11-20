@@ -14,6 +14,7 @@ long = 'Long'  # memories happened in a long time, it's sentence in voice
 long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
 
 memory_types = [real, pack, context, instant, short, long, long2]
+memory_duration = [0, 0, 0, 0.5, 5, 10, 60]
 
 ordered = 'Ordered'
 unordered = 'Unordered'
