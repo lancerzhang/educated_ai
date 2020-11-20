@@ -186,7 +186,10 @@ class Brain:
             return None
         memory = self.find_memory(memory_type, data)
         if memory is None:
-            data_ids = {x.MID for x in data}
+            if constants.ordered == self.get_order(memory_type):
+                data_ids = [x.MID for x in data]
+            else:
+                data_ids = {x.MID for x in data}
             memory = self.add_memory(memory_type, data_ids)
             # print(f'memory pack:{memory}')
             # for x in self.all_memories[memory_type].copy().values():
@@ -231,7 +234,10 @@ class Brain:
     def find_memory(self, memory_type, child_memories):
         if len(child_memories) == 0:
             return
-        child_ids = {x.MID for x in child_memories}
+        if constants.ordered == self.get_order(memory_type):
+            child_ids = [x.MID for x in child_memories]
+        else:
+            child_ids = {x.MID for x in child_memories}
         found_memory = None
         parent_ids = set()
         for m in child_memories:
@@ -244,13 +250,24 @@ class Brain:
                 # memory was deleted
                 continue
             # print(p)
-            if parent.data.issubset(child_memories):
+            if constants.ordered == self.get_order(memory_type):
+                is_sub = util.is_sublist(child_memories, parent.data)
+            else:
+                is_sub = parent.data.issubset(child_memories)
+            if is_sub:
                 # print(f'issubset')
                 self.activate_memory(parent)
             if parent.data == child_ids:
                 # print(f'exist')
                 found_memory = parent
         return found_memory
+
+    @staticmethod
+    def get_order(memory_type):
+        order = constants.ordered  # ordered
+        if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.pack):
+            order = constants.unordered  # unordered
+        return order
 
     # Use a separate thread to cleanup memories regularly.
     @util.timeit

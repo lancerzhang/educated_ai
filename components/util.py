@@ -400,3 +400,13 @@ def get_filled_shape(img):
         cnts = sorted_cnts[0]
         cv2.drawContours(outline, [cnts], -1, 255, -1)
         return outline
+
+
+def is_sublist(small, big):
+    for i in range(len(big) - len(small) + 1):
+        for j in range(len(small)):
+            if big[i + j] != small[j]:
+                break
+        else:
+            return True
+    return False

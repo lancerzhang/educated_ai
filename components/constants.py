@@ -15,6 +15,9 @@ long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
 
 memory_types = [real, pack, context, instant, short, long, long2]
 
+ordered = 'Ordered'
+unordered = 'Unordered'
+
 n_memory_children = 4
 # memory status
 # dormant memories will be clean up in high priority
