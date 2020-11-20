@@ -42,111 +42,6 @@ class Brain:
             self.memory_vp_tree.update({mt: None})
             self.work_memories.update({mt: deque(maxlen=constants.n_memory_children)})
 
-    @classmethod
-    def get_retrievability(cls, t, stability=0):
-        if t <= 1200:
-            forget_possibility = 0.00035 * t
-        elif t <= 3600:
-            forget_possibility = 0.000155555 * t
-        elif t <= 86400:
-            forget_possibility = 0.000008564 * t
-        elif t <= 604800:
-            forget_possibility = 0.000001273 * t
-        elif t <= 2592000:
-            forget_possibility = 0.000000304 * t
-        else:
-            forget_possibility = 0.8
-        r = 1 - forget_possibility * (len(cls.memory_cycles) - stability) / len(cls.memory_cycles)
-        return round(r, 2)
-
-    @classmethod
-    def is_steady(cls, m):
-        now_time = time.time()
-        # print(f'now {now_time}, at {m.activated_time}, stb {m.stability}')
-        if now_time < m.activated_time + cls.memory_cycles[m.stability]:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def activate_memory(cls, m):
-        now_time = time.time()
-        if m.stability == len(cls.memory_cycles) or cls.is_steady(m):
-            pass
-        elif now_time - m.CREATED_TIME > cls.memory_cycles[m.stability]:
-            m.stability += 1
-        m.activated_time = now_time
-
-    @classmethod
-    def validate_memory(cls, m):
-        now_time = time.time()
-        if cls.is_steady(m):
-            # print(f'is steady')
-            # avoid frequent refresh
-            return True
-        else:
-            retrievability = cls.get_retrievability(now_time - m.CREATED_TIME, m.stability)
-            ran = random.randint(1, 100)
-            if ran > retrievability * 100:
-                return False
-            else:
-                # print(f'here')
-                # avoid frequent cleanup
-                m.activated_time = now_time
-                return True
-
-    @classmethod
-    def slow_loop(cls, mode, items, map_func, args, chunk=10, interval=interval_s):
-        time.sleep(cls.interval_s)
-        start = time.time()
-        chunk_size = chunk
-        result = []
-        for i in range(0, len(items), chunk_size):
-            chunk_items = items[i:i + chunk_size]
-            for item in chunk_items:
-                if mode == cls.SELF_FUNC:
-                    new_item = globals()[map_func](item, args)
-                else:
-                    new_item = getattr(item, map_func)(item, args)
-                result.append(new_item)
-            if time.time() - start > cls.interval_s:
-                start = time.time()
-                time.sleep(cls.interval_s)
-        return result
-
-    @staticmethod
-    def create_indexes(item, memory_indexes):
-        memory_indexes.update({item.MID: item})
-
-    @staticmethod
-    def update_index(mid, memory_indexes):
-        mem = memory_indexes[mid]
-        for context_mid in mem.context.copy():
-            # if the context memory still exists
-            if context_mid in memory_indexes:
-                # add item to context_index of each memory in context
-                memory_indexes[context_mid].context_index.add(mem.MID)
-            else:
-                # the context memory was forgot
-                del mem.context[context_mid]
-        for data_mid in mem.DATA:
-            if data_mid in memory_indexes:
-                # add item to data_index of each memory in DATA
-                memory_indexes[data_mid].data_index.add(mem.MID)
-        # check if the memory was forgot in context index
-        for context_index in mem.context_indexes.copy():
-            if context_index not in memory_indexes:
-                mem.context_indexes.remove(context_index)
-        # check if the memory was forgot in data index
-        for data_index in mem.data_indexes.copy():
-            if data_index not in memory_indexes:
-                mem.data_indexes.remove(data_index)
-
-    @staticmethod
-    def update_weight(item, memory_indexes):
-        item.context_weight = math.log(len(memory_indexes) / len(item.context_indexes))
-        item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
-
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
         brain_thread.daemon = True
@@ -155,7 +50,7 @@ class Brain:
     def stop(self):
         self.running = False
 
-    def input_voice(self, voice_features_serial):
+    def process_voice(self, voice_features_serial):
         packs = []
         for features in voice_features_serial:
             data = self.input_real(features)
@@ -268,6 +163,111 @@ class Brain:
         if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.pack):
             order = constants.unordered  # unordered
         return order
+
+    @classmethod
+    def get_retrievability(cls, t, stability=0):
+        if t <= 1200:
+            forget_possibility = 0.00035 * t
+        elif t <= 3600:
+            forget_possibility = 0.000155555 * t
+        elif t <= 86400:
+            forget_possibility = 0.000008564 * t
+        elif t <= 604800:
+            forget_possibility = 0.000001273 * t
+        elif t <= 2592000:
+            forget_possibility = 0.000000304 * t
+        else:
+            forget_possibility = 0.8
+        r = 1 - forget_possibility * (len(cls.memory_cycles) - stability) / len(cls.memory_cycles)
+        return round(r, 2)
+
+    @classmethod
+    def is_steady(cls, m):
+        now_time = time.time()
+        # print(f'now {now_time}, at {m.activated_time}, stb {m.stability}')
+        if now_time < m.activated_time + cls.memory_cycles[m.stability]:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def activate_memory(cls, m):
+        now_time = time.time()
+        if m.stability == len(cls.memory_cycles) or cls.is_steady(m):
+            pass
+        elif now_time - m.CREATED_TIME > cls.memory_cycles[m.stability]:
+            m.stability += 1
+        m.activated_time = now_time
+
+    @classmethod
+    def validate_memory(cls, m):
+        now_time = time.time()
+        if cls.is_steady(m):
+            # print(f'is steady')
+            # avoid frequent refresh
+            return True
+        else:
+            retrievability = cls.get_retrievability(now_time - m.CREATED_TIME, m.stability)
+            ran = random.randint(1, 100)
+            if ran > retrievability * 100:
+                return False
+            else:
+                # print(f'here')
+                # avoid frequent cleanup
+                m.activated_time = now_time
+                return True
+
+    @classmethod
+    def slow_loop(cls, mode, items, map_func, args, chunk=10, interval=interval_s):
+        time.sleep(cls.interval_s)
+        start = time.time()
+        chunk_size = chunk
+        result = []
+        for i in range(0, len(items), chunk_size):
+            chunk_items = items[i:i + chunk_size]
+            for item in chunk_items:
+                if mode == cls.SELF_FUNC:
+                    new_item = globals()[map_func](item, args)
+                else:
+                    new_item = getattr(item, map_func)(item, args)
+                result.append(new_item)
+            if time.time() - start > cls.interval_s:
+                start = time.time()
+                time.sleep(cls.interval_s)
+        return result
+
+    @staticmethod
+    def create_indexes(item, memory_indexes):
+        memory_indexes.update({item.MID: item})
+
+    @staticmethod
+    def update_index(mid, memory_indexes):
+        mem = memory_indexes[mid]
+        for context_mid in mem.context.copy():
+            # if the context memory still exists
+            if context_mid in memory_indexes:
+                # add item to context_index of each memory in context
+                memory_indexes[context_mid].context_index.add(mem.MID)
+            else:
+                # the context memory was forgot
+                del mem.context[context_mid]
+        for data_mid in mem.DATA:
+            if data_mid in memory_indexes:
+                # add item to data_index of each memory in DATA
+                memory_indexes[data_mid].data_index.add(mem.MID)
+        # check if the memory was forgot in context index
+        for context_index in mem.context_indexes.copy():
+            if context_index not in memory_indexes:
+                mem.context_indexes.remove(context_index)
+        # check if the memory was forgot in data index
+        for data_index in mem.data_indexes.copy():
+            if data_index not in memory_indexes:
+                mem.data_indexes.remove(data_index)
+
+    @staticmethod
+    def update_weight(item, memory_indexes):
+        item.context_weight = math.log(len(memory_indexes) / len(item.context_indexes))
+        item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
 
     # Use a separate thread to cleanup memories regularly.
     @util.timeit

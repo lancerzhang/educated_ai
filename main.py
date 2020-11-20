@@ -55,7 +55,7 @@ def main(argv):
             # print(f'n voice_features_set {len(voice_features_set)}')
             # if (time.time() - start_time) > 10:
             #     print('here')
-            brain.input_voice(voice_features_serial)
+            brain.process_voice(voice_features_serial)
             # if (time.time() - start_time) > 20:
             #     voice.stop()
             process_end = time.time()
