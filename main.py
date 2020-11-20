@@ -64,6 +64,7 @@ def main(argv):
             print(f'len brain.all_memories voice: {len(brain.all_memories[constants.voice])}')
             print(f'len brain.all_memories pack: {len(brain.all_memories[constants.pack])}')
             print(f'len brain.all_memories instant: {len(brain.all_memories[constants.instant])}')
+            print(f'len brain.all_memories short: {len(brain.all_memories[constants.short])}')
             # logging.debug(f'idle time {idle_time}')
             # print(f'idle time {idle_time}')
             if idle_time > 0:

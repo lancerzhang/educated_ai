@@ -3,7 +3,6 @@ import math
 import random
 import threading
 import time
-from collections import deque
 
 import vptree
 
@@ -40,7 +39,7 @@ class Brain:
             self.n_memories.update({mt: 0})
             self.memory_cache.update({mt: set()})
             self.memory_vp_tree.update({mt: None})
-            self.work_memories.update({mt: deque(maxlen=constants.n_memory_children)})
+            self.work_memories.update({mt: []})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -55,13 +54,12 @@ class Brain:
         for features in voice_features_serial:
             data = self.input_real(features)
             pack = self.input_memory(constants.pack, data)
-            if pack is not None:
-                if len(packs) == 0:
-                    packs.append(pack)
-                else:
-                    if pack.data != packs[-1].data:
-                        packs.append(pack)
-        self.input_memory(constants.instant, packs)
+            packs = self.add_seq(pack, packs)
+        instant = self.input_memory(constants.instant, packs)
+        instants = self.add_seq(instant, self.work_memories[constants.instant], constants.n_memory_children,
+                                constants.memory_duration[constants.memory_types.index(constants.short)])
+        self.work_memories[constants.instant] = instants
+        short = self.input_memory(constants.short, instants)
 
     @util.timeit
     def input_real(self, features):
@@ -92,6 +90,28 @@ class Brain:
             for m in data:
                 m.data_indexes.add(memory.MID)
         return memory
+
+    @staticmethod
+    def add_seq(mm, ls, n_limit=-1, time_limit=-1):
+        if mm is None:
+            return ls
+        if len(ls) == 0:
+            ls.append(mm)
+            return ls
+        if mm.data == ls[-1].data:
+            return ls
+        ls.append(mm)
+        if 0 < n_limit < len(ls):
+            ls.pop(0)
+        if time_limit > 0:
+            now_time = time.time()
+            new_ls = []
+            for x in ls:
+                if now_time - x.activated_time < time_limit:
+                    new_ls.append(x)
+            return new_ls
+        else:
+            return ls
 
     def add_memory(self, memory_type, memory_data, real_type=None):
         m = Memory(memory_type, memory_data, real_type)
