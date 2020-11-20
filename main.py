@@ -55,8 +55,7 @@ def main(argv):
             # print(f'n voice_features_set {len(voice_features_set)}')
             # if (time.time() - start_time) > 10:
             #     print('here')
-            for features in voice_features_serial:
-                brain.input_features(features)
+            brain.input_voice(voice_features_serial)
             # if (time.time() - start_time) > 20:
             #     voice.stop()
             process_end = time.time()
@@ -64,6 +63,7 @@ def main(argv):
             # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
             print(f'len brain.all_memories voice: {len(brain.all_memories[constants.voice])}')
             print(f'len brain.all_memories pack: {len(brain.all_memories[constants.pack])}')
+            print(f'len brain.all_memories instant: {len(brain.all_memories[constants.instant])}')
             # logging.debug(f'idle time {idle_time}')
             # print(f'idle time {idle_time}')
             if idle_time > 0:

@@ -155,52 +155,45 @@ class Brain:
     def stop(self):
         self.running = False
 
-    def input_features(self, features):
-        pack = self.input_real(features)
-        self.input_pack(pack)
+    def input_voice(self, voice_features_serial):
+        packs = []
+        for features in voice_features_serial:
+            data = self.input_real(features)
+            pack = self.input_memory(constants.pack, data)
+            if pack is not None:
+                if len(packs) == 0:
+                    packs.append(pack)
+                else:
+                    if pack.data != packs[-1].data:
+                        packs.append(pack)
+        self.input_memory(constants.instant, packs)
 
     @util.timeit
     def input_real(self, features):
-        pack = set()
+        data = set()
         for feature in features:
-            m = self.find_memory(feature)
+            m = self.find_real(feature)
             if m is None:
                 m = self.add_memory(constants.real, feature, feature.type)
             else:
                 self.activate_memory(m)
-            pack.add(m)
-        return pack
+            data.add(m)
+        return data
 
     @util.timeit
-    def input_pack(self, pack):
-        if len(pack) == 0:
-            return
-        data = {p.MID for p in pack}
-        pack_memory = None
-        parent_ids = set()
-        for m in pack:
-            # print(f'm:{m}')
-            parent_ids = parent_ids.union(m.data_indexes)
-        # print(parent_ids)
-        for pid in parent_ids:
-            p = self.all_memories[constants.pack].get(pid)
-            if p is None:
-                # memory was deleted
-                continue
-            # print(p)
-            if p.data.issubset(pack):
-                # print(f'issubset')
-                self.activate_memory(p)
-            if p.data == data:
-                # print(f'exist')
-                pack_memory = p
-        if pack_memory is None:
-            pm = self.add_memory(constants.pack, data)
-            # print(f'added pack:{pm}')
-            # for m in self.all_memories[constants.pack].copy().values():
-            #     print(m)
-            for m in pack:
-                m.data_indexes.add(pm.MID)
+    def input_memory(self, memory_type, data):
+        if len(data) == 0:
+            return None
+        memory = self.find_memory(memory_type, data)
+        if memory is None:
+            data_ids = {x.MID for x in data}
+            memory = self.add_memory(memory_type, data_ids)
+            # print(f'memory pack:{memory}')
+            # for x in self.all_memories[memory_type].copy().values():
+            #     print(x)
+            for m in data:
+                m.data_indexes.add(memory.MID)
+        return memory
 
     def add_memory(self, memory_type, memory_data, real_type=None):
         m = Memory(memory_type, memory_data, real_type)
@@ -210,7 +203,7 @@ class Brain:
         self.memory_cache[memory_type].add(m)
         return m
 
-    def find_cache(self, feature):
+    def find_real_cache(self, feature):
         recognizer = self.RECOGNIZERS[feature.type]
         cache = self.memory_cache[feature.type].copy()
         # print(f'len cache {len(cache)}')
@@ -218,7 +211,7 @@ class Brain:
             if recognizer.is_feature_similar(feature, m.data):
                 return m
 
-    def find_tree(self, feature):
+    def find_real_tree(self, feature):
         recognizer = self.RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
         if tree is not None:
@@ -228,11 +221,36 @@ class Brain:
                 return nearest_memory
 
     @util.timeit
-    def find_memory(self, feature):
-        nearest = self.find_tree(feature)
+    def find_real(self, feature):
+        nearest = self.find_real_tree(feature)
         if nearest is None:
-            nearest = self.find_cache(feature)
+            nearest = self.find_real_cache(feature)
         return nearest
+
+    @util.timeit
+    def find_memory(self, memory_type, child_memories):
+        if len(child_memories) == 0:
+            return
+        child_ids = {x.MID for x in child_memories}
+        found_memory = None
+        parent_ids = set()
+        for m in child_memories:
+            # print(f'm:{m}')
+            parent_ids = parent_ids.union(m.data_indexes)
+        # print(parent_ids)
+        for pid in parent_ids:
+            parent = self.all_memories[memory_type].get(pid)
+            if parent is None:
+                # memory was deleted
+                continue
+            # print(p)
+            if parent.data.issubset(child_memories):
+                # print(f'issubset')
+                self.activate_memory(parent)
+            if parent.data == child_ids:
+                # print(f'exist')
+                found_memory = parent
+        return found_memory
 
     # Use a separate thread to cleanup memories regularly.
     @util.timeit
