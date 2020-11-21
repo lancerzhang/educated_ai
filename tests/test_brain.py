@@ -10,18 +10,21 @@ from components.memory import Memory
 class TestBrain(unittest.TestCase):
 
     def test_get_retrievability(self):
-        self.assertEqual(1, Brain.get_retrievability(14, 0))
-        self.assertEqual(0.99, Brain.get_retrievability(30, 0))
-        self.assertEqual(0.98, Brain.get_retrievability(60, 0))
-        self.assertEqual(0.95, Brain.get_retrievability(150, 0))
-        self.assertEqual(0.90, Brain.get_retrievability(60 * 5, 0))
-        self.assertEqual(0.79, Brain.get_retrievability(60 * 10, 0))
-        self.assertEqual(0.58, Brain.get_retrievability(60 * 20, 0))
-        self.assertEqual(0.44, Brain.get_retrievability(60 * 60, 0))
-        self.assertEqual(0.26, Brain.get_retrievability(60 * 60 * 24, 0))
-        self.assertEqual(0.23, Brain.get_retrievability(60 * 60 * 24 * 7, 0))
-        self.assertEqual(0.21, Brain.get_retrievability(60 * 60 * 24 * 30, 0))
-        self.assertEqual(0.20, Brain.get_retrievability(60 * 60 * 24 * 30 * 2, 0))
+        self.assertEqual(1, Brain.get_retrievability(Brain.memory_cycles[0] - 1, 0))
+        self.assertEqual(1, Brain.get_retrievability(Brain.memory_cycles[0], 0))
+        self.assertEqual(0, Brain.get_retrievability(Brain.memory_cycles[0] + 1, 0))
+        self.assertEqual(1, Brain.get_retrievability(14, 1))
+        self.assertEqual(0.99, Brain.get_retrievability(30, 1))
+        self.assertEqual(0.98, Brain.get_retrievability(60, 1))
+        self.assertEqual(0.95, Brain.get_retrievability(150, 1))
+        self.assertEqual(0.90, Brain.get_retrievability(60 * 5, 1))
+        self.assertEqual(0.79, Brain.get_retrievability(60 * 10, 1))
+        self.assertEqual(0.58, Brain.get_retrievability(60 * 20, 1))
+        self.assertEqual(0.44, Brain.get_retrievability(60 * 60, 1))
+        self.assertEqual(0.26, Brain.get_retrievability(60 * 60 * 24, 1))
+        self.assertEqual(0.23, Brain.get_retrievability(60 * 60 * 24 * 7, 1))
+        self.assertEqual(0.21, Brain.get_retrievability(60 * 60 * 24 * 30, 1))
+        self.assertEqual(0.20, Brain.get_retrievability(60 * 60 * 24 * 30 * 2, 1))
         self.assertEqual(1, Brain.get_retrievability(60 * 60 * 24 * 30, len(Brain.memory_cycles)))
 
     def test_activate_memory(self):
@@ -84,9 +87,9 @@ class TestBrain(unittest.TestCase):
     def test_is_steady(self):
         m = Memory(constants.real, None)
         m.CREATED_TIME = m.activated_time = time.time() - 10
-        self.assertEqual(True,Brain.is_steady(m))
+        self.assertEqual(True, Brain.is_steady(m))
         m.CREATED_TIME = m.activated_time = time.time() - 20
-        self.assertEqual(False,Brain.is_steady(m))
+        self.assertEqual(False, Brain.is_steady(m))
 
 
 if __name__ == "__main__":

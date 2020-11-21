@@ -56,15 +56,15 @@ def main(argv):
             # if (time.time() - start_time) > 10:
             #     print('here')
             brain.process_voice(voice_features_serial)
-            # if (time.time() - start_time) > 20:
-            #     voice.stop()
+            if (time.time() - start_time) > 50:
+                voice.stop()
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
             # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
-            print(f'len brain.all_memories voice: {len(brain.all_memories[constants.voice])}')
-            print(f'len brain.all_memories pack: {len(brain.all_memories[constants.pack])}')
-            print(f'len brain.all_memories instant: {len(brain.all_memories[constants.instant])}')
-            print(f'len brain.all_memories short: {len(brain.all_memories[constants.short])}')
+            # print(f'len brain.all_memories voice: {len(brain.categorized_memory[constants.voice])}')
+            # print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack])}')
+            # print(f'len brain.all_memories instant: {len(brain.categorized_memory[constants.instant])}')
+            # print(f'len brain.all_memories short: {len(brain.categorized_memory[constants.short])}')
             # logging.debug(f'idle time {idle_time}')
             # print(f'idle time {idle_time}')
             if idle_time > 0:

@@ -99,7 +99,7 @@ class TestSound(unittest.TestCase):
         fp11 = self.sound.filter_feature(FeaturePack(kernel=kernel1))
         m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=fp11.kernel, feature=fp11.feature)
         m1.status = MemoryStatus.MATCHING
-        self.sound.brain.all_memories = {m1}
+        self.sound.brain.categorized_memory = {m1}
         self.sound.brain.active_memories = {m1}
         self.sound.brain.reindex()
         data1_2 = np.load('sound1_2.npy')
