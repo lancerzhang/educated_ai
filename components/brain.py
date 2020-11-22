@@ -84,6 +84,12 @@ class Brain:
             if len(data) <= 1:
                 return None
         memory = self.find_memory(memory_type, data)
+        # if memory_type == constants.short and memory is None:
+        #     print(f'adding')
+        #     for x in data:
+        #         print(x)
+        #     for x in self.all_memories.copy().values():
+        #         print(x)
         if memory is None:
             if constants.ordered == self.get_order(memory_type):
                 data_ids = [x.MID for x in data]
@@ -97,8 +103,13 @@ class Brain:
                 m.data_indexes.add(memory.MID)
         return memory
 
-    @staticmethod
-    def add_seq(mm, ls, n_limit=-1, time_limit=-1):
+    def add_seq(self, mm, old, n_limit=-1, time_limit=-1):
+        ls = []
+        if len(old) > 0:
+            for x in old:
+                existed = self.all_memories.get(x.MID)
+                if existed is not None:
+                    ls.append(x)
         if mm is None:
             return ls
         if len(ls) == 0:
