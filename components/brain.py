@@ -319,44 +319,40 @@ class Brain:
                 if self.validate_memory(m):
                     new_memories.update({mid: m})
                     new_all_memories.update({mid: m})
-                else:
-                    print(f'{mid} is to be deleted')
-                    # the memory need to be deleted
-                    # break the downward connection
-                    if isinstance(m.data, list) or isinstance(m.data, set):
-                        for x in m.data:
-                            child = self.all_memories.get(x)
-                            print(f'updating {x}')
-                            if not debuged:
-                                debuged = True
-                                for k in self.all_memories.copy():
-                                    print(k)
-                            child.data_indexes.remove(mid)
-                    # delete the memory, remove index
-                    # break the upward connection
-                    for x in m.data_indexes:
-                        if not debuged:
-                            debuged = True
-                            for k in self.all_memories.copy():
-                                print(k)
-                        print(f'remove {mid} from {x} data')
-                        parent = self.all_memories.get(x)
-                        parent.data.remove(mid)
-                        if len(parent.data) == 1:
-                            equal_from = parent.MID
-                            equal_to = parent.data.pop()
-                            print(f'{equal_from} ony has one child, equals to {equal_to}')
-                            for y in parent.data_indexes:
-                                grand_parent = self.all_memories.get(y)
-                                print(f'type of grand_parent.data {type(grand_parent.data)}')
-                                if isinstance(grand_parent.data, set):
-                                    print(f'replace grand parent set data')
-                                    grand_parent.data.remove(equal_from)
-                                    grand_parent.data.add(equal_to)
-                                elif isinstance(grand_parent.data, list):
-                                    print(f'replace grand parent list data')
-                                    new_data = [equal_to if x == equal_from else x for x in grand_parent.data]
-                                    grand_parent.data = new_data
+                # refresh data index
+                new_data_indexes = set()
+                for di in m.data_indexes:
+                    existed = self.all_memories.get(di)
+                    if existed is not None:
+                        new_data_indexes.add(existed.MID)
+                m.data_indexes = new_data_indexes
+                # refresh data
+                if isinstance(m.data, list) or isinstance(m.data, set):
+                    new_data = []
+                    for d in m.data:
+                        existed = self.all_memories.get(d)
+                        if existed is not None:
+                            new_data.append(existed.MID)
+                    if isinstance(m.data, set):
+                        new_data = set(new_data)
+                    m.data = new_data
+                    # re-link one child memory
+                    if len(m.data) == 1:
+                        equal_from = m.MID
+                        equal_to = m.data.pop()
+                        print(f'{equal_from} ony has one child, equals to {equal_to}')
+                        for y in m.data_indexes:
+                            parent = self.all_memories.get(y)
+                            if parent is not None:
+                                print(f'type of parent.data {type(parent.data)}')
+                                if isinstance(parent.data, set):
+                                    print(f'replace parent set data')
+                                    parent.data.remove(equal_from)
+                                    parent.data.add(equal_to)
+                                elif isinstance(parent.data, list):
+                                    print(f'replace parent list data')
+                                    new_data = [equal_to if x == equal_from else x for x in parent.data]
+                                    parent.data = new_data
             # TODO, some update may lost during this process
             self.categorized_memory.update({ft: new_memories})
             time.sleep(self.interval_s)
@@ -372,7 +368,11 @@ class Brain:
             if has_creation or has_deletion:
                 print(f'start to reindex')
                 recognizer = self.RECOGNIZERS[ft]
-                tree = vptree.VPTree(list(memories.values()), recognizer.compare_memory)
+                memory_list = list(memories.values())
+                if len(memory_list) > 0:
+                    tree = vptree.VPTree(memory_list, recognizer.compare_memory)
+                else:
+                    tree = None
                 print(f'vptree points:{len(memories)}')
                 # TODO, some update may lost during this process
                 self.memory_vp_tree.update({ft: tree})
