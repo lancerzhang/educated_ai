@@ -29,29 +29,36 @@ class TestBrain(unittest.TestCase):
 
     def test_activate_memory(self):
         stability = 0
+        # test not strengthen in short time
         m = Memory(constants.real, None)
-        m.CREATED_TIME = m.activated_time = time.time() - 5
+        m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - 5
         Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
-        m.CREATED_TIME = m.activated_time = time.time() - 16
+        # test strengthen
+        m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - 16
         Brain.activate_memory(m)
         stability += 1
         self.assertEqual(stability, m.stability)
-        m.CREATED_TIME = m.activated_time = time.time() - 20
+        # test not strengthen in second short time
+        m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - 20
         Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
+        # test not strengthen if short elapse time after last strengthen_time
         m.CREATED_TIME = time.time() - 300
-        m.activated_time = time.time() - 20
+        m.strengthen_time = time.time() - 20
         Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
-        m.CREATED_TIME = m.activated_time = time.time() - 2592000
+        # test strengthen in another long time
+        m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - 2592000
         Brain.activate_memory(m)
         stability += 1
         self.assertEqual(stability, m.stability)
+        # test can't strength continuously
         for _ in range(10):
             Brain.activate_memory(m)
         self.assertEqual(stability, m.stability)
-        m.CREATED_TIME = m.activated_time = time.time() - 1200
+        # test not strengthen_time when stability is maximum
+        m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - 1200
         m.stability = len(Brain.memory_cycles)
         Brain.activate_memory(m)
         stability = len(Brain.memory_cycles)

@@ -28,6 +28,8 @@ class Brain:
 
     def __init__(self):
         self.running = True
+        self.instant_set = set()
+        self.instant_list = []
         self.all_memories = {}  # contains both cache and vp tree
         self.categorized_memory = {}  # contains both cache and vp tree
         self.n_memories = {}  # length of all_memories
@@ -84,10 +86,13 @@ class Brain:
             if len(data) <= 1:
                 return None
         memory = self.find_memory(memory_type, data)
+        if memory_type == constants.instant and memory is not None:
+            print(f'found existing memory:{memory}')
         # if memory_type == constants.short and memory is None:
         #     print(f'adding')
         #     for x in data:
         #         print(x)
+        #     print(f'all memory')
         #     for x in self.all_memories.copy().values():
         #         print(x)
         if memory is None:
@@ -96,7 +101,12 @@ class Brain:
             else:
                 data_ids = {x.MID for x in data}
             memory = self.add_memory(memory_type, data_ids)
-            print(f'new {memory_type} memory:{memory} \n all memories')
+            if memory_type == constants.instant:
+                self.instant_set.add(util.list_to_str(data_ids))
+                self.instant_list.append(util.list_to_str(data_ids))
+                print(f'new instants set {len(self.instant_set)} list {len(self.instant_list)}')
+            # print(f'new {memory_type} memory:{memory}')
+            # print(f'all memories')
             # for x in self.all_memories[memory_type].copy().values():
             #     print(x)
             for m in data:
@@ -171,6 +181,14 @@ class Brain:
             child_ids = [x.MID for x in child_memories]
         else:
             child_ids = {x.MID for x in child_memories}
+        # if memory_type == constants.instant:
+        #     print(f'finding:{child_ids}')
+        #     print('packs')
+        #     for x in self.categorized_memory[constants.pack].copy().values():
+        #         print(x)
+        #     print('instant')
+        #     for x in self.categorized_memory[constants.instant].copy().values():
+        #         print(x)
         found_memory = None
         parent_ids = set()
         for m in child_memories:
@@ -188,10 +206,21 @@ class Brain:
             else:
                 is_sub = parent.data.issubset(child_memories)
             if is_sub:
-                # print(f'issubset')
+                # if self.get_order(parent.MEMORY_TYPE) == constants.ordered:
+                #     print(f'activating {parent}')
+                if parent.MEMORY_TYPE == constants.instant:
+                    print(f'activating instant: {parent}')
                 self.activate_memory(parent)
             if parent.data == child_ids:
                 # print(f'exist')
+                # if self.get_order(parent.MEMORY_TYPE) == constants.ordered:
+                #     print(f'found {parent}')
+                if parent.MEMORY_TYPE == constants.instant:
+                    print(f'found instant: {parent}')
+                    print(is_sub)
+                    print(self.get_order(memory_type))
+                    print(parent.data)
+                    print(child_ids)
                 found_memory = parent
         return found_memory
 
@@ -205,11 +234,11 @@ class Brain:
     @classmethod
     def get_retrievability(cls, t, stability=0):
         # stability 0 is very easy to forget
-        if stability == 0:
-            if t <= cls.memory_cycles[0]:
-                return 1
-            else:
-                return 0
+        # if stability == 0:
+        #     if t <= cls.memory_cycles[0]:
+        #         return 1
+        #     else:
+        #         return 0
         # for stability larger than 0
         if t <= 1200:
             forget_possibility = 0.00035 * t
@@ -242,10 +271,14 @@ class Brain:
     @classmethod
     def activate_memory(cls, m):
         now_time = time.time()
-        if m.stability == len(cls.memory_cycles) or cls.is_steady(m):
-            pass
-        elif now_time - m.CREATED_TIME > cls.memory_cycles[m.stability]:
+        if m.stability == len(cls.memory_cycles):
+            return
+        # strengthen if time is larger then current cycle
+        # but can't continuously strengthen
+        if now_time - m.CREATED_TIME > cls.memory_cycles[m.stability] and \
+                now_time - m.strengthen_time > cls.memory_cycles[m.stability]:
             m.stability += 1
+            m.strengthen_time = now_time
         m.activated_time = now_time
 
     @classmethod
@@ -351,17 +384,17 @@ class Brain:
                     if len(m.data) == 1:
                         equal_from = m.MID
                         equal_to = m.data.pop()
-                        print(f'{equal_from} ony has one child, equals to {equal_to}')
+                        # print(f'{equal_from} ony has one child, equals to {equal_to}')
                         for y in m.data_indexes:
                             parent = self.all_memories.get(y)
                             if parent is not None:
-                                print(f'type of parent.data {type(parent.data)}')
+                                # print(f'type of parent.data {type(parent.data)}')
                                 if isinstance(parent.data, set):
-                                    print(f'replace parent set data')
+                                    # print(f'replace parent set data')
                                     parent.data.remove(equal_from)
                                     parent.data.add(equal_to)
                                 elif isinstance(parent.data, list):
-                                    print(f'replace parent list data')
+                                    # print(f'replace parent list data')
                                     new_data = [equal_to if x == equal_from else x for x in parent.data]
                                     parent.data = new_data
             # TODO, some update may lost during this process

@@ -1,7 +1,5 @@
 import time
 
-from components import constants
-
 
 class Memory:
 
@@ -11,6 +9,7 @@ class Memory:
         self.REAL_TYPE = real_type
         self.CREATED_TIME = time.time()
         self.activated_time = time.time()
+        self.strengthen_time = time.time()
         self.stability = 0
         self.context = {}
         self.context_indexes = set()  # ID of memories use this memory as context
