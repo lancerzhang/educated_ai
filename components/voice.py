@@ -8,7 +8,7 @@ import numpy as np
 from components.recognizers import VoiceRecognizer
 from . import util
 
-logger = logging.getLogger('Sound')
+logger = logging.getLogger('Voice')
 logger.setLevel(logging.DEBUG)
 
 
@@ -34,7 +34,7 @@ class Voice(object):
 
     # need to overwrite this
     def receive(self):
-        print('receive() not implemented!')
+        logger.error('receive() not implemented!')
         return
 
     # @util.timeit
@@ -55,7 +55,7 @@ class Voice(object):
         phase = np.array(phase)
         mf = VoiceRecognizer(y=phase, sr=self.sample_rate)
         features = mf.features
-        print(f'len features: {len(features)}')
+        logger.debug(f'len features: {len(features)}')
         # for feature in features:
         #     print(f'len feature: {len(feature)}')
         return features

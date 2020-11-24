@@ -46,6 +46,7 @@ def main(argv):
             voice = MicrophoneVoice(brain)
         voice.start()
         start_time = time.time()
+        last_debug_time = time.time()
         logging.info('initialized.')
         print('initialized.')
         while 1:
@@ -56,20 +57,47 @@ def main(argv):
             # if (time.time() - start_time) > 10:
             #     print('here')
             brain.process_voice(voice_features_serial)
-            if (time.time() - start_time) > 50:
-                voice.stop()
+            # if (time.time() - start_time) > 20:
+            #     voice.stop()
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
-            # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
-            # print(f'len brain.all_memories voice: {len(brain.categorized_memory[constants.voice])}')
-            # print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack])}')
-            # print(f'len brain.all_memories instant: {len(brain.categorized_memory[constants.instant])}')
-            # print(f'len brain.all_memories short: {len(brain.categorized_memory[constants.short])}')
             # logging.debug(f'idle time {idle_time}')
             # print(f'idle time {idle_time}')
             if idle_time > 0:
                 time.sleep(idle_time)
-            print(f'elapse time {time.time() - start_time}')
+
+            if time.time() - last_debug_time > 1:
+                # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
+                print(f'len brain.all_memories voice: {len(brain.categorized_memory[constants.voice])}')
+                print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack])}')
+                print(f'len brain.all_memories instant: {len(brain.categorized_memory[constants.instant])}')
+                print(f'len brain.all_memories short: {len(brain.categorized_memory[constants.short])}')
+                # print(f'stability is: {[x.stability for x in brain.all_memories.copy().values()]}')
+                print(f'stability of voice is:'
+                      f' {[x.stability for x in brain.categorized_memory[constants.voice].copy().values()]}')
+                print(f'stability of pack is:'
+                      f' {[x.stability for x in brain.categorized_memory[constants.pack].copy().values()]}')
+                print(f'stability of instant is:'
+                      f' {[x.stability for x in brain.categorized_memory[constants.instant].copy().values()]}')
+                print(f'stability of short is:'
+                      f' {[x.stability for x in brain.categorized_memory[constants.short].copy().values()]}')
+                print(
+                    f'live time of voice is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.voice].copy().values()]}')
+                print(
+                    f'live time of pack is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.pack].copy().values()]}')
+                print(
+                    f'live time of instant is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.instant].copy().values()]}')
+                print(
+                    f'live time of short is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.short].copy().values()]}')
+                print(f'data len of pack is:'
+                      f' {[len(x.data) for x in brain.categorized_memory[constants.pack].copy().values()]}')
+                print(f'data len of instant is:'
+                      f' {[len(x.data) for x in brain.categorized_memory[constants.instant].copy().values()]}')
+                print(f'data len of short is:'
+                      f' {[len(x.data) for x in brain.categorized_memory[constants.short].copy().values()]}')
+                last_debug_time = time.time()
+                print(f'elapse time {time.time() - start_time}')
+
     except:
         logging.error(traceback.format_exc())
 

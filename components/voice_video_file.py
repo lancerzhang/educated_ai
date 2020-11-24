@@ -1,3 +1,4 @@
+import logging
 import time
 
 import audioread
@@ -5,6 +6,9 @@ import numpy as np
 
 from . import util
 from .voice import Voice
+
+logger = logging.getLogger('VideoFileVoice')
+logger.setLevel(logging.DEBUG)
 
 
 class VideoFileVoice(Voice):
@@ -86,7 +90,7 @@ class VideoFileVoice(Voice):
                 try:
                     self.process_a_buffer()
                 except StopIteration:
-                    print(f'replay video')
+                    logger.debug(f'replay video')
                     self.open_video()
                     break
             # avoid looping too fast, that eat processing power of main thread
