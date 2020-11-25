@@ -29,10 +29,8 @@ class Brain:
 
     def __init__(self):
         self.running = True
-        self.instant_set = set()
-        self.instant_list = []
         self.all_memories = {}  # contains both cache and vp tree
-        self.categorized_memory = {}  # contains both cache and vp tree
+        self.categorized_memory = {}  # memories by category
         self.n_memories = {}  # length of all_memories
         self.memory_cache = {}  # cache before put to vp tree
         self.memory_vp_tree = {}  # speed up searching memories
@@ -102,14 +100,6 @@ class Brain:
             else:
                 data_ids = {x.MID for x in data}
             memory = self.add_memory(memory_type, data_ids)
-            # if memory_type == constants.instant:
-            #     self.instant_set.add(util.list_to_str(data_ids))
-            #     self.instant_list.append(util.list_to_str(data_ids))
-            #     print(f'new instants set {len(self.instant_set)} list {len(self.instant_list)}')
-            # print(f'new {memory_type} memory:{memory}')
-            # print(f'all memories')
-            # for x in self.all_memories[memory_type].copy().values():
-            #     print(x)
             for m in data:
                 m.data_indexes.add(memory.MID)
         return memory
@@ -352,61 +342,6 @@ class Brain:
         item.context_weight = math.log(len(memory_indexes) / len(item.context_indexes))
         item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
 
-    # Use a separate thread to cleanup memories regularly.
-    @util.timeit
-    def cleanup_memories2(self):
-        new_all_memories = {}
-        debuged = False
-        for ft in constants.feature_types + constants.memory_types:
-            memories = self.categorized_memory[ft].copy()
-            new_memories = {}
-            for mid, m in memories.items():
-                if self.validate_memory(m):
-                    new_memories.update({mid: m})
-                    new_all_memories.update({mid: m})
-                else:
-                    # print(f'{m.MEMORY_TYPE} {mid} is to be deleted')
-                    # the memory need to be deleted
-                    # break the downward connection
-                    if isinstance(m.data, list) or isinstance(m.data, set):
-                        for x in m.data:
-                            child = self.all_memories.get(x)
-                            # print(f'updating {x}')
-                            # if not debuged:
-                            #     debuged = True
-                            #     for k in self.all_memories.copy():
-                            #         print(k)
-                            child.data_indexes.remove(mid)
-                    # delete the memory, remove index
-                    # break the upward connection
-                    for x in m.data_indexes:
-                        # if not debuged:
-                        #     debuged = True
-                        #     for k in self.all_memories.copy():
-                        #         print(k)
-                        # print(f'remove {mid} from {x} data')
-                        parent = self.all_memories.get(x)
-                        parent.data.remove(mid)
-                        if len(parent.data) == 1:
-                            equal_from = parent.MID
-                            equal_to = parent.data.pop()
-                            # print(f'{equal_from} ony has one child, equals to {equal_to}')
-                            for y in parent.data_indexes:
-                                grand_parent = self.all_memories.get(y)
-                                # print(f'type of grand_parent.data {type(grand_parent.data)}')
-                                if isinstance(grand_parent.data, set):
-                                    # print(f'replace grand parent set data')
-                                    grand_parent.data.remove(equal_from)
-                                    grand_parent.data.add(equal_to)
-                                elif isinstance(grand_parent.data, list):
-                                    # print(f'replace grand parent list data')
-                                    new_data = [equal_to if x == equal_from else x for x in grand_parent.data]
-                                    grand_parent.data = new_data
-            # TODO, some update may lost during this process
-            self.categorized_memory.update({ft: new_memories})
-            time.sleep(self.interval_s)
-        self.all_memories = new_all_memories
-
     def cleanup_memories(self):
         new_all_memories = {}
         debuged = False
@@ -464,14 +399,14 @@ class Brain:
             has_creation = len(caches) > 0
             has_deletion = self.n_memories[ft] != len(memories)
             if has_creation or has_deletion:
-                print(f'start to reindex')
+                logger.debug(f'start to reindex')
                 recognizer = self.RECOGNIZERS[ft]
                 memory_list = list(memories.values())
                 if len(memory_list) > 0:
                     tree = vptree.VPTree(memory_list, recognizer.compare_memory)
                 else:
                     tree = None
-                print(f'vptree points:{len(memories)}')
+                logger.debug(f'vptree points:{len(memories)}')
                 # TODO, some update may lost during this process
                 self.memory_vp_tree.update({ft: tree})
                 caches.clear()
