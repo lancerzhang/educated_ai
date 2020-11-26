@@ -36,12 +36,12 @@ class Brain:
         self.memory_cache = {}  # cache before put to vp tree
         self.memory_vp_tree = {}  # speed up searching memories
         self.work_memories = {}
-        for mt in constants.feature_types + constants.memory_types:
-            self.categorized_memory.update({mt: {}})
-            self.n_memories.update({mt: 0})  # length of categorized_memories
-            self.memory_cache.update({mt: set()})  # cache before put to vp tree
-            self.memory_vp_tree.update({mt: None})  # speed up searching memories
-            self.work_memories.update({mt: []})
+        for t in constants.feature_types + constants.memory_types:
+            self.categorized_memory.update({t: {}})
+            self.n_memories.update({t: 0})  # length of categorized_memories
+            self.memory_cache.update({t: set()})  # cache before put to vp tree
+            self.memory_vp_tree.update({t: None})  # speed up searching memories
+            self.work_memories.update({t: []})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -345,8 +345,8 @@ class Brain:
 
     def cleanup_memories(self):
         new_all_memories = {}
-        for ft in constants.feature_types + constants.memory_types:
-            memories = self.categorized_memory[ft].copy()
+        for t in constants.feature_types + constants.memory_types:
+            memories = self.categorized_memory[t].copy()
             new_memories = {}
             for mid, m in memories.items():
                 if self.validate_memory(m):
@@ -387,7 +387,7 @@ class Brain:
                     #                 new_data = [equal_to if x == equal_from else x for x in parent.data]
                     #                 parent.data = new_data
             # TODO, some update may lost during this process
-            self.categorized_memory.update({ft: new_memories})
+            self.categorized_memory.update({t: new_memories})
             time.sleep(self.interval_s)
         self.all_memories = new_all_memories
 
