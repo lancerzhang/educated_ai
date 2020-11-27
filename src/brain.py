@@ -105,14 +105,14 @@ class Brain:
             matched_parent = self.add_memory(memory_type, [x.MID for x in sub_memories])
             for m in sub_memories:
                 m.data_indexes.add(matched_parent.MID)
-        for x in activated_parents:
-            t = x.MEMORY_TYPE
-            self.work_memories[t] = util.list_remove(self.work_memories[t], x)
-        for x in activated_children:
-            x = self.all_memories.get(x)
-            if x is not None:
-                t = x.MEMORY_TYPE
-                self.work_memories[t] = util.list_remove(self.work_memories[t], x)
+        # for x in activated_parents:
+        #     t = x.MEMORY_TYPE
+        #     self.work_memories[t] = util.list_remove(self.work_memories[t], x)
+        # for x in activated_children:
+        #     x = self.all_memories.get(x)
+        #     if x is not None:
+        #         t = x.MEMORY_TYPE
+        #         self.work_memories[t] = util.list_remove(self.work_memories[t], x)
         return matched_parent
 
     def add_working(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
