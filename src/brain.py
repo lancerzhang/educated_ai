@@ -102,12 +102,7 @@ class Brain:
         return memory
 
     def add_seq(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
-        ls = []
-        if len(old) > 0:
-            for x in old:
-                existed = self.all_memories.get(x.MID)
-                if existed is not None:
-                    ls.append(x)
+        ls = self.get_valid_memories(old, output_type='Memory')
         if mm is None:
             return ls
         if len(ls) == 0:
@@ -180,12 +175,8 @@ class Brain:
             # print(f'm:{m}')
             parent_ids = parent_ids.union(m.data_indexes)
         # print(parent_ids)
-        for pid in parent_ids:
-            parent = self.all_memories.get(pid)
-            if parent is None:
-                # memory was deleted
-                continue
-            # print(p)
+        parents = self.get_valid_memories(parent_ids, output_type='Memory')
+        for parent in parents:
             if constants.ordered == util.get_order(memory_type):
                 is_sub = util.is_sublist(child_memories, parent.data)
             else:
@@ -245,6 +236,21 @@ class Brain:
             return True
         else:
             return False
+
+    def get_valid_memories(self, src, output_type='mid'):
+        memories = []
+        for x in src:
+            if type(x) == Memory:
+                x = x.MID
+            existed = self.all_memories.get(x)
+            if existed is not None:
+                if output_type == 'mid':
+                    memories.append(existed.MID)
+                else:
+                    memories.append(existed)
+        if type(src) == set:
+            memories = set(memories)
+        return memories
 
     @classmethod
     def activate_memory(cls, m: Memory):
@@ -339,22 +345,10 @@ class Brain:
                     new_memories.update({mid: m})
                     new_all_memories.update({mid: m})
                 # refresh data index
-                new_data_indexes = set()
-                for di in m.data_indexes:
-                    existed = self.all_memories.get(di)
-                    if existed is not None:
-                        new_data_indexes.add(existed.MID)
-                m.data_indexes = new_data_indexes
+                m.data_indexes = self.get_valid_memories(m.data_indexes)
                 # refresh data
                 if isinstance(m.data, list) or isinstance(m.data, set):
-                    new_data = []
-                    for d in m.data:
-                        existed = self.all_memories.get(d)
-                        if existed is not None:
-                            new_data.append(existed.MID)
-                    if isinstance(m.data, set):
-                        new_data = set(new_data)
-                    m.data = new_data
+                    m.data = self.get_valid_memories(m.data)
                     # re-link one child memory
                     # if len(m.data) == 1:
                     #     equal_from = m.MID

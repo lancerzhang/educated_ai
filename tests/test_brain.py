@@ -153,11 +153,13 @@ class TestBrain(unittest.TestCase):
         m1 = brain.add_memory(constants.real, feature, constants.voice)
         self.assertEqual(1, len(brain.categorized_memory[constants.voice]))
         self.assertEqual(1, len(brain.memory_cache[constants.voice]))
+        # test creation
         brain.reindex()
         self.assertEqual(1, len(brain.categorized_memory[constants.voice]))
         self.assertEqual(0, len(brain.memory_cache[constants.voice]))
         self.assertNotEqual(None, brain.memory_vp_tree[constants.voice])
         self.assertEqual(1, brain.n_memories[constants.voice])
+        # test deletion
         brain.categorized_memory[constants.voice] = {}
         brain.reindex()
         self.assertEqual(None, brain.memory_vp_tree[constants.voice])
@@ -170,14 +172,28 @@ class TestBrain(unittest.TestCase):
         brain = Brain()
         self.assertEqual(None, brain.input_memory(constants.instant, []))
         self.assertEqual(None, brain.input_memory(constants.short, [1]))
+        # test not found and then create memory
         brain.find_memory = MagicMock(return_value=None)
         m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
         m2 = brain.input_memory(constants.pack, [m1])
         self.assertEqual({m1.MID}, m2.data)
         self.assertEqual({m2.MID}, m1.data_indexes)
+        # test found memory
         brain.find_memory = MagicMock(return_value=m2)
         m3 = brain.input_memory(constants.pack, [m1])
         self.assertEqual(m2, m3)
+
+    def test_get_valid_memories(self):
+        brain = Brain()
+        m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
+        self.assertEqual([m1.MID], brain.get_valid_memories([m1.MID]))
+        self.assertEqual([m1], brain.get_valid_memories([m1.MID], output_type='Memory'))
+        self.assertEqual([m1.MID], brain.get_valid_memories([m1]))
+        self.assertEqual([m1], brain.get_valid_memories([m1], output_type='Memory'))
+        self.assertEqual([], brain.get_valid_memories(["not exist"]))
+        self.assertEqual({m1.MID}, brain.get_valid_memories({m1.MID}))
+        del brain.all_memories[m1.MID]
+        self.assertEqual([], brain.get_valid_memories([m1]))
 
     def test_add_seq(self):
         pass
