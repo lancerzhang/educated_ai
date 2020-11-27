@@ -173,13 +173,13 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(None, brain.input_memory(constants.instant, []))
         self.assertEqual(None, brain.input_memory(constants.short, [1]))
         # test not found and then create memory
-        brain.find_memory = MagicMock(return_value=(None, set()))
+        brain.find_memory = MagicMock(return_value=(None, set(), set()))
         m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
         m2 = brain.input_memory(constants.pack, [m1])
         self.assertEqual({m1.MID}, m2.data)
         self.assertEqual({m2.MID}, m1.data_indexes)
         # test found memory
-        brain.find_memory = MagicMock(return_value=(m2, set()))
+        brain.find_memory = MagicMock(return_value=(m2, set(), set()))
         m3 = brain.input_memory(constants.pack, [m1])
         self.assertEqual(m2, m3)
 
@@ -189,7 +189,7 @@ class TestBrain(unittest.TestCase):
         m2 = brain.add_memory(constants.real, VoiceFeature(1, 2), constants.voice)
         m3 = brain.input_memory(constants.pack, [m1])
         m4 = brain.input_memory(constants.pack, [m2])
-        brain.find_memory = MagicMock(return_value=(None, [m3, m4]))
+        brain.find_memory = MagicMock(return_value=(None, {m3, m4}, set()))
         brain.work_memories[constants.pack] = [m3, m4]
         m5 = brain.input_memory(constants.pack, [m1, m2])
         self.assertEqual(0, len(brain.work_memories[constants.pack]))

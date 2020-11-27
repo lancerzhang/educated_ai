@@ -91,7 +91,7 @@ class Brain:
             # for short and above memory, require more than one child
             if len(sub_memories) <= 1:
                 return None
-        matched_parent, activated_parents = self.find_memory(memory_type, sub_memories)
+        matched_parent, activated_parents, activated_children = self.find_memory(memory_type, sub_memories)
         # if memory_type == constants.instant and memory is not None:
         #     print(f'found existing memory:{memory}')
         # if memory_type == constants.short and memory is None:
@@ -108,6 +108,11 @@ class Brain:
         for x in activated_parents:
             t = x.MEMORY_TYPE
             self.work_memories[t] = util.list_remove(self.work_memories[t], x)
+        for x in activated_children:
+            x = self.all_memories.get(x)
+            if x is not None:
+                t = x.MEMORY_TYPE
+                self.work_memories[t] = util.list_remove(self.work_memories[t], x)
         return matched_parent
 
     def add_working(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
@@ -186,7 +191,8 @@ class Brain:
             parent_ids = parent_ids.union(m.data_indexes)
         # print(parent_ids)
         parents = self.get_valid_memories(parent_ids, output_type='Memory')
-        activated = set()
+        activated_parents = set()
+        activated_children = set()
         for parent in parents:
             if constants.ordered == util.get_order(memory_type):
                 is_sub = util.is_sublist(child_memories, parent.data)
@@ -198,7 +204,8 @@ class Brain:
                 # if parent.MEMORY_TYPE == constants.instant:
                 #     print(f'activating instant: {parent}')
                 self.activate_memory(parent)
-                activated.add(parent)
+                activated_parents.add(parent)
+                activated_children = activated_children.union(set(parent.data))
             if parent.data == child_ids:
                 # print(f'exist')
                 # if self.get_order(parent.MEMORY_TYPE) == constants.ordered:
@@ -210,7 +217,7 @@ class Brain:
                 #     print(parent.data)
                 #     print(child_ids)
                 match_parent = parent
-        return match_parent, activated
+        return match_parent, activated_parents, activated_children
 
     @classmethod
     def get_retrievability(cls, t, stability=0):
@@ -274,6 +281,8 @@ class Brain:
 
     @classmethod
     def activate_memory(cls, m: Memory):
+        # if constants.short == m.MEMORY_TYPE:
+        #     print(f'activated {m.MID}')
         now_time = time.time()
         if m.stability == len(cls.memory_cycles):
             return
