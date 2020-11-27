@@ -58,10 +58,16 @@ class Brain:
             pack = self.input_memory(constants.pack, data)
             packs = self.add_seq(pack, packs)
         instant = self.input_memory(constants.instant, packs)
+        # input short memory
         instants = self.add_seq(instant, self.work_memories[constants.instant], n_limit=constants.n_memory_children,
                                 time_limit=self.get_memory_duration(constants.short))
         self.work_memories[constants.instant] = instants
         short = self.input_memory(constants.short, instants)
+        # input long memory
+        shorts = self.add_seq(short, self.work_memories[constants.short], n_limit=constants.n_memory_children,
+                              time_limit=self.get_memory_duration(constants.long))
+        self.work_memories[constants.short] = shorts
+        long = self.input_memory(constants.long, shorts)
 
     @util.timeit
     def input_real(self, features: list):

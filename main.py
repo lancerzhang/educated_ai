@@ -72,6 +72,7 @@ def main(argv):
                 print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack])}')
                 print(f'len brain.all_memories instant: {len(brain.categorized_memory[constants.instant])}')
                 print(f'len brain.all_memories short: {len(brain.categorized_memory[constants.short])}')
+                print(f'len brain.all_memories long: {len(brain.categorized_memory[constants.long])}')
                 # print(f'stability is: {[x.stability for x in brain.all_memories.copy().values()]}')
                 print(f'stability of voice is:'
                       f' {[x.stability for x in brain.categorized_memory[constants.voice].copy().values()]}')
@@ -81,6 +82,8 @@ def main(argv):
                       f' {[x.stability for x in brain.categorized_memory[constants.instant].copy().values()]}')
                 print(f'stability of short is:'
                       f' {[x.stability for x in brain.categorized_memory[constants.short].copy().values()]}')
+                print(f'stability of long is:'
+                      f' {[x.stability for x in brain.categorized_memory[constants.long].copy().values()]}')
                 print(
                     f'live time of voice is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.voice].copy().values()]}')
                 print(
@@ -89,12 +92,16 @@ def main(argv):
                     f'live time of instant is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.instant].copy().values()]}')
                 print(
                     f'live time of short is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.short].copy().values()]}')
+                print(
+                    f'live time of long is: {[int(x.activated_time - x.CREATED_TIME) for x in brain.categorized_memory[constants.long].copy().values()]}')
                 print(f'data len of pack is:'
                       f' {[len(x.data) for x in brain.categorized_memory[constants.pack].copy().values()]}')
                 print(f'data len of instant is:'
                       f' {[len(x.data) for x in brain.categorized_memory[constants.instant].copy().values()]}')
                 print(f'data len of short is:'
                       f' {[len(x.data) for x in brain.categorized_memory[constants.short].copy().values()]}')
+                print(f'data len of long is:'
+                      f' {[len(x.data) for x in brain.categorized_memory[constants.long].copy().values()]}')
                 last_debug_time = time.time()
                 print(f'elapse time {time.time() - start_time}')
 
