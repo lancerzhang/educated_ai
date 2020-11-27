@@ -58,8 +58,8 @@ class Brain:
             pack = self.input_memory(constants.pack, data)
             packs = self.add_seq(pack, packs)
         instant = self.input_memory(constants.instant, packs)
-        instants = self.add_seq(instant, self.work_memories[constants.instant], constants.n_memory_children,
-                                constants.memory_duration[constants.memory_types.index(constants.short)])
+        instants = self.add_seq(instant, self.work_memories[constants.instant], n_limit=constants.n_memory_children,
+                                time_limit=self.get_memory_duration(constants.short))
         self.work_memories[constants.instant] = instants
         short = self.input_memory(constants.short, instants)
 
@@ -77,7 +77,7 @@ class Brain:
 
     @util.timeit
     def input_memory(self, memory_type: str, memories: list):
-        if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.instant):
+        if self.get_memory_index(memory_type) <= self.get_memory_index(constants.instant):
             # for instant and below memory, require more at least one child
             if len(memories) == 0:
                 return None
@@ -107,12 +107,11 @@ class Brain:
             return ls
         if len(ls) == 0:
             ls.append(mm)
-            return ls
-        if mm.data == ls[-1].data:
-            return ls
-        ls.append(mm)
-        if 0 < n_limit < len(ls):
-            ls.pop(0)
+        elif ls[-1].data != mm.data:
+            ls.append(mm)
+        if n_limit > 0:
+            while n_limit < len(ls):
+                ls.pop(0)
         if time_limit > 0:
             now_time = time.time()
             new_ls = []
@@ -126,10 +125,12 @@ class Brain:
     def add_memory(self, memory_type: str, memory_data, real_type: str = None):
         m = Memory(memory_type, memory_data, real_type)
         if real_type:
-            memory_type = real_type
-        self.categorized_memory[memory_type].update({m.MID: m})
+            t = real_type
+        else:
+            t = memory_type
+        self.categorized_memory[t].update({m.MID: m})
         self.all_memories.update({m.MID: m})
-        self.memory_cache[memory_type].add(m)
+        self.memory_cache[t].add(m)
         return m
 
     def find_real_cache(self, feature: Feature):
@@ -251,6 +252,14 @@ class Brain:
         if type(src) == set:
             memories = set(memories)
         return memories
+
+    @staticmethod
+    def get_memory_index(memory_type: str):
+        return constants.memory_types.index(memory_type)
+
+    @classmethod
+    def get_memory_duration(cls, memory_type: str):
+        return constants.memory_duration[cls.get_memory_index(memory_type)]
 
     @classmethod
     def activate_memory(cls, m: Memory):

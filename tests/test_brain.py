@@ -196,10 +196,39 @@ class TestBrain(unittest.TestCase):
         self.assertEqual([], brain.get_valid_memories([m1]))
 
     def test_add_seq(self):
-        pass
+        brain = Brain()
+        # test add none
+        self.assertEqual([], brain.add_seq(None, []))
+        m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
+        # test add into blank list
+        self.assertEqual([m1], brain.add_seq(m1, []))
+        # test add the same memory
+        self.assertEqual([m1], brain.add_seq(m1, []))
+        # test n_limit
+        ls = [1, 2, 3, m1]
+        brain.get_valid_memories = MagicMock(return_value=ls)
+        self.assertEqual(ls, brain.add_seq(m1, ls, n_limit=4))
+        ls = [1, 2, 3, 4, 5, m1]
+        brain.get_valid_memories = MagicMock(return_value=ls)
+        self.assertEqual([3, 4, 5, m1], brain.add_seq(m1, ls, n_limit=4))
+        # test time_limit
+        m1.activated_time = time.time() - 6
+        m2 = brain.add_memory(constants.real, VoiceFeature(1, 2), constants.voice)
+        m2.activated_time = time.time() - 4
+        brain.get_valid_memories = MagicMock(return_value=[m1])
+        self.assertEqual([m2], brain.add_seq(m2, [], time_limit=5))
+
+    def test_get_memory_duration(self):
+        self.assertEqual(5, Brain.get_memory_duration(constants.short))
 
     def test_add_memory(self):
-        pass
+        brain = Brain()
+        m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
+        self.assertEqual(VoiceFeature, type(m1.data))
+        m2 = brain.add_memory(constants.pack, [1, 2])
+        self.assertEqual(set, type(m2.data))
+        m3 = brain.add_memory(constants.instant, [1, 2])
+        self.assertEqual(list, type(m3.data))
 
     def test_find_real_cache(self):
         pass
