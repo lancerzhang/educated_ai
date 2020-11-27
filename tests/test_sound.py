@@ -2,15 +2,15 @@ import unittest
 
 import numpy as np
 
-from components import favor
-from components.brain import Brain
-from components.favor import Favor
-from components.featurepack import FeaturePack
-from components.memory import Memory
-from components.memory import MemoryStatus
-from components.memory import MemoryType
-from components.memory import FeatureTypes
-from components.voice import Voice
+from src import favor
+from src.brain import Brain
+from src.favor import Favor
+from src.featurepack import FeaturePack
+from src.memory import Memory
+from src.memory import MemoryStatus
+from src.memory import MemoryType
+from src.memory import FeatureTypes
+from src.voice import Voice
 
 
 class TestSound(unittest.TestCase):

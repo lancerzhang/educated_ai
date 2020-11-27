@@ -2,7 +2,7 @@ import cv2
 import imutils
 import numpy as np
 from matplotlib import pyplot
-from components.filter_colors import FilterColors
+from src.filter_colors import FilterColors
 
 """
 1) filter_colors (major colors) 2) (major color shape) canny + drawContours + matchShapes

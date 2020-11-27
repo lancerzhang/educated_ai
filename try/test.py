@@ -1,6 +1,6 @@
 import numpy as np
 
-from components import util
+from src import util
 
 dict = {}
 filters = []

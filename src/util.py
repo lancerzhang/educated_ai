@@ -10,7 +10,7 @@ import cv2
 import numpy
 import numpy as np
 
-from components import constants
+from src import constants
 
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')

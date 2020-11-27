@@ -9,8 +9,8 @@ from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from numpy import expand_dims
 
-from components import util
-from components.rgb_histogram import RGBHistogram
+from src import util
+from src.rgb_histogram import RGBHistogram
 
 """
 1) RGBHistogram 2) vgg16 top filters + canny + drawContours + matchShapes

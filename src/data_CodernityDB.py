@@ -11,7 +11,7 @@ from CodernityDB.tree_index import TreeBasedIndex
 
 class ChildMemoryIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-from components import constants,util
+from src import constants,util
 import hashlib"""
 
     def __init__(self, *args, **kwargs):
@@ -36,7 +36,7 @@ import hashlib"""
 
 class ActorMouseIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-from components import constants
+from src import constants
 import hashlib"""
 
     def __init__(self, *args, **kwargs):
@@ -62,7 +62,7 @@ import hashlib"""
 
 class VisionZoomIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-from components import constants
+from src import constants
 import hashlib"""
 
     def __init__(self, *args, **kwargs):
@@ -90,7 +90,7 @@ import hashlib"""
 
 class VisionMoveIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-from components import constants
+from src import constants
 import hashlib"""
 
     def __init__(self, *args, **kwargs):
@@ -121,7 +121,7 @@ import hashlib"""
 class HousekeepIndex(HashIndex):
     sh_num = 100
     custom_header = """from CodernityDB.hash_index import HashIndex
-from components import constants
+from src import constants
 import hashlib"""
 
     def __init__(self, *args, **kwargs):
@@ -141,7 +141,7 @@ import hashlib"""
 
 class RecallIndex(HashIndex):
     custom_header = """from CodernityDB.hash_index import HashIndex
-from components import constants"""
+from src import constants"""
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = 'I'
@@ -160,7 +160,7 @@ from components import constants"""
 
 class LastRecallIndex(TreeBasedIndex):
     custom_header = """from CodernityDB.tree_index import TreeBasedIndex
-from components import constants"""
+from src import constants"""
 
     def __init__(self, *args, **kwargs):
         kwargs['node_capacity'] = 13

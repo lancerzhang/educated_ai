@@ -1,8 +1,8 @@
 import numpy as np
 
-from components import constants
-from components.data_adaptor import DataAdaptor
-from components.data_sqlite3 import DataSqlite3
+from src import constants
+from src.data_adaptor import DataAdaptor
+from src.data_sqlite3 import DataSqlite3
 
 data_service = DataAdaptor(DataSqlite3('../data/dump.sql'))
 

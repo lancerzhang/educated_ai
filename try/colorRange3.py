@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import cv2
-from components import util
-from components.hsv_color_shapes import ColorShape
+from src import util
+from src.hsv_color_shapes import ColorShape
 
 
 img = cv2.imread('square2.jpg', 1)

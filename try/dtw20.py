@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
-from components import util
+from src import util
 
 print(tf.__version__)
 

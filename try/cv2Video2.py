@@ -1,6 +1,6 @@
 import cv2
 
-from components import util
+from src import util
 
 cap = cv2.VideoCapture('D:/bak/test.mkv')
 frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)

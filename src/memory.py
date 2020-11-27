@@ -1,6 +1,6 @@
 import time
 
-from components import util
+from src import util
 
 
 class Memory:

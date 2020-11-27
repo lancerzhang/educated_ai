@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 
-from components.filter_colors import FilterColors
+from src.filter_colors import FilterColors
 
 img = cv2.imread('square1.jpg', 1)
 fc = FilterColors(img)

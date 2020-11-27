@@ -3,8 +3,8 @@ import time
 
 import schedule
 
-from components.keyboard_listener import KeyboardListener
-from components.mouse_listener import MouseListener
+from src.keyboard_listener import KeyboardListener
+from src.mouse_listener import MouseListener
 
 
 def schedule_action1():

@@ -1,4 +1,4 @@
-from components import constants
+from src import constants
 
 
 class Feature(object):

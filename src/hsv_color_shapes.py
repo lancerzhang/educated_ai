@@ -3,7 +3,7 @@ import colorsys
 import cv2
 import numpy as np
 
-import components.rgb_top_colors as mc
+import src.rgb_top_colors as mc
 
 RGB_MAX = 255
 HUE_MAX = 179

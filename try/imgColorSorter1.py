@@ -1,6 +1,6 @@
 import cv2
 
-from components import util
+from src import util
 
 img1 = cv2.imread('head1.jpg', 1)
 img1 = cv2.resize(img1, (1, 1))

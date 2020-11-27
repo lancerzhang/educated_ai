@@ -6,9 +6,9 @@ from PIL import Image
 from scipy.spatial.distance import euclidean
 from skimage.metrics import structural_similarity as ssim
 
-from components import util
-from components.features import VoiceFeature
-from components.hsv_color_shapes import ColorShape
+from src import util
+from src.features import VoiceFeature
+from src.hsv_color_shapes import ColorShape
 
 CV_THRESHOLD = 64
 

@@ -12,7 +12,7 @@ import math
 import numpy as np
 import pyaudio
 
-from components import util
+from src import util
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16

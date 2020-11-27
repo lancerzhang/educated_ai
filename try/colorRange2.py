@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 from colorthief import ColorThief
 
-from components import util
+from src import util
 
 threshold = 50
 

@@ -6,13 +6,13 @@ from multiprocessing import Pool
 
 import numpy as np
 
-from components import favor
-from components import vision, constants
-from components.brain import Brain
-from components.favor import Favor
-from components.featurepack import FeaturePack
-from components.vision import Block
-from components.vision import Vision
+from src import favor
+from src import vision, constants
+from src.brain import Brain
+from src.favor import Favor
+from src.featurepack import FeaturePack
+from src.vision import Block
+from src.vision import Vision
 
 
 def filter_feature(kernel, data, contrast=None, channel='g'):

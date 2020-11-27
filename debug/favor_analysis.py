@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 from matplotlib import pyplot
 
-from components import favor
-from components.favor import Favor
+from src import favor
+from src.favor import Favor
 
 with open('../try/vgg16.l1.filters', 'rb') as filters:
     vgg16_filters = pickle.load(filters)

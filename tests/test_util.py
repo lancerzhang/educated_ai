@@ -5,8 +5,9 @@ from itertools import groupby
 
 import numpy as np
 
-from components import util
-from components import constants
+from src import constants
+from src import util
+
 
 class TestUtil(unittest.TestCase):
 

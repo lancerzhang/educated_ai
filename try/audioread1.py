@@ -4,7 +4,7 @@ import librosa.display as dsp
 import matplotlib.pyplot as plt
 import numpy as np
 
-from components import util
+from src import util
 
 RATE = 44100
 i = 0

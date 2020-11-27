@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-from components import util
+from src import util
 
 logger = logging.getLogger('Favor')
 logger.setLevel(logging.INFO)

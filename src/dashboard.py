@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from components.memory import MemoryStatus
+from src.memory import MemoryStatus
 
 logger = logging.getLogger('dashboard')
 logger.setLevel(logging.DEBUG)

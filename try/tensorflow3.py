@@ -8,7 +8,7 @@ import tensorflow as tf
 
 print(tf.__version__)
 
-from components import util
+from src import util
 import os, ssl
 import pickle
 import time

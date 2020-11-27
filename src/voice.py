@@ -5,7 +5,7 @@ import threading
 
 import numpy as np
 
-from components.recognizers import VoiceRecognizer
+from src.recognizers import VoiceRecognizer
 from . import util
 
 logger = logging.getLogger('Voice')

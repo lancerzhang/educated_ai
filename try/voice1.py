@@ -6,7 +6,7 @@ import librosa.display as dsp
 import matplotlib.pyplot as plt
 import numpy as np
 
-from components import voice
+from src import voice
 
 _thread.start_new_thread(voice.receive, ())
 

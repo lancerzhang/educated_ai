@@ -1,14 +1,14 @@
-from components.action import Action
-from components.brain import Brain
-from components.favor import Favor
-from components.keyboard_listener import KeyboardListener
-from components.mouse_listener import MouseListener
-from components.reward import Reward
-from components.voice_microphone import MicrophoneVoice
-from components.vision_cozmo import CozmoVision
-from components.status import Status
-from components import constants
-from components import util
+from src.action import Action
+from src.brain import Brain
+from src.favor import Favor
+from src.keyboard_listener import KeyboardListener
+from src.mouse_listener import MouseListener
+from src.reward import Reward
+from src.voice_microphone import MicrophoneVoice
+from src.vision_cozmo import CozmoVision
+from src.status import Status
+from src import constants
+from src import util
 import logging
 import schedule
 import threading

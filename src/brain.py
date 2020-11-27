@@ -7,12 +7,12 @@ import traceback
 
 import vptree
 
-from components import constants
-from components import util
-from components.features import Feature
-from components.memory import Memory
-from components.recognizers import ImageRecognizer
-from components.recognizers import VoiceRecognizer
+from src import constants
+from src import util
+from src.features import Feature
+from src.memory import Memory
+from src.recognizers import ImageRecognizer
+from src.recognizers import VoiceRecognizer
 
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.DEBUG)

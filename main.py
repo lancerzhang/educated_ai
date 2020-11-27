@@ -4,12 +4,12 @@ import sys
 import time
 import traceback
 
-from components import constants
-from components.brain import Brain
-from components.vision_screen import ScreenVision
-from components.vision_video_file import VideoFileVision
-from components.voice_microphone import MicrophoneVoice
-from components.voice_video_file import VideoFileVoice
+from src import constants
+from src.brain import Brain
+from src.vision_screen import ScreenVision
+from src.vision_video_file import VideoFileVision
+from src.voice_microphone import MicrophoneVoice
+from src.voice_video_file import VideoFileVoice
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')

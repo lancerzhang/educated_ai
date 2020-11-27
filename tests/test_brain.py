@@ -2,10 +2,10 @@ import time
 import unittest
 from unittest.mock import MagicMock
 
-from components import constants
-from components.brain import Brain
-from components.features import VoiceFeature
-from components.memory import Memory
+from src import constants
+from src.brain import Brain
+from src.features import VoiceFeature
+from src.memory import Memory
 
 
 class TestBrain(unittest.TestCase):

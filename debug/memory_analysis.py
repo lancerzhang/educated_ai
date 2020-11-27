@@ -1,9 +1,9 @@
 import logging
 import sys
 
-from components import brain
-from components import dashboard
-from components.brain import Brain
+from src import brain
+from src import dashboard
+from src.brain import Brain
 
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
