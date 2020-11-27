@@ -6,7 +6,7 @@ from itertools import groupby
 import numpy as np
 
 from components import util
-
+from components import constants
 
 class TestUtil(unittest.TestCase):
 
@@ -366,6 +366,13 @@ class TestUtil(unittest.TestCase):
         self.assertFalse(util.greater_than_half(1, 3))
         self.assertFalse(util.greater_than_half(1, 4))
         self.assertFalse(util.greater_than_half(2, 4))
+
+    def test_get_order(self):
+        self.assertEqual(constants.unordered, util.get_order(constants.real))
+        self.assertEqual(constants.unordered, util.get_order(constants.pack))
+        self.assertEqual(constants.unordered, util.get_order(constants.context))
+        self.assertEqual(constants.ordered, util.get_order(constants.instant))
+        self.assertEqual(constants.ordered, util.get_order(constants.short))
 
 
 if __name__ == "__main__":

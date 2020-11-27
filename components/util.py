@@ -10,6 +10,8 @@ import cv2
 import numpy
 import numpy as np
 
+from components import constants
+
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')
 logger.setLevel(logging.INFO)
@@ -410,3 +412,19 @@ def is_sublist(small, big):
         else:
             return True
     return False
+
+
+def get_order(memory_type):
+    order = constants.ordered  # ordered
+    if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.context):
+        order = constants.unordered  # unordered
+    return order
+
+
+def create_data(memory_type, data: list):
+    if data is None:
+        return
+    if set == type(data) or list == type(data):
+        if constants.unordered == get_order(memory_type):
+            data = set(data)
+    return data

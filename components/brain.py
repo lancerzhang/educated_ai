@@ -76,16 +76,16 @@ class Brain:
         return data
 
     @util.timeit
-    def input_memory(self, memory_type: str, data: list):
+    def input_memory(self, memory_type: str, memories: list):
         if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.instant):
             # for instant and below memory, require more at least one child
-            if len(data) == 0:
+            if len(memories) == 0:
                 return None
         else:
             # for short and above memory, require more than one child
-            if len(data) <= 1:
+            if len(memories) <= 1:
                 return None
-        memory = self.find_memory(memory_type, data)
+        memory = self.find_memory(memory_type, memories)
         # if memory_type == constants.instant and memory is not None:
         #     print(f'found existing memory:{memory}')
         # if memory_type == constants.short and memory is None:
@@ -96,12 +96,8 @@ class Brain:
         #     for x in self.all_memories.copy().values():
         #         print(x)
         if memory is None:
-            if constants.ordered == self.get_order(memory_type):
-                data_ids = [x.MID for x in data]
-            else:
-                data_ids = {x.MID for x in data}
-            memory = self.add_memory(memory_type, data_ids)
-            for m in data:
+            memory = self.add_memory(memory_type, [x.MID for x in memories])
+            for m in memories:
                 m.data_indexes.add(memory.MID)
         return memory
 
@@ -169,10 +165,7 @@ class Brain:
     def find_memory(self, memory_type: str, child_memories: list):
         if len(child_memories) == 0:
             return
-        if constants.ordered == self.get_order(memory_type):
-            child_ids = [x.MID for x in child_memories]
-        else:
-            child_ids = {x.MID for x in child_memories}
+        child_ids = util.create_data(memory_type, [x.MID for x in child_memories])
         # if memory_type == constants.instant:
         #     print(f'finding:{child_ids}')
         #     print('packs')
@@ -193,7 +186,7 @@ class Brain:
                 # memory was deleted
                 continue
             # print(p)
-            if constants.ordered == self.get_order(memory_type):
+            if constants.ordered == util.get_order(memory_type):
                 is_sub = util.is_sublist(child_memories, parent.data)
             else:
                 is_sub = parent.data.issubset(child_memories)
@@ -215,13 +208,6 @@ class Brain:
                 #     print(child_ids)
                 found_memory = parent
         return found_memory
-
-    @staticmethod
-    def get_order(memory_type: str):
-        order = constants.ordered  # ordered
-        if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.context):
-            order = constants.unordered  # unordered
-        return order
 
     @classmethod
     def get_retrievability(cls, t, stability=0):

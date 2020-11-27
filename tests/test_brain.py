@@ -114,13 +114,6 @@ class TestBrain(unittest.TestCase):
         m.CREATED_TIME = m.activated_time = time.time() - 20
         self.assertEqual(False, Brain.is_steady(m))
 
-    def test_get_order(self):
-        self.assertEqual(constants.unordered, Brain.get_order(constants.real))
-        self.assertEqual(constants.unordered, Brain.get_order(constants.pack))
-        self.assertEqual(constants.unordered, Brain.get_order(constants.context))
-        self.assertEqual(constants.ordered, Brain.get_order(constants.instant))
-        self.assertEqual(constants.ordered, Brain.get_order(constants.short))
-
     def test_cleanup_memories(self):
         brain = Brain()
         m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
@@ -179,7 +172,12 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(None, brain.input_memory(constants.short, [1]))
         brain.find_memory = MagicMock(return_value=None)
         m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
-        m2 = brain.input_memory(constants.pack, [m1.MID])
+        m2 = brain.input_memory(constants.pack, [m1])
+        self.assertEqual({m1.MID}, m2.data)
+        self.assertEqual({m2.MID}, m1.data_indexes)
+        brain.find_memory = MagicMock(return_value=m2)
+        m3 = brain.input_memory(constants.pack, [m1])
+        self.assertEqual(m2, m3)
 
     def test_add_seq(self):
         pass

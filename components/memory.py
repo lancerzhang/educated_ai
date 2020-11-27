@@ -1,5 +1,7 @@
 import time
 
+from components import util
+
 
 class Memory:
 
@@ -15,7 +17,7 @@ class Memory:
         self.context_indexes = set()  # ID of memories use this memory as context
         self.context_weight = 0  # weight when this memory is a context
         # data of context should be [source_memory_id, target_memory_id]
-        self.data = memory_data
+        self.data = util.create_data(memory_type, memory_data)
         self.data_indexes = set()  # ID of memories use this memory as data
         self.data_weight = 0  # weight when this memory is a data
 
