@@ -56,16 +56,16 @@ class Brain:
         for features in voice_features_serial:
             data = self.input_real(features)
             pack = self.input_memory(constants.pack, data)
-            packs = self.add_seq(pack, packs)
+            packs = self.add_working(pack, packs)
         instant = self.input_memory(constants.instant, packs)
         # input short memory
-        instants = self.add_seq(instant, self.work_memories[constants.instant], n_limit=constants.n_memory_children,
-                                time_limit=self.get_memory_duration(constants.short))
+        instants = self.add_working(instant, self.work_memories[constants.instant], n_limit=constants.n_memory_children,
+                                    time_limit=self.get_memory_duration(constants.short))
         self.work_memories[constants.instant] = instants
         short = self.input_memory(constants.short, instants)
         # input long memory
-        shorts = self.add_seq(short, self.work_memories[constants.short], n_limit=constants.n_memory_children,
-                              time_limit=self.get_memory_duration(constants.long))
+        shorts = self.add_working(short, self.work_memories[constants.short], n_limit=constants.n_memory_children,
+                                  time_limit=self.get_memory_duration(constants.long))
         self.work_memories[constants.short] = shorts
         long = self.input_memory(constants.long, shorts)
 
@@ -82,16 +82,16 @@ class Brain:
         return data
 
     @util.timeit
-    def input_memory(self, memory_type: str, memories: list):
+    def input_memory(self, memory_type: str, sub_memories: list):
         if self.get_memory_index(memory_type) <= self.get_memory_index(constants.instant):
             # for instant and below memory, require more at least one child
-            if len(memories) == 0:
+            if len(sub_memories) == 0:
                 return None
         else:
             # for short and above memory, require more than one child
-            if len(memories) <= 1:
+            if len(sub_memories) <= 1:
                 return None
-        memory = self.find_memory(memory_type, memories)
+        matched_parent, activated_parents = self.find_memory(memory_type, sub_memories)
         # if memory_type == constants.instant and memory is not None:
         #     print(f'found existing memory:{memory}')
         # if memory_type == constants.short and memory is None:
@@ -101,13 +101,16 @@ class Brain:
         #     print(f'all memory')
         #     for x in self.all_memories.copy().values():
         #         print(x)
-        if memory is None:
-            memory = self.add_memory(memory_type, [x.MID for x in memories])
-            for m in memories:
-                m.data_indexes.add(memory.MID)
-        return memory
+        if matched_parent is None:
+            matched_parent = self.add_memory(memory_type, [x.MID for x in sub_memories])
+            for m in sub_memories:
+                m.data_indexes.add(matched_parent.MID)
+        for x in activated_parents:
+            t = x.MEMORY_TYPE
+            self.work_memories[t] = util.list_remove(self.work_memories[t], x)
+        return matched_parent
 
-    def add_seq(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
+    def add_working(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
         ls = self.get_valid_memories(old, output_type='Memory')
         if mm is None:
             return ls
@@ -176,13 +179,14 @@ class Brain:
         #     print('instant')
         #     for x in self.categorized_memory[constants.instant].copy().values():
         #         print(x)
-        found_memory = None
+        match_parent = None
         parent_ids = set()
         for m in child_memories:
             # print(f'm:{m}')
             parent_ids = parent_ids.union(m.data_indexes)
         # print(parent_ids)
         parents = self.get_valid_memories(parent_ids, output_type='Memory')
+        activated = set()
         for parent in parents:
             if constants.ordered == util.get_order(memory_type):
                 is_sub = util.is_sublist(child_memories, parent.data)
@@ -194,6 +198,7 @@ class Brain:
                 # if parent.MEMORY_TYPE == constants.instant:
                 #     print(f'activating instant: {parent}')
                 self.activate_memory(parent)
+                activated.add(parent)
             if parent.data == child_ids:
                 # print(f'exist')
                 # if self.get_order(parent.MEMORY_TYPE) == constants.ordered:
@@ -204,8 +209,8 @@ class Brain:
                 #     print(self.get_order(memory_type))
                 #     print(parent.data)
                 #     print(child_ids)
-                found_memory = parent
-        return found_memory
+                match_parent = parent
+        return match_parent, activated
 
     @classmethod
     def get_retrievability(cls, t, stability=0):

@@ -116,7 +116,7 @@ class TestBrain(unittest.TestCase):
 
     def test_cleanup_memories(self):
         brain = Brain()
-        m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
+        m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
         m2 = brain.add_memory(constants.pack, {m1.MID})
         m3 = brain.add_memory(constants.instant, [m2.MID])
         m4 = brain.add_memory(constants.short, [m3.MID])
@@ -173,19 +173,30 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(None, brain.input_memory(constants.instant, []))
         self.assertEqual(None, brain.input_memory(constants.short, [1]))
         # test not found and then create memory
-        brain.find_memory = MagicMock(return_value=None)
-        m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
+        brain.find_memory = MagicMock(return_value=(None, set()))
+        m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
         m2 = brain.input_memory(constants.pack, [m1])
         self.assertEqual({m1.MID}, m2.data)
         self.assertEqual({m2.MID}, m1.data_indexes)
         # test found memory
-        brain.find_memory = MagicMock(return_value=m2)
+        brain.find_memory = MagicMock(return_value=(m2, set()))
         m3 = brain.input_memory(constants.pack, [m1])
         self.assertEqual(m2, m3)
 
+    def test_input_memory_activation(self):
+        brain = Brain()
+        m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
+        m2 = brain.add_memory(constants.real, VoiceFeature(1, 2), constants.voice)
+        m3 = brain.input_memory(constants.pack, [m1])
+        m4 = brain.input_memory(constants.pack, [m2])
+        brain.find_memory = MagicMock(return_value=(None, [m3, m4]))
+        brain.work_memories[constants.pack] = [m3, m4]
+        m5 = brain.input_memory(constants.pack, [m1, m2])
+        self.assertEqual(0, len(brain.work_memories[constants.pack]))
+
     def test_get_valid_memories(self):
         brain = Brain()
-        m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
+        m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
         self.assertEqual([m1.MID], brain.get_valid_memories([m1.MID]))
         self.assertEqual([m1], brain.get_valid_memories([m1.MID], output_type='Memory'))
         self.assertEqual([m1.MID], brain.get_valid_memories([m1]))
@@ -195,28 +206,28 @@ class TestBrain(unittest.TestCase):
         del brain.all_memories[m1.MID]
         self.assertEqual([], brain.get_valid_memories([m1]))
 
-    def test_add_seq(self):
+    def test_add_working(self):
         brain = Brain()
         # test add none
-        self.assertEqual([], brain.add_seq(None, []))
+        self.assertEqual([], brain.add_working(None, []))
         m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
         # test add into blank list
-        self.assertEqual([m1], brain.add_seq(m1, []))
+        self.assertEqual([m1], brain.add_working(m1, []))
         # test add the same memory
-        self.assertEqual([m1], brain.add_seq(m1, []))
+        self.assertEqual([m1], brain.add_working(m1, []))
         # test n_limit
         ls = [1, 2, 3, m1]
         brain.get_valid_memories = MagicMock(return_value=ls)
-        self.assertEqual(ls, brain.add_seq(m1, ls, n_limit=4))
+        self.assertEqual(ls, brain.add_working(m1, ls, n_limit=4))
         ls = [1, 2, 3, 4, 5, m1]
         brain.get_valid_memories = MagicMock(return_value=ls)
-        self.assertEqual([3, 4, 5, m1], brain.add_seq(m1, ls, n_limit=4))
+        self.assertEqual([3, 4, 5, m1], brain.add_working(m1, ls, n_limit=4))
         # test time_limit
         m1.activated_time = time.time() - 6
         m2 = brain.add_memory(constants.real, VoiceFeature(1, 2), constants.voice)
         m2.activated_time = time.time() - 4
         brain.get_valid_memories = MagicMock(return_value=[m1])
-        self.assertEqual([m2], brain.add_seq(m2, [], time_limit=5))
+        self.assertEqual([m2], brain.add_working(m2, [], time_limit=5))
 
     def test_get_memory_duration(self):
         self.assertEqual(5, Brain.get_memory_duration(constants.short))

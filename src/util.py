@@ -132,6 +132,10 @@ def list_continuous_combination(list1, width):
     return lists
 
 
+def list_remove(list1, thing):
+    return [x for x in list1 if x is not thing]
+
+
 @timeit
 def delete_empty_surround(arr):
     shape = arr.shape
