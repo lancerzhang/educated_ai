@@ -132,7 +132,7 @@ class Brain:
         else:
             return ls
 
-    def add_memory(self, memory_type: str, memory_data: list, real_type: str = None):
+    def add_memory(self, memory_type: str, memory_data, real_type: str = None):
         m = Memory(memory_type, memory_data, real_type)
         if real_type:
             memory_type = real_type

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 from components import constants
 from components.brain import Brain
+from components.features import VoiceFeature
 from components.memory import Memory
 
 
@@ -64,6 +65,21 @@ class TestBrain(unittest.TestCase):
         stability = len(Brain.memory_cycles)
         self.assertEqual(stability, m.stability)
 
+    def test_activate_memory_continuously(self):
+        stability = 0
+        # test not strengthen in short time
+        m = Memory(constants.real, None)
+        m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - 1
+        Brain.activate_memory(m)
+        self.assertEqual(stability, m.stability)
+        for i in range(2, Brain.memory_cycles[0]):
+            m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - i
+        self.assertEqual(stability, m.stability)
+        m.CREATED_TIME = m.activated_time = m.strengthen_time = time.time() - (Brain.memory_cycles[0] + 1)
+        Brain.activate_memory(m)
+        stability += 1
+        self.assertEqual(stability, m.stability)
+
     def test_validate_memory(self):
         # test memory fail to validate
         m = Memory(constants.real, None)
@@ -97,6 +113,91 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(True, Brain.is_steady(m))
         m.CREATED_TIME = m.activated_time = time.time() - 20
         self.assertEqual(False, Brain.is_steady(m))
+
+    def test_get_order(self):
+        self.assertEqual(constants.unordered, Brain.get_order(constants.real))
+        self.assertEqual(constants.unordered, Brain.get_order(constants.pack))
+        self.assertEqual(constants.unordered, Brain.get_order(constants.context))
+        self.assertEqual(constants.ordered, Brain.get_order(constants.instant))
+        self.assertEqual(constants.ordered, Brain.get_order(constants.short))
+
+    def test_cleanup_memories(self):
+        brain = Brain()
+        m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
+        m2 = brain.add_memory(constants.pack, {m1.MID})
+        m3 = brain.add_memory(constants.instant, [m2.MID])
+        m4 = brain.add_memory(constants.short, [m3.MID])
+        m3.data_indexes = {m4.MID}
+        brain.validate_memory = MagicMock(return_value=True)
+        brain.cleanup_memories()
+        # normal case
+        self.assertEqual(4, len(brain.all_memories))
+        self.assertEqual(1, len(m3.data_indexes))
+        self.assertEqual(1, len(m2.data))
+        self.assertEqual(1, len(m3.data))
+        # test cleanup data index
+        del brain.all_memories[m4.MID]
+        self.assertEqual(3, len(brain.all_memories))
+        brain.cleanup_memories()
+        self.assertEqual(0, len(m3.data_indexes))
+        # test cleanup data
+        self.assertEqual(True, type(m2.data) == set)
+        self.assertEqual(True, type(m3.data) == list)
+        del brain.all_memories[m1.MID]
+        brain.cleanup_memories()
+        self.assertEqual(0, len(m2.data))
+        del brain.all_memories[m2.MID]
+        brain.cleanup_memories()
+        self.assertEqual(0, len(m3.data))
+        # test memory forget
+        brain.validate_memory = MagicMock(return_value=False)
+        brain.cleanup_memories()
+        self.assertEqual(0, len(brain.all_memories))
+
+    def test_reindex(self):
+        brain = Brain()
+        feature = VoiceFeature(1, 2, [[1, 2], [3, 4]])
+        m1 = brain.add_memory(constants.real, feature, constants.voice)
+        self.assertEqual(1, len(brain.categorized_memory[constants.voice]))
+        self.assertEqual(1, len(brain.memory_cache[constants.voice]))
+        brain.reindex()
+        self.assertEqual(1, len(brain.categorized_memory[constants.voice]))
+        self.assertEqual(0, len(brain.memory_cache[constants.voice]))
+        self.assertNotEqual(None, brain.memory_vp_tree[constants.voice])
+        self.assertEqual(1, brain.n_memories[constants.voice])
+        brain.categorized_memory[constants.voice] = {}
+        brain.reindex()
+        self.assertEqual(None, brain.memory_vp_tree[constants.voice])
+        self.assertEqual(0, brain.n_memories[constants.voice])
+
+    def test_input_real(self):
+        pass
+
+    def test_input_memory(self):
+        brain = Brain()
+        self.assertEqual(None, brain.input_memory(constants.instant, []))
+        self.assertEqual(None, brain.input_memory(constants.short, [1]))
+        brain.find_memory = MagicMock(return_value=None)
+        m1 = brain.add_memory(constants.real, VoiceFeature, constants.voice)
+        m2 = brain.input_memory(constants.pack, [m1.MID])
+
+    def test_add_seq(self):
+        pass
+
+    def test_add_memory(self):
+        pass
+
+    def test_find_real_cache(self):
+        pass
+
+    def test_find_real_tree(self):
+        pass
+
+    def test_find_real(self):
+        pass
+
+    def test_find_memory(self):
+        pass
 
 
 if __name__ == "__main__":
