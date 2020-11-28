@@ -8,6 +8,13 @@ Don't download, it's not finish, just for keeping my code.
 ``` bash
     pip install -r requirements.txt
 ```
+- Install pyaudio, download correct version from below
+https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio
+
+And then run
+``` bash
+    pip install PyAudio-0.2.11-cp38-cp38-win_amd64.whl
+```
 ### Mac
 - install brew
 - Use separate python runtime in PyCharm. PyCharm - Settings - Project Interpreter "Add" - Virtualenv Environment
