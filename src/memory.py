@@ -1,12 +1,14 @@
 import time
 
 from src import util
+import uuid
+import hashlib
 
 
 class Memory:
 
     def __init__(self, memory_type, memory_data, real_type=None):
-        self.MID = int(time.time() * 1000 * 1000)
+        self.MID = self.create_id()
         self.MEMORY_TYPE = memory_type
         self.REAL_TYPE = real_type
         self.CREATED_TIME = time.time()
@@ -29,3 +31,7 @@ class Memory:
 
     def __eq__(self, other):
         return other == self.MID
+
+    @staticmethod
+    def create_id():
+        return int(hashlib.md5(str(uuid.uuid4()).encode('utf-8')).hexdigest(), 16)
