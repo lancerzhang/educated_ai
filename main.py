@@ -75,6 +75,7 @@ def main(argv):
         logging.info('initializing, please wait.')
         brain = Brain()
         brain.start()
+        brain.load()
         process_time = 1 / constants.process_per_second
         if video_file:
             vision = VideoFileVision(video_file, is_show)

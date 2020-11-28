@@ -5,6 +5,7 @@ import threading
 import time
 import traceback
 
+import numpy as np
 import vptree
 
 from src import constants
@@ -20,7 +21,7 @@ logger.setLevel(logging.DEBUG)
 
 class Brain:
     interval_s = 5 / 1000
-    MEMORY_FILE = 'data/memory.npy'
+    MEMORY_FILE = 'memories.npy'
     SELF_FUNC = 's'
     ITEM_FUNC = 'v'
     RECOGNIZERS = {constants.voice: VoiceRecognizer, constants.image: ImageRecognizer}
@@ -140,11 +141,11 @@ class Brain:
         m = Memory(memory_type, memory_data, real_type)
         if real_type:
             t = real_type
+            self.memory_cache[t].add(m)
         else:
             t = memory_type
         self.categorized_memory[t].update({m.MID: m})
         self.all_memories.update({m.MID: m})
-        self.memory_cache[t].add(m)
         return m
 
     def find_real_cache(self, feature: Feature):
@@ -427,6 +428,30 @@ class Brain:
             try:
                 self.cleanup_memories()
                 self.reindex()
+                self.save()
                 time.sleep(self.interval_s)
             except:
                 logger.error(traceback.format_exc())
+
+    # Use a separate thread to persist memories to storage regularly.
+    @util.timeit
+    def save(self):
+        try:
+            np.save(self.MEMORY_FILE, self.all_memories)
+        except:
+            logging.error(traceback.format_exc())
+
+    @util.timeit
+    def load(self):
+        try:
+            memories = np.load(self.MEMORY_FILE, allow_pickle=True).item()
+            self.all_memories = memories
+            for m in memories.values():
+                t = m.MEMORY_TYPE
+                if m.REAL_TYPE is not None:
+                    t = m.REAL_TYPE
+                    self.memory_cache[t].add(m)
+                self.categorized_memory[t].update({m.MID: m})
+            self.reindex()
+        except:
+            logging.error(traceback.format_exc())
