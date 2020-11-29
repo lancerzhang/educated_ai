@@ -16,7 +16,7 @@ from src.recognizers import ImageRecognizer
 from src.recognizers import VoiceRecognizer
 
 logger = logging.getLogger('Brain')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Brain:
@@ -223,11 +223,11 @@ class Brain:
     @classmethod
     def get_retrievability(cls, t, stability=0):
         # stability 0 is very easy to forget
-        if stability == 0:
-            if t <= cls.memory_cycles[0]:
-                return 1
-            else:
-                return 0
+        # if stability == 0:
+        #     if t <= cls.memory_cycles[0]:
+        #         return 1
+        #     else:
+        #         return 0
         # for stability larger than 0
         if t <= 1200:
             forget_possibility = 0.00035 * t
@@ -259,7 +259,7 @@ class Brain:
 
     def get_valid_memories(self, src, output_type='mid'):
         memories = []
-        for x in src:
+        for x in src.copy():
             if type(x) == Memory:
                 x = x.MID
             existed = self.all_memories.get(x)

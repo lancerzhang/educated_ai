@@ -9,7 +9,7 @@ from src.recognizers import VoiceRecognizer
 from . import util
 
 logger = logging.getLogger('Voice')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Voice(object):

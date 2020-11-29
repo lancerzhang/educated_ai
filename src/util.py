@@ -26,7 +26,7 @@ def timeit(f):
         te = time.time()
         tms = int((te - ts) * 1000)
         if tms > 10:
-            logger.info('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
+            logger.debug('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
         return result
 
     return timed
@@ -420,7 +420,7 @@ def is_sublist(small, big):
 
 def get_order(memory_type):
     order = constants.ordered  # ordered
-    if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.context):
+    if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.instant):
         order = constants.unordered  # unordered
     return order
 

@@ -105,7 +105,7 @@ def main(argv):
             if idle_time > 0:
                 time.sleep(idle_time)
 
-            if time.time() - last_debug_time > 2:
+            if time.time() - last_debug_time > 30:
                 print_info(brain)
                 last_debug_time = time.time()
                 print(f'elapse time {time.time() - start_time}')

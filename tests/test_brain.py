@@ -135,7 +135,7 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(0, len(m3.data_indexes))
         # test cleanup data
         self.assertEqual(True, type(m2.data) == set)
-        self.assertEqual(True, type(m3.data) == list)
+        self.assertEqual(True, type(m4.data) == list)
         del brain.all_memories[m1.MID]
         brain.cleanup_memories()
         self.assertEqual(0, len(m2.data))
@@ -183,17 +183,6 @@ class TestBrain(unittest.TestCase):
         m3 = brain.input_memory(constants.pack, [m1])
         self.assertEqual(m2, m3)
 
-    def test_input_memory_activation(self):
-        brain = Brain()
-        m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
-        m2 = brain.add_memory(constants.real, VoiceFeature(1, 2), constants.voice)
-        m3 = brain.input_memory(constants.pack, [m1])
-        m4 = brain.input_memory(constants.pack, [m2])
-        brain.find_memory = MagicMock(return_value=(None, {m3, m4}, set()))
-        brain.work_memories[constants.pack] = [m3, m4]
-        m5 = brain.input_memory(constants.pack, [m1, m2])
-        self.assertEqual(0, len(brain.work_memories[constants.pack]))
-
     def test_get_valid_memories(self):
         brain = Brain()
         m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
@@ -238,7 +227,7 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(VoiceFeature, type(m1.data))
         m2 = brain.add_memory(constants.pack, [1, 2])
         self.assertEqual(set, type(m2.data))
-        m3 = brain.add_memory(constants.instant, [1, 2])
+        m3 = brain.add_memory(constants.short, [1, 2])
         self.assertEqual(list, type(m3.data))
 
     def test_find_real_cache(self):
