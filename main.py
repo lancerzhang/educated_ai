@@ -33,16 +33,16 @@ def print_info(brain):
           f' {[x.stability for x in brain.categorized_memory[constants.short].copy().values()]}')
     print(f'stability of long is:'
           f' {[x.stability for x in brain.categorized_memory[constants.long].copy().values()]}')
-    print(
-        f'live time of voice is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.voice].copy().values()]}')
-    print(
-        f'live time of pack is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.pack].copy().values()]}')
-    print(
-        f'live time of instant is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.instant].copy().values()]}')
-    print(
-        f'live time of short is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.short].copy().values()]}')
-    print(
-        f'live time of long is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.long].copy().values()]}')
+    # print(
+    #     f'live time of voice is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.voice].copy().values()]}')
+    # print(
+    #     f'live time of pack is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.pack].copy().values()]}')
+    # print(
+    #     f'live time of instant is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.instant].copy().values()]}')
+    # print(
+    #     f'live time of short is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.short].copy().values()]}')
+    # print(
+    #     f'live time of long is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.long].copy().values()]}')
     print(f'data len of pack is:'
           f' {[len(x.data) for x in brain.categorized_memory[constants.pack].copy().values()]}')
     print(f'data len of instant is:'
@@ -101,7 +101,7 @@ def main(argv):
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
             # logging.debug(f'idle time {idle_time}')
-            # print(f'idle time {idle_time}')
+            print(f'idle time {idle_time}')
             if idle_time > 0:
                 time.sleep(idle_time)
 

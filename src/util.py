@@ -26,7 +26,7 @@ def timeit(f):
         te = time.time()
         tms = int((te - ts) * 1000)
         if tms > 10:
-            logger.debug('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
+            logger.info('%s.%s took:%d ms' % (f.__module__, f.__name__, tms))
         return result
 
     return timed

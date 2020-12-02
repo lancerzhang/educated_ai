@@ -52,6 +52,7 @@ class Brain:
     def stop(self):
         self.running = False
 
+    @util.timeit
     def process_voice(self, voice_features_serial: list):
         packs = []
         for features in voice_features_serial:
@@ -116,6 +117,7 @@ class Brain:
         #         self.work_memories[t] = util.list_remove(self.work_memories[t], x)
         return matched_parent
 
+    @util.timeit
     def add_working(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
         ls = self.get_valid_memories(old, output_type='Memory')
         if mm is None:
@@ -137,6 +139,7 @@ class Brain:
         else:
             return ls
 
+    @util.timeit
     def add_memory(self, memory_type: str, memory_data, real_type: str = None):
         m = Memory(memory_type, memory_data, real_type)
         if real_type:
@@ -148,6 +151,7 @@ class Brain:
         self.all_memories.update({m.MID: m})
         return m
 
+    @util.timeit
     def find_real_cache(self, feature: Feature):
         recognizer = self.RECOGNIZERS[feature.type]
         cache = self.memory_cache[feature.type].copy()
@@ -156,6 +160,7 @@ class Brain:
             if recognizer.is_feature_similar(feature, m.data):
                 return m
 
+    @util.timeit
     def find_real_tree(self, feature: Feature):
         recognizer = self.RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
@@ -257,6 +262,7 @@ class Brain:
         else:
             return False
 
+    @util.timeit
     def get_valid_memories(self, src, output_type='mid'):
         memories = []
         for x in src.copy():
