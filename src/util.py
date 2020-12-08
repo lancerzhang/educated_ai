@@ -409,6 +409,8 @@ def get_filled_shape(img):
 
 
 def is_sublist(small, big):
+    if len(small) == 0 or len(big) == 0:
+        return False
     for i in range(len(big) - len(small) + 1):
         for j in range(len(small)):
             if big[i + j] != small[j]:
