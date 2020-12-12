@@ -15,7 +15,7 @@ class Memory:
         self.activated_time = time.time()
         self.strengthen_time = time.time()
         self.stability = 0
-        self.context = {}
+        # self.context = set()
         self.context_indexes = set()  # ID of memories use this memory as context
         self.context_weight = 0  # weight when this memory is a context
         # data of context should be [source_memory_id, target_memory_id]

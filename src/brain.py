@@ -31,18 +31,19 @@ class Brain:
 
     def __init__(self):
         self.running = True
-        self.all_memories = {}  # contains both cache and vp tree
-        self.categorized_memory = {}  # memories by category
-        self.n_memories = {}  # length of all_memories
-        self.memory_cache = {}  # cache before put to vp tree
-        self.memory_vp_tree = {}  # speed up searching memories
-        self.work_memories = {}
+        self.all_memories = {}  # contains both cache and vp tree, for searching abstract memory
+        self.categorized_memory = {}  # memories by category, for cleanup memory
+        self.n_memories = {}  # length of all_memories, for compare and cleanup memory
+        self.memory_cache = {}  # cache before put to vp tree, for searching real memory
+        self.memory_vp_tree = {}  # speed up searching memories, for searching real memory
+        self.work_context_memory = set()  # wide connection for high level memory
+        self.work_temporal_memories = {}
         for t in constants.feature_types + constants.memory_types:
             self.categorized_memory.update({t: {}})
             self.n_memories.update({t: 0})  # length of categorized_memories
             self.memory_cache.update({t: set()})  # cache before put to vp tree
             self.memory_vp_tree.update({t: None})  # speed up searching memories
-            self.work_memories.update({t: []})
+            self.work_temporal_memories.update({t: []})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -56,23 +57,27 @@ class Brain:
     def process_voice(self, voice_features_serial: list):
         packs = []
         for features in voice_features_serial:
-            data = self.input_real(features)
-            pack = self.input_memory(constants.pack, data)
+            data = self.create_real(features)
+            pack = self.create_memory(constants.pack, data)
             packs = self.add_working(pack, packs)
-        instant = self.input_memory(constants.instant, packs)
+        instant = self.create_memory(constants.instant, packs)
         # input short memory
-        instants = self.add_working(instant, self.work_memories[constants.instant], n_limit=constants.n_memory_children,
+        instants = self.add_working(instant, self.work_temporal_memories[constants.instant],
+                                    n_limit=constants.n_memory_children,
                                     time_limit=self.get_memory_duration(constants.short))
-        self.work_memories[constants.instant] = instants
-        short = self.input_memory(constants.short, instants)
+        self.work_temporal_memories[constants.instant] = instants
+        short = self.create_memory(constants.short, instants)
         # input long memory
-        shorts = self.add_working(short, self.work_memories[constants.short], n_limit=constants.n_memory_children,
+        shorts = self.add_working(short, self.work_temporal_memories[constants.short],
+                                  n_limit=constants.n_memory_children,
                                   time_limit=self.get_memory_duration(constants.long))
-        self.work_memories[constants.short] = shorts
-        long = self.input_memory(constants.long, shorts)
+        self.work_temporal_memories[constants.short] = shorts
+        long = self.create_memory(constants.long, shorts)
+        # update contexts and synapses
+        self.process_work_context_memories([short, long])
 
     @util.timeit
-    def input_real(self, features: list):
+    def create_real(self, features: list):
         data = set()
         for feature in features:
             m = self.find_real(feature)
@@ -84,8 +89,8 @@ class Brain:
         return data
 
     @util.timeit
-    def input_memory(self, memory_type: str, sub_memories: list):
-        if self.get_memory_index(memory_type) <= self.get_memory_index(constants.instant):
+    def create_memory(self, memory_type: str, sub_memories: list):
+        if self.get_memory_type_index(memory_type) <= self.get_memory_type_index(constants.instant):
             # for instant and below memory, require more at least one child
             if len(sub_memories) == 0:
                 return None
@@ -151,6 +156,55 @@ class Brain:
         self.all_memories.update({m.MID: m})
         return m
 
+    def process_work_context_memories(self, memories: list):
+        is_new_list = []
+        for m in memories:
+            is_new = self.add_context(m)
+            is_new_list.append(is_new)
+        for i in range(len(memories)):
+            if is_new_list[i]:
+                self.create_synapse(memories[i])
+
+    def add_context(self, m: Memory):
+        if m is None or self.get_memory_type_index(m.MEMORY_TYPE) < self.get_memory_type_index(
+                constants.short) or m.stability < constants.stable:
+            return
+        if m in self.work_context_memory:
+            is_new = False
+        else:
+            is_new = True
+            self.work_context_memory.add(m)
+        return is_new
+
+    def create_synapse(self, m: Memory):
+        pass
+
+    def update_contexts(self, n_context=constants.n_memory_context):
+        live_memories = self.get_valid_memories(self.work_context_memory.copy(), output_type='Memory')
+        if len(live_memories) > n_context:
+            m_list = list(live_memories)
+            s_list = sorted(m_list, key=lambda x: (x.stability, x.activated_time), reverse=True)
+            n_list = s_list[0:n_context]
+            live_memories = set(n_list)
+        self.work_context_memory = live_memories
+
+    @util.timeit
+    def update_context(self, m: Memory):
+        if m is None:
+            return
+        parent_type = constants.memory_types[constants.memory_types.index(m.MEMORY_TYPE) + 1]
+        # parent as context
+        contexts = self.work_context_memory[parent_type]
+        live_contexts = self.get_valid_memories(contexts)
+        valid_contexts = set()
+        now_time = time.time()
+        for x in live_contexts:
+            if now_time - x.activated_time < self.get_memory_duration(parent_type):
+                valid_contexts.add(x)
+                m.context.add(x.MID)
+                x.context_indexes.add(m.MID)
+        self.work_context_memory[parent_type] = valid_contexts
+
     @util.timeit
     def find_real_cache(self, feature: Feature):
         recognizer = self.RECOGNIZERS[feature.type]
@@ -203,7 +257,7 @@ class Brain:
             if constants.ordered == util.get_order(memory_type):
                 is_sub = util.is_sublist(child_memories, parent.data)
             else:
-                is_sub = parent.data.issubset(child_memories)
+                is_sub = util.is_subset(parent.data, set(child_memories))
             if is_sub:
                 # if self.get_order(parent.MEMORY_TYPE) == constants.ordered:
                 #     print(f'activating {parent}')
@@ -225,12 +279,18 @@ class Brain:
                 match_parent = parent
         return match_parent, activated_parents, activated_children
 
+    @util.timeit
+    def find_context(self, child_memories: list):
+        context_ids = set.intersection(*[x.context_indexes for x in child_memories])
+        contexts = self.get_valid_memories(context_ids, output_type='Memory')
+        return contexts
+
     @classmethod
     def get_retrievability(cls, t, stability=0):
         # stability 0 is very easy to forget
-        # if stability == 0:
-        #     if t <= cls.memory_cycles[0]:
-        #         return 1
+        if stability == 0:
+            if t <= cls.memory_cycles[0]:
+                return 1
         #     else:
         #         return 0
         # for stability larger than 0
@@ -279,12 +339,12 @@ class Brain:
         return memories
 
     @staticmethod
-    def get_memory_index(memory_type: str):
+    def get_memory_type_index(memory_type: str):
         return constants.memory_types.index(memory_type)
 
     @classmethod
     def get_memory_duration(cls, memory_type: str):
-        return constants.memory_duration[cls.get_memory_index(memory_type)]
+        return constants.memory_duration[cls.get_memory_type_index(memory_type)]
 
     @classmethod
     def activate_memory(cls, m: Memory):

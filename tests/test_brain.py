@@ -13,7 +13,7 @@ class TestBrain(unittest.TestCase):
     def test_get_retrievability(self):
         self.assertEqual(1, Brain.get_retrievability(Brain.memory_cycles[0] - 1, 0))
         self.assertEqual(1, Brain.get_retrievability(Brain.memory_cycles[0], 0))
-        self.assertEqual(0, Brain.get_retrievability(Brain.memory_cycles[0] + 1, 0))
+        self.assertEqual(0.99, Brain.get_retrievability(Brain.memory_cycles[0] + 1, 0))
         self.assertEqual(1, Brain.get_retrievability(14, 1))
         self.assertEqual(0.99, Brain.get_retrievability(30, 1))
         self.assertEqual(0.98, Brain.get_retrievability(60, 1))
@@ -170,17 +170,17 @@ class TestBrain(unittest.TestCase):
 
     def test_input_memory(self):
         brain = Brain()
-        self.assertEqual(None, brain.input_memory(constants.instant, []))
-        self.assertEqual(None, brain.input_memory(constants.short, [1]))
+        self.assertEqual(None, brain.create_memory(constants.instant, []))
+        self.assertEqual(None, brain.create_memory(constants.short, [1]))
         # test not found and then create memory
         brain.find_memory = MagicMock(return_value=(None, set(), set()))
         m1 = brain.add_memory(constants.real, VoiceFeature(1, 1), constants.voice)
-        m2 = brain.input_memory(constants.pack, [m1])
+        m2 = brain.create_memory(constants.pack, [m1])
         self.assertEqual({m1.MID}, m2.data)
         self.assertEqual({m2.MID}, m1.data_indexes)
         # test found memory
         brain.find_memory = MagicMock(return_value=(m2, set(), set()))
-        m3 = brain.input_memory(constants.pack, [m1])
+        m3 = brain.create_memory(constants.pack, [m1])
         self.assertEqual(m2, m3)
 
     def test_get_valid_memories(self):
@@ -240,6 +240,12 @@ class TestBrain(unittest.TestCase):
         pass
 
     def test_find_memory(self):
+        pass
+
+    def test_find_context(self):
+        pass
+
+    def test_update_index(self):
         pass
 
 

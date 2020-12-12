@@ -7,19 +7,21 @@ feature_types = [voice]
 # memory types
 real = 'Real'  # one real memory
 pack = 'Pack'  # pack of one type of real memories happened at the same time
-context = 'Context'  # indicate if a memory is context of another
+synapse = 'Synapse'  # connection between high level memories
 instant = 'Instant'  # pack memories happened in an instant, it's phone in voice
 short = 'Short'  # memories happened in a short time, it's word in voice
 long = 'Long'  # memories happened in a long time, it's sentence in voice
-long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
+# long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
 
-memory_types = [real, pack, context, instant, short, long, long2]
-memory_duration = [0, 0, 0, 0.5, 5, 20, 20]
+memory_types = [real, pack, instant, short, long, synapse]
+memory_duration = [0, 0, 0.5, 5, 20, -1]
 
 ordered = 'Ordered'
 unordered = 'Unordered'
-
+stable = 2
 n_memory_children = 4
+n_memory_context = 10
+
 # memory status
 # dormant memories will be clean up in high priority
 # dormant memories can't be activated

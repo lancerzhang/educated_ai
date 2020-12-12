@@ -408,7 +408,7 @@ def get_filled_shape(img):
         return outline
 
 
-def is_sublist(small, big):
+def is_sublist(small: list, big: list):
     if len(small) == 0 or len(big) == 0:
         return False
     for i in range(len(big) - len(small) + 1):
@@ -418,6 +418,12 @@ def is_sublist(small, big):
         else:
             return True
     return False
+
+
+def is_subset(small: set, big: set):
+    if len(small) == 0 or len(big) == 0:
+        return False
+    return small.issubset(big)
 
 
 def get_order(memory_type):
