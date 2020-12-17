@@ -371,9 +371,9 @@ class TestUtil(unittest.TestCase):
     def test_get_order(self):
         self.assertEqual(constants.unordered, util.get_order(constants.real))
         self.assertEqual(constants.unordered, util.get_order(constants.pack))
-        self.assertEqual(constants.unordered, util.get_order(constants.synapse))
-        self.assertEqual(constants.ordered, util.get_order(constants.instant))
-        self.assertEqual(constants.ordered, util.get_order(constants.short))
+        self.assertEqual(constants.unordered, util.get_order(constants.context))
+        self.assertEqual(constants.unordered, util.get_order(constants.instant))
+        self.assertEqual(constants.unordered, util.get_order(constants.short))
 
     def test_is_sublist(self):
         self.assertTrue(util.is_sublist([1], [1, 2]))

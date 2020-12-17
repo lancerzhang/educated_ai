@@ -7,13 +7,13 @@ feature_types = [voice]
 # memory types
 real = 'Real'  # one real memory
 pack = 'Pack'  # pack of one type of real memories happened at the same time
-synapse = 'Synapse'  # connection between high level memories
 instant = 'Instant'  # pack memories happened in an instant, it's phone in voice
 short = 'Short'  # memories happened in a short time, it's word in voice
 long = 'Long'  # memories happened in a long time, it's sentence in voice
 # long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
+context = 'Context'  # connection between high level memories
 
-memory_types = [real, pack, instant, short, long, synapse]
+memory_types = [real, pack, instant, short, long, context]
 memory_duration = [0, 0, 0.5, 5, 20, -1]
 
 ordered = 'Ordered'
