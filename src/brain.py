@@ -65,7 +65,7 @@ class Brain:
             return
         packs = []
         for features in voice_features_serial:
-            data = self.add_real(features)
+            data = self.add_real_memories(features)
             pack = self.add_memory(constants.pack, data)
             packs = self.add_working(pack, packs)
         instant = self.add_memory(constants.instant, packs)
@@ -95,7 +95,7 @@ class Brain:
         self.update_weak_contexts()
 
     @util.timeit
-    def add_real(self, features: list):
+    def add_real_memories(self, features: list):
         data = set()
         for feature in features:
             m = self.find_real(feature)
@@ -177,25 +177,24 @@ class Brain:
     def add_strong_contexts(self, memories):
         new_memories = set()
         for m in memories:
-            if m is None or self.get_memory_type_index(m.MEMORY_TYPE) < self.get_memory_type_index(
-                    constants.short) or m.stability < constants.stable:
+            if m is None or m.stability < constants.stable:
                 continue
             if m not in self.strong_context_memories:
                 self.strong_context_memories.add(m)
                 new_memories.add(m)
         self.update_strong_contexts()
         for x in new_memories:
-            self.add_strong_context(x)
+            self.add_links(x)
 
-    def add_strong_context(self, m: Memory):
+    def add_links(self, m: Memory):
         for x in self.strong_context_memories:
             if x != m:
                 sub_memories = [x, m]
-                matched_parent = self.find_context(sub_memories)
+                matched_parent = self.find_link(sub_memories)
                 if matched_parent is None:
-                    matched_parent = self.create_memory(constants.context, [x.MID for x in sub_memories])
+                    matched_parent = self.create_memory(constants.link, sub_memories)
                     for y in sub_memories:
-                        y.context_indexes.add(matched_parent.MID)
+                        y.link_indexes.add(matched_parent.MID)
 
     def update_strong_contexts(self, n_context=constants.n_memory_context):
         live_memories = self.get_valid_memories(self.strong_context_memories.copy(), output_type='Memory')
@@ -204,23 +203,20 @@ class Brain:
             if time.time() - m.activated_time < self.get_memory_duration(m.MEMORY_TYPE):
                 memories.append(m)
         if len(memories) > n_context:
-            s_list = sorted(memories, key=lambda x: (x.stability, x.activated_time), reverse=True)
+            s_list = sorted(memories, key=lambda x: (x.stability, x.context_weight, x.activated_time), reverse=True)
             n_list = s_list[0:n_context]
             memories = set(n_list)
         self.strong_context_memories = memories
 
     def update_weak_contexts(self):
+        link_ids = set()
         for m in self.strong_context_memories:
-            context_memories = set()
-            for context_id in m.context_indexes:
-                context = self.all_memories.get(context_id)
-                if context is not None:
-                    for child_id in context.data:
-                        child = self.all_memories.get(child_id)
-                        context_memories.add(child)
-            context_memories.remove(m)
-            context_memories.remove(None)
-            self.weak_context_memories = context_memories.union(self.weak_context_memories)
+            link_ids = link_ids.union(m.link_indexes)
+        valid_links = self.get_valid_memories(link_ids, output_type='Memory')
+        week_memories = set()
+        for link in valid_links:
+            week_memories = week_memories.union(link.data)
+        self.weak_context_memories = self.get_valid_memories(week_memories, output_type='Memory')
 
     @util.timeit
     def find_real_cache(self, feature: Feature):
@@ -296,11 +292,11 @@ class Brain:
                 match_parent = parent
         return match_parent, activated_parents, activated_children
 
-    def find_context(self, child_memories: list):
+    def find_link(self, child_memories: list):
         if len(child_memories) != 2:
             return
-        index1 = child_memories[0].context_indexes
-        index2 = child_memories[1].context_indexes
+        index1 = child_memories[0].link_indexes
+        index2 = child_memories[1].link_indexes
         found = index1.intersection(index2)
         if len(found) == 0:
             return
@@ -434,7 +430,7 @@ class Brain:
 
     @staticmethod
     def update_weight(item, memory_indexes):
-        item.context_weight = math.log(len(memory_indexes) / len(item.context_indexes))
+        item.context_weight = math.log(len(memory_indexes) / len(item.link_indexes))
         item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
 
     def cleanup_memories(self):

@@ -11,6 +11,7 @@ import numpy
 import numpy as np
 
 from src import constants
+from src.memory import Memory
 
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')
@@ -438,6 +439,13 @@ def create_data(memory_type, data: list):
     if data is None:
         return
     if set == type(data) or list == type(data):
+        transformation = False
+        for e in data:
+            if type(e) == Memory:
+                transformation = True
+            break
+        if transformation:
+            data = [x.MID for x in data]
         if constants.unordered == get_order(memory_type):
             data = set(data)
     return data

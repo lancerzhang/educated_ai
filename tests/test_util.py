@@ -7,6 +7,7 @@ import numpy as np
 
 from src import constants
 from src import util
+from src.memory import Memory
 
 
 class TestUtil(unittest.TestCase):
@@ -392,6 +393,13 @@ class TestUtil(unittest.TestCase):
         self.assertFalse(util.is_subset(set(), {1, 2}))
         self.assertFalse(util.is_subset(set(), set()))
         self.assertTrue(util.is_subset({1, 2}, {1, 3, 2}))
+
+    def test_create_data(self):
+        m1 = Memory(constants.short, [])
+        m2 = Memory(constants.short, [])
+        data = util.create_data(constants.long, [m1, m2])
+        self.assertEqual(2, len(data))
+        self.assertEqual(int, type(data.pop()))
 
 
 if __name__ == "__main__":
