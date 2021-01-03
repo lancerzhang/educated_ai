@@ -8,10 +8,10 @@ feature_types = [speech]
 real = 'Real'  # one real memory
 pack_real = 'PackReal'  # pack of one type of real memories happened at the same time
 pack_instant = 'PackReal'  # pack of different type of instant memories happened at the same time
-instant = 'Instant'  # pack memories happened in an instant, it's phone in voice
-short = 'Short'  # memories happened in a short time, it's word in voice
-# long = 'Long'  # memories happened in a long time, it's sentence in voice
-# long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
+instant = 'Instant'  # pack memories happened in an instant, it's phone in speech
+short = 'Short'  # memories happened in a short time, it's word in speech
+# long = 'Long'  # memories happened in a long time, it's sentence in speech
+# long2 = 'Long2'  # memories happened in a longer time, it's sentence in speech
 # link = 'Link'  # connection between high level memories
 
 memory_types = [real, pack_real, pack_instant, instant, short]

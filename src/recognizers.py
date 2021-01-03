@@ -7,7 +7,7 @@ from scipy.spatial.distance import euclidean
 from skimage.metrics import structural_similarity as ssim
 
 from src import util
-from src.features import VoiceFeature
+from src.features import SpeechFeature
 from src.hsv_color_shapes import ColorShape
 
 CV_THRESHOLD = 64
@@ -50,7 +50,7 @@ class ImgHistRecognizer:
             return False
 
 
-class ImageRecognizer:
+class VisionRecognizer:
     hash_threshold = 21
     ssim_threshold = 0.4
     top_colors_hsv = {}
@@ -125,7 +125,7 @@ class ImageRecognizer:
             return False
 
 
-class VoiceRecognizer:
+class SpeechRecognizer:
     BLOCK_WIDTH = 2
     BLOCK_HEIGHT = 2
     MIN_ENERGY_UNIT = 25
@@ -146,13 +146,13 @@ class VoiceRecognizer:
                 if np.sum(np.abs(block)) > self.MIN_ENERGY_UNIT * self.BLOCK_WIDTH * self.BLOCK_HEIGHT:
                     norm_block = block / np.max(np.abs(block))
                     max_energy = np.max(block)
-                    feature.append(VoiceFeature(i, max_energy, norm_block))
+                    feature.append(SpeechFeature(i, max_energy, norm_block))
             if len(feature) > 0:
                 # TODO, do we need this?
                 # first mfcc value is total energy
                 # total_energy = mfcc_frames[j:j + self.BLOCK_HEIGHT, 0:1]
                 # max_energy = np.max(total_energy)
-                # feature.insert(0, VoiceFeature(0, max_energy))
+                # feature.insert(0, SpeechFeature(0, max_energy))
                 features.append(feature)
         return features
 
