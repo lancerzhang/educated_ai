@@ -98,7 +98,7 @@ def main(argv):
             short_voice = brain.input_voice(voice_features_serial)
             shorts = {short_voice}
             shorts.remove(None)
-            brain.recognize(shorts)
+            brain.recognize_temporal(shorts)
             # if (time.time() - start_time) > 20:
             #     voice.stop()
             process_end = time.time()

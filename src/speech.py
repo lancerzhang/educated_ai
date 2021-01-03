@@ -5,7 +5,7 @@ import threading
 
 import numpy as np
 
-from src.recognizers import VoiceRecognizer
+from src.recognizers import SpeechRecognizer
 from . import util
 
 logger = logging.getLogger('Speech')
@@ -49,11 +49,11 @@ class Speech(object):
     def get_features_serial(self):
         if len(self.phases) == 0:
             return []
-        # get voice data of a phase, which max duration is Voice.MAX_PHASE_DURATION
+        # get speech data of a phase, which max duration is Speech.MAX_PHASE_DURATION
         phase = self.phases.popleft()
         # print(f'len phase:{len(phase)}')
         phase = np.array(phase)
-        mf = VoiceRecognizer(y=phase, sr=self.sample_rate)
+        mf = SpeechRecognizer(y=phase, sr=self.sample_rate)
         features = mf.features
         logger.debug(f'len features: {len(features)}')
         # for feature in features:

@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from src.recognizers import ImageRecognizer
+from src.recognizers import VisionRecognizer
 
 print(tf.__version__)
 
@@ -138,7 +138,7 @@ def match_block_seq(img_seq, move_seq, img, width, x_start, y_start):
         if x_start < 0 or y_start < 0 or x_end > img_width or y_end > img_height:
             return False
         block2 = img[y_start:y_end, x_start:x_end]
-        if not ImageRecognizer(block1).is_similar(block2):
+        if not VisionRecognizer(block1).is_similar(block2):
             return False
         else:
             matched_seq.append([block1, block2])
@@ -157,7 +157,7 @@ def search_block_seq(img_seq, move_seq, img, size):
             p_x = i * step
             p_y = j * step
             block2 = img[p_y:p_y + width, p_x:p_x + width]
-            if ImageRecognizer(img_seq[0]).is_similar(block2):
+            if VisionRecognizer(img_seq[0]).is_similar(block2):
                 if match_block_seq(img_seq, move_seq, img, width, p_x, p_y):
                     return True
     return False

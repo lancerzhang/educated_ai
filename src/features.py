@@ -5,7 +5,7 @@ class Feature(object):
     type = 'feature'
 
 
-class VoiceFeature(Feature):
+class SpeechFeature(Feature):
 
     def __init__(self, frequency, energy, shape=None):
         self.type = constants.speech
@@ -14,10 +14,10 @@ class VoiceFeature(Feature):
         self.shape = shape
 
 
-class ImageFeature(Feature):
+class VisionFeature(Feature):
 
     def __init__(self, hist=None, color=None, shape=None):
-        self.type = constants.image
+        self.type = constants.vision
         self.hist = hist
         self.color = color
         self.shape = shape

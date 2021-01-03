@@ -12,8 +12,8 @@ from src import constants
 from src import util
 from src.features import Feature
 from src.memory import Memory
-from src.recognizers import ImageRecognizer
-from src.recognizers import VoiceRecognizer
+from src.recognizers import SpeechRecognizer
+from src.recognizers import VisionRecognizer
 
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.INFO)
@@ -24,7 +24,7 @@ class Brain:
     MEMORY_FILE = 'memories.npy'
     SELF_FUNC = 's'
     ITEM_FUNC = 'v'
-    RECOGNIZERS = {constants.speech: VoiceRecognizer, constants.image: ImageRecognizer}
+    RECOGNIZERS = {constants.speech: SpeechRecognizer, constants.vision: VisionRecognizer}
 
     memory_cycles = [15, 30, 60, 120, 60 * 5, 60 * 30, 60 * 60 * 12, 60 * 60 * 24, 60 * 60 * 24 * 2, 60 * 60 * 24 * 4,
                      60 * 60 * 24 * 7, 60 * 60 * 24 * 15, 60 * 60 * 24 * 30]
@@ -57,11 +57,11 @@ class Brain:
         self.running = False
 
     @util.timeit
-    def input_voice(self, voice_features_serial: list):
-        if len(voice_features_serial) == 0:
+    def recognize_speech(self, speech_features_serial: list):
+        if len(speech_features_serial) == 0:
             return
         real_packs = []
-        for features in voice_features_serial:
+        for features in speech_features_serial:
             data = self.add_real_memories(features)
             real_pack = self.add_memory(constants.pack_real, data)
             real_packs = self.add_working(real_pack, real_packs)
@@ -70,7 +70,7 @@ class Brain:
 
     # process temporal memories
     @util.timeit
-    def recognize(self, instants: set):
+    def recognize_temporal(self, instants: set):
         if len(instants) == 0:
             return
         # input short memory
@@ -78,8 +78,8 @@ class Brain:
         instant_packs = self.add_memory(constants.pack_instant, instants)
         new_memories = self.add_working(instant_packs, memories, constants.n_memory_children,
                                         self.get_memory_duration(constants.short))
-        self.work_temporal_memories[constants.short] = new_memories
         if memories != new_memories:
+            self.work_temporal_memories[constants.short] = new_memories
             short = self.add_memory(constants.short, new_memories)
             if short is not None:
                 self.add_contexts([short])
@@ -157,18 +157,8 @@ class Brain:
         mt = constants.instant + t
         memories = self.work_temporal_memories[mt]
         new_memories = self.add_working(m, memories, 1, self.get_memory_duration(constants.instant))
-        self.work_temporal_memories[mt] = new_memories
         if memories != new_memories:
-            return new_memories
-
-    def add_to_short_queue(self, m: Memory):
-        if m is None:
-            return
-        memories = self.work_temporal_memories[constants.short]
-        new_memories = self.add_working(m, memories, constants.n_memory_children,
-                                        self.get_memory_duration(constants.short))
-        self.work_temporal_memories[constants.short] = new_memories
-        if memories != new_memories:
+            self.work_temporal_memories[mt] = new_memories
             return new_memories
 
     @util.timeit
