@@ -10,7 +10,7 @@ from src.memory import Memory
 from src.memory import MemoryStatus
 from src.memory import MemoryType
 from src.memory import FeatureTypes
-from src.voice import Voice
+from src.speech import Speech
 
 
 class TestSound(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestSound(unittest.TestCase):
         brain1 = Brain()
         favor.FAVOR_FILE = 'favor.npy'
         favor1 = Favor()
-        self.sound = Voice(brain1, favor1)
+        self.sound = Speech(brain1, favor1)
 
     def test_filter_feature(self):
         kernel1 = '-1,-1,1,-1,-1,0,1,0,1'
@@ -97,7 +97,7 @@ class TestSound(unittest.TestCase):
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_1)
         fp11 = self.sound.filter_feature(FeaturePack(kernel=kernel1))
-        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.voice, kernel=fp11.kernel, feature=fp11.feature)
+        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.speech, kernel=fp11.kernel, feature=fp11.feature)
         m1.status = MemoryStatus.MATCHING
         self.sound.brain.categorized_memory = {m1}
         self.sound.brain.active_memories = {m1}

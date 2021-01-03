@@ -8,7 +8,7 @@ class Feature(object):
 class VoiceFeature(Feature):
 
     def __init__(self, frequency, energy, shape=None):
-        self.type = constants.voice
+        self.type = constants.speech
         self.frequency = frequency
         self.energy = energy
         self.shape = shape

@@ -1,25 +1,26 @@
 # feature types
-voice = 'Voice'
-image = 'Image'
+speech = 'Speech'
+vision = 'Vision'
 
-feature_types = [voice]
+feature_types = [speech]
 
 # memory types
 real = 'Real'  # one real memory
-pack = 'Pack'  # pack of one type of real memories happened at the same time
+pack_real = 'PackReal'  # pack of one type of real memories happened at the same time
+pack_instant = 'PackReal'  # pack of different type of instant memories happened at the same time
 instant = 'Instant'  # pack memories happened in an instant, it's phone in voice
 short = 'Short'  # memories happened in a short time, it's word in voice
-long = 'Long'  # memories happened in a long time, it's sentence in voice
+# long = 'Long'  # memories happened in a long time, it's sentence in voice
 # long2 = 'Long2'  # memories happened in a longer time, it's sentence in voice
-link = 'Link'  # connection between high level memories
+# link = 'Link'  # connection between high level memories
 
-memory_types = [real, pack, instant, short, long, link]
-memory_duration = [0, 0, 0.5, 5, 20, -1]
+memory_types = [real, pack_real, pack_instant, instant, short]
+memory_duration = [0, 0, 0.5, 0.5, 5]
 
-ordered = 'Ordered'
-unordered = 'Unordered'
-stable = 2
-n_memory_children = 4
+temporal = 'Temporal'
+disorder = 'Disorder'
+stable = 3
+n_memory_children = 3
 n_memory_context = 10
 
 # memory status

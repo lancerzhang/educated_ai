@@ -8,8 +8,8 @@ from src import constants
 from src.brain import Brain
 from src.vision_screen import ScreenVision
 from src.vision_video_file import VideoFileVision
-from src.voice_microphone import MicrophoneVoice
-from src.voice_video_file import VideoFileVoice
+from src.speech_microphone import MicrophoneSpeech
+from src.speech_video_file import VideoFileSpeech
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
@@ -17,16 +17,16 @@ logging.basicConfig(filename='app.log', level=logging.INFO,
 
 def print_info(brain):
     # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
-    print(f'len brain.all_memories voice: {len(brain.categorized_memory[constants.voice])}')
-    print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack])}')
+    print(f'len brain.all_memories voice: {len(brain.categorized_memory[constants.speech])}')
+    print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack_real])}')
     print(f'len brain.all_memories instant: {len(brain.categorized_memory[constants.instant])}')
     print(f'len brain.all_memories short: {len(brain.categorized_memory[constants.short])}')
     print(f'len brain.all_memories long: {len(brain.categorized_memory[constants.long])}')
     # print(f'stability is: {[x.stability for x in brain.all_memories.copy().values()]}')
     print(f'stability of voice is:'
-          f' {[x.stability for x in brain.categorized_memory[constants.voice].copy().values()]}')
+          f' {[x.stability for x in brain.categorized_memory[constants.speech].copy().values()]}')
     print(f'stability of pack is:'
-          f' {[x.stability for x in brain.categorized_memory[constants.pack].copy().values()]}')
+          f' {[x.stability for x in brain.categorized_memory[constants.pack_real].copy().values()]}')
     print(f'stability of instant is:'
           f' {[x.stability for x in brain.categorized_memory[constants.instant].copy().values()]}')
     print(f'stability of short is:'
@@ -44,7 +44,7 @@ def print_info(brain):
     # print(
     #     f'live time of long is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.long].copy().values()]}')
     print(f'data len of pack is:'
-          f' {[len(x.data) for x in brain.categorized_memory[constants.pack].copy().values()]}')
+          f' {[len(x.data) for x in brain.categorized_memory[constants.pack_real].copy().values()]}')
     print(f'data len of instant is:'
           f' {[len(x.data) for x in brain.categorized_memory[constants.instant].copy().values()]}')
     print(f'data len of short is:'
@@ -79,10 +79,10 @@ def main(argv):
         process_time = 1 / constants.process_per_second
         if video_file:
             vision = VideoFileVision(video_file, is_show)
-            voice = VideoFileVoice(video_file)
+            voice = VideoFileSpeech(video_file)
         else:
             vision = ScreenVision(brain)
-            voice = MicrophoneVoice(brain)
+            voice = MicrophoneSpeech(brain)
         voice.start()
         start_time = time.time()
         last_debug_time = time.time()
@@ -98,7 +98,7 @@ def main(argv):
             short_voice = brain.input_voice(voice_features_serial)
             shorts = {short_voice}
             shorts.remove(None)
-            brain.process(shorts)
+            brain.recognize(shorts)
             # if (time.time() - start_time) > 20:
             #     voice.stop()
             process_end = time.time()

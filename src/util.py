@@ -428,11 +428,10 @@ def is_subset(small: set, big: set):
 
 
 def get_order(memory_type):
-    return constants.unordered
-    # order = constants.ordered  # ordered
-    # if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.lo):
-    #     order = constants.unordered  # unordered
-    # return order
+    order = constants.temporal  # temporal
+    if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.instant):
+        order = constants.disorder  # unordered
+    return order
 
 
 def create_data(memory_type, data: list):
@@ -446,6 +445,6 @@ def create_data(memory_type, data: list):
             break
         if transformation:
             data = [x.MID for x in data]
-        if constants.unordered == get_order(memory_type):
+        if constants.disorder == get_order(memory_type):
             data = set(data)
     return data

@@ -5,13 +5,13 @@ import numpy as np
 import pyaudio
 
 from . import util
-from .voice import Voice
+from .speech import Speech
 
-logger = logging.getLogger('MicrophoneSound')
+logger = logging.getLogger('MicrophoneSpeech')
 logger.setLevel(logging.INFO)
 
 
-class MicrophoneVoice(Voice):
+class MicrophoneSpeech(Speech):
     FORMAT = pyaudio.paInt16
 
     @util.timeit
@@ -19,7 +19,7 @@ class MicrophoneVoice(Voice):
         self.chunk = 1024
         self.channels = 1
         self.max_phases = 5  # max phases storage
-        super(MicrophoneVoice, self).__init__(brain, favor)
+        super(MicrophoneSpeech, self).__init__(brain, favor)
 
     @util.timeit
     def receive(self):

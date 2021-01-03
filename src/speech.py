@@ -8,11 +8,11 @@ import numpy as np
 from src.recognizers import VoiceRecognizer
 from . import util
 
-logger = logging.getLogger('Voice')
+logger = logging.getLogger('Speech')
 logger.setLevel(logging.INFO)
 
 
-class Voice(object):
+class Speech(object):
     MAX_PHASE_DURATION = 0.2  # second of phase
     chunk = 0  # need to be overwrote
     sample_rate = 0  # need to be overwrote

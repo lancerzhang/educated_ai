@@ -1,8 +1,8 @@
+import hashlib
 import time
+import uuid
 
 from src import util
-import uuid
-import hashlib
 
 
 class Memory:
@@ -15,8 +15,8 @@ class Memory:
         self.activated_time = time.time()
         self.strengthen_time = time.time()
         self.stability = 0
-        # self.context = set()
-        self.link_indexes = set()  # ID of memories link to this memory
+        self.context = set()
+        self.context_indexes = set()  # ID of memories use this memory as index
         self.context_weight = 0  # weight when this memory is a context
         # data of context should be [source_memory_id, target_memory_id]
         self.data = util.create_data(memory_type, memory_data)

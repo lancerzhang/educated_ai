@@ -18,12 +18,12 @@ class TestBrain(unittest.TestCase):
         ls1 = [1, 2]
         brain.add_working = MagicMock(return_value=ls1)
         brain.input_voice(ls1)
-        mt = constants.instant + constants.voice
+        mt = constants.instant + constants.speech
         self.assertEqual(ls1, brain.work_temporal_memories[mt])
 
     def test_process(self):
         brain = Brain()
-        self.assertIsNone(brain.process(set()))
+        self.assertIsNone(brain.recognize(set()))
 
     def test_get_retrievability(self):
         self.assertEqual(1, Brain.get_retrievability(Brain.memory_cycles[0] - 1, 0))
@@ -131,8 +131,8 @@ class TestBrain(unittest.TestCase):
 
     def test_cleanup_memories(self):
         brain = Brain()
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
-        m2 = brain.create_memory(constants.pack, {m1.MID})
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
+        m2 = brain.create_memory(constants.pack_real, {m1.MID})
         m3 = brain.create_memory(constants.instant, [m2.MID])
         m4 = brain.create_memory(constants.short, [m3.MID])
         m3.data_indexes = {m4.MID}
@@ -165,39 +165,39 @@ class TestBrain(unittest.TestCase):
     def test_reindex(self):
         brain = Brain()
         feature = VoiceFeature(1, 2, [[1, 2], [3, 4]])
-        m1 = brain.create_memory(constants.real, feature, constants.voice)
-        self.assertEqual(1, len(brain.categorized_memory[constants.voice]))
-        self.assertEqual(1, len(brain.memory_cache[constants.voice]))
+        m1 = brain.create_memory(constants.real, feature, constants.speech)
+        self.assertEqual(1, len(brain.categorized_memory[constants.speech]))
+        self.assertEqual(1, len(brain.memory_cache[constants.speech]))
         # test creation
         brain.reindex()
-        self.assertEqual(1, len(brain.categorized_memory[constants.voice]))
-        self.assertEqual(0, len(brain.memory_cache[constants.voice]))
-        self.assertNotEqual(None, brain.memory_vp_tree[constants.voice])
-        self.assertEqual(1, brain.n_memories[constants.voice])
+        self.assertEqual(1, len(brain.categorized_memory[constants.speech]))
+        self.assertEqual(0, len(brain.memory_cache[constants.speech]))
+        self.assertNotEqual(None, brain.memory_vp_tree[constants.speech])
+        self.assertEqual(1, brain.n_memories[constants.speech])
         # test deletion
-        brain.categorized_memory[constants.voice] = {}
+        brain.categorized_memory[constants.speech] = {}
         brain.reindex()
-        self.assertEqual(None, brain.memory_vp_tree[constants.voice])
-        self.assertEqual(0, brain.n_memories[constants.voice])
+        self.assertEqual(None, brain.memory_vp_tree[constants.speech])
+        self.assertEqual(0, brain.n_memories[constants.speech])
 
     def test_input_memory(self):
         brain = Brain()
         self.assertEqual(None, brain.add_memory(constants.instant, []))
         self.assertEqual(None, brain.add_memory(constants.short, [1]))
         # test not found and then create memory
-        brain.find_memory = MagicMock(return_value=(None, set(), set()))
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
-        m2 = brain.add_memory(constants.pack, [m1])
+        brain.find_parent = MagicMock(return_value=(None, set(), set()))
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
+        m2 = brain.add_memory(constants.pack_real, [m1])
         self.assertEqual({m1.MID}, m2.data)
         self.assertEqual({m2.MID}, m1.data_indexes)
         # test found memory
-        brain.find_memory = MagicMock(return_value=(m2, set(), set()))
-        m3 = brain.add_memory(constants.pack, [m1])
+        brain.find_parent = MagicMock(return_value=(m2, set(), set()))
+        m3 = brain.add_memory(constants.pack_real, [m1])
         self.assertEqual(m2, m3)
 
     def test_get_valid_memories(self):
         brain = Brain()
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
         self.assertEqual([m1.MID], brain.get_valid_memories([m1.MID]))
         self.assertEqual([m1], brain.get_valid_memories([m1.MID], output_type='Memory'))
         self.assertEqual([m1.MID], brain.get_valid_memories([m1]))
@@ -211,7 +211,7 @@ class TestBrain(unittest.TestCase):
         brain = Brain()
         # test add none
         self.assertEqual([], brain.add_working(None, []))
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
         # test add into blank list
         self.assertEqual([m1], brain.add_working(m1, []))
         # test add the same memory
@@ -225,7 +225,7 @@ class TestBrain(unittest.TestCase):
         self.assertEqual([3, 4, 5, m1], brain.add_working(m1, ls, n_limit=4))
         # test time_limit
         m1.activated_time = time.time() - 6
-        m2 = brain.create_memory(constants.real, VoiceFeature(1, 2), constants.voice)
+        m2 = brain.create_memory(constants.real, VoiceFeature(1, 2), constants.speech)
         m2.activated_time = time.time() - 4
         brain.get_valid_memories = MagicMock(return_value=[m1])
         self.assertEqual([m2], brain.add_working(m2, [], time_limit=5))
@@ -235,75 +235,75 @@ class TestBrain(unittest.TestCase):
 
     def test_create_memory(self):
         brain = Brain()
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
         self.assertEqual(VoiceFeature, type(m1.data))
-        m2 = brain.create_memory(constants.pack, [1, 2])
+        m2 = brain.create_memory(constants.pack_real, [1, 2])
         self.assertEqual(set, type(m2.data))
         m3 = brain.create_memory(constants.short, [1, 2])
         self.assertEqual(set, type(m3.data))
 
     def test_add_strong_contexts(self):
         brain = Brain()
-        brain.update_strong_contexts = MagicMock()
-        brain.add_strong_contexts([None])
-        self.assertEqual(0, len(brain.strong_context_memories))
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
-        brain.add_strong_contexts([m1])
-        self.assertEqual(0, len(brain.strong_context_memories))
+        brain.update_contexts = MagicMock()
+        brain.add_contexts([None])
+        self.assertEqual(0, len(brain.context_memories))
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
+        brain.add_contexts([m1])
+        self.assertEqual(0, len(brain.context_memories))
         m1.stability = 9
         brain.add_links = MagicMock()
-        brain.add_strong_contexts([m1])
-        self.assertEqual(1, len(brain.strong_context_memories))
-        brain.add_strong_contexts([m1])
-        self.assertEqual(1, len(brain.strong_context_memories))
+        brain.add_contexts([m1])
+        self.assertEqual(1, len(brain.context_memories))
+        brain.add_contexts([m1])
+        self.assertEqual(1, len(brain.context_memories))
         brain.add_links.assert_called_once()
 
     def test_add_links(self):
         brain = Brain()
         brain.find_link = MagicMock(return_value=None)
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
-        brain.strong_context_memories.add(m1)
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
+        brain.context_memories.add(m1)
         brain.add_links(m1)
         brain.find_link.assert_not_called()
-        m2 = brain.create_memory(constants.real, VoiceFeature(1, 2), constants.voice)
+        m2 = brain.create_memory(constants.real, VoiceFeature(1, 2), constants.speech)
         self.assertEqual(0, len(brain.categorized_memory[constants.link]))
-        self.assertEqual(0, len(m1.link_indexes))
-        self.assertEqual(0, len(m2.link_indexes))
+        self.assertEqual(0, len(m1.context_indexes))
+        self.assertEqual(0, len(m2.context_indexes))
         brain.add_links(m2)
         self.assertEqual(1, len(brain.categorized_memory[constants.link]))
-        self.assertEqual(1, len(m1.link_indexes))
-        self.assertEqual(1, len(m2.link_indexes))
+        self.assertEqual(1, len(m1.context_indexes))
+        self.assertEqual(1, len(m2.context_indexes))
 
     def test_update_strong_contexts(self):
         brain = Brain()
-        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.voice)
+        m1 = brain.create_memory(constants.real, VoiceFeature(1, 1), constants.speech)
         brain.get_valid_memories = MagicMock(return_value=[m1])
         brain.get_memory_duration = MagicMock(return_value=0)
-        brain.update_strong_contexts()
-        self.assertEqual(0, len(brain.strong_context_memories))
+        brain.update_contexts()
+        self.assertEqual(0, len(brain.context_memories))
         brain.get_memory_duration = MagicMock(return_value=5)
-        brain.update_strong_contexts()
-        self.assertEqual(1, len(brain.strong_context_memories))
-        m2 = brain.create_memory(constants.real, VoiceFeature(1, 2), constants.voice)
+        brain.update_contexts()
+        self.assertEqual(1, len(brain.context_memories))
+        m2 = brain.create_memory(constants.real, VoiceFeature(1, 2), constants.speech)
         m2.stability = 9
         brain.get_valid_memories = MagicMock(return_value=[m1, m2])
-        brain.update_strong_contexts(1)
-        self.assertEqual(1, len(brain.strong_context_memories))
+        brain.update_contexts(1)
+        self.assertEqual(1, len(brain.context_memories))
         m1.stability = m2.stability
         m1.activated_time = m2.activated_time + 1
-        brain.update_strong_contexts(1)
-        self.assertEqual(m1.MID, brain.strong_context_memories.pop().MID)
-        brain.update_strong_contexts()
-        self.assertEqual(2, len(brain.strong_context_memories))
+        brain.update_contexts(1)
+        self.assertEqual(m1.MID, brain.context_memories.pop().MID)
+        brain.update_contexts()
+        self.assertEqual(2, len(brain.context_memories))
 
     def test_update_weak_contexts(self):
         brain = Brain()
         m1 = brain.create_memory(constants.short, [])
         m2 = brain.create_memory(constants.long, [])
         m3 = brain.create_memory(constants.link, [m1, m2])
-        m1.link_indexes = {m3.MID}
-        m2.link_indexes = {m3.MID}
-        brain.strong_context_memories = {m1}
+        m1.context_indexes = {m3.MID}
+        m2.context_indexes = {m3.MID}
+        brain.context_memories = {m1}
         brain.update_weak_contexts()
         self.assertEqual(2, len(brain.weak_context_memories))
         del brain.all_memories[m2]
@@ -320,8 +320,8 @@ class TestBrain(unittest.TestCase):
         m3 = brain.create_memory(constants.link, [m1, m2])
         self.assertIsNone(brain.find_link([m1, m2]))
         self.assertIsNone(brain.find_link([m1]))
-        m1.link_indexes = {m3.MID}
-        m2.link_indexes = {m3.MID}
+        m1.context_indexes = {m3.MID}
+        m2.context_indexes = {m3.MID}
         self.assertEqual(m3.MID, brain.find_link([m1, m2]))
         self.assertEqual(int, type(m3.data.pop()))
 

@@ -5,13 +5,13 @@ import audioread
 import numpy as np
 
 from . import util
-from .voice import Voice
+from .speech import Speech
 
-logger = logging.getLogger('VideoFileVoice')
+logger = logging.getLogger('VideoFileSpeech')
 logger.setLevel(logging.DEBUG)
 
 
-class VideoFileVoice(Voice):
+class VideoFileSpeech(Speech):
 
     @util.timeit
     def __init__(self, file_path):
@@ -28,7 +28,7 @@ class VideoFileVoice(Voice):
         # detect chunk size
         self.read_a_buffer()
         self.set_chunk()
-        super(VideoFileVoice, self).__init__()
+        super(VideoFileSpeech, self).__init__()
 
     @util.timeit
     def open_video(self):

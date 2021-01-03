@@ -24,7 +24,7 @@ class Brain:
     MEMORY_FILE = 'memories.npy'
     SELF_FUNC = 's'
     ITEM_FUNC = 'v'
-    RECOGNIZERS = {constants.voice: VoiceRecognizer, constants.image: ImageRecognizer}
+    RECOGNIZERS = {constants.speech: VoiceRecognizer, constants.image: ImageRecognizer}
 
     memory_cycles = [15, 30, 60, 120, 60 * 5, 60 * 30, 60 * 60 * 12, 60 * 60 * 24, 60 * 60 * 24 * 2, 60 * 60 * 24 * 4,
                      60 * 60 * 24 * 7, 60 * 60 * 24 * 15, 60 * 60 * 24 * 30]
@@ -36,10 +36,7 @@ class Brain:
         self.n_memories = {}  # length of all_memories, for compare and cleanup memory
         self.memory_cache = {}  # cache before put to vp tree, for searching real memory
         self.memory_vp_tree = {}  # speed up searching memories, for searching real memory
-        # wide connection for high level memory, each 2 strong context memories have a link
-        self.strong_context_memories = set()
-        # memories link to strong context memory, which can use to determine next memory
-        self.weak_context_memories = set()
+        self.context_memories = set()  # context for temporal memory
         self.work_temporal_memories = {}
         for t in constants.feature_types + constants.memory_types:
             self.categorized_memory.update({t: {}})
@@ -63,36 +60,50 @@ class Brain:
     def input_voice(self, voice_features_serial: list):
         if len(voice_features_serial) == 0:
             return
-        packs = []
+        real_packs = []
         for features in voice_features_serial:
             data = self.add_real_memories(features)
-            pack = self.add_memory(constants.pack, data)
-            packs = self.add_working(pack, packs)
-        instant = self.add_memory(constants.instant, packs)
-        # input short memory
-        mt = constants.instant + constants.voice
-        instants = self.add_working(instant, self.work_temporal_memories[mt],
-                                    n_limit=constants.n_memory_children,
-                                    time_limit=self.get_memory_duration(constants.short))
-        self.work_temporal_memories[mt] = instants
-        short = self.add_memory(constants.short, instants)
-        return short
+            real_pack = self.add_memory(constants.pack_real, data)
+            real_packs = self.add_working(real_pack, real_packs)
+        instant = self.add_memory(constants.instant, real_packs)
+        return self.add_to_instant_queue(constants.speech, instant)
 
-    def process(self, memories: set):
-        if len(memories) == 0:
+    # process temporal memories
+    @util.timeit
+    def recognize(self, instants: set):
+        if len(instants) == 0:
             return
-        # input long memory
-        shorts = []
-        for short in memories:
-            shorts = self.add_working(short, self.work_temporal_memories[constants.short],
-                                      n_limit=constants.n_memory_children,
-                                      time_limit=self.get_memory_duration(constants.long))
-            self.work_temporal_memories[constants.short] = shorts
-        long = self.add_memory(constants.long, shorts)
-        # update contexts and synapses
-        self.add_strong_contexts([long])
-        self.add_strong_contexts(memories)
-        self.update_weak_contexts()
+        # input short memory
+        memories = self.work_temporal_memories[constants.short]
+        instant_packs = self.add_memory(constants.pack_instant, instants)
+        new_memories = self.add_working(instant_packs, memories, constants.n_memory_children,
+                                        self.get_memory_duration(constants.short))
+        self.work_temporal_memories[constants.short] = new_memories
+        if memories != new_memories:
+            short = self.add_memory(constants.short, new_memories)
+            if short is not None:
+                self.add_contexts([short])
+                self.associate(short)
+
+    @util.timeit
+    def control(self):
+        pass
+
+    @util.timeit
+    def recognize_self(self, actions):
+        if actions is not None:
+            for ac in actions:
+                memories = self.work_temporal_memories[constants.short]
+                new_memories = self.add_working(ac, memories, constants.n_memory_children,
+                                                self.get_memory_duration(constants.short))
+                self.add_memory(constants.short, new_memories)
+
+    @util.timeit
+    def associate(self, m: Memory):
+        # memory need to be stable enough for association
+        if m is None or self.is_stable(m) is False:
+            return
+        associations = self.search_parents(m)
 
     @util.timeit
     def add_real_memories(self, features: list):
@@ -107,7 +118,7 @@ class Brain:
         return data
 
     @util.timeit
-    def add_memory(self, memory_type: str, sub_memories: list):
+    def add_memory(self, memory_type: str, sub_memories):
         if self.get_memory_type_index(memory_type) <= self.get_memory_type_index(constants.instant):
             # for instant and below memory, require more at least one child
             if len(sub_memories) == 0:
@@ -116,7 +127,7 @@ class Brain:
             # for short and above memory, require more than one child
             if len(sub_memories) <= 1:
                 return None
-        matched_parent, activated_parents, activated_children = self.find_memory(memory_type, sub_memories)
+        matched_parent, activated_parents, activated_children = self.find_parent(memory_type, sub_memories)
         # if memory_type == constants.instant and memory is not None:
         #     print(f'found existing memory:{memory}')
         # if memory_type == constants.short and memory is None:
@@ -139,6 +150,26 @@ class Brain:
         #         t = x.MEMORY_TYPE
         #         self.work_memories[t] = util.list_remove(self.work_memories[t], x)
         return matched_parent
+
+    def add_to_instant_queue(self, t, m: Memory):
+        if m is None:
+            return
+        mt = constants.instant + t
+        memories = self.work_temporal_memories[mt]
+        new_memories = self.add_working(m, memories, 1, self.get_memory_duration(constants.instant))
+        self.work_temporal_memories[mt] = new_memories
+        if memories != new_memories:
+            return new_memories
+
+    def add_to_short_queue(self, m: Memory):
+        if m is None:
+            return
+        memories = self.work_temporal_memories[constants.short]
+        new_memories = self.add_working(m, memories, constants.n_memory_children,
+                                        self.get_memory_duration(constants.short))
+        self.work_temporal_memories[constants.short] = new_memories
+        if memories != new_memories:
+            return new_memories
 
     @util.timeit
     def add_working(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
@@ -174,30 +205,26 @@ class Brain:
         self.all_memories.update({m.MID: m})
         return m
 
-    def add_strong_contexts(self, memories):
-        new_memories = set()
+    def add_contexts(self, memories):
         for m in memories:
-            if m is None or m.stability < constants.stable:
+            # memory need to be stable enough for adding to context
+            if m is None or self.is_stable(m) is False:
                 continue
-            if m not in self.strong_context_memories:
-                self.strong_context_memories.add(m)
-                new_memories.add(m)
-        self.update_strong_contexts()
-        for x in new_memories:
-            self.add_links(x)
+            self.context_memories.add(m)
+        self.update_contexts()
 
     def add_links(self, m: Memory):
-        for x in self.strong_context_memories:
+        for x in self.context_memories:
             if x != m:
                 sub_memories = [x, m]
                 matched_parent = self.find_link(sub_memories)
                 if matched_parent is None:
                     matched_parent = self.create_memory(constants.link, sub_memories)
                     for y in sub_memories:
-                        y.link_indexes.add(matched_parent.MID)
+                        y.context_indexes.add(matched_parent.MID)
 
-    def update_strong_contexts(self, n_context=constants.n_memory_context):
-        live_memories = self.get_valid_memories(self.strong_context_memories.copy(), output_type='Memory')
+    def update_contexts(self, n_context=constants.n_memory_context):
+        live_memories = self.get_valid_memories(self.context_memories.copy(), output_type='Memory')
         memories = []
         for m in live_memories:
             if time.time() - m.activated_time < self.get_memory_duration(m.MEMORY_TYPE):
@@ -206,17 +233,20 @@ class Brain:
             s_list = sorted(memories, key=lambda x: (x.stability, x.context_weight, x.activated_time), reverse=True)
             n_list = s_list[0:n_context]
             memories = set(n_list)
-        self.strong_context_memories = memories
+        self.context_memories = memories
 
     def update_weak_contexts(self):
+        self.weak_context_memories = self.find_brothers(self.context_memories)
+
+    def find_brothers(self, memories):
         link_ids = set()
-        for m in self.strong_context_memories:
-            link_ids = link_ids.union(m.link_indexes)
+        for m in memories:
+            link_ids = link_ids.union(m.context_indexes)
         valid_links = self.get_valid_memories(link_ids, output_type='Memory')
         week_memories = set()
         for link in valid_links:
             week_memories = week_memories.union(link.data)
-        self.weak_context_memories = self.get_valid_memories(week_memories, output_type='Memory')
+        return self.get_valid_memories(week_memories, output_type='Memory')
 
     @util.timeit
     def find_real_cache(self, feature: Feature):
@@ -245,7 +275,7 @@ class Brain:
         return nearest
 
     @util.timeit
-    def find_memory(self, memory_type: str, child_memories: list):
+    def find_parent(self, memory_type: str, child_memories: list):
         if len(child_memories) == 0:
             return
         child_ids = util.create_data(memory_type, [x.MID for x in child_memories])
@@ -267,7 +297,7 @@ class Brain:
         activated_parents = set()
         activated_children = set()
         for parent in parents:
-            if constants.ordered == util.get_order(memory_type):
+            if constants.temporal == util.get_order(memory_type):
                 is_sub = util.is_sublist(child_memories, parent.data)
             else:
                 is_sub = util.is_subset(parent.data, set(child_memories))
@@ -295,8 +325,8 @@ class Brain:
     def find_link(self, child_memories: list):
         if len(child_memories) != 2:
             return
-        index1 = child_memories[0].link_indexes
-        index2 = child_memories[1].link_indexes
+        index1 = child_memories[0].context_indexes
+        index2 = child_memories[1].context_indexes
         found = index1.intersection(index2)
         if len(found) == 0:
             return
@@ -309,11 +339,20 @@ class Brain:
         else:
             print(f'this wont happen')
 
-    # @util.timeit
-    # def find_context(self, child_memories: list):
-    #     context_ids = set.intersection(*[x.context_indexes for x in child_memories])
-    #     contexts = self.get_valid_memories(context_ids, output_type='Memory')
-    #     return contexts
+    @util.timeit
+    def search_parents(self, child_memory: Memory):
+        if child_memory is None:
+            return
+        parent_ids = child_memory.data_indexes
+        parents = self.get_valid_memories(parent_ids, output_type='Memory')
+        return parents
+
+    @staticmethod
+    def is_stable(m: Memory):
+        if m.stability < constants.stable:
+            return False
+        else:
+            return True
 
     @classmethod
     def get_retrievability(cls, t, stability=0):
@@ -430,7 +469,7 @@ class Brain:
 
     @staticmethod
     def update_weight(item, memory_indexes):
-        item.context_weight = math.log(len(memory_indexes) / len(item.link_indexes))
+        item.context_weight = math.log(len(memory_indexes) / len(item.context_indexes))
         item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
 
     def cleanup_memories(self):
