@@ -16,14 +16,14 @@ logging.basicConfig(filename='app.log', level=logging.INFO,
 
 
 def print_info(brain):
-    # print(f'len brain.memory_cache voice: {len(brain.memory_cache[constants.voice])}')
-    print(f'len brain.all_memories voice: {len(brain.categorized_memory[constants.speech])}')
+    # print(f'len brain.memory_cache speech: {len(brain.memory_cache[constants.speech])}')
+    print(f'len brain.all_memories speech: {len(brain.categorized_memory[constants.speech])}')
     print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack_real])}')
     print(f'len brain.all_memories instant: {len(brain.categorized_memory[constants.instant])}')
     print(f'len brain.all_memories short: {len(brain.categorized_memory[constants.short])}')
     print(f'len brain.all_memories long: {len(brain.categorized_memory[constants.long])}')
     # print(f'stability is: {[x.stability for x in brain.all_memories.copy().values()]}')
-    print(f'stability of voice is:'
+    print(f'stability of speech is:'
           f' {[x.stability for x in brain.categorized_memory[constants.speech].copy().values()]}')
     print(f'stability of pack is:'
           f' {[x.stability for x in brain.categorized_memory[constants.pack_real].copy().values()]}')
@@ -34,7 +34,7 @@ def print_info(brain):
     print(f'stability of long is:'
           f' {[x.stability for x in brain.categorized_memory[constants.long].copy().values()]}')
     # print(
-    #     f'live time of voice is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.voice].copy().values()]}')
+    #     f'live time of speech is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.speech].copy().values()]}')
     # print(
     #     f'live time of pack is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.pack].copy().values()]}')
     # print(
@@ -79,11 +79,11 @@ def main(argv):
         process_time = 1 / constants.process_per_second
         if video_file:
             vision = VideoFileVision(video_file, is_show)
-            voice = VideoFileSpeech(video_file)
+            speech = VideoFileSpeech(video_file)
         else:
             vision = ScreenVision(brain)
-            voice = MicrophoneSpeech(brain)
-        voice.start()
+            speech = MicrophoneSpeech(brain)
+        speech.start()
         start_time = time.time()
         last_debug_time = time.time()
         logging.info('initialized.')
@@ -91,16 +91,17 @@ def main(argv):
         while 1:
             process_start = time.time()
             # logging.debug('frame started.')
-            voice_features_serial = voice.process()
-            # print(f'n voice_features_set {len(voice_features_set)}')
+            speech_features_serial = speech.process()
+            # print(f'n speech_features_set {len(speech_features_set)}')
             # if (time.time() - start_time) > 10:
             #     print('here')
-            short_voice = brain.input_voice(voice_features_serial)
-            shorts = {short_voice}
-            shorts.remove(None)
-            brain.recognize_temporal(shorts)
+            speech_instant = brain.recognize_speech(speech_features_serial)
+            instants = {speech_instant}
+            instants.remove(None)
+            short=brain.recognize_temporal(instants)
+            brain.control(short)
             # if (time.time() - start_time) > 20:
-            #     voice.stop()
+            #     speech.stop()
             process_end = time.time()
             idle_time = process_time - (process_end - process_start)
             # logging.debug(f'idle time {idle_time}')

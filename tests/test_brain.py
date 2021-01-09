@@ -185,13 +185,13 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(None, brain.add_memory(constants.instant, []))
         self.assertEqual(None, brain.add_memory(constants.short, [1]))
         # test not found and then create memory
-        brain.find_parent = MagicMock(return_value=(None, set(), set()))
+        brain.find_parents = MagicMock(return_value=(None, set(), set()))
         m1 = brain.create_memory(constants.real, SpeechFeature(1, 1), constants.speech)
         m2 = brain.add_memory(constants.pack_real, [m1])
         self.assertEqual({m1.MID}, m2.data)
         self.assertEqual({m2.MID}, m1.data_indexes)
         # test found memory
-        brain.find_parent = MagicMock(return_value=(m2, set(), set()))
+        brain.find_parents = MagicMock(return_value=(m2, set(), set()))
         m3 = brain.add_memory(constants.pack_real, [m1])
         self.assertEqual(m2, m3)
 
