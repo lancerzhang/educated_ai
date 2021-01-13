@@ -108,11 +108,11 @@ class Brain:
     @util.timeit
     def add_memory(self, memory_type: str, sub_memories):
         if util.get_order(memory_type) == constants.disorder:
-            # for instant and below memory, require more at least one child
+            # for disorder memory, require more at least one child
             if len(sub_memories) == 0:
                 return None
         else:
-            # for short and above memory, require more than one child
+            # for temporal memory, require more than one child
             if len(sub_memories) <= 1:
                 return None
         full_matches, partial_matches = self.find_parents(memory_type, sub_memories)
@@ -126,18 +126,23 @@ class Brain:
             else:
                 sp = sorted(full_matches, key=lambda x: (self.get_context_weight(x), x.stability), reverse=True)
                 best_match = sp[0]
-                contexts = self.get_common_contexts(best_match)
+                common_contexts = self.get_common_contexts(best_match)
                 if self.context_memories == best_match.context:
                     # contexts of best match equal current contexts
                     result = best_match
                 else:
-                    if len(contexts) == 0:
-                        contexts = self.context_memories
-                    existing = self.match_contexts(full_matches, contexts)
-                    if existing is None:
-                        return self.create_memory(memory_type, [x.MID for x in sub_memories], contexts=contexts)
+                    if len(common_contexts) == 0:
+                        # if no common context, then create a new memory with current context
+                        result = self.create_memory(memory_type, [x.MID for x in sub_memories],
+                                                    contexts=self.context_memories)
                     else:
-                        return existing
+                        # search if there is memory with common context
+                        existing = self.match_contexts(full_matches, common_contexts)
+                        if existing is None:
+                            result = self.create_memory(memory_type, [x.MID for x in sub_memories],
+                                                        contexts=common_contexts)
+                        else:
+                            result = existing
         return result
 
     def get_common_contexts(self, m: Memory):
