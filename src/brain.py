@@ -63,9 +63,9 @@ class Brain:
         real_packs = []
         for features in speech_features_serial:
             data = self.add_real_memories(features)
-            real_pack = self.add_memory(constants.pack_real, data)
+            real_pack = self.add_memory(data)
             real_packs = self.add_working(real_pack, real_packs)
-        instant = self.add_memory(constants.instant, real_packs)
+        instant = self.add_memory(real_packs)
         return self.add_to_instant_queue(constants.speech, instant)
 
     # process temporal memories
@@ -74,13 +74,13 @@ class Brain:
         if len(instants) == 0:
             return
         # input short memory
-        instant_pack = self.add_memory(constants.pack_instant, instants)
+        instant_pack = self.add_memory(instants)
         memories = self.work_temporal_memories[constants.short]
         new_memories = self.add_working(instant_pack, memories, constants.n_memory_children,
                                         self.get_memory_duration(constants.short))
         if memories != new_memories:
             self.work_temporal_memories[constants.short] = new_memories
-            short = self.add_memory(constants.short, new_memories)
+            short = self.add_memory(new_memories)
             if short is not None:
                 self.add_contexts(short)
                 return short
@@ -105,50 +105,57 @@ class Brain:
             data.add(m)
         return data
 
-    @util.timeit
-    def add_memory(self, memory_type: str, sub_memories):
-        if util.get_order(memory_type) == constants.disorder:
-            # for disorder memory, require more at least one child
-            if len(sub_memories) == 0:
-                return None
-        else:
+    def get_parent_type(self, m: Memory):
+        idx = self.get_memory_type_index(m.MEMORY_TYPE)
+        if idx < len(constants.memory_types) - 1:
+            idx += 1
+        return constants.memory_types[idx]
+
+    # @util.timeit
+    def add_memory(self, sub_memories):
+        if len(sub_memories) == 0:
+            return None
+        sub_memories = list(sub_memories)
+        memory_type = self.get_parent_type(sub_memories[0])
+        if util.get_order(memory_type) == constants.temporal and len(sub_memories) <= 1:
             # for temporal memory, require more than one child
-            if len(sub_memories) <= 1:
-                return None
-        full_matches, partial_matches = self.find_parents(memory_type, sub_memories)
+            return None
+        full_matches, partial_matches = self.find_parents(sub_memories)
         for m in partial_matches:
             self.activate_memory(m)
         if len(full_matches) == 0:
-            result = self.create_memory(memory_type, [x.MID for x in sub_memories])
+            result = self.create_memory(memory_type, sub_memories)
         else:
             if util.get_order(memory_type) == constants.disorder:
                 result = full_matches.pop()
             else:
-                sp = sorted(full_matches, key=lambda x: (self.get_context_weight(x), x.stability), reverse=True)
+                sp = self.sort_context(full_matches)
                 best_match = sp[0]
                 common_contexts = self.get_common_contexts(best_match)
-                if self.context_memories == best_match.context:
+                context_ids = {x.MID for x in self.context_memories}
+                if context_ids == best_match.context:
                     # contexts of best match equal current contexts
                     result = best_match
                 else:
                     if len(common_contexts) == 0:
                         # if no common context, then create a new memory with current context
-                        result = self.create_memory(memory_type, [x.MID for x in sub_memories],
-                                                    contexts=self.context_memories)
+                        result = self.create_memory(memory_type, sub_memories, contexts=self.context_memories)
                     else:
                         # search if there is memory with common context
                         existing = self.match_contexts(full_matches, common_contexts)
                         if existing is None:
-                            result = self.create_memory(memory_type, [x.MID for x in sub_memories],
-                                                        contexts=common_contexts)
+                            result = self.create_memory(memory_type, sub_memories, contexts=common_contexts)
                         else:
                             result = existing
         return result
 
+    def sort_context(self, memories):
+        return sorted(memories, key=lambda x: (self.get_context_weight(x), x.stability), reverse=True)
+
     def get_common_contexts(self, m: Memory):
         ctx_ids = {x.MID for x in self.context_memories}
         common_ids = ctx_ids.intersection(m.context)
-        return self.get_valid_memories(common_ids)
+        return self.get_valid_memories(common_ids, output_type='Memory')
 
     def get_context_weight(self, m: Memory):
         return sum(x.context_weight for x in self.get_common_contexts(m))
@@ -162,7 +169,7 @@ class Brain:
         new_memories = self.add_working(m, memories, 1, self.get_memory_duration(constants.instant))
         if memories != new_memories:
             self.work_temporal_memories[mt] = new_memories
-            return new_memories
+            return new_memories[0]
 
     @util.timeit
     def add_working(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
@@ -252,10 +259,11 @@ class Brain:
             nearest = self.find_real_cache(feature)
         return nearest
 
-    @util.timeit
-    def find_parents(self, memory_type: str, child_memories: list):
+    # @util.timeit
+    def find_parents(self, child_memories: list):
         if len(child_memories) == 0:
             return
+        memory_type = self.get_parent_type(child_memories[0])
         child_ids = util.create_data(memory_type, [x.MID for x in child_memories])
         full_matches = set()
         partial_matches = set()
@@ -273,14 +281,6 @@ class Brain:
             if parent.data == child_ids:
                 full_matches.add(parent)
         return full_matches, partial_matches
-
-    @util.timeit
-    def search_parents(self, child_memory: Memory):
-        if child_memory is None:
-            return
-        parent_ids = child_memory.data_indexes
-        parents = self.get_valid_memories(parent_ids, output_type='Memory')
-        return parents
 
     @staticmethod
     def is_stable(m: Memory):
@@ -344,8 +344,9 @@ class Brain:
 
     @staticmethod
     def match_contexts(memories, context):
+        context_ids = {x.MID for x in context}
         for m in memories:
-            if m.context == context:
+            if m.context == context_ids:
                 return m
 
     @staticmethod
@@ -408,10 +409,8 @@ class Brain:
                 time.sleep(cls.interval_s)
         return result
 
-    @staticmethod
-    def update_weight(item, memory_indexes):
-        item.context_weight = math.log(len(memory_indexes) / len(item.context_indexes))
-        item.data_weight = math.log(len(memory_indexes) / len(item.data_indexes))
+    def update_weight(self, item):
+        item.context_weight = math.log( len(self.all_memories)/len(item.context_indexes) )
 
     def cleanup_memories(self):
         new_all_memories = {}

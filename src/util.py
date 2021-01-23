@@ -429,7 +429,7 @@ def is_subset(small: set, big: set):
 
 def get_order(memory_type):
     order = constants.temporal  # temporal
-    if constants.memory_types.index(memory_type) <= constants.memory_types.index(constants.instant):
+    if constants.memory_types.index(memory_type) < constants.memory_types.index(constants.short):
         order = constants.disorder  # unordered
     return order
 
