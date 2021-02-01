@@ -21,6 +21,7 @@ class Memory:
         # data of context should be [source_memory_id, target_memory_id]
         self.data = util.create_data(memory_type, memory_data)
         self.data_indexes = set()  # ID of memories use this memory as data
+        self.data_weight = 0  # weight when this memory is a child
         self.action = None
 
     def __hash__(self):

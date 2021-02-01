@@ -6,10 +6,10 @@ import traceback
 
 from src import constants
 from src.brain import Brain
-from src.vision_screen import ScreenVision
-from src.vision_video_file import VideoFileVision
 from src.speech_microphone import MicrophoneSpeech
 from src.speech_video_file import VideoFileSpeech
+from src.vision_screen import ScreenVision
+from src.vision_video_file import VideoFileVision
 
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(threadName)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s')
@@ -21,7 +21,7 @@ def print_info(brain):
     print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack_real])}')
     print(f'len brain.all_memories instant: {len(brain.categorized_memory[constants.instant])}')
     print(f'len brain.all_memories short: {len(brain.categorized_memory[constants.short])}')
-    print(f'len brain.all_memories long: {len(brain.categorized_memory[constants.long])}')
+    # print(f'len brain.all_memories long: {len(brain.categorized_memory[constants.long])}')
     # print(f'stability is: {[x.stability for x in brain.all_memories.copy().values()]}')
     print(f'stability of speech is:'
           f' {[x.stability for x in brain.categorized_memory[constants.speech].copy().values()]}')
@@ -31,8 +31,8 @@ def print_info(brain):
           f' {[x.stability for x in brain.categorized_memory[constants.instant].copy().values()]}')
     print(f'stability of short is:'
           f' {[x.stability for x in brain.categorized_memory[constants.short].copy().values()]}')
-    print(f'stability of long is:'
-          f' {[x.stability for x in brain.categorized_memory[constants.long].copy().values()]}')
+    # print(f'stability of long is:'
+    #       f' {[x.stability for x in brain.categorized_memory[constants.long].copy().values()]}')
     # print(
     #     f'live time of speech is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.speech].copy().values()]}')
     # print(
@@ -49,8 +49,8 @@ def print_info(brain):
           f' {[len(x.data) for x in brain.categorized_memory[constants.instant].copy().values()]}')
     print(f'data len of short is:'
           f' {[len(x.data) for x in brain.categorized_memory[constants.short].copy().values()]}')
-    print(f'data len of long is:'
-          f' {[len(x.data) for x in brain.categorized_memory[constants.long].copy().values()]}')
+    # print(f'data len of long is:'
+    #       f' {[len(x.data) for x in brain.categorized_memory[constants.long].copy().values()]}')
 
 
 def main(argv):
@@ -98,7 +98,7 @@ def main(argv):
             speech_instant = brain.recognize_speech(speech_features_serial)
             instants = {speech_instant}
             instants.remove(None)
-            short=brain.recognize_temporal(instants)
+            short = brain.recognize_temporal(instants)
             brain.control(short)
             # if (time.time() - start_time) > 20:
             #     speech.stop()

@@ -131,12 +131,12 @@ class Brain:
             else:
                 sp = self.sort_context(full_matches)
                 best_match = sp[0]
-                common_contexts = self.get_common_contexts(best_match)
                 context_ids = {x.MID for x in self.context_memories}
                 if context_ids == best_match.context:
                     # contexts of best match equal current contexts
                     result = best_match
                 else:
+                    common_contexts = self.get_common_contexts(best_match)
                     if len(common_contexts) == 0:
                         # if no common context, then create a new memory with current context
                         result = self.create_memory(memory_type, sub_memories, context=self.context_memories)
@@ -414,8 +414,11 @@ class Brain:
                 time.sleep(cls.interval_s)
         return result
 
-    def update_weight(self, item):
-        item.context_weight = math.log(len(self.all_memories) / len(item.context_indexes))
+    def update_context_weight(self, m: Memory):
+        m.context_weight = math.log(len(self.all_memories) / len(m.context_indexes))
+
+    def update_data_weight(self, m: Memory):
+        m.data_weight = math.log(len(self.all_memories) / len(m.data_indexes))
 
     def cleanup_memories(self):
         new_all_memories = {}
@@ -426,30 +429,32 @@ class Brain:
                 if self.validate_memory(m):
                     new_memories.update({mid: m})
                     new_all_memories.update({mid: m})
-                # refresh data and index
-                m.data_indexes = self.get_valid_memories(m.data_indexes)
-                m.context = self.get_valid_memories(m.context)
-                m.context_indexes = self.get_valid_memories(m.context_indexes)
-                # refresh data
-                if isinstance(m.data, list) or isinstance(m.data, set):
-                    m.data = self.get_valid_memories(m.data)
-                    # re-link one child memory
-                    # if len(m.data) == 1:
-                    #     equal_from = m.MID
-                    #     equal_to = m.data.pop()
-                    #     # print(f'{equal_from} ony has one child, equals to {equal_to}')
-                    #     for y in m.data_indexes:
-                    #         parent = self.all_memories.get(y)
-                    #         if parent is not None:
-                    #             # print(f'type of parent.data {type(parent.data)}')
-                    #             if isinstance(parent.data, set):
-                    #                 # print(f'replace parent set data')
-                    #                 parent.data.remove(equal_from)
-                    #                 parent.data.add(equal_to)
-                    #             elif isinstance(parent.data, list):
-                    #                 # print(f'replace parent list data')
-                    #                 new_data = [equal_to if x == equal_from else x for x in parent.data]
-                    #                 parent.data = new_data
+                    # refresh data and index
+                    m.data_indexes = self.get_valid_memories(m.data_indexes)
+                    m.context = self.get_valid_memories(m.context)
+                    m.context_indexes = self.get_valid_memories(m.context_indexes)
+                    self.update_context_weight(m)
+                    self.update_data_weight(m)
+                    # refresh data
+                    if isinstance(m.data, list) or isinstance(m.data, set):
+                        m.data = self.get_valid_memories(m.data)
+                        # re-link one child memory
+                        # if len(m.data) == 1:
+                        #     equal_from = m.MID
+                        #     equal_to = m.data.pop()
+                        #     # print(f'{equal_from} ony has one child, equals to {equal_to}')
+                        #     for y in m.data_indexes:
+                        #         parent = self.all_memories.get(y)
+                        #         if parent is not None:
+                        #             # print(f'type of parent.data {type(parent.data)}')
+                        #             if isinstance(parent.data, set):
+                        #                 # print(f'replace parent set data')
+                        #                 parent.data.remove(equal_from)
+                        #                 parent.data.add(equal_to)
+                        #             elif isinstance(parent.data, list):
+                        #                 # print(f'replace parent list data')
+                        #                 new_data = [equal_to if x == equal_from else x for x in parent.data]
+                        #                 parent.data = new_data
             # TODO, some update may lost during this process
             self.categorized_memory.update({t: new_memories})
             time.sleep(self.interval_s)
