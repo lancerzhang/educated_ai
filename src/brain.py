@@ -139,12 +139,12 @@ class Brain:
                 else:
                     if len(common_contexts) == 0:
                         # if no common context, then create a new memory with current context
-                        result = self.create_memory(memory_type, sub_memories, contexts=self.context_memories)
+                        result = self.create_memory(memory_type, sub_memories, context=self.context_memories)
                     else:
                         # search if there is memory with common context
                         existing = self.match_contexts(full_matches, common_contexts)
                         if existing is None:
-                            result = self.create_memory(memory_type, sub_memories, contexts=common_contexts)
+                            result = self.create_memory(memory_type, sub_memories, context=common_contexts)
                         else:
                             result = existing
         return result
@@ -194,7 +194,7 @@ class Brain:
             return ls
 
     @util.timeit
-    def create_memory(self, memory_type: str, memory_data, real_type: str = None, contexts=None):
+    def create_memory(self, memory_type: str, memory_data, real_type: str = None, context=None):
         m = Memory(memory_type, memory_data, real_type)
         if real_type:
             t = real_type
@@ -207,11 +207,16 @@ class Brain:
         if self.get_memory_type_index(memory_type) > 0:
             for d in memory_data:
                 d.data_indexes.add(m.MID)
-        if contexts is None:
+        memory_context = set()
+        if context is None:
             if util.get_order(memory_type) == constants.temporal:
-                m.context = {x.MID for x in self.context_memories}
+                memory_context = self.context_memories
         else:
-            m.context = {x.MID for x in contexts}
+            memory_context = context
+        if len(memory_context) > 0:
+            m.context = {x.MID for x in memory_context}
+            for c in memory_context:
+                c.context_indexes.add(m.MID)
         return m
 
     def add_contexts(self, m: Memory):
@@ -410,7 +415,7 @@ class Brain:
         return result
 
     def update_weight(self, item):
-        item.context_weight = math.log( len(self.all_memories)/len(item.context_indexes) )
+        item.context_weight = math.log(len(self.all_memories) / len(item.context_indexes))
 
     def cleanup_memories(self):
         new_all_memories = {}
@@ -421,8 +426,10 @@ class Brain:
                 if self.validate_memory(m):
                     new_memories.update({mid: m})
                     new_all_memories.update({mid: m})
-                # refresh data index
+                # refresh data and index
                 m.data_indexes = self.get_valid_memories(m.data_indexes)
+                m.context = self.get_valid_memories(m.context)
+                m.context_indexes = self.get_valid_memories(m.context_indexes)
                 # refresh data
                 if isinstance(m.data, list) or isinstance(m.data, set):
                     m.data = self.get_valid_memories(m.data)
