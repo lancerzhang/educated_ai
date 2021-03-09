@@ -415,10 +415,16 @@ class Brain:
         return result
 
     def update_context_weight(self, m: Memory):
-        m.context_weight = math.log(len(self.all_memories) / len(m.context_indexes))
+        if len(m.context_indexes) == 0:
+            m.context_weight = 0
+        else:
+            m.context_weight = math.log(len(self.all_memories) / len(m.context_indexes))
 
     def update_data_weight(self, m: Memory):
-        m.data_weight = math.log(len(self.all_memories) / len(m.data_indexes))
+        if len(m.data_indexes) == 0:
+            m.data_weight = 0
+        else:
+            m.data_weight = math.log(len(self.all_memories) / len(m.data_indexes))
 
     def cleanup_memories(self):
         new_all_memories = {}

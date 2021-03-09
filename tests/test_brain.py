@@ -66,11 +66,11 @@ class TestBrain(unittest.TestCase):
         m3 = brain.create_memory(constants.real, SpeechFeature(1, 3), constants.speech)
         m4 = brain.create_memory(constants.pack_real, [m3])
         self.assertIsNone(brain.add_memory([]))
-        self.assertIsNone(brain.add_memory([m1]))
+        self.assertIsNotNone(brain.add_memory([m1]))
         # test add disorder memory
         brain.find_parents = MagicMock(return_value=([], []))
         n1 = brain.add_memory([m1, m3])
-        self.assertEqual([m1, m3], n1.data)
+        self.assertEqual({m1, m3}, n1.data)
         self.assertNotEqual(m2.MID, n1.MID)
         # test return disorder memory
         brain.find_parents = MagicMock(return_value=([m2], [m2]))
@@ -79,6 +79,7 @@ class TestBrain(unittest.TestCase):
         # test best match equal
         brain.context_memories = {m2}
         m3.context = {m2.MID}
+        brain.get_parent_type = MagicMock(return_value=constants.short)
         brain.sort_context = MagicMock(return_value=([m3, m4]))
         brain.find_parents = MagicMock(return_value=([m2], [m2]))
         n2 = brain.add_memory([m2, m4])
@@ -255,9 +256,9 @@ class TestBrain(unittest.TestCase):
     def test_cleanup_memories(self):
         brain = Brain()
         m1 = brain.create_memory(constants.real, SpeechFeature(1, 1), constants.speech)
-        m2 = brain.create_memory(constants.pack_real, {m1.MID})
-        m3 = brain.create_memory(constants.instant, [m2.MID])
-        m4 = brain.create_memory(constants.short, [m3.MID])
+        m2 = brain.create_memory(constants.pack_real, {m1})
+        m3 = brain.create_memory(constants.instant, [m2])
+        m4 = brain.create_memory(constants.short, [m3])
         m3.data_indexes = {m4.MID}
         brain.validate_memory = MagicMock(return_value=True)
         brain.cleanup_memories()
@@ -272,8 +273,8 @@ class TestBrain(unittest.TestCase):
         brain.cleanup_memories()
         self.assertEqual(0, len(m3.data_indexes))
         # test cleanup data
-        self.assertEqual(True, type(m2.data) == set)
-        self.assertEqual(True, type(m4.data) == set)
+        self.assertTrue(type(m2.data) == set)
+        self.assertTrue(type(m4.data) == list)
         del brain.all_memories[m1.MID]
         brain.cleanup_memories()
         self.assertEqual(0, len(m2.data))
@@ -307,14 +308,14 @@ class TestBrain(unittest.TestCase):
         brain = Brain()
         m1 = brain.create_memory(constants.real, SpeechFeature(1, 1), constants.speech)
         m2 = brain.add_memory([m1])
-        self.assertEqual(None, brain.add_memory([]))
-        self.assertEqual(None, brain.add_memory([m1]))
+        self.assertIsNone(brain.add_memory([]))
+        self.assertIsNotNone(brain.add_memory([m1]))
         # test not found and then create memory
-        brain.find_parents = MagicMock(return_value=(None, set(), set()))
+        brain.find_parents = MagicMock(return_value=(None, set()))
         self.assertEqual({m1.MID}, m2.data)
         self.assertEqual({m2.MID}, m1.data_indexes)
         # test found memory
-        brain.find_parents = MagicMock(return_value=(m2, set(), set()))
+        brain.find_parents = MagicMock(return_value=({m2}, set()))
         m3 = brain.add_memory([m1])
         self.assertEqual(m2, m3)
 
@@ -359,11 +360,12 @@ class TestBrain(unittest.TestCase):
     def test_create_memory(self):
         brain = Brain()
         m1 = brain.create_memory(constants.real, SpeechFeature(1, 1), constants.speech)
+        m2 = brain.create_memory(constants.real, SpeechFeature(1, 2), constants.speech)
         self.assertEqual(SpeechFeature, type(m1.data))
-        m2 = brain.create_memory(constants.pack_real, [1, 2])
+        m2 = brain.create_memory(constants.pack_real, [m1, m2])
         self.assertEqual(set, type(m2.data))
-        m3 = brain.create_memory(constants.short, [1, 2])
-        self.assertEqual(set, type(m3.data))
+        m3 = brain.create_memory(constants.short, [m1, m2])
+        self.assertEqual(list, type(m3.data))
 
     def test_update_contexts(self):
         brain = Brain()
@@ -397,8 +399,8 @@ class TestBrain(unittest.TestCase):
         m6 = brain.add_memory([m1, m2, m3])
         m4.context_indexes = {m5.MID, m6.MID}
         m5.context_indexes = {m6.MID}
-        brain.update_weight(m4)
-        brain.update_weight(m5)
+        brain.update_context_weight(m4)
+        brain.update_context_weight(m5)
         self.assertGreater(m5.context_weight, m4.context_weight)
 
 
