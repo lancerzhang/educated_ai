@@ -1,12 +1,10 @@
 from src.action import Action
 from src.brain import Brain
-from src.favor import Favor
 from src.keyboard_listener import KeyboardListener
 from src.mouse_listener import MouseListener
 from src.reward import Reward
 from src.speech_microphone import MicrophoneSpeech
 from src.vision_cozmo import CozmoVision
-from src.status import Status
 from src import constants
 from src import util
 import logging
@@ -45,7 +43,6 @@ def main():
         schedule_thread.daemon = True
         schedule_thread.start()
         reward = Reward(brain)
-        status = Status(brain)
         action = Action(brain)
         vision = CozmoVision(brain, favor)
         vision_thread = threading.Thread(target=vision.run_cozmo_thread)

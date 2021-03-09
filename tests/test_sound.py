@@ -2,14 +2,9 @@ import unittest
 
 import numpy as np
 
-from src import favor
 from src.brain import Brain
-from src.favor import Favor
 from src.featurepack import FeaturePack
 from src.memory import Memory
-from src.memory import MemoryStatus
-from src.memory import MemoryType
-from src.memory import FeatureTypes
 from src.speech import Speech
 
 
@@ -18,9 +13,7 @@ class TestSound(unittest.TestCase):
 
     def setUp(self):
         brain1 = Brain()
-        favor.FAVOR_FILE = 'favor.npy'
-        favor1 = Favor()
-        self.sound = Speech(brain1, favor1)
+        self.sound = Speech(brain1)
 
     def test_filter_feature(self):
         kernel1 = '-1,-1,1,-1,-1,0,1,0,1'

@@ -37,16 +37,13 @@ class Brain:
         self.memory_cache = {}  # cache before put to vp tree, for searching real memory
         self.memory_vp_tree = {}  # speed up searching memories, for searching real memory
         self.context_memories = set()  # context for temporal memory
-        self.work_temporal_memories = {}
+        self.temporal_memories = {}
         for t in constants.feature_types + constants.memory_types:
             self.categorized_memory.update({t: {}})
             self.n_memories.update({t: 0})  # length of categorized_memories
             self.memory_cache.update({t: set()})  # cache before put to vp tree
             self.memory_vp_tree.update({t: None})  # speed up searching memories
-        for f in constants.feature_types:
-            for m in constants.memory_types:
-                t = m + f
-                self.work_temporal_memories.update({t: []})
+            self.temporal_memories.update({t: []})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -75,11 +72,11 @@ class Brain:
             return
         # input short memory
         instant_pack = self.add_memory(instants)
-        memories = self.work_temporal_memories[constants.short]
+        memories = self.temporal_memories[constants.short]
         new_memories = self.add_working(instant_pack, memories, constants.n_memory_children,
                                         self.get_memory_duration(constants.short))
         if memories != new_memories:
-            self.work_temporal_memories[constants.short] = new_memories
+            self.temporal_memories[constants.short] = new_memories
             short = self.add_memory(new_memories)
             if short is not None:
                 self.add_contexts(short)
@@ -95,7 +92,7 @@ class Brain:
 
     @util.timeit
     def add_real_memories(self, features: list):
-        data = set()
+        data = set()  # use set to prevent duplicated memory
         for feature in features:
             m = self.find_real(feature)
             if m is None:
@@ -165,10 +162,10 @@ class Brain:
         if m is None:
             return
         mt = constants.instant + t
-        memories = self.work_temporal_memories[mt]
+        memories = self.temporal_memories[mt]
         new_memories = self.add_working(m, memories, 1, self.get_memory_duration(constants.instant))
         if memories != new_memories:
-            self.work_temporal_memories[mt] = new_memories
+            self.temporal_memories[mt] = new_memories
             return new_memories[0]
 
     @util.timeit
@@ -248,7 +245,7 @@ class Brain:
                 return m
 
     @util.timeit
-    def find_real_tree(self, feature: Feature):
+    def find_feature_tree(self, feature: Feature):
         recognizer = self.RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
         if tree is not None:
@@ -259,7 +256,7 @@ class Brain:
 
     @util.timeit
     def find_real(self, feature: Feature):
-        nearest = self.find_real_tree(feature)
+        nearest = self.find_feature_tree(feature)
         if nearest is None:
             nearest = self.find_real_cache(feature)
         return nearest
@@ -357,10 +354,6 @@ class Brain:
     @staticmethod
     def get_memory_type_index(memory_type: str):
         return constants.memory_types.index(memory_type)
-
-    @classmethod
-    def get_memory_duration(cls, memory_type: str):
-        return constants.memory_duration[cls.get_memory_type_index(memory_type)]
 
     @classmethod
     def activate_memory(cls, m: Memory):

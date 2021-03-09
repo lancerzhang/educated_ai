@@ -6,10 +6,8 @@ from multiprocessing import Pool
 
 import numpy as np
 
-from src import favor
 from src import vision, constants
 from src.brain import Brain
-from src.favor import Favor
 from src.featurepack import FeaturePack
 from src.vision import Block
 from src.vision import Vision
@@ -31,9 +29,7 @@ class TestVision(unittest.TestCase):
 
     def setUp(self):
         brain1 = Brain()
-        favor.FAVOR_FILE = 'favor.npy'
-        favor1 = Favor()
-        vision1 = Vision(brain1, favor1)
+        vision1 = Vision(brain1)
         vision1.FRAME_WIDTH = 1920
         vision1.FRAME_HEIGHT = 1080
         vision1.init_current_block()

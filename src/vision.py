@@ -105,7 +105,6 @@ class Vision(object):
     MOVE_LEFT = 18
     MOVE_RIGHT = 0
     LAST_MOVE_TIME = 'lmt'
-    VISION_KERNEL_FILE = 'kernels.npy'
     previous_energies = []
     previous_full_image = None
     previous_histogram1 = None

@@ -5,33 +5,15 @@ vision = 'Vision'
 feature_types = [speech]
 
 # memory types
-real = 'Real'  # one real memory
-pack_real = 'PackReal'  # pack of one type of real memories happened at the same time
-instant = 'Instant'  # pack memories happened in an instant, it's phone in speech
-pack_instant = 'PackInstant'  # pack of different type of instant memories happened at the same time
-short = 'Short'  # memories happened in a short time, it's word in speech
-# long = 'Long'  # memories happened in a long time, it's sentence in speech
-# long2 = 'Long2'  # memories happened in a longer time, it's sentence in speech
-# link = 'Link'  # connection between high level memories
+real = 'Real'  # one real memory can contains multiple features
+temporal = 'Temporal'  # temporal memories
+memory_types = [real, temporal]
 
-memory_types = [real, pack_real, instant, pack_instant, short]
-memory_duration = [0, 0, 0.5, 0.5, 5]
+max_memory_duration = 5
 
-temporal = 'Temporal'
-disorder = 'Disorder'
 stable = 3
-n_memory_children = 3
+n_memory_children = 4
 n_memory_context = 10
-
-# memory status
-# dormant memories will be clean up in high priority
-# dormant memories can't be activated
-# dormant memories can be retrieved if it's yet clean up, recall count will be kept
-dormant = 'Dormant'
-sleep = 'Sleep'
-living = 'Living'
-matched = 'Matched'
-matching = 'Matching'
 
 # vision
 ZOOM_TYPE = 'zmt'
@@ -41,12 +23,6 @@ SPEED = 'spd'
 MOVE_DURATION = 'drt'
 # ACTUAL_SPEED_TIMES = 50
 # ACTUAL_DEGREES_TIMES = 10
-
-# status
-BUSY = 'busy'
-SHORT_DURATION = 'S'
-MEDIUM_DURATION = 'M'
-LONG_DURATION = 'L'
 
 # memory
 ID = '_id'
