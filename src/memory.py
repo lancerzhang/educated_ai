@@ -7,10 +7,10 @@ from src import util
 
 class Memory:
 
-    def __init__(self, memory_type, memory_data, real_type=None):
+    def __init__(self, memory_type, memory_data, feature_type=None):
         self.MID = self.create_id()
         self.MEMORY_TYPE = memory_type
-        self.REAL_TYPE = real_type
+        self.FEATURE_TYPE = feature_type
         self.CREATED_TIME = time.time()
         self.activated_time = time.time()
         self.strengthen_time = time.time()

@@ -90,7 +90,7 @@ class TestSound(unittest.TestCase):
         self.sound.previous_phase = np.array([])
         self.sound.phases.append(data1_1)
         fp11 = self.sound.filter_feature(FeaturePack(kernel=kernel1))
-        m1 = Memory(MemoryType.REAL, real_type=FeatureTypes.speech, kernel=fp11.kernel, feature=fp11.feature)
+        m1 = Memory(MemoryType.REAL, feature_type=FeatureTypes.speech, kernel=fp11.kernel, feature=fp11.feature)
         m1.status = MemoryStatus.MATCHING
         self.sound.brain.categorized_memory = {m1}
         self.sound.brain.active_memories = {m1}

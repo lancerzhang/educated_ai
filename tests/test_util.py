@@ -370,7 +370,7 @@ class TestUtil(unittest.TestCase):
         self.assertFalse(util.greater_than_half(2, 4))
 
     def test_get_order(self):
-        self.assertEqual(constants.disorder, util.get_order(constants.real))
+        self.assertEqual(constants.disorder, util.get_order(constants.pack))
         self.assertEqual(constants.disorder, util.get_order(constants.pack_real))
         self.assertEqual(constants.disorder, util.get_order(constants.context))
         self.assertEqual(constants.disorder, util.get_order(constants.instant))

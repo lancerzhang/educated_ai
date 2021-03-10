@@ -18,14 +18,14 @@ logging.basicConfig(filename='app.log', level=logging.INFO,
 def print_info(brain):
     # print(f'len brain.memory_cache speech: {len(brain.memory_cache[constants.speech])}')
     print(f'len brain.all_memories speech: {len(brain.categorized_memory[constants.speech])}')
-    print(f'len brain.all_memories real: {len(brain.categorized_memory[constants.real])}')
+    print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack])}')
     print(f'len brain.all_memories temporal: {len(brain.categorized_memory[constants.temporal])}')
     # print(f'len brain.all_memories long: {len(brain.categorized_memory[constants.long])}')
     # print(f'stability is: {[x.stability for x in brain.all_memories.copy().values()]}')
     print(f'stability of speech is:'
           f' {[x.stability for x in brain.categorized_memory[constants.speech].copy().values()]}')
-    print(f'stability of real is:'
-          f' {[x.stability for x in brain.categorized_memory[constants.real].copy().values()]}')
+    print(f'stability of pack is:'
+          f' {[x.stability for x in brain.categorized_memory[constants.pack].copy().values()]}')
     print(f'stability of temporal is:'
           f' {[x.stability for x in brain.categorized_memory[constants.temporal].copy().values()]}')
     # print(f'stability of long is:'
@@ -40,8 +40,8 @@ def print_info(brain):
     #     f'live time of short is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.short].copy().values()]}')
     # print(
     #     f'live time of long is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.long].copy().values()]}')
-    print(f'data len of real is:'
-          f' {[len(x.data) for x in brain.categorized_memory[constants.real].copy().values()]}')
+    print(f'data len of pack is:'
+          f' {[len(x.data) for x in brain.categorized_memory[constants.pack].copy().values()]}')
     print(f'data len of temporal is:'
           f' {[len(x.data) for x in brain.categorized_memory[constants.temporal].copy().values()]}')
 
@@ -83,15 +83,14 @@ def main(argv):
         print('initialized.')
         while 1:
             process_start = time.time()
+            brain.prepare_temporal()
             # logging.debug('frame started.')
             speech_features_serial = speech.process()
             # print(f'n speech_features_set {len(speech_features_set)}')
             # if (time.time() - start_time) > 10:
             #     print('here')
-            speech_instant = brain.recognize_speech(speech_features_serial)
-            instants = {speech_instant}
-            instants.remove(None)
-            short = brain.recognize_temporal(instants)
+            brain.recognize_speech(speech_features_serial)
+            short = brain.recognize_temporal()
             brain.control(short)
             # if (time.time() - start_time) > 20:
             #     speech.stop()

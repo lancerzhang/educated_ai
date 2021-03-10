@@ -1,18 +1,17 @@
 # feature types
 speech = 'Speech'
 vision = 'Vision'
-
 feature_types = [speech]
 
 # memory types
-real = 'Real'  # one real memory can contains multiple features
+feature = 'feature'
+pack = 'Pack'  # one pack memory can contains multiple features
 temporal = 'Temporal'  # temporal memories
-memory_types = [real, temporal]
-
-max_memory_duration = 5
+memory_types = [feature, pack, temporal]
+memory_duration = [0, 0.5, 7]
 
 stable = 3
-n_memory_children = 4
+n_memory_children = 3
 n_memory_context = 10
 
 # vision

@@ -37,13 +37,14 @@ class Brain:
         self.memory_cache = {}  # cache before put to vp tree, for searching real memory
         self.memory_vp_tree = {}  # speed up searching memories, for searching real memory
         self.context_memories = set()  # context for temporal memory
-        self.temporal_memories = {}
+        self.working_memories = {}
+        self.origin_temporal_memories = []
         for t in constants.feature_types + constants.memory_types:
             self.categorized_memory.update({t: {}})
             self.n_memories.update({t: 0})  # length of categorized_memories
             self.memory_cache.update({t: set()})  # cache before put to vp tree
             self.memory_vp_tree.update({t: None})  # speed up searching memories
-            self.temporal_memories.update({t: []})
+            self.working_memories.update({t: []})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -54,29 +55,47 @@ class Brain:
         self.running = False
 
     @util.timeit
-    def recognize_speech(self, speech_features_serial: list):
-        if len(speech_features_serial) == 0:
+    def recognize_vision(self, features):
+        if len(features) == 0:
             return
-        real_packs = []
-        for features in speech_features_serial:
-            data = self.add_real_memories(features)
-            real_pack = self.add_memory(data)
-            real_packs = self.add_working(real_pack, real_packs)
-        instant = self.add_memory(real_packs)
-        return self.add_to_instant_queue(constants.speech, instant)
+        feature_memories = self.add_feature_memories(features)
+        pack_memory = self.add_memory(feature_memories)
+        origin_working = self.working_memories[constants.vision]
+        new_working = self.add_working(pack_memory, origin_working, n_limit=constants.n_memory_children,
+                                       time_limit=self.get_memory_duration(constants.pack))
+        if origin_working != new_working:
+            temporal_memory = self.add_memory(new_working)
+            self.working_memories[constants.temporal].append(temporal_memory)
+
+    @util.timeit
+    def recognize_speech(self, features_serial: list):
+        if len(features_serial) == 0:
+            return
+        pack_memories = []
+        for features in features_serial:
+            feature_memories = self.add_feature_memories(features)
+            pack_memory = self.add_memory(feature_memories)
+            pack_memories = self.add_working(pack_memory, pack_memories)
+        # there may be more than n_memory_children for speech
+        temporal_memory = self.add_memory(pack_memories)
+        self.working_memories[constants.temporal].append(temporal_memory)
+
+    # need to call before input any temporal in a frame¬
+    def prepare_temporal(self):
+        self.origin_temporal_memories = self.working_memories[constants.temporal]
 
     # process temporal memories
     @util.timeit
-    def recognize_temporal(self, instants: set):
+    def recognize_temporal(self):
         if len(instants) == 0:
             return
         # input short memory
         instant_pack = self.add_memory(instants)
-        memories = self.temporal_memories[constants.short]
+        memories = self.working_memories[constants.short]
         new_memories = self.add_working(instant_pack, memories, constants.n_memory_children,
                                         self.get_memory_duration(constants.short))
         if memories != new_memories:
-            self.temporal_memories[constants.short] = new_memories
+            self.working_memories[constants.short] = new_memories
             short = self.add_memory(new_memories)
             if short is not None:
                 self.add_contexts(short)
@@ -91,12 +110,12 @@ class Brain:
                 pass
 
     @util.timeit
-    def add_real_memories(self, features: list):
+    def add_feature_memories(self, features: list):
         data = set()  # use set to prevent duplicated memory
         for feature in features:
-            m = self.find_real(feature)
+            m = self.find_feature(feature)
             if m is None:
-                m = self.create_memory(constants.real, feature, feature.type)
+                m = self.create_memory(constants.feature, feature, feature.type)
             else:
                 self.activate_memory(m)
             data.add(m)
@@ -156,17 +175,6 @@ class Brain:
 
     def get_context_weight(self, m: Memory):
         return sum(x.context_weight for x in self.get_common_contexts(m))
-
-    # queue length is 1, only return if current memory is different from last
-    def add_to_instant_queue(self, t, m: Memory):
-        if m is None:
-            return
-        mt = constants.instant + t
-        memories = self.temporal_memories[mt]
-        new_memories = self.add_working(m, memories, 1, self.get_memory_duration(constants.instant))
-        if memories != new_memories:
-            self.temporal_memories[mt] = new_memories
-            return new_memories[0]
 
     @util.timeit
     def add_working(self, mm: Memory, old: list, n_limit=-1, time_limit=-1):
@@ -236,7 +244,7 @@ class Brain:
         self.context_memories = memories
 
     @util.timeit
-    def find_real_cache(self, feature: Feature):
+    def find_feature_cache(self, feature: Feature):
         recognizer = self.RECOGNIZERS[feature.type]
         cache = self.memory_cache[feature.type].copy()
         # print(f'len cache {len(cache)}')
@@ -249,16 +257,16 @@ class Brain:
         recognizer = self.RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
         if tree is not None:
-            query = Memory(constants.real, feature, feature.type)
+            query = Memory(constants.feature, feature, feature.type)
             distance, nearest_memory = tree.get_nearest_neighbor(query)
             if recognizer.is_similar(distance):
                 return nearest_memory
 
     @util.timeit
-    def find_real(self, feature: Feature):
+    def find_feature(self, feature: Feature):
         nearest = self.find_feature_tree(feature)
         if nearest is None:
-            nearest = self.find_real_cache(feature)
+            nearest = self.find_feature_cache(feature)
         return nearest
 
     # @util.timeit
@@ -354,6 +362,10 @@ class Brain:
     @staticmethod
     def get_memory_type_index(memory_type: str):
         return constants.memory_types.index(memory_type)
+
+    @classmethod
+    def get_memory_duration(cls, memory_type: str):
+        return constants.memory_duration[cls.get_memory_type_index(memory_type)]
 
     @classmethod
     def activate_memory(cls, m: Memory):
@@ -506,8 +518,8 @@ class Brain:
             self.all_memories = memories
             for m in memories.values():
                 t = m.MEMORY_TYPE
-                if m.REAL_TYPE is not None:
-                    t = m.REAL_TYPE
+                if m.FEATURE_TYPE is not None:
+                    t = m.FEATURE_TYPE
                     self.memory_cache[t].add(m)
                 self.categorized_memory[t].update({m.MID: m})
             self.reindex()

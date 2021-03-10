@@ -51,7 +51,7 @@ class Action(object):
 
     @util.timeit
     def feel_clicks(self, click):
-        q = Memory(MemoryType.REAL, real_type=FeatureTypes.ACTION_MOUSE_CLICK, click_type=click)
+        q = Memory(MemoryType.REAL, feature_type=FeatureTypes.ACTION_MOUSE_CLICK, click_type=click)
         m = self.brain.put_memory(q)
         self.brain.compose_memory([m], MemoryType.SLICE, real_type=FeatureTypes.ACTION_MOUSE_CLICK)
 
