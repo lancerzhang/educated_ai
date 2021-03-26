@@ -24,6 +24,9 @@ class TimedQueue:
     def __getitem__(self, x):
         return self.data[x].item
 
+    def __str__(self):
+        return self.item
+
     def append(self, item):
         self.data.append(TimedItem(item))
 
@@ -49,3 +52,11 @@ class TimedQueue:
             else:
                 return result
         return result
+
+    def clean(self):
+        new_queue = deque()
+        end_time = time.time() - self.total_duration
+        for item in self.data:
+            if item.time > end_time:
+                new_queue.append(item)
+        self.data = new_queue
