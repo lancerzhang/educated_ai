@@ -13,7 +13,7 @@ class TestTimedQueue(unittest.TestCase):
     item1 = None
 
     def setUp(self):
-        tq = TimedQueue(5, 2, 3)
+        tq = TimedQueue(5, 2, 2)
         data = deque()
         item1 = TimedItem(f'feature1')
         data.append(item1)
@@ -23,10 +23,16 @@ class TestTimedQueue(unittest.TestCase):
 
     def prepare_full_data(self):
         data = deque()
-
+        created_time = time.time() - 5
+        print(f'prepare_full_data: created_time {created_time}')
         for i in reversed(range(5)):
             item = TimedItem(f'feature{i}')
-            item.created_time = time.time() - (i + 1) * time_unit
+            if (i + 1) % 2 == 1:
+                created_time += 1.1
+            else:
+                created_time += 0.1
+            item.created_time = created_time
+            print(created_time)
             data.append(item)
         self.timed_queue.data = data
 
@@ -54,13 +60,15 @@ class TestTimedQueue(unittest.TestCase):
 
     def test_pop_left_split_by_duration(self):
         self.prepare_full_data()
+        self.timed_queue.pop_duration = 1
+        self.timed_queue.pop_count = 9999
         # test split by get duration
         items = self.timed_queue.pop_left()
         self.assertEqual(2, len(items))
         items = self.timed_queue.pop_left()
         self.assertEqual(2, len(items))
         items = self.timed_queue.pop_left()
-        self.assertIsNone(items)
+        self.assertEqual(1, len(items))
 
     def test_pop_left_split_by_count(self):
         self.prepare_full_data()
@@ -73,8 +81,7 @@ class TestTimedQueue(unittest.TestCase):
 
     def test_pop_left_in_one_go(self):
         self.prepare_full_data()
-        self.timed_queue.pop_duration = self.timed_queue.total_duration
-        self.timed_queue.total_duration += 0.1
+        self.timed_queue.pop_duration = 3
         self.timed_queue.pop_count = 5
         items = self.timed_queue.pop_left()
         self.assertEqual(5, len(items))

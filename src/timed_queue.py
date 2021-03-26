@@ -42,10 +42,12 @@ class TimedQueue:
         # only read when time elapse certain duration
         # because data is collected continuously, should collect data for enough time
         read_end_time = self.data[0].created_time + self.pop_duration
+        print(f'pop_left: read_end_time:{read_end_time}')
+        print(f'pop_left: now {time.time()}')
         if read_end_time > time.time():
+            print('pop_left: not enough duration to read')
             return
         result = []
-        # print(f'read_end_time:{read_end_time}')
         while self.data:
             # print(self.data[0].time)
             if self.data[0].created_time < read_end_time and len(result) < self.pop_count:
