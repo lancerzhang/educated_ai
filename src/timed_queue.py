@@ -13,7 +13,7 @@ class TimedItem:
 
 class TimedQueue:
 
-    def __init__(self, total_duration, pop_duration, pop_count=9999, break_time=0):
+    def __init__(self, total_duration, pop_duration, pop_count=9999, break_time=9999):
         if total_duration <= pop_duration:
             raise RuntimeError("total_duration should larger than pop_duration!")
         self.data = deque()
@@ -48,9 +48,13 @@ class TimedQueue:
             print('pop_left: not enough duration to read')
             return
         result = []
+        last_time = self.data[0].created_time
         while self.data:
             # print(self.data[0].time)
-            if self.data[0].created_time < read_end_time and len(result) < self.pop_count:
+            if self.data[0].created_time < read_end_time \
+                    and self.data[0].created_time - last_time < self.break_time \
+                    and len(result) < self.pop_count:
+                last_time = self.data[0].created_time
                 result.append(self.data.popleft().content)
             else:
                 return result

@@ -88,6 +88,18 @@ class TestTimedQueue(unittest.TestCase):
         items = self.timed_queue.pop_left()
         self.assertIsNone(items)
 
+    def test_pop_left_break_time(self):
+        self.prepare_full_data()
+        self.timed_queue.pop_duration = 2
+        self.timed_queue.pop_count = 5
+        self.timed_queue.break_time = 0.9
+        items = self.timed_queue.pop_left()
+        self.assertEqual(2, len(items))
+        items = self.timed_queue.pop_left()
+        self.assertEqual(2, len(items))
+        items = self.timed_queue.pop_left()
+        self.assertIsNone(items)
+
     def test_clean(self):
         self.assertEqual(1, len(self.timed_queue))
         self.item1.created_time = time.time() - 6
