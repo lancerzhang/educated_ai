@@ -8,7 +8,7 @@ feature = 'feature'
 pack = 'Pack'  # one pack memory can contains multiple features
 temporal = 'Temporal'  # temporal memories
 memory_types = [feature, pack, temporal]
-memory_duration = [0, 0.3, 7]
+memory_duration = [0, 0.3, 2]
 
 stable = 3
 n_memory_children = 3

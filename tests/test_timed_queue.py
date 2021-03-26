@@ -23,9 +23,10 @@ class TestTimedQueue(unittest.TestCase):
 
     def prepare_full_data(self):
         data = deque()
+
         for i in reversed(range(5)):
             item = TimedItem(f'feature{i}')
-            item.time = time.time() - (i + 1) * time_unit
+            item.created_time = time.time() - (i + 1) * time_unit
             data.append(item)
         self.timed_queue.data = data
 
@@ -36,8 +37,8 @@ class TestTimedQueue(unittest.TestCase):
     def test_append(self):
         self.timed_queue.append('feature2')
         self.assertEqual(2, len(self.timed_queue))
-        self.assertEqual(self.item1.item, self.timed_queue[0])
-        self.assertTrue(self.timed_queue.data[1].time > self.timed_queue.data[0].time)
+        self.assertEqual(str(self.item1), self.timed_queue[0])
+        self.assertTrue(self.timed_queue.data[1].created_time > self.timed_queue.data[0].created_time)
         tq2 = TimedQueue(10, 2, 3)
         tq2.extend(self.timed_queue.data)
         self.assertEqual(2, len(tq2))
@@ -82,6 +83,6 @@ class TestTimedQueue(unittest.TestCase):
 
     def test_clean(self):
         self.assertEqual(1, len(self.timed_queue))
-        self.item1.time = time.time() - 6
+        self.item1.created_time = time.time() - 6
         self.timed_queue.clean()
         self.assertEqual(0, len(self.timed_queue))
