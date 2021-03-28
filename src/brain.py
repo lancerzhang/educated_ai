@@ -46,12 +46,21 @@ class Brain:
         for ft in constants.feature_types:
             self.memory_cache.update({ft: set()})  # cache before put to vp tree
             self.memory_vp_tree.update({ft: None})  # speed up searching memories
-            for mt in constants.memory_types:
-                mft = f'{mt}{ft}'
-                duration = self.get_memory_duration(constants.pack)
-                self.working_memories.update(
-                    {mft: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
-                                     break_time=duration * 0.2)})
+            mt = constants.pack
+            mft = f'{mt}{ft}'
+            duration = self.get_memory_duration(mt)
+            # set consecutive_duplicates=False to remove those consecutive duplicates
+            # which is to ignore those minor difference in very short time
+            self.working_memories.update(
+                {mft: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
+                                 break_time=duration * 0.3, consecutive_duplicates=False)})
+            # for longer time set consecutive_duplicates=True to keep those duplicates
+            mt = constants.temporal
+            mft = f'{mt}{ft}'
+            duration = self.get_memory_duration(mt)
+            self.working_memories.update(
+                {mft: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
+                                 break_time=duration * 0.3, consecutive_duplicates=True)})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -61,53 +70,40 @@ class Brain:
     def stop(self):
         self.running = False
 
+    def recognize_pack(self, ft, features):
+        pv = f'{constants.pack}{ft}'
+        feature_memories = self.add_feature_memories(features)
+        pack_memory = self.add_memory(feature_memories)
+        self.working_memories[pv].append(pack_memory)
+
+    def recognize_temporal(self, ft):
+        pf = f'{constants.pack}{ft}'
+        pack_memory_list = self.working_memories[pf].pop_left()
+        if pack_memory_list:
+            temporal_memory = self.add_memory(pack_memory_list)
+            tf = f'{constants.temporal}{ft}'
+            self.working_memories[tf].append(temporal_memory)
+
     @util.timeit
     def recognize_vision(self, features):
         if len(features) == 0:
             return
-        feature_memories = self.add_feature_memories(features)
-        pack_memory = self.add_memory(feature_memories)
-        origin_working = self.working_memories[constants.vision]
-        new_working = self.add_working(pack_memory, origin_working, n_limit=constants.n_memory_children,
-                                       time_limit=self.get_memory_duration(constants.pack))
-        if origin_working != new_working:
-            temporal_memory = self.add_memory(new_working)
-            self.working_memories[constants.temporal].append(temporal_memory)
+        ft = constants.vision
+        self.recognize_pack(ft, features)
+        self.recognize_temporal(ft)
 
     @util.timeit
     def recognize_speech(self, features_serial: list):
         if len(features_serial) == 0:
             return
-        pack_memory_list = []
+        ft = constants.speech
         for features in features_serial:
-            feature_memories = self.add_feature_memories(features)
-            pack_memory = self.add_memory(feature_memories)
-            pack_memory_list = self.add_working(pack_memory, pack_memory_list)
-        # there may be more than n_memory_children for speech
-        # speech memories were tokenized, so we can add it as temporal memory
-        temporal_memory = self.add_memory(pack_memory_list)
-        self.working_memories[constants.temporal].append(temporal_memory)
+            self.recognize_pack(ft, features)
+        self.recognize_temporal(ft)
 
     # need to call before input any temporal in a frame¬
     def prepare_temporal(self):
         self.origin_temporal_memories = self.working_memories[constants.temporal]
-
-    # process temporal memories
-    @util.timeit
-    def recognize_temporal(self):
-        if len(instants) == 0:
-            return
-        # input short memory
-        instant_pack = self.add_memory(instants)
-        memories = self.working_memories[constants.short]
-        new_memories = self.add_working(instant_pack, memories, constants.n_memory_children,
-                                        self.get_memory_duration(constants.short))
-        if memories != new_memories:
-            self.working_memories[constants.short] = new_memories
-            short = self.add_memory(new_memories)
-            if short is not None:
-                self.add_contexts(short)
-                return short
 
     @util.timeit
     def control(self, m: Memory, actions):
