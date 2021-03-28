@@ -7,20 +7,18 @@ class TimedItem:
         self.content = content
         self.created_time = time.time()
 
-    def __str__(self):
-        return self.content
-
 
 class TimedQueue:
 
-    def __init__(self, total_duration, pop_duration, pop_count=9999, break_time=9999):
+    def __init__(self, total_duration, pop_duration, pop_count=9999, break_time=9999, consecutive_duplicates=True):
         if total_duration <= pop_duration:
-            raise RuntimeError("total_duration should larger than pop_duration!")
+            raise RuntimeError("Total_duration should larger than pop_duration!")
         self.data = deque()
         self.total_duration = total_duration
         self.pop_duration = pop_duration
         self.pop_count = pop_count
         self.break_time = break_time
+        self.consecutive_duplicates = consecutive_duplicates  # Allow consecutive duplicates?
 
     def __len__(self):
         return len(self.data)
@@ -42,10 +40,10 @@ class TimedQueue:
         # only read when time elapse certain duration
         # because data is collected continuously, should collect data for enough time
         read_end_time = self.data[0].created_time + self.pop_duration
-        print(f'pop_left: read_end_time:{read_end_time}')
-        print(f'pop_left: now {time.time()}')
+        # print(f'pop_left: read_end_time:{read_end_time}')
+        # print(f'pop_left: now {time.time()}')
         if read_end_time > time.time():
-            print('pop_left: not enough duration to read')
+            # print('pop_left: not enough duration to read')
             return
         result = []
         last_time = self.data[0].created_time
@@ -55,7 +53,13 @@ class TimedQueue:
                     and self.data[0].created_time - last_time < self.break_time \
                     and len(result) < self.pop_count:
                 last_time = self.data[0].created_time
-                result.append(self.data.popleft().content)
+                new_item = self.data.popleft()
+                # if len(result) > 0:
+                #     print(f'result[-1] {result[-1]}')
+                # print(f'new_item.content {new_item.content}')
+                # print(f'break')
+                if self.consecutive_duplicates or len(result) == 0 or result[-1] != new_item.content:
+                    result.append(new_item.content)
             else:
                 return result
         return result

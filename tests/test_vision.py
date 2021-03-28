@@ -57,17 +57,17 @@ class TestVision(unittest.TestCase):
         img4_2 = cv2.imread('p4-2.jpg', 0)
         kernel3 = '-1,-1,1,-1,-1,0,1,0,1'
         fp1_1 = filter_feature(kernel=kernel3, data=img1_1)
-        fp1_2 = filter_feature(kernel=kernel3, data=img1_2, contrast=fp1_1.feature)
+        fp1_2 = filter_feature(kernel=kernel3, data=img1_2, contrast=fp1_1.pack)
         self.assertTrue(fp1_2.similar)
-        fp2_1 = filter_feature(kernel=kernel3, data=img2_1, contrast=fp1_1.feature)
+        fp2_1 = filter_feature(kernel=kernel3, data=img2_1, contrast=fp1_1.pack)
         # self.assertFalse(fp2_1.similar)
         # TODO
-        feature_data2_2 = filter_feature(kernel=kernel3, data=img2_2, contrast=fp2_1.feature)
+        feature_data2_2 = filter_feature(kernel=kernel3, data=img2_2, contrast=fp2_1.pack)
         feature_data3_1 = filter_feature(kernel=kernel3, data=img3_1)
-        feature_data3_2 = filter_feature(kernel=kernel3, data=img3_2, contrast=feature_data3_1.feature)
+        feature_data3_2 = filter_feature(kernel=kernel3, data=img3_2, contrast=feature_data3_1.pack)
         self.assertTrue(feature_data3_2.similar)
         feature_data4_1 = filter_feature(kernel=kernel3, data=img4_1)
-        feature_data4_2 = filter_feature(kernel=kernel3, data=img4_2, contrast=feature_data4_1.feature)
+        feature_data4_2 = filter_feature(kernel=kernel3, data=img4_2, contrast=feature_data4_1.pack)
         self.assertTrue(feature_data4_2.similar)
 
     def test_get_rank(self):

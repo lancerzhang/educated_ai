@@ -14,6 +14,7 @@ from src.features import Feature
 from src.memory import Memory
 from src.recognizers import SpeechRecognizer
 from src.recognizers import VisionRecognizer
+from src.timed_queue import TimedQueue
 
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.INFO)
@@ -42,9 +43,15 @@ class Brain:
         for t in constants.feature_types + constants.memory_types:
             self.categorized_memory.update({t: {}})
             self.n_memories.update({t: 0})  # length of categorized_memories
-            self.memory_cache.update({t: set()})  # cache before put to vp tree
-            self.memory_vp_tree.update({t: None})  # speed up searching memories
-            self.working_memories.update({t: []})
+        for ft in constants.feature_types:
+            self.memory_cache.update({ft: set()})  # cache before put to vp tree
+            self.memory_vp_tree.update({ft: None})  # speed up searching memories
+            for mt in constants.memory_types:
+                mft = f'{mt}{ft}'
+                duration = self.get_memory_duration(constants.pack)
+                self.working_memories.update(
+                    {mft: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
+                                     break_time=duration * 0.2)})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -71,13 +78,14 @@ class Brain:
     def recognize_speech(self, features_serial: list):
         if len(features_serial) == 0:
             return
-        pack_memories = []
+        pack_memory_list = []
         for features in features_serial:
             feature_memories = self.add_feature_memories(features)
             pack_memory = self.add_memory(feature_memories)
-            pack_memories = self.add_working(pack_memory, pack_memories)
+            pack_memory_list = self.add_working(pack_memory, pack_memory_list)
         # there may be more than n_memory_children for speech
-        temporal_memory = self.add_memory(pack_memories)
+        # speech memories were tokenized, so we can add it as temporal memory
+        temporal_memory = self.add_memory(pack_memory_list)
         self.working_memories[constants.temporal].append(temporal_memory)
 
     # need to call before input any temporal in a frame¬
@@ -115,7 +123,7 @@ class Brain:
         for feature in features:
             m = self.find_feature(feature)
             if m is None:
-                m = self.create_memory(constants.feature, feature, feature.type)
+                m = self.create_memory(constants.pack, feature, feature.type)
             else:
                 self.activate_memory(m)
             data.add(m)
@@ -257,7 +265,7 @@ class Brain:
         recognizer = self.RECOGNIZERS[feature.type]
         tree = self.memory_vp_tree[feature.type]
         if tree is not None:
-            query = Memory(constants.feature, feature, feature.type)
+            query = Memory(constants.pack, feature, feature.type)
             distance, nearest_memory = tree.get_nearest_neighbor(query)
             if recognizer.is_similar(distance):
                 return nearest_memory
