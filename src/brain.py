@@ -71,10 +71,10 @@ class Brain:
         self.running = False
 
     def recognize_pack(self, ft, features):
-        pv = f'{constants.pack}{ft}'
+        pf = f'{constants.pack}{ft}'
         feature_memories = self.add_feature_memories(features)
         pack_memory = self.add_memory(feature_memories)
-        self.working_memories[pv].append(pack_memory)
+        self.working_memories[pf].append(pack_memory)
 
     def recognize_temporal(self, ft):
         pf = f'{constants.pack}{ft}'
@@ -101,9 +101,10 @@ class Brain:
             self.recognize_pack(ft, features)
         self.recognize_temporal(ft)
 
-    # need to call before input any temporal in a frame¬
-    def prepare_temporal(self):
-        self.origin_temporal_memories = self.working_memories[constants.temporal]
+    # need to call before a frame
+    def prepare_frame(self):
+        for _, working_queue in self.working_memories.items():
+            working_queue.clean()
 
     @util.timeit
     def control(self, m: Memory, actions):

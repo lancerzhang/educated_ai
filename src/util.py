@@ -11,7 +11,6 @@ import numpy
 import numpy as np
 
 from src import constants
-from src.memory import Memory
 
 USED_COUNT = 'uct'
 logger = logging.getLogger('util')
@@ -428,23 +427,18 @@ def is_subset(small: set, big: set):
 
 
 def get_order(memory_type):
-    order = constants.temporal  # temporal
-    if constants.memory_types.index(memory_type) < constants.memory_types.index(constants.short):
-        order = constants.disorder  # unordered
+    order = constants.temporal  # ordered
+    if constants.memory_types.index(memory_type) < constants.memory_types.index(constants.temporal):
+        order = constants.pack  # unordered
     return order
 
 
-def create_data(memory_type, data: list):
+def create_data(memory_type, data):
     if data is None:
         return
     if set == type(data) or list == type(data):
-        transformation = False
-        for e in data:
-            if type(e) == Memory:
-                transformation = True
-            break
-        if transformation:
-            data = [x.MID for x in data]
-        if constants.disorder == get_order(memory_type):
+        if constants.pack == get_order(memory_type):
             data = set(data)
+        else:
+            data = list(data)
     return data

@@ -83,7 +83,7 @@ def main(argv):
         print('initialized.')
         while 1:
             process_start = time.time()
-            brain.prepare_temporal()
+            brain.prepare_frame()
             # logging.debug('frame started.')
             speech_features_serial = speech.process()
             # print(f'n speech_features_set {len(speech_features_set)}')
