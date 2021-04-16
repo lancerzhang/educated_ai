@@ -125,8 +125,8 @@ class TestTimedQueue(unittest.TestCase):
         items = self.timed_queue.pop_left()
         self.assertEqual(3, len(items))
 
-    def test_clean(self):
+    def test_delete_expired(self):
         self.assertEqual(1, len(self.timed_queue))
         self.item1.created_time = time.time() - 6
-        self.timed_queue.clean()
+        self.timed_queue.delete_expired()
         self.assertEqual(0, len(self.timed_queue))

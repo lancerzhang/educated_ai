@@ -33,16 +33,16 @@ class Brain:
     def __init__(self):
         self.running = True
         self.all_memories = {}  # contains both cache and vp tree, for searching abstract memory
-        self.categorized_memory = {}  # memories by category, for cleanup memory
-        self.n_memories = {}  # length of all_memories, for compare and cleanup memory
-        self.memory_cache = {}  # cache before put to vp tree, for searching real memory
-        self.memory_vp_tree = {}  # speed up searching memories, for searching real memory
-        self.context_memories = set()  # context for temporal memory
+        # self.categorized_memory = {}  # memories by category, for cleanup memory
+        # self.n_memories = {}  # length of all_memories, for compare and cleanup memory
+        self.memory_cache = {}  # cache before put to vp tree, for searching feature memory
+        self.memory_vp_tree = {}  # speed up searching memories, for searching feature memory
+        self.context_memories = set()
         self.working_memories = {}
-        self.origin_temporal_memories = []
-        for t in constants.feature_types + constants.memory_types:
-            self.categorized_memory.update({t: {}})
-            self.n_memories.update({t: 0})  # length of categorized_memories
+        # self.origin_temporal_memories = []
+        # for t in constants.feature_types + constants.memory_types:
+        #     self.categorized_memory.update({t: {}})
+        #     self.n_memories.update({t: 0})  # length of categorized_memories
         for ft in constants.feature_types:
             self.memory_cache.update({ft: set()})  # cache before put to vp tree
             self.memory_vp_tree.update({ft: None})  # speed up searching memories
@@ -104,7 +104,7 @@ class Brain:
     # need to call before a frame
     def prepare_frame(self):
         for _, working_queue in self.working_memories.items():
-            working_queue.clean()
+            working_queue.delete_expired()
 
     @util.timeit
     def control(self, m: Memory, actions):

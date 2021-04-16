@@ -64,7 +64,7 @@ class TimedQueue:
                 return result
         return result
 
-    def clean(self):
+    def delete_expired(self):
         new_queue = deque()
         end_time = time.time() - self.total_duration
         for item in self.data:
