@@ -426,19 +426,9 @@ def is_subset(small: set, big: set):
     return small.issubset(big)
 
 
-def get_order(memory_type):
-    order = constants.temporal  # ordered
-    if constants.memory_types.index(memory_type) < constants.memory_types.index(constants.temporal):
-        order = constants.pack  # unordered
-    return order
-
-
 def create_data(memory_type, data):
     if data is None:
         return
-    if set == type(data) or list == type(data):
-        if constants.pack == get_order(memory_type):
-            data = set(data)
-        else:
-            data = list(data)
+    if constants.instant == memory_type:
+        data = set(data)
     return data

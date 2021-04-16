@@ -18,14 +18,14 @@ logging.basicConfig(filename='app.log', level=logging.INFO,
 def print_info(brain):
     # print(f'len brain.memory_cache speech: {len(brain.memory_cache[constants.speech])}')
     print(f'len brain.all_memories speech: {len(brain.categorized_memory[constants.speech])}')
-    print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.pack])}')
+    print(f'len brain.all_memories pack: {len(brain.categorized_memory[constants.instant])}')
     print(f'len brain.all_memories temporal: {len(brain.categorized_memory[constants.temporal])}')
     # print(f'len brain.all_memories long: {len(brain.categorized_memory[constants.long])}')
     # print(f'stability is: {[x.stability for x in brain.all_memories.copy().values()]}')
     print(f'stability of speech is:'
           f' {[x.stability for x in brain.categorized_memory[constants.speech].copy().values()]}')
     print(f'stability of pack is:'
-          f' {[x.stability for x in brain.categorized_memory[constants.pack].copy().values()]}')
+          f' {[x.stability for x in brain.categorized_memory[constants.instant].copy().values()]}')
     print(f'stability of temporal is:'
           f' {[x.stability for x in brain.categorized_memory[constants.temporal].copy().values()]}')
     # print(f'stability of long is:'
@@ -41,7 +41,7 @@ def print_info(brain):
     # print(
     #     f'live time of long is: {[int(time.time() - x.CREATED_TIME) for x in brain.categorized_memory[constants.long].copy().values()]}')
     print(f'data len of pack is:'
-          f' {[len(x.data) for x in brain.categorized_memory[constants.pack].copy().values()]}')
+          f' {[len(x.data) for x in brain.categorized_memory[constants.instant].copy().values()]}')
     print(f'data len of temporal is:'
           f' {[len(x.data) for x in brain.categorized_memory[constants.temporal].copy().values()]}')
 
@@ -86,11 +86,12 @@ def main(argv):
             brain.prepare_frame()
             # logging.debug('frame started.')
             speech_features_serial = speech.process()
+            vision_features= vision.process()
             # print(f'n speech_features_set {len(speech_features_set)}')
             # if (time.time() - start_time) > 10:
             #     print('here')
             brain.recognize_speech(speech_features_serial)
-            short = brain.recognize_temporal()
+            brain.recognize_vision(vision_features)
             brain.control(short)
             # if (time.time() - start_time) > 20:
             #     speech.stop()

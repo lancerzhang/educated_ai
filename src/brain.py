@@ -35,32 +35,30 @@ class Brain:
         self.all_memories = {}  # contains both cache and vp tree, for searching abstract memory
         # self.categorized_memory = {}  # memories by category, for cleanup memory
         # self.n_memories = {}  # length of all_memories, for compare and cleanup memory
-        self.memory_cache = {}  # cache before put to vp tree, for searching feature memory
-        self.memory_vp_tree = {}  # speed up searching memories, for searching feature memory
+        self.feature_memory_cache = {}  # cache before put to vp tree, for searching feature memory
+        self.feature_memories = {}  # speed up searching memories, for searching feature memory
         self.context_memories = set()
-        self.working_memories = {}
+        self.working_memory_queues = {}
         # self.origin_temporal_memories = []
         # for t in constants.feature_types + constants.memory_types:
         #     self.categorized_memory.update({t: {}})
         #     self.n_memories.update({t: 0})  # length of categorized_memories
-        for ft in constants.feature_types:
-            self.memory_cache.update({ft: set()})  # cache before put to vp tree
-            self.memory_vp_tree.update({ft: None})  # speed up searching memories
-            mt = constants.pack
-            mft = f'{mt}{ft}'
-            duration = self.get_memory_duration(mt)
-            # set consecutive_duplicates=False to remove those consecutive duplicates
-            # which is to ignore those minor difference in very short time
-            self.working_memories.update(
-                {mft: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
-                                 break_time=duration * 0.3, consecutive_duplicates=False)})
-            # for longer time set consecutive_duplicates=True to keep those duplicates
-            mt = constants.temporal
-            mft = f'{mt}{ft}'
-            duration = self.get_memory_duration(mt)
-            self.working_memories.update(
-                {mft: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
-                                 break_time=duration * 0.3, consecutive_duplicates=True)})
+        for feature_type in constants.feature_types:
+            self.feature_memory_cache.update({feature_type: set()})  # cache before put to vp tree
+            self.feature_memories.update(
+                {feature_type: vptree.VPTree([], lambda a, b: False)})  # speed up searching memories
+            for memory_type in constants.memory_types:
+                queue_key = f'{memory_type}{feature_type}'
+                duration = self.get_memory_duration(memory_type)
+                # set consecutive_duplicates=False to remove those consecutive duplicates
+                # which is to ignore those minor difference in very short time
+                # for longer time set consecutive_duplicates=True to keep those duplicates
+                allow_duplicates = False
+                if memory_type == constants.temporal:
+                    allow_duplicates = True
+                self.working_memory_queues.update(
+                    {queue_key: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
+                                           break_time=duration * 0.3, consecutive_duplicates=allow_duplicates)})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -70,40 +68,40 @@ class Brain:
     def stop(self):
         self.running = False
 
-    def recognize_pack(self, ft, features):
-        pf = f'{constants.pack}{ft}'
-        feature_memories = self.add_feature_memories(features)
-        pack_memory = self.add_memory(feature_memories)
-        self.working_memories[pf].append(pack_memory)
+    def add_features_to_instant_queue(self, feature_type, features):
+        instant_queue_key = f'{constants.instant}{feature_type}'
+        feature_memory_list = self.add_feature_memories(features)
+        features_memory = self.add_collection_memory(feature_memory_list)
+        self.working_memory_queues[instant_queue_key].append(features_memory)
+        features_memory_list = self.working_memory_queues[instant_queue_key].pop_left()
+        if features_memory_list:
+            instant_memory = self.add_collection_memory(features_memory_list)
+            temporal_queue_key = f'{constants.temporal}{feature_type}'
+            self.working_memory_queues[temporal_queue_key].append(instant_memory)
 
-    def recognize_temporal(self, ft):
-        pf = f'{constants.pack}{ft}'
-        pack_memory_list = self.working_memories[pf].pop_left()
-        if pack_memory_list:
-            temporal_memory = self.add_memory(pack_memory_list)
-            tf = f'{constants.temporal}{ft}'
-            self.working_memories[tf].append(temporal_memory)
+    def add_instant_to_temporal_queue(self, feature_type):
+        pass
 
     @util.timeit
     def recognize_vision(self, features):
         if len(features) == 0:
             return
-        ft = constants.vision
-        self.recognize_pack(ft, features)
-        self.recognize_temporal(ft)
+        feature_type = constants.vision
+        self.add_features_to_instant_queue(feature_type, features)
+        self.add_instant_to_temporal_queue(feature_type)
 
     @util.timeit
     def recognize_speech(self, features_serial: list):
         if len(features_serial) == 0:
             return
-        ft = constants.speech
+        feature_type = constants.speech
         for features in features_serial:
-            self.recognize_pack(ft, features)
-        self.recognize_temporal(ft)
+            self.add_features_to_instant_queue(feature_type, features)
+        self.add_instant_to_temporal_queue(feature_type)
 
     # need to call before a frame
     def prepare_frame(self):
-        for _, working_queue in self.working_memories.items():
+        for _, working_queue in self.working_memory_queues.items():
             working_queue.delete_expired()
 
     @util.timeit
@@ -120,7 +118,7 @@ class Brain:
         for feature in features:
             m = self.find_feature(feature)
             if m is None:
-                m = self.create_memory(constants.pack, feature, feature.type)
+                m = self.create_memory(constants.feature, feature, feature.type)
             else:
                 self.activate_memory(m)
             data.add(m)
@@ -133,12 +131,11 @@ class Brain:
         return constants.memory_types[idx]
 
     # @util.timeit
-    def add_memory(self, sub_memories):
+    def add_collection_memory(self, sub_memories: list):
         if len(sub_memories) == 0:
             return None
-        sub_memories = list(sub_memories)
         memory_type = self.get_parent_type(sub_memories[0])
-        if util.get_order(memory_type) == constants.temporal and len(sub_memories) <= 1:
+        if memory_type == constants.temporal and len(sub_memories) <= 1:
             # for temporal memory, require more than one child
             return None
         full_matches, partial_matches = self.find_parents(sub_memories)
@@ -147,11 +144,11 @@ class Brain:
         if len(full_matches) == 0:
             result = self.create_memory(memory_type, sub_memories)
         else:
-            if util.get_order(memory_type) == constants.disorder:
+            if memory_type == constants.instant:
                 result = full_matches.pop()
             else:
-                sp = self.sort_context(full_matches)
-                best_match = sp[0]
+                sorted_memories = self.sort_context(full_matches)
+                best_match = sorted_memories[0]
                 context_ids = {x.MID for x in self.context_memories}
                 if context_ids == best_match.context:
                     # contexts of best match equal current contexts
@@ -208,10 +205,9 @@ class Brain:
         m = Memory(memory_type, memory_data, real_type)
         if real_type:
             t = real_type
-            self.memory_cache[t].add(m)
+            self.feature_memory_cache[t].add(m)
         else:
             t = memory_type
-        self.categorized_memory[t].update({m.MID: m})
         self.all_memories.update({m.MID: m})
         # for non real memory, update data indexes
         if self.get_memory_type_index(memory_type) > 0:
@@ -219,7 +215,7 @@ class Brain:
                 d.data_indexes.add(m.MID)
         memory_context = set()
         if context is None:
-            if util.get_order(memory_type) == constants.temporal:
+            if memory_type == constants.temporal:
                 memory_context = self.context_memories
         else:
             memory_context = context
@@ -251,7 +247,7 @@ class Brain:
     @util.timeit
     def find_feature_cache(self, feature: Feature):
         recognizer = self.RECOGNIZERS[feature.type]
-        cache = self.memory_cache[feature.type].copy()
+        cache = self.feature_memory_cache[feature.type].copy()
         # print(f'len cache {len(cache)}')
         for m in cache:
             if recognizer.is_feature_similar(feature, m.data):
@@ -260,9 +256,9 @@ class Brain:
     @util.timeit
     def find_feature_tree(self, feature: Feature):
         recognizer = self.RECOGNIZERS[feature.type]
-        tree = self.memory_vp_tree[feature.type]
+        tree = self.feature_memories[feature.type]
         if tree is not None:
-            query = Memory(constants.pack, feature, feature.type)
+            query = Memory(constants.instant, feature, feature.type)
             distance, nearest_memory = tree.get_nearest_neighbor(query)
             if recognizer.is_similar(distance):
                 return nearest_memory
@@ -287,7 +283,7 @@ class Brain:
             parent_ids = parent_ids.union(m.data_indexes)
         parents = self.get_valid_memories(parent_ids, output_type='Memory')
         for parent in parents:
-            if constants.temporal == util.get_order(memory_type):
+            if constants.temporal == memory_type:
                 is_sub = util.is_sublist(child_memories, parent.data)
             else:
                 is_sub = util.is_subset(parent.data, set(child_memories))
@@ -480,7 +476,7 @@ class Brain:
     def reindex(self):
         for ft in constants.feature_types:
             memories = self.categorized_memory[ft].copy()
-            caches = self.memory_cache[ft]
+            caches = self.feature_memory_cache[ft]
             has_creation = len(caches) > 0
             has_deletion = self.n_memories[ft] != len(memories)
             if has_creation or has_deletion:
@@ -493,7 +489,7 @@ class Brain:
                     tree = None
                 logger.debug(f'vptree points:{len(memories)}')
                 # TODO, some update may lost during this process
-                self.memory_vp_tree.update({ft: tree})
+                self.feature_memories.update({ft: tree})
                 caches.clear()
                 time.sleep(self.interval_s)
             self.n_memories.update({ft: len(memories)})
@@ -525,7 +521,7 @@ class Brain:
                 t = m.MEMORY_TYPE
                 if m.FEATURE_TYPE is not None:
                     t = m.FEATURE_TYPE
-                    self.memory_cache[t].add(m)
+                    self.feature_memory_cache[t].add(m)
                 self.categorized_memory[t].update({m.MID: m})
             self.reindex()
         except:
