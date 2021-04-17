@@ -37,8 +37,10 @@ class Brain:
         # self.n_memories = {}  # length of all_memories, for compare and cleanup memory
         self.feature_memory_cache = {}  # cache before put to vp tree, for searching feature memory
         self.feature_memories = {}  # speed up searching memories, for searching feature memory
-        self.context_memories = set()
+        self.context_memories = set()  # acknowledged context memories
+        self.context_task = set()  # partial acknowledged context memories
         self.working_memory_queues = {}
+        self.last_processed = {}
         # self.origin_temporal_memories = []
         # for t in constants.feature_types + constants.memory_types:
         #     self.categorized_memory.update({t: {}})
@@ -54,11 +56,13 @@ class Brain:
                 # which is to ignore those minor difference in very short time
                 # for longer time set consecutive_duplicates=True to keep those duplicates
                 allow_duplicates = False
+                pop_num = constants.n_memory_children
                 if memory_type == constants.temporal:
                     allow_duplicates = True
+                    pop_num = 9999  # no limit
                 self.working_memory_queues.update(
-                    {queue_key: TimedQueue(duration * 1.5, duration, pop_count=constants.n_memory_children,
-                                           break_time=duration * 0.3, consecutive_duplicates=allow_duplicates)})
+                    {queue_key: TimedQueue(duration * 1.5, duration, pop_count=pop_num, break_time=duration * 0.3,
+                                           consecutive_duplicates=allow_duplicates)})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -71,16 +75,50 @@ class Brain:
     def add_features_to_instant_queue(self, feature_type, features):
         instant_queue_key = f'{constants.instant}{feature_type}'
         feature_memory_list = self.add_feature_memories(features)
-        features_memory = self.add_collection_memory(feature_memory_list)
+        features_memory = self.add_memory(feature_memory_list)
         self.working_memory_queues[instant_queue_key].append(features_memory)
         features_memory_list = self.working_memory_queues[instant_queue_key].pop_left()
         if features_memory_list:
-            instant_memory = self.add_collection_memory(features_memory_list)
+            instant_memory = self.add_memory(features_memory_list)
             temporal_queue_key = f'{constants.temporal}{feature_type}'
             self.working_memory_queues[temporal_queue_key].append(instant_memory)
 
-    def add_instant_to_temporal_queue(self, feature_type):
-        pass
+    def recognize_temporal(self, feature_type):
+        temporal_queue_key = f'{constants.temporal}{feature_type}'
+        last_queue = self.last_processed[temporal_queue_key]
+        new_queue = self.working_memory_queues[temporal_queue_key].pop_left()
+        if new_queue is not None and len(new_queue) > 0 and last_queue != new_queue:
+            # get a short duration of memories
+            # TODO, test
+            # no odd word, no incomplete task
+            # times up, force end
+            self.coalesce_memory(new_queue)
+
+    def coalesce_memory(self, memory_list: list):
+        new_memory_list = []
+        positions = self.search_breakpoints(memory_list, [0])
+        for i in range(len(positions) - 1):
+            new_memory_list.append(memory_list[positions[i]:positions[i + 1]])
+        if memory_list == new_memory_list:
+            return new_memory_list
+        else:
+            return self.coalesce_memory(new_memory_list)
+
+    def search_breakpoints(self, memory_list, position_list, reverse=False):
+        pos = position_list[-1]
+        if reverse:
+            while pos < len(memory_list):
+                for length in reversed(range(1, constants.n_memory_children)):
+                    child_memories = memory_list[pos:length]
+                    parent_memories, _ = self.find_parents(child_memories)
+                    pos -= 1
+        else:
+            while pos > 0:
+                for length in range(1, constants.n_memory_children):
+                    child_memories = memory_list[pos:length]
+                    parent_memories, _ = self.find_parents(child_memories)
+                pos += 1
+        return position_list
 
     @util.timeit
     def recognize_vision(self, features):
@@ -88,7 +126,7 @@ class Brain:
             return
         feature_type = constants.vision
         self.add_features_to_instant_queue(feature_type, features)
-        self.add_instant_to_temporal_queue(feature_type)
+        self.recognize_temporal(feature_type)
 
     @util.timeit
     def recognize_speech(self, features_serial: list):
@@ -97,7 +135,7 @@ class Brain:
         feature_type = constants.speech
         for features in features_serial:
             self.add_features_to_instant_queue(feature_type, features)
-        self.add_instant_to_temporal_queue(feature_type)
+        self.recognize_temporal(feature_type)
 
     # need to call before a frame
     def prepare_frame(self):
@@ -131,7 +169,7 @@ class Brain:
         return constants.memory_types[idx]
 
     # @util.timeit
-    def add_collection_memory(self, sub_memories: list):
+    def add_memory(self, sub_memories: list):
         if len(sub_memories) == 0:
             return None
         memory_type = self.get_parent_type(sub_memories[0])
@@ -144,9 +182,7 @@ class Brain:
         if len(full_matches) == 0:
             result = self.create_memory(memory_type, sub_memories)
         else:
-            if memory_type == constants.instant:
-                result = full_matches.pop()
-            else:
+            if memory_type == constants.temporal:
                 sorted_memories = self.sort_context(full_matches)
                 best_match = sorted_memories[0]
                 context_ids = {x.MID for x in self.context_memories}
@@ -165,6 +201,8 @@ class Brain:
                             result = self.create_memory(memory_type, sub_memories, context=common_contexts)
                         else:
                             result = existing
+            else:
+                result = full_matches.pop()
         return result
 
     def sort_context(self, memories):
