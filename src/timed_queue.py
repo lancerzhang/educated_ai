@@ -48,7 +48,7 @@ class TimedQueue:
         result = []
         last_time = self.data[0].created_time
         while self.data:
-            # print(self.data[0].time)
+            # print(self.data[0].created_time)
             if self.data[0].created_time < read_end_time \
                     and self.data[0].created_time - last_time < self.break_time \
                     and len(result) < self.pop_count:

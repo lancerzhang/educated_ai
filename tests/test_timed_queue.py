@@ -54,8 +54,20 @@ class TestTimedQueue(unittest.TestCase):
         tq = TimedQueue(5, 2)
         self.assertIsNone(tq.pop_left())
 
-    def test_pop_left_not_enough_data(self):
+    def test_pop_left_not_enough_count_and_duration(self):
         # test not enough duration to read
+        self.assertIsNone(self.timed_queue.pop_left())
+
+    def test_pop_left_not_enough_count(self):
+        self.prepare_full_data()
+        self.timed_queue.pop_count = 6
+        self.timed_queue.pop_duration = 9999
+        self.assertIsNone(self.timed_queue.pop_left())
+
+    def test_pop_left_not_enough_duration(self):
+        self.prepare_full_data()
+        self.timed_queue.pop_count = 9999
+        self.timed_queue.pop_duration = 6
         self.assertIsNone(self.timed_queue.pop_left())
 
     def test_pop_left_split_by_duration(self):
@@ -89,6 +101,26 @@ class TestTimedQueue(unittest.TestCase):
         self.assertEqual(5, len(items))
         items = self.timed_queue.pop_left()
         self.assertIsNone(items)
+
+    def test_pop_left_in_one_go_with_no_end_element(self):
+        data = deque()
+        created_time = time.time() - 8
+        # print(f'prepare_full_data: created_time {created_time}')
+        for i in reversed(range(5)):
+            item = TimedItem(f'feature{i}')
+            if (i + 1) % 2 == 1:
+                created_time += 1.1
+            else:
+                created_time += 0.1
+            item.created_time = created_time
+            # print(created_time)
+            data.append(item)
+        self.timed_queue.data = data
+        self.timed_queue.pop_duration = 6
+        self.timed_queue.pop_count = 9999
+        items = self.timed_queue.pop_left()
+        self.assertIsNotNone(items)
+        self.assertEqual(5, len(items))
 
     def test_pop_left_break_time(self):
         self.prepare_full_data()
