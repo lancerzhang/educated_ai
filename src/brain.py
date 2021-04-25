@@ -104,20 +104,41 @@ class Brain:
         else:
             return self.coalesce_memory(new_memory_list)
 
-    def search_breakpoints(self, memory_list, position_list, reverse=False):
-        pos = position_list[-1]
+    def segment_memories(self, memory_list, position_list, reverse=False):
         if reverse:
-            while pos < len(memory_list):
-                for length in reversed(range(1, constants.n_memory_children)):
-                    child_memories = memory_list[pos:length]
+            end = position_list[-1]
+            while end > 0:
+                for width in reversed(range(constants.n_memory_children)):
+                    start = end - width - 1
+                    if width == 1:
+                        position_list.append(start)
+                        end = start
+                        break
+                    if end > len(memory_list):
+                        break
+                    child_memories = memory_list[start:end]
                     parent_memories, _ = self.find_parents(child_memories)
-                    pos -= 1
+                    if len(parent_memories) > 0:
+                        position_list.append(start)
+                        end = start
+                        break
         else:
-            while pos > 0:
-                for length in range(1, constants.n_memory_children):
-                    child_memories = memory_list[pos:length]
+            start = position_list[-1]
+            while start < len(memory_list):
+                for width in reversed(range(constants.n_memory_children)):
+                    end = start + width + 1
+                    if width == 1:
+                        position_list.append(end)
+                        start = end
+                        break
+                    if end > len(memory_list):
+                        break
+                    child_memories = memory_list[start:end]
                     parent_memories, _ = self.find_parents(child_memories)
-                pos += 1
+                    if len(parent_memories) > 0:
+                        position_list.append(end)
+                        start = end
+                        break
         return position_list
 
     @util.timeit
