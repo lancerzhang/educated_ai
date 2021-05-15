@@ -86,13 +86,13 @@ def main(argv):
             brain.prepare_frame()
             # logging.debug('frame started.')
             speech_features_serial = speech.process()
-            vision_features= vision.process()
+            vision_features = vision.process()
             # print(f'n speech_features_set {len(speech_features_set)}')
             # if (time.time() - start_time) > 10:
             #     print('here')
-            brain.recognize_speech(speech_features_serial)
-            brain.recognize_vision(vision_features)
-            brain.control(short)
+            brain.receive_speech(speech_features_serial)
+            brain.receive_vision(vision_features)
+            brain.recognize()
             # if (time.time() - start_time) > 20:
             #     speech.stop()
             process_end = time.time()

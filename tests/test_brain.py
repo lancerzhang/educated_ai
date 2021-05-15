@@ -12,7 +12,7 @@ class TestBrain(unittest.TestCase):
 
     def test_recognize_speech(self):
         brain = Brain()
-        self.assertIsNone(brain.recognize_speech([]))
+        self.assertIsNone(brain.receive_speech([]))
 
     def test_add_real_memories(self):
         brain = Brain()

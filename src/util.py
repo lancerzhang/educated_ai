@@ -429,6 +429,6 @@ def is_subset(small: set, big: set):
 def create_data(memory_type, data):
     if data is None:
         return
-    if constants.instant == memory_type:
+    if constants.sense == memory_type:
         data = set(data)
     return data

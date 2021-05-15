@@ -1,15 +1,17 @@
 # feature types
 speech = 'Speech'
 vision = 'Vision'
-feature_types = [speech, vision]
+sense_types = [speech, vision]
 
 # memory types
 feature = 'Feature'
-features = 'Features'  # features found at the same time
-instant = 'Instant'  # features found at a very short time
-temporal = 'Temporal'
-memory_types = [feature, features, instant, temporal]
-memory_duration = [0, 0, 0.3, 2]
+sense = 'Sense'  # features found at the same time
+
+temporal = 'Memory'
+context = 'Context'
+memory_types = [feature, sense, temporal, context]
+break_time = 0.2
+memory_duration = [0, 0, 5]
 
 stable = 3
 n_memory_children = 3

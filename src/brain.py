@@ -14,7 +14,7 @@ from src.features import Feature
 from src.memory import Memory
 from src.recognizers import SpeechRecognizer
 from src.recognizers import VisionRecognizer
-from src.timed_queue import TimedQueue
+from src.timed_list import TimedList
 
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.INFO)
@@ -25,6 +25,7 @@ class Brain:
     MEMORY_FILE = 'memories.npy'
     SELF_FUNC = 's'
     ITEM_FUNC = 'v'
+    DURATION = 10
     RECOGNIZERS = {constants.speech: SpeechRecognizer, constants.vision: VisionRecognizer}
 
     memory_cycles = [15, 30, 60, 120, 60 * 5, 60 * 30, 60 * 60 * 12, 60 * 60 * 24, 60 * 60 * 24 * 2, 60 * 60 * 24 * 4,
@@ -39,30 +40,17 @@ class Brain:
         self.feature_memories = {}  # speed up searching memories, for searching feature memory
         self.context_memories = set()  # acknowledged context memories
         self.context_task = set()  # partial acknowledged context memories
-        self.working_memory_queues = {}
+        self.working_memory_lists = {}
         self.last_processed = {}
         # self.origin_temporal_memories = []
         # for t in constants.feature_types + constants.memory_types:
         #     self.categorized_memory.update({t: {}})
         #     self.n_memories.update({t: 0})  # length of categorized_memories
-        for feature_type in constants.feature_types:
-            self.feature_memory_cache.update({feature_type: set()})  # cache before put to vp tree
+        for sense_type in constants.sense_types:
+            self.feature_memory_cache.update({sense_type: set()})  # cache before put to vp tree
             self.feature_memories.update(
-                {feature_type: vptree.VPTree([], lambda a, b: False)})  # speed up searching memories
-            for memory_type in constants.memory_types:
-                queue_key = f'{memory_type}{feature_type}'
-                duration = self.get_memory_duration(memory_type)
-                # set consecutive_duplicates=False to remove those consecutive duplicates
-                # which is to ignore those minor difference in very short time
-                # for longer time set consecutive_duplicates=True to keep those duplicates
-                allow_duplicates = False
-                pop_num = constants.n_memory_children
-                if memory_type == constants.temporal:
-                    allow_duplicates = True
-                    pop_num = 9999  # no limit
-                self.working_memory_queues.update(
-                    {queue_key: TimedQueue(duration * 1.5, duration, pop_count=pop_num, break_time=duration * 0.3,
-                                           consecutive_duplicates=allow_duplicates)})
+                {sense_type: vptree.VPTree([], lambda a, b: False)})  # speed up searching memories
+            self.working_memory_lists.update({sense_type: TimedList(self.DURATION)})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -72,37 +60,50 @@ class Brain:
     def stop(self):
         self.running = False
 
-    def add_features_to_instant_queue(self, feature_type, features):
-        instant_queue_key = f'{constants.instant}{feature_type}'
-        feature_memory_list = self.add_feature_memories(features)
-        features_memory = self.add_memory(feature_memory_list)
-        self.working_memory_queues[instant_queue_key].append(features_memory)
-        features_memory_list = self.working_memory_queues[instant_queue_key].pop_left()
-        if features_memory_list:
-            instant_memory = self.add_memory(features_memory_list)
-            temporal_queue_key = f'{constants.temporal}{feature_type}'
-            self.working_memory_queues[temporal_queue_key].append(instant_memory)
+    @util.timeit
+    def receive_vision(self, features):
+        if len(features) == 0:
+            return
+        feature_type = constants.vision
+        self.add_sense(feature_type, features)
 
-    def recognize_temporal(self, feature_type):
-        temporal_queue_key = f'{constants.temporal}{feature_type}'
-        last_queue = self.last_processed[temporal_queue_key]
-        new_queue = self.working_memory_queues[temporal_queue_key].pop_left()
-        if new_queue is not None and len(new_queue) > 0 and last_queue != new_queue:
-            # get a short duration of memories
-            # TODO, test
-            # no odd word, no incomplete task
-            # times up, force end
-            self.coalesce_memory(new_queue)
+    @util.timeit
+    def receive_speech(self, features_list: list):
+        if len(features_list) == 0:
+            return
+        sense_type = constants.speech
+        for features in features_list:
+            self.add_sense(sense_type, features)
 
-    def coalesce_memory(self, memory_list: list):
-        new_memory_list = []
-        positions = self.search_breakpoints(memory_list, [0])
-        for i in range(len(positions) - 1):
-            new_memory_list.append(memory_list[positions[i]:positions[i + 1]])
-        if memory_list == new_memory_list:
-            return new_memory_list
-        else:
-            return self.coalesce_memory(new_memory_list)
+    def add_sense(self, sense_type, features):
+        feature_memories = self.add_feature_memories(features)
+        sense_memory = self.add_memory(feature_memories)
+        self.working_memory_lists[sense_type].append(sense_memory)
+
+    def rebuild_context(self):
+        new_context = set()
+        # remove outdated context
+        for m in self.context_memories:
+            if time.time() - m.activated_time < self.DURATION:
+                new_context.add(m)
+        # put processed memory to context
+        for sense_type in constants.sense_types:
+            processed = self.working_memory_lists[sense_type].processed
+            for m in processed:
+                new_context.add(m)
+        self.context_memories = new_context
+
+    def recognize(self):
+        for sense_type in constants.sense_types:
+            self.working_memory_lists[sense_type].slice()
+        self.rebuild_context()
+        for sense_type in constants.sense_types:
+            new_working = self.coalesce_memory(sense_type)
+            self.working_memory_lists[sense_type].rebuild(new_working)
+
+    def coalesce_memory(self, sense_type):
+        working = self.working_memory_lists[sense_type].processing
+        return working
 
     def segment_memories(self, memory_list, position_list, reverse=False):
         if reverse:
@@ -141,26 +142,9 @@ class Brain:
                         break
         return position_list
 
-    @util.timeit
-    def recognize_vision(self, features):
-        if len(features) == 0:
-            return
-        feature_type = constants.vision
-        self.add_features_to_instant_queue(feature_type, features)
-        self.recognize_temporal(feature_type)
-
-    @util.timeit
-    def recognize_speech(self, features_serial: list):
-        if len(features_serial) == 0:
-            return
-        feature_type = constants.speech
-        for features in features_serial:
-            self.add_features_to_instant_queue(feature_type, features)
-        self.recognize_temporal(feature_type)
-
     # need to call before a frame
     def prepare_frame(self):
-        for _, working_queue in self.working_memory_queues.items():
+        for _, working_queue in self.working_memory_lists.items():
             working_queue.delete_expired()
 
     @util.timeit
@@ -493,7 +477,7 @@ class Brain:
 
     def cleanup_memories(self):
         new_all_memories = {}
-        for t in constants.feature_types + constants.memory_types:
+        for t in constants.sense_types + constants.memory_types:
             memories = self.categorized_memory[t].copy()
             new_memories = {}
             for mid, m in memories.items():
@@ -533,7 +517,7 @@ class Brain:
 
     @util.timeit
     def reindex(self):
-        for ft in constants.feature_types:
+        for ft in constants.sense_types:
             memories = self.categorized_memory[ft].copy()
             caches = self.feature_memory_cache[ft]
             has_creation = len(caches) > 0
