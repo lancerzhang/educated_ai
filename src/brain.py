@@ -14,7 +14,7 @@ from src.features import Feature
 from src.memory import Memory
 from src.recognizers import SpeechRecognizer
 from src.recognizers import VisionRecognizer
-from src.timed_list import TimedList
+from src.memory_list import MemoryList
 
 logger = logging.getLogger('Brain')
 logger.setLevel(logging.INFO)
@@ -25,7 +25,7 @@ class Brain:
     MEMORY_FILE = 'memories.npy'
     SELF_FUNC = 's'
     ITEM_FUNC = 'v'
-    DURATION = 10
+    DURATION = 5
     RECOGNIZERS = {constants.speech: SpeechRecognizer, constants.vision: VisionRecognizer}
 
     memory_cycles = [15, 30, 60, 120, 60 * 5, 60 * 30, 60 * 60 * 12, 60 * 60 * 24, 60 * 60 * 24 * 2, 60 * 60 * 24 * 4,
@@ -40,7 +40,7 @@ class Brain:
         self.feature_memories = {}  # speed up searching memories, for searching feature memory
         self.context_memories = set()  # acknowledged context memories
         self.context_task = set()  # partial acknowledged context memories
-        self.working_memory_lists = {}
+        self.working_memory_lists = MemoryList(self.DURATION)  # use single time line for all memories
         self.last_processed = {}
         # self.origin_temporal_memories = []
         # for t in constants.feature_types + constants.memory_types:
@@ -50,7 +50,7 @@ class Brain:
             self.feature_memory_cache.update({sense_type: set()})  # cache before put to vp tree
             self.feature_memories.update(
                 {sense_type: vptree.VPTree([], lambda a, b: False)})  # speed up searching memories
-            self.working_memory_lists.update({sense_type: TimedList(self.DURATION)})
+            # self.working_memory_lists.update({sense_type: TimedList(self.DURATION)})
 
     def start(self):
         brain_thread = threading.Thread(target=self.persist)
@@ -95,7 +95,7 @@ class Brain:
 
     def recognize(self):
         for sense_type in constants.sense_types:
-            self.working_memory_lists[sense_type].slice()
+            self.working_memory_lists[sense_type].prepare()
         self.rebuild_context()
         for sense_type in constants.sense_types:
             new_working = self.coalesce_memory(sense_type)
@@ -191,7 +191,7 @@ class Brain:
                 sorted_memories = self.sort_context(full_matches)
                 best_match = sorted_memories[0]
                 context_ids = {x.MID for x in self.context_memories}
-                if context_ids == best_match.context:
+                if context_ids == best_match.link:
                     # contexts of best match equal current contexts
                     result = best_match
                 else:
@@ -267,25 +267,6 @@ class Brain:
             for c in memory_context:
                 c.context_indexes.add(m.MID)
         return m
-
-    def add_contexts(self, m: Memory):
-        # memory need to be stable enough for adding to context
-        if m is None or self.is_stable(m) is False:
-            return
-        self.context_memories.add(m)
-        self.update_contexts()
-
-    def update_contexts(self, n_context=constants.n_memory_context):
-        live_memories = self.get_valid_memories(self.context_memories.copy(), output_type='Memory')
-        memories = []
-        for m in live_memories:
-            if time.time() - m.activated_time < self.get_memory_duration(m.MEMORY_TYPE):
-                memories.append(m)
-        if len(memories) > n_context:
-            s_list = sorted(memories, key=lambda x: (x.stability, x.context_weight, x.activated_time), reverse=True)
-            n_list = s_list[0:n_context]
-            memories = set(n_list)
-        self.context_memories = memories
 
     @util.timeit
     def find_feature_cache(self, feature: Feature):
@@ -400,7 +381,7 @@ class Brain:
     def match_contexts(memories, context):
         context_ids = {x.MID for x in context}
         for m in memories:
-            if m.context == context_ids:
+            if m.link == context_ids:
                 return m
 
     @staticmethod
@@ -486,7 +467,7 @@ class Brain:
                     new_all_memories.update({mid: m})
                     # refresh data and index
                     m.data_indexes = self.get_valid_memories(m.data_indexes)
-                    m.context = self.get_valid_memories(m.context)
+                    m.link = self.get_valid_memories(m.link)
                     m.context_indexes = self.get_valid_memories(m.context_indexes)
                     self.update_context_weight(m)
                     self.update_data_weight(m)

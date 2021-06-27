@@ -6,16 +6,22 @@ sense_types = [speech, vision]
 # memory types
 feature = 'Feature'
 sense = 'Sense'  # features found at the same time
-
-temporal = 'Memory'
-context = 'Context'
-memory_types = [feature, sense, temporal, context]
+temporal = 'Temporal'  # memories are connected with order
+link = 'Link'  # memories in a duration are connected without order
+memory_types = [feature, sense, temporal, link]
 break_time = 0.2
-memory_duration = [0, 0, 5]
+memory_duration = [0, 0, 5, 5]
 
-stable = 3
+# memories will be combined as one sequentially
+# they can be an unique thing or a pattern
+temporal_duration = 3
+
+# each two memories in context will be connected, they are fungible
+# context will become prerequisite of processing memories
+context_duration = 7
+
+stable = 8
 n_memory_children = 3
-n_memory_context = 10
 
 # vision
 ZOOM_TYPE = 'zmt'

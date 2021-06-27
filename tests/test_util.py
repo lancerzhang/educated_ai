@@ -372,7 +372,7 @@ class TestUtil(unittest.TestCase):
     def test_get_order(self):
         self.assertEqual(constants.disorder, util.get_order(constants.pack))
         self.assertEqual(constants.disorder, util.get_order(constants.pack_real))
-        self.assertEqual(constants.disorder, util.get_order(constants.context))
+        self.assertEqual(constants.disorder, util.get_order(constants.link))
         self.assertEqual(constants.disorder, util.get_order(constants.instant))
         self.assertEqual(constants.disorder, util.get_order(constants.short))
 

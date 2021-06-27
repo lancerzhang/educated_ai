@@ -78,7 +78,7 @@ class TestBrain(unittest.TestCase):
         self.assertEqual(m2.MID, n1.MID)
         # test best match equal
         brain.context_memories = {m2}
-        m3.context = {m2.MID}
+        m3.link = {m2.MID}
         brain.get_parent_type = MagicMock(return_value=constants.short)
         brain.sort_context = MagicMock(return_value=([m3, m4]))
         brain.find_parents = MagicMock(return_value=([m2], [m2]))
@@ -102,7 +102,7 @@ class TestBrain(unittest.TestCase):
         m1 = brain.create_memory(constants.pack, SpeechFeature(1, 1), constants.speech)
         m2 = brain.create_memory(constants.pack, SpeechFeature(1, 2), constants.speech)
         brain.context_memories = {m1, m2}
-        m2.context = {m1.MID}
+        m2.link = {m1.MID}
         self.assertEqual({m1}, brain.get_common_contexts(m2))
 
     def test_get_context_weight(self):
@@ -124,9 +124,9 @@ class TestBrain(unittest.TestCase):
         m1.context_weight = 0.7
         m2.context_weight = 0.5
         m3.context_weight = 0.6
-        m1.context = {m2.MID, m3.MID}
-        m2.context = {m1.MID, m3.MID}
-        m3.context = {m2.MID, m1.MID}
+        m1.link = {m2.MID, m3.MID}
+        m2.link = {m1.MID, m3.MID}
+        m3.link = {m2.MID, m1.MID}
         self.assertEqual([m2, m3, m1], brain.sort_context({m1, m2, m3}))
 
     def test_add_to_instant_queue(self):
@@ -140,9 +140,9 @@ class TestBrain(unittest.TestCase):
         m1 = brain.create_memory(constants.pack, SpeechFeature(1, 1), constants.speech)
         m2 = brain.create_memory(constants.pack, SpeechFeature(1, 2), constants.speech)
         m3 = brain.create_memory(constants.pack, SpeechFeature(1, 2), constants.speech)
-        m1.context = {m2.MID, m3.MID}
-        m2.context = {m1.MID, m3.MID}
-        m3.context = {m2.MID, m1.MID}
+        m1.link = {m2.MID, m3.MID}
+        m2.link = {m1.MID, m3.MID}
+        m3.link = {m2.MID, m1.MID}
         self.assertEqual(m3, brain.match_contexts({m1, m2, m3}, {m1, m2}))
 
     def test_process(self):

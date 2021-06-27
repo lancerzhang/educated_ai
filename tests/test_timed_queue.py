@@ -2,8 +2,8 @@ import time
 import unittest
 from collections import deque
 
-from src.timed_list import TimedItem
-from src.timed_list import TimedList
+from src.memory_list import TimedItem
+from src.memory_list import MemoryList
 
 time_unit = 1
 
@@ -13,7 +13,7 @@ class TestTimedQueue(unittest.TestCase):
     item1 = None
 
     def setUp(self):
-        tq = TimedList(5, 2, pop_count=2)
+        tq = MemoryList(5, 2, pop_count=2)
         data = deque()
         item1 = TimedItem(f'feature1')
         data.append(item1)
@@ -37,21 +37,12 @@ class TestTimedQueue(unittest.TestCase):
         self.timed_queue.data = data
 
     def test_init(self):
-        self.assertRaises(RuntimeError, TimedList, 1, 2, 2)
-        self.assertRaises(RuntimeError, TimedList, 2, 2, 2)
-
-    def test_append(self):
-        self.timed_queue.append('feature2')
-        self.assertEqual(2, len(self.timed_queue))
-        self.assertEqual(self.item1.content, self.timed_queue[0])
-        self.assertTrue(self.timed_queue.data[1].created_time > self.timed_queue.data[0].created_time)
-        tq2 = TimedList(10, 2)
-        tq2.extend(self.timed_queue.data)
-        self.assertEqual(2, len(tq2))
+        self.assertRaises(RuntimeError, MemoryList, 1, 2, 2)
+        self.assertRaises(RuntimeError, MemoryList, 2, 2, 2)
 
     def test_pop_left_no_data(self):
         # test no data
-        tq = TimedList(5, 2)
+        tq = MemoryList(5, 2)
         self.assertIsNone(tq.pop_left())
 
     def test_pop_left_not_enough_count_and_duration(self):
